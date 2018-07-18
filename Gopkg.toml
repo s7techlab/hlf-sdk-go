@@ -1,0 +1,61 @@
+# Gopkg.toml example
+#
+# Refer to https://golang.github.io/dep/docs/Gopkg.toml.html
+# for detailed Gopkg.toml documentation.
+#
+# required = ["github.com/user/thing/cmd/thing"]
+# ignored = ["github.com/user/project/pkgX", "bitbucket.org/user/project/pkgA/pkgY"]
+#
+# [[constraint]]
+#   name = "github.com/user/project"
+#   version = "1.0.0"
+#
+# [[constraint]]
+#   name = "github.com/user/project2"
+#   branch = "dev"
+#   source = "github.com/myfork/project2"
+#
+# [[override]]
+#   name = "github.com/x/y"
+#   version = "2.4.0"
+#
+# [prune]
+#   non-go = false
+#   go-tests = true
+#   unused-packages = true
+
+required = ["github.com/op/go-logging"]
+
+
+[[override]]
+  name = "github.com/CognitionFoundry/gohfc"
+  source = "git@github.com:dimaxgl/gohfc.git"
+  revision = "d7dd76922f8327d40da0ed4a362e77fe1d10f082"
+
+[[override]]
+  name = "github.com/pkg/errors"
+  branch = "master"
+
+[[override]]
+  name = "github.com/golang/protobuf"
+  branch = "master"
+
+[[constraint]]
+  name = "gopkg.in/yaml.v2"
+  version = "2.2.1"
+
+[[constraint]]
+  name = "github.com/hyperledger/fabric"
+  branch = "master"
+
+[[constraint]]
+  name = "github.com/op/go-logging"
+  branch = "master"
+
+[[override]]
+    name = "github.com/docker/libnetwork"
+    branch = "master"
+
+[prune]
+  go-tests = true
+  unused-packages = true

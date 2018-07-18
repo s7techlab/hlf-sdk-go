@@ -1,0 +1,48 @@
+# Orderer config
+orderer:
+  host: localhost:7050
+  useTLS: false
+  timeout: 5s
+# Config of local peer
+local_peer:
+  host: localhost:7051
+  tls:
+    enabled: false
+  # GRPC parameters
+  grpc:
+    # Keep-Alive parameters
+#    keep_alive:
+#      time:
+
+
+discovery:
+  type: local
+  options:
+    channels:
+      - name: public
+        description: public channel for all members
+        chaincodes:
+        - name: network
+          type: golang
+          version: "0.1"
+          description: system discovery chaincode
+        peers:
+          - host: localhost:7051
+          - host: localhost:17051
+
+crypto:
+  type: ecdsa
+  options:
+    # Possible curves: P256, P384, P512
+    curve: P256
+    # TODO
+    # Possible algorithms for signature: (not implemented)
+    signatureAlgorithm: <none>
+    # Possible hashing algorithms: SHA2-256, SHA2-384, SHA3-256, SHA3-384
+    hash: SHA2-256
+#discovery:
+#  type: network
+#  params:
+#    channel: public
+#    chaincode: network
+#    version: 0.1
