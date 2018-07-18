@@ -8,6 +8,8 @@ Alpha version, **use at your own risk!**
 - crypto - cryptographic implementation
 - discovery - discovery service implementation (local only)
 - examples - examples of using current SDK (invoke cli and events client)
+    - [event-listener](examples/event-listener) - example of using peer.DeliverService, which shows new blocks
+    - [blockchain_info](examples/blockchain_info) - example of viewing info about channels and channel's ledger
 - identity - member identity implementation
 - member - member core implementation
 
