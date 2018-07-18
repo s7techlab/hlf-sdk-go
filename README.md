@@ -12,4 +12,4 @@ Alpha version, **use at your own risk!**
 - member - member core implementation
 
 #### Thanks
-- [GoHFC](github.com/CognitionFoundry/gohfc) - for basic ideas and examples
+- [GoHFC](https://github.com/CognitionFoundry/gohfc) - for basic ideas and examples
