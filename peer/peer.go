@@ -3,16 +3,15 @@ package peer
 import (
 	"context"
 	"sync"
-	"time"
-
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	fabricPeer "github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
+	"time"
+	"github.com/s7techlab/hlf-sdk-go/api/config"
 )
 
 const (
@@ -37,6 +36,35 @@ func (p *peer) Endorse(proposal *fabricPeer.SignedProposal) (*fabricPeer.Proposa
 		}
 		return resp, nil
 	}
+}
+
+func (p *peer) Conn() *grpc.ClientConn {
+	return p.conn
+}
+
+func (p *peer) Uri() string {
+	return p.uri
+}
+
+func (p *peer) Close() error {
+	return p.conn.Close()
+}
+
+func (p *peer) initEndorserClient() error {
+	var err error
+	if p.conn == nil {
+		p.connMx.Lock()
+		defer p.connMx.Unlock()
+		if p.conn, err = grpc.Dial(p.uri, p.grpcOptions...); err != nil {
+			return errors.Wrap(err, `failed to initialize grpc connection`)
+		}
+	}
+
+	if p.client == nil {
+		p.client = fabricPeer.NewEndorserClient(p.conn)
+	}
+
+	return nil
 }
 
 func New(c config.PeerConfig) (api.Peer, error) {
@@ -70,23 +98,10 @@ func New(c config.PeerConfig) (api.Peer, error) {
 	return &p, nil
 }
 
-func (p *peer) initEndorserClient() error {
-	var err error
-	if p.conn == nil {
-		p.connMx.Lock()
-		defer p.connMx.Unlock()
-		if p.conn, err = grpc.Dial(p.uri, p.grpcOptions...); err != nil {
-			return errors.Wrap(err, `failed to initialize grpc connection`)
-		}
-		p.client = fabricPeer.NewEndorserClient(p.conn)
+func NewFromGRPC(address string, conn *grpc.ClientConn, grpcOptions ...grpc.DialOption) (api.Peer, error) {
+	p := peer{conn: conn, uri: address, grpcOptions: grpcOptions}
+	if err := p.initEndorserClient(); err != nil {
+		return nil, errors.Wrap(err, `failed to initialize EndorserClient`)
 	}
-	return nil
-}
-
-func (p *peer) Uri() string {
-	return p.uri
-}
-
-func (p *peer) Close() error {
-	return p.conn.Close()
+	return &p, nil
 }

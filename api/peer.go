@@ -5,6 +5,7 @@ import (
 
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/peer"
+	"google.golang.org/grpc"
 )
 
 // Peer is common interface for endorsing peer
@@ -13,6 +14,8 @@ type Peer interface {
 	Endorse(proposal *peer.SignedProposal) (*peer.ProposalResponse, error)
 	// Uri returns url used for grpc connection
 	Uri() string
+	// Conn returns instance of grpc connection
+	Conn() *grpc.ClientConn
 	// Close terminates peer connection
 	Close() error
 }

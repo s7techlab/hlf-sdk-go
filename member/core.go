@@ -11,8 +11,8 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/discovery"
 	"github.com/s7techlab/hlf-sdk-go/member/chaincode/system"
 	"github.com/s7techlab/hlf-sdk-go/member/channel"
-	"github.com/s7techlab/hlf-sdk-go/orderer"
 	"github.com/s7techlab/hlf-sdk-go/peer"
+	"github.com/s7techlab/hlf-sdk-go/orderer"
 )
 
 type Core struct {
@@ -25,6 +25,7 @@ type Core struct {
 	channels          map[string]api.Channel
 	channelMx         sync.Mutex
 	cs                api.CryptoSuite
+	options           *coreOptions
 }
 
 func (c *Core) System() api.SystemCC {
@@ -51,7 +52,7 @@ func (c *Core) Channel(name string) api.Channel {
 	}
 }
 
-func NewCore(mspId string, configPath string, identity api.Identity) (*Core, error) {
+func NewCore(mspId string, configPath string, identity api.Identity, opts ...CoreOpt) (*Core, error) {
 	conf, err := config.NewYamlConfig(configPath)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to initialize config`)
@@ -60,6 +61,13 @@ func NewCore(mspId string, configPath string, identity api.Identity) (*Core, err
 	core := Core{
 		mspId:    mspId,
 		channels: make(map[string]api.Channel),
+		options:  new(coreOptions),
+	}
+
+	for _, option := range opts {
+		if err = option(core.options); err != nil {
+			return nil, errors.Wrap(err, `failed to apply option`)
+		}
 	}
 
 	if dp, err := discovery.GetProvider(conf.Discovery.Type); err != nil {
@@ -72,12 +80,20 @@ func NewCore(mspId string, configPath string, identity api.Identity) (*Core, err
 		return nil, errors.Wrap(err, `failed to initialize crypto suite`)
 	}
 
-	if core.localPeer, err = peer.New(conf.LocalPeer); err != nil {
-		return nil, errors.Wrap(err, `failed to initialize local peer`)
+	if core.options.peer == nil {
+		if core.localPeer, err = peer.New(conf.LocalPeer); err != nil {
+			return nil, errors.Wrap(err, `failed to initialize local peer`)
+		}
+	} else {
+		core.localPeer = core.options.peer
 	}
 
-	if core.orderer, err = orderer.New(conf.Orderer); err != nil {
-		return nil, errors.Wrap(err, `failed to initialize orderer`)
+	if core.options.orderer == nil {
+		if core.orderer, err = orderer.New(conf.Orderer); err != nil {
+			return nil, errors.Wrap(err, `failed to initialize orderer`)
+		}
+	} else {
+		core.orderer = core.options.orderer
 	}
 
 	core.identity = identity.GetSigningIdentity(core.cs)
