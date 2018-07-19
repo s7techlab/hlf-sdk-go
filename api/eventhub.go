@@ -17,7 +17,6 @@ type EventHub interface {
 	// SubscribeCC allows to subscribe on chaincode events using name of channel, chaincode and block offset
 	SubscribeCC(channelName string, ccName string, seekOpt ...EventCCSeekOption) EventCCSubscription
 	// SubscribeTx allows to subscribe on transaction events by id
-	// TODO (not implemented)
 	SubscribeTx(channelName string, tx ChaincodeTx) EventTxSubscription
 	// Close terminates eventHub grpc connection
 	Close() error
@@ -58,6 +57,8 @@ func SeekRange(start, end uint64) EventCCSeekOption {
 type EventCCSubscription interface {
 	// Events initiates internal GRPC stream and returns channel on chaincode events or error if stream is failed
 	Events() (chan *peer.ChaincodeEvent, error)
+	// Errors returns errors associated with this subscription
+	Errors() (chan error)
 	// Close terminates internal GRPC stream
 	Close() error
 }

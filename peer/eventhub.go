@@ -163,6 +163,40 @@ func NewEventHub(config config.PeerConfig, identity msp.SigningIdentity, grpcOpt
 	return evHub, nil
 }
 
+// GRPCStreamError contains original error from GRPC stream
+type GRPCStreamError struct {
+	Err error
+}
+
+func (e *GRPCStreamError) Error() string {
+	return fmt.Sprintf("grpc stream error: %s", e.Err)
+}
+
+type EnvelopeParsingError struct {
+	Err error
+}
+
+func (e *EnvelopeParsingError) Error() string {
+	return fmt.Sprintf("envelope parsing error: %s", e.Err)
+}
+
+type UnknownEventTypeError struct {
+	Type string
+}
+
+func (e *UnknownEventTypeError) Error() string {
+	return fmt.Sprintf("unknown event type: %s", e.Type)
+}
+
+type InvalidTxError struct {
+	TxId api.ChaincodeTx
+	Code fabricPeer.TxValidationCode
+}
+
+func (e *InvalidTxError) Error() string {
+	return fmt.Sprintf("invalid tx: %s with validation code: %s", e.TxId, e.Code.String())
+}
+
 type eventSubscription struct {
 	startPos    *orderer.SeekPosition
 	stopPos     *orderer.SeekPosition
@@ -170,6 +204,7 @@ type eventSubscription struct {
 	ccName      string
 	channelName string
 	events      chan *fabricPeer.ChaincodeEvent
+	errChan     chan error
 	parentConn  *grpc.ClientConn
 	identity    msp.SigningIdentity
 }
@@ -197,11 +232,15 @@ func (es *eventSubscription) Events() (chan *fabricPeer.ChaincodeEvent, error) {
 	return es.events, nil
 }
 
+func (es *eventSubscription) Errors() (chan error) {
+	return es.errChan
+}
+
 func (es *eventSubscription) handleCCSubscription() {
 	for {
 		ev, err := es.client.Recv()
 		if err != nil {
-			log.Println(err)
+			es.errChan <- &GRPCStreamError{Err: err}
 		} else {
 			switch event := ev.Type.(type) {
 			case *fabricPeer.DeliverResponse_Block:
@@ -209,7 +248,7 @@ func (es *eventSubscription) handleCCSubscription() {
 				for i, r := range event.Block.Data.Data {
 					if txFltr.IsValid(i) {
 						if ev, err := getCCEventFromEnvelope(r); err != nil {
-							log.Println(err)
+							es.errChan <- &EnvelopeParsingError{Err: err}
 						} else {
 							if ev != nil {
 								es.events <- ev
@@ -219,13 +258,13 @@ func (es *eventSubscription) handleCCSubscription() {
 						env, _ := utils.GetEnvelopeFromBlock(r)
 						p, _ := utils.GetPayload(env)
 						chHeader, _ := utils.UnmarshalChannelHeader(p.Header.ChannelHeader)
-						log.Printf("tx %s is on channel %s invalid with code: %s", chHeader.TxId, chHeader.ChannelId, fabricPeer.TxValidationCode_name[int32(txFltr.Flag(i))])
+						es.errChan <- &InvalidTxError{TxId: api.ChaincodeTx(chHeader.TxId), Code: txFltr.Flag(i)}
 					}
 				}
 			case *fabricPeer.DeliverResponse_FilteredBlock:
-				log.Println(`FilteredBlock not implemented`)
+				es.errChan <- &UnknownEventTypeError{Type: `DeliverResponse_FilteredBlock`}
 			default:
-				log.Printf("unknown type: %v\n", ev.Type)
+				es.errChan <- &UnknownEventTypeError{Type: fmt.Sprintf("%v", ev.Type)}
 			}
 		}
 	}
