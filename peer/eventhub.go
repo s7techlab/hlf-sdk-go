@@ -42,6 +42,7 @@ func (e *eventHub) SubscribeCC(channelName string, ccName string, seekOpt ...api
 	sub := &eventSubscription{
 		ccName:      ccName,
 		channelName: channelName,
+		errChan:     make(chan error),
 		events:      make(chan *fabricPeer.ChaincodeEvent),
 		parentConn:  e.conn,
 		identity:    e.identity,
