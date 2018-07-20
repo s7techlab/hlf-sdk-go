@@ -36,6 +36,7 @@ func (e *ErrUnexpectedStatus) Error() string {
 type orderer struct {
 	uri             string
 	conn            *grpc.ClientConn
+	ctx             context.Context
 	connMx          sync.Mutex
 	timeout         time.Duration
 	broadcastClient fabricOrderer.AtomicBroadcastClient
@@ -107,7 +108,7 @@ func (o *orderer) initBroadcastClient() error {
 	if o.conn == nil {
 		o.connMx.Lock()
 		defer o.connMx.Unlock()
-		if o.conn, err = grpc.Dial(o.uri, o.grpcOptions...); err != nil {
+		if o.conn, err = grpc.DialContext(o.ctx, o.uri, o.grpcOptions...); err != nil {
 			return errors.Wrap(err, `failed to initialize grpc connection`)
 		}
 		o.broadcastClient = fabricOrderer.NewAtomicBroadcastClient(o.conn)
@@ -140,8 +141,10 @@ func New(c config.OrdererConfig) (api.Orderer, error) {
 		grpc.MaxCallSendMsgSize(maxSendMsgSize),
 	))
 
-	if o.timeout, err = time.ParseDuration(c.Timeout); err != nil {
-		return nil, errors.Wrap(err, `failed to parse timeout duration`)
+	if c.Timeout.Duration != 0 {
+		o.ctx, _ = context.WithTimeout(context.Background(), c.Timeout.Duration)
+	} else {
+		o.ctx = context.Background()
 	}
 
 	if err = o.initBroadcastClient(); err != nil {

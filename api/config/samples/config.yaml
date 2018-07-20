@@ -8,6 +8,7 @@ local_peer:
   host: localhost:7051
   tls:
     enabled: false
+  timeout: 1s
   # GRPC parameters
   grpc:
     # Keep-Alive parameters
@@ -40,9 +41,3 @@ crypto:
     signatureAlgorithm: <none>
     # Possible hashing algorithms: SHA2-256, SHA2-384, SHA3-256, SHA3-384
     hash: SHA2-256
-#discovery:
-#  type: network
-#  params:
-#    channel: public
-#    chaincode: network
-#    version: 0.1

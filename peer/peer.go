@@ -22,8 +22,10 @@ const (
 type peer struct {
 	uri         string
 	conn        *grpc.ClientConn
+	ctx         context.Context
 	connMx      sync.Mutex
 	grpcOptions []grpc.DialOption
+	timeout     time.Duration
 	client      fabricPeer.EndorserClient
 }
 
@@ -55,7 +57,7 @@ func (p *peer) initEndorserClient() error {
 	if p.conn == nil {
 		p.connMx.Lock()
 		defer p.connMx.Unlock()
-		if p.conn, err = grpc.Dial(p.uri, p.grpcOptions...); err != nil {
+		if p.conn, err = grpc.DialContext(p.ctx, p.uri, p.grpcOptions...); err != nil {
 			return errors.Wrap(err, `failed to initialize grpc connection`)
 		}
 	}
@@ -67,6 +69,7 @@ func (p *peer) initEndorserClient() error {
 	return nil
 }
 
+// New returns new peer instance based on peer config
 func New(c config.PeerConfig) (api.Peer, error) {
 	p := peer{uri: c.Host, grpcOptions: make([]grpc.DialOption, 0)}
 	if c.Tls.Enabled {
@@ -77,6 +80,12 @@ func New(c config.PeerConfig) (api.Peer, error) {
 		}
 	} else {
 		p.grpcOptions = append(p.grpcOptions, grpc.WithInsecure())
+	}
+
+	if c.Timeout.Duration != 0 {
+		p.ctx, _ = context.WithTimeout(context.Background(), c.Timeout.Duration)
+	} else {
+		p.ctx = context.Background()
 	}
 
 	// Set KeepAlive parameters if presented
@@ -98,6 +107,7 @@ func New(c config.PeerConfig) (api.Peer, error) {
 	return &p, nil
 }
 
+// NewFromGRPC allows to initialize peer from existing GRPC connection
 func NewFromGRPC(address string, conn *grpc.ClientConn, grpcOptions ...grpc.DialOption) (api.Peer, error) {
 	p := peer{conn: conn, uri: address, grpcOptions: grpcOptions}
 	if err := p.initEndorserClient(); err != nil {

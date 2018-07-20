@@ -1,5 +1,11 @@
 package config
 
+import (
+	"time"
+	"strings"
+	"strconv"
+)
+
 type Config struct {
 	Crypto    CryptoConfig    `yaml:"crypto"`
 	LocalPeer PeerConfig      `yaml:"local_peer"`
@@ -8,16 +14,17 @@ type Config struct {
 }
 
 type PeerConfig struct {
-	Host string     `yaml:"host"`
-	Tls  TlsConfig  `yaml:"tls"`
-	GRPC GRPCConfig `yaml:"grpc"`
+	Host    string     `yaml:"host"`
+	Tls     TlsConfig  `yaml:"tls"`
+	GRPC    GRPCConfig `yaml:"grpc"`
+	Timeout Duration   `yaml:"timeout"`
 }
 
 type OrdererConfig struct {
 	Host    string     `yaml:"host"`
 	Tls     TlsConfig  `yaml:"tls"`
 	GRPC    GRPCConfig `yaml:"grpc"`
-	Timeout string     `yaml:"timeout"`
+	Timeout Duration   `yaml:"timeout"`
 }
 
 type GRPCConfig struct {
@@ -45,8 +52,44 @@ type DiscoveryConfig struct {
 type DiscoveryConfigOpts map[string]interface{}
 
 type CryptoConfig struct {
-	Type    string              `yaml:"type"`
+	Type    string          `yaml:"type"`
 	Options CryptoSuiteOpts `yaml:"options"`
 }
 
 type CryptoSuiteOpts map[string]interface{}
+
+type Duration struct {
+	time.Duration
+}
+
+func (d *Duration) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var out string
+	var err error
+
+	if err = unmarshal(&out); err != nil {
+		return err
+	}
+
+	switch {
+	case strings.HasSuffix(out, `s`):
+		if d.Duration, err = time.ParseDuration(out); err != nil {
+			return err
+		}
+	case strings.HasSuffix(out, `h`):
+		if d.Duration, err = time.ParseDuration(out); err != nil {
+			return err
+		}
+	case strings.HasSuffix(out, `m`):
+		if d.Duration, err = time.ParseDuration(out); err != nil {
+			return err
+		}
+	default:
+		if t, err := strconv.Atoi(out); err != nil {
+			return err
+		} else {
+			d.Duration = time.Millisecond * time.Duration(t)
+		}
+	}
+
+	return nil
+}
