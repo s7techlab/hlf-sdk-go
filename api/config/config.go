@@ -1,9 +1,9 @@
 package config
 
 import (
-	"time"
-	"strings"
 	"strconv"
+	"strings"
+	"time"
 )
 
 type Config struct {

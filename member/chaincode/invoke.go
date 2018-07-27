@@ -74,7 +74,7 @@ func (b *invokeBuilder) ArgBytes(args [][]byte) (api.ChaincodeTx, []byte, error)
 	if b.async {
 		return tx, peerResponses[0].Response.Payload, nil
 	} else {
-		tsSub := b.ccCore.evHub.SubscribeTx(b.ccCore.channelName, tx)
+		tsSub := b.ccCore.deliverClient.SubscribeTx(b.ccCore.channelName, tx)
 		defer tsSub.Close()
 		event, err := tsSub.Result()
 		if err != nil {

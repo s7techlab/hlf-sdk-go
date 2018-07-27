@@ -2,16 +2,16 @@ package peer
 
 import (
 	"context"
-	"sync"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	fabricPeer "github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
+	"sync"
 	"time"
-	"github.com/s7techlab/hlf-sdk-go/api/config"
 )
 
 const (

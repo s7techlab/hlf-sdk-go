@@ -12,7 +12,6 @@ import (
 	peerSDK "github.com/s7techlab/hlf-sdk-go/peer"
 )
 
-
 type cscc struct {
 	peer      api.Peer
 	identity  msp.SigningIdentity

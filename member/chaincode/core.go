@@ -6,13 +6,13 @@ import (
 )
 
 type Core struct {
-	name        string
-	channelName string
-	peer        api.Peer
-	orderer     api.Orderer
-	dp          api.DiscoveryProvider
-	identity    msp.SigningIdentity
-	evHub       api.EventHub
+	name          string
+	channelName   string
+	peer          api.Peer
+	orderer       api.Orderer
+	dp            api.DiscoveryProvider
+	identity      msp.SigningIdentity
+	deliverClient api.DeliverClient
 }
 
 func (c *Core) Invoke(fn string) api.ChaincodeInvokeBuilder {
@@ -28,9 +28,9 @@ func (c *Core) Install(version string) {
 }
 
 func (c *Core) Subscribe(seekOption ...api.EventCCSeekOption) api.EventCCSubscription {
-	return c.evHub.SubscribeCC(c.channelName, c.name, seekOption...)
+	return c.deliverClient.SubscribeCC(c.channelName, c.name, seekOption...)
 }
 
-func NewCore(ccName string, channelName string, peer api.Peer, orderer api.Orderer, dp api.DiscoveryProvider, identity msp.SigningIdentity, evHub api.EventHub) *Core {
-	return &Core{name: ccName, channelName: channelName, peer: peer, orderer: orderer, dp: dp, identity: identity, evHub: evHub}
+func NewCore(ccName string, channelName string, peer api.Peer, orderer api.Orderer, dp api.DiscoveryProvider, identity msp.SigningIdentity, deliverClient api.DeliverClient) *Core {
+	return &Core{name: ccName, channelName: channelName, peer: peer, orderer: orderer, dp: dp, identity: identity, deliverClient: deliverClient}
 }

@@ -2,7 +2,7 @@ package identity
 
 /**
 Package allows to use identities from wonderful gohfc package by CognitionFoundry
- */
+*/
 
 import (
 	"crypto/ecdsa"

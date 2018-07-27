@@ -11,15 +11,16 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/discovery"
 	"github.com/s7techlab/hlf-sdk-go/member/chaincode/system"
 	"github.com/s7techlab/hlf-sdk-go/member/channel"
-	"github.com/s7techlab/hlf-sdk-go/peer"
 	"github.com/s7techlab/hlf-sdk-go/orderer"
+	"github.com/s7techlab/hlf-sdk-go/peer"
+	"github.com/s7techlab/hlf-sdk-go/peer/deliver"
 )
 
 type Core struct {
 	mspId             string
 	identity          msp.SigningIdentity
 	localPeer         api.Peer
-	localEventHub     api.EventHub
+	localPeerDeliver  api.DeliverClient
 	orderer           api.Orderer
 	discoveryProvider api.DiscoveryProvider
 	channels          map[string]api.Channel
@@ -46,7 +47,7 @@ func (c *Core) Channel(name string) api.Channel {
 	if ch, ok := c.channels[name]; ok {
 		return ch
 	} else {
-		ch = channel.NewCore(name, c.localPeer, c.orderer, c.discoveryProvider, c.identity, c.localEventHub)
+		ch = channel.NewCore(name, c.localPeer, c.orderer, c.discoveryProvider, c.identity, c.localPeerDeliver)
 		c.channels[name] = ch
 		return ch
 	}
@@ -98,7 +99,7 @@ func NewCore(mspId string, configPath string, identity api.Identity, opts ...Cor
 
 	core.identity = identity.GetSigningIdentity(core.cs)
 
-	if core.localEventHub, err = peer.NewEventHub(conf.LocalPeer, core.identity); err != nil {
+	if core.localPeerDeliver, err = deliver.NewDeliverClient(conf.LocalPeer, core.identity); err != nil {
 		return nil, errors.Wrap(err, `failed to initialize event hub`)
 	}
 
