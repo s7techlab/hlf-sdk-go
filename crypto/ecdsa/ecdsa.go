@@ -101,6 +101,14 @@ func (c *ecdsaSuite) Hash(data []byte) []byte {
 	return h.Sum(nil)
 }
 
+func (c *ecdsaSuite) NewPrivateKey() (interface{}, error) {
+	if key, err := ecdsa.GenerateKey(c.curve, rand.Reader); err != nil {
+		return nil, errors.Wrap(err, `failed to generate ECDSA private key`)
+	} else {
+		return key, nil
+	}
+}
+
 func (c *ecdsaSuite) Initialize(opts config.CryptoSuiteOpts) (api.CryptoSuite, error) {
 	var options ecdsaOpts
 	var err error

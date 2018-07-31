@@ -10,6 +10,8 @@ type CryptoSuite interface {
 	Verify(publicKey interface{}, msg, sig []byte) error
 	// Hash is used for hashing presented data
 	Hash(data []byte) []byte
+	// NewPrivateKey generates new private key
+	NewPrivateKey() (interface{}, error)
 	// Initialize is used for suite instantiation using presented options
 	Initialize(opts config.CryptoSuiteOpts) (CryptoSuite, error)
 }

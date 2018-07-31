@@ -59,3 +59,7 @@ required = ["github.com/op/go-logging"]
 [prune]
   go-tests = true
   unused-packages = true
+
+[[constraint]]
+  branch = "release-1.2"
+  name = "github.com/hyperledger/fabric-ca"

@@ -27,6 +27,12 @@ type OrdererConfig struct {
 	Timeout Duration   `yaml:"timeout"`
 }
 
+type CAConfig struct {
+	Crypto CryptoConfig `yaml:"crypto"`
+	Host   string       `yaml:"host"`
+	Tls    TlsConfig    `yaml:"tls"`
+}
+
 type GRPCConfig struct {
 	KeepAlive *GRPCKeepAliveConfig `yaml:"keep_alive"`
 }

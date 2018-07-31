@@ -47,6 +47,34 @@
   version = "v1.17.0"
 
 [[projects]]
+  name = "github.com/cloudflare/cfssl"
+  packages = [
+    "api",
+    "api/client",
+    "auth",
+    "certdb",
+    "certdb/dbconf",
+    "certdb/sql",
+    "cli",
+    "config",
+    "crypto/pkcs7",
+    "csr",
+    "errors",
+    "helpers",
+    "helpers/derhelpers",
+    "info",
+    "log",
+    "ocsp",
+    "ocsp/config",
+    "signer",
+    "signer/local",
+    "signer/remote",
+    "signer/universal"
+  ]
+  revision = "5d63dbd981b5c408effbb58c442d54761ff94fbd"
+  version = "1.3.2"
+
+[[projects]]
   branch = "master"
   name = "github.com/containerd/continuity"
   packages = ["pathdriver"]
@@ -162,6 +190,20 @@
   name = "github.com/golang/snappy"
   packages = ["."]
   revision = "2e65f85255dbc3072edf28d6b5b8efc472979f5a"
+
+[[projects]]
+  name = "github.com/google/certificate-transparency-go"
+  packages = [
+    ".",
+    "asn1",
+    "client",
+    "client/configpb",
+    "jsonclient",
+    "tls",
+    "x509",
+    "x509/pkix"
+  ]
+  revision = "5ab67e519c93568ac3ee50fd6772a5bcf8aa460d"
 
 [[projects]]
   branch = "master"
@@ -315,6 +357,37 @@
     "amcl/FP256BN"
   ]
   revision = "600b0c45a024131b326a41096da0559a9a7461fd"
+
+[[projects]]
+  name = "github.com/hyperledger/fabric-ca"
+  packages = [
+    "api",
+    "lib/common",
+    "util"
+  ]
+  revision = "3bcdbb2bb9f46c7eb705c9de8b9bb002c5c15fe3"
+  version = "v1.2.0"
+
+[[projects]]
+  name = "github.com/jmhodges/clock"
+  packages = ["."]
+  revision = "880ee4c335489bc78d01e4d0a254ae880734bc15"
+  version = "v1.1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/jmoiron/sqlx"
+  packages = [
+    ".",
+    "reflectx"
+  ]
+  revision = "0dae4fefe7c0e190f7b5a78dac28a1c82cc8d849"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/kisielk/sqlstruct"
+  packages = ["."]
+  revision = "648daed35d49dac24a4bff253b190a80da3ab6a5"
 
 [[projects]]
   name = "github.com/kr/pretty"
@@ -516,6 +589,11 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = [
+    "cryptobyte",
+    "cryptobyte/asn1",
+    "ocsp",
+    "pkcs12",
+    "pkcs12/internal/rc2",
     "sha3",
     "ssh/terminal"
   ]
@@ -632,6 +710,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "abaace07f2a6b31db76ac101a60b71a7a0256d9985c4a9de731a499b223f4ef4"
+  inputs-digest = "6f41b2508feb018db89ca6d0abcc15721ed8d45d5836cf7e433be664333bed53"
   solver-name = "gps-cdcl"
   solver-version = 1
