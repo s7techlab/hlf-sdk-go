@@ -1,6 +1,10 @@
 package api
 
-import "github.com/s7techlab/hlf-sdk-go/api/config"
+import (
+	"crypto/x509"
+
+	"github.com/s7techlab/hlf-sdk-go/api/config"
+)
 
 // CryptoSuite describes common cryptographic operations
 type CryptoSuite interface {
@@ -12,6 +16,8 @@ type CryptoSuite interface {
 	Hash(data []byte) []byte
 	// NewPrivateKey generates new private key
 	NewPrivateKey() (interface{}, error)
+	// GetSignatureAlgorithm
+	GetSignatureAlgorithm() x509.SignatureAlgorithm
 	// Initialize is used for suite instantiation using presented options
 	Initialize(opts config.CryptoSuiteOpts) (CryptoSuite, error)
 }

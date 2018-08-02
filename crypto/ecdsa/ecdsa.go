@@ -10,6 +10,8 @@ import (
 	"hash"
 	"math/big"
 
+	"crypto/x509"
+
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
@@ -28,6 +30,10 @@ const (
 	hashSHA2384 = `SHA2-384`
 	hashSHA3256 = `SHA3-256`
 	hashSHA3384 = `SHA3-384`
+
+	sigSHA256 = `SHA256`
+	sigSHA384 = `SHA384`
+	sigSHA512 = `SHA512`
 )
 
 var (
@@ -39,8 +45,10 @@ var (
 		elliptic.P521(): new(big.Int).Rsh(elliptic.P521().Params().N, 1),
 	}
 
-	errUnknownCurve      = errors.New(`unknown elliptic curve`)
-	errUnknownHash       = errors.New(`unknown hashing algorithm`)
+	errUnknownCurve              = errors.New(`unknown elliptic curve`)
+	errUnknownHash               = errors.New(`unknown hashing algorithm`)
+	errUnknownSignatureAlgorithm = errors.New(`unknown signature algorithm`)
+
 	errInvalidPrivateKey = errors.New(`invalid private key, expected ECDSA`)
 	errInvalidPublicKey  = errors.New(`invalid public key, expected ECDSA`)
 	errInvalidSignature  = errors.New(`invalid ECDSA signature`)
@@ -53,8 +61,9 @@ type ecdsaOpts struct {
 }
 
 type ecdsaSuite struct {
-	curve  elliptic.Curve
-	hasher func() hash.Hash
+	curve        elliptic.Curve
+	hasher       func() hash.Hash
+	sigAlgorithm x509.SignatureAlgorithm
 }
 type ecdsaSignature struct {
 	R, S *big.Int
@@ -109,6 +118,10 @@ func (c *ecdsaSuite) NewPrivateKey() (interface{}, error) {
 	}
 }
 
+func (c *ecdsaSuite) GetSignatureAlgorithm() x509.SignatureAlgorithm {
+	return c.sigAlgorithm
+}
+
 func (c *ecdsaSuite) Initialize(opts config.CryptoSuiteOpts) (api.CryptoSuite, error) {
 	var options ecdsaOpts
 	var err error
@@ -123,6 +136,9 @@ func (c *ecdsaSuite) Initialize(opts config.CryptoSuiteOpts) (api.CryptoSuite, e
 	}
 	if cs.hasher, err = getHasher(options.Hash); err != nil {
 		return nil, errors.Wrap(err, `failed to get hasher`)
+	}
+	if cs.sigAlgorithm, err = getSignatureAlgorithm(options.SignatureAlgorithm); err != nil {
+		return nil, errors.Wrap(err, `failed to get signature algorithm`)
 	}
 	return cs, nil
 }
@@ -151,6 +167,18 @@ func getHasher(hashType string) (func() hash.Hash, error) {
 		return sha3.New384, nil
 	}
 	return nil, errUnknownHash
+}
+
+func getSignatureAlgorithm(algorithm string) (x509.SignatureAlgorithm, error) {
+	switch algorithm {
+	case sigSHA256:
+		return x509.ECDSAWithSHA256, nil
+	case sigSHA384:
+		return x509.ECDSAWithSHA384, nil
+	case sigSHA512:
+		return x509.ECDSAWithSHA512, nil
+	}
+	return x509.UnknownSignatureAlgorithm, errUnknownSignatureAlgorithm
 }
 
 // from gohfc
