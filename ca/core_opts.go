@@ -35,6 +35,13 @@ func WithBytesConfig(configBytes []byte) opt {
 	}
 }
 
+func WithRawConfig(conf *config.CAConfig) opt {
+	return func(c *core) error {
+		c.config = conf
+		return nil
+	}
+}
+
 func WithHTTPClient(client *http.Client) opt {
 	return func(c *core) error {
 		c.client = client
