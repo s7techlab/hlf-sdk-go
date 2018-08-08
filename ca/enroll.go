@@ -4,21 +4,16 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"io/ioutil"
 	"net/http"
-
 	"reflect"
 
-	"encoding/base64"
-
-	"github.com/cloudflare/cfssl/api"
 	"github.com/cloudflare/cfssl/signer"
-	"github.com/hyperledger/fabric-ca/lib/common"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
-	sdkApi "github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/ca"
 )
 
@@ -71,18 +66,18 @@ func (c *core) Enroll(name, secret string, req *x509.CertificateRequest, opts ..
 	}
 
 	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
-		res := api.Response{}
+		res := ca.Response{}
 		if err = json.Unmarshal(body, &res); err != nil {
 			return nil, options.PrivateKey, errors.Wrap(err, `failed to unmarshal JSON response`)
 		}
 
 		if res.Success != true {
-			return nil, options.PrivateKey, &sdkApi.CAResponseError{Errors: res.Errors, Messages: res.Messages}
+			return nil, options.PrivateKey, &ca.ResponseError{Errors: res.Errors, Messages: res.Messages}
 		}
 
 		switch result := res.Result.(type) {
 		case map[string]interface{}:
-			var enrollResp common.EnrollmentResponseNet
+			var enrollResp ca.ResponseEnrollment
 			if err = mapstructure.Decode(result, &enrollResp); err != nil {
 				return nil, options.PrivateKey, errors.Wrap(err, `failed to decode CA response`)
 			}

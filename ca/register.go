@@ -7,16 +7,14 @@ import (
 	"net/http"
 	"reflect"
 
-	"github.com/cloudflare/cfssl/api"
-	caApi "github.com/hyperledger/fabric-ca/api"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
-	sdkApi "github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/api/ca"
 )
 
 const regEndpoint = `/api/v1/register`
 
-func (c *core) Register(req caApi.RegistrationRequest) (string, error) {
+func (c *core) Register(req ca.RegistrationRequest) (string, error) {
 	reqBytes, err := json.Marshal(req)
 	if err != nil {
 		return ``, errors.Wrap(err, `failed to marshal request to JSON`)
@@ -48,18 +46,18 @@ func (c *core) Register(req caApi.RegistrationRequest) (string, error) {
 	}
 
 	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
-		res := api.Response{}
+		res := ca.Response{}
 		if err = json.Unmarshal(body, &res); err != nil {
 			return ``, errors.Wrap(err, `failed to unmarshal JSON response`)
 		}
 
 		if res.Success != true {
-			return ``, &sdkApi.CAResponseError{Errors: res.Errors, Messages: res.Messages}
+			return ``, &ca.ResponseError{Errors: res.Errors, Messages: res.Messages}
 		}
 
 		switch result := res.Result.(type) {
 		case map[string]interface{}:
-			var regResp caApi.RegistrationResponse
+			var regResp ca.ResponseRegistration
 			if err = mapstructure.Decode(result, &regResp); err != nil {
 				return ``, errors.Wrap(err, `failed to decode CA response`)
 			}

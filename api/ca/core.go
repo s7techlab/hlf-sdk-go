@@ -2,12 +2,11 @@ package ca
 
 import (
 	"crypto/x509"
-
-	"github.com/hyperledger/fabric-ca/api"
 )
 
 type Core interface {
-	Register(req api.RegistrationRequest) (string, error)
+	CAInfo() (*ResponseCAInfo, error)
+	Register(req RegistrationRequest) (string, error)
 	Enroll(name, secret string, req *x509.CertificateRequest, opts ...EnrollOpt) (*x509.Certificate, interface{}, error)
 }
 
