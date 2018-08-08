@@ -144,3 +144,8 @@ func NewMSPIdentityRaw(mspId string, cert *x509.Certificate, privateKey interfac
 
 	return &mspIdentity{signingIdentity: signingIdentity}, nil
 }
+
+func NewEnrollIdentity(privateKey interface{}) (api.Identity, error) {
+	identity := &mspSigningIdentity{privateKey: privateKey}
+	return &mspIdentity{signingIdentity: identity}, nil
+}
