@@ -4,7 +4,7 @@ type (
 	// RegistrationRequest holds all data needed for new registration of new user in Certificate Authority
 	RegistrationRequest struct {
 		// Name is unique name that identifies identity
-		Name string `json:"name"`
+		Name string `json:"id"`
 		// Type defines type of this identity (user,client, auditor etc...)
 		Type string `json:"type"`
 		// Secret is password that will be used for enrollment. If not provided random password will be generated
