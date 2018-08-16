@@ -2,6 +2,9 @@ package peer
 
 import (
 	"context"
+	"sync"
+	"time"
+
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	fabricPeer "github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
@@ -10,8 +13,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
-	"sync"
-	"time"
 )
 
 const (
@@ -29,8 +30,23 @@ type peer struct {
 	client      fabricPeer.EndorserClient
 }
 
-func (p *peer) Endorse(proposal *fabricPeer.SignedProposal) (*fabricPeer.ProposalResponse, error) {
-	if resp, err := p.client.ProcessProposal(context.Background(), proposal); err != nil {
+func (p *peer) Endorse(proposal *fabricPeer.SignedProposal, opts ...api.PeerEndorseOpt) (*fabricPeer.ProposalResponse, error) {
+
+	var err error
+
+	endorseOpts := new(api.PeerEndorseOpts)
+	for _, opt := range opts {
+		if err = opt(endorseOpts); err != nil {
+			return nil, errors.Wrap(err, `failed to apply option`)
+		}
+	}
+
+	// Use default peer context if endorse context isn't provided
+	if endorseOpts.Context == nil {
+		endorseOpts.Context = p.ctx
+	}
+
+	if resp, err := p.client.ProcessProposal(endorseOpts.Context, proposal); err != nil {
 		return nil, errors.Wrap(err, `failed to endorse proposal`)
 	} else {
 		if resp.Response.Status != shim.OK {

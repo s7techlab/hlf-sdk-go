@@ -3,6 +3,8 @@ package api
 import (
 	"fmt"
 
+	"context"
+
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/peer"
 	"google.golang.org/grpc"
@@ -11,7 +13,7 @@ import (
 // Peer is common interface for endorsing peer
 type Peer interface {
 	// Endorse sends proposal to endorsing peer and returns it's result
-	Endorse(proposal *peer.SignedProposal) (*peer.ProposalResponse, error)
+	Endorse(proposal *peer.SignedProposal, opts ...PeerEndorseOpt) (*peer.ProposalResponse, error)
 	// Uri returns url used for grpc connection
 	Uri() string
 	// Conn returns instance of grpc connection
@@ -37,4 +39,17 @@ type PeerEndorseError struct {
 
 func (e PeerEndorseError) Error() string {
 	return fmt.Sprintf("failed to endorse: %s (code: %d)", e.Message, e.Status)
+}
+
+type PeerEndorseOpts struct {
+	Context context.Context
+}
+
+type PeerEndorseOpt func(opts *PeerEndorseOpts) error
+
+func WithContext(ctx context.Context) PeerEndorseOpt {
+	return func(opts *PeerEndorseOpts) error {
+		opts.Context = ctx
+		return nil
+	}
 }

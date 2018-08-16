@@ -1,6 +1,8 @@
 package subs
 
 import (
+	"log"
+
 	"github.com/hyperledger/fabric/core/ledger/util"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
@@ -69,6 +71,8 @@ func (ts *txSubscription) handleSubscription() {
 					continue
 				}
 
+				log.Println(ts.txId)
+
 				if api.ChaincodeTx(chHeader.TxId) == ts.txId {
 					if txFilter.IsValid(i) {
 						ts.events <- api.TxEvent{
@@ -92,6 +96,8 @@ func (ts *txSubscription) handleSubscription() {
 			switch err.(type) {
 			case *api.GRPCStreamError:
 				ts.events <- api.TxEvent{TxId: ts.txId, Success: false, Error: err}
+			default:
+				ts.events <- api.TxEvent{TxId: ts.txId, Success: false, Error: errors.Wrap(err, `unknown error`)}
 			}
 		}
 	}

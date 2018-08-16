@@ -18,6 +18,11 @@ type processor struct {
 	channelName string
 }
 
+type endorseChannelResponse struct {
+	Response *fabricPeer.ProposalResponse
+	Error    error
+}
+
 func (p *processor) CreateProposal(cc *api.DiscoveryChaincode, identity msp.SigningIdentity, fn string, args [][]byte) (*fabricPeer.SignedProposal, api.ChaincodeTx, error) {
 	invSpec, err := p.invocationSpec(cc, fn, args)
 	if err != nil {
@@ -72,19 +77,42 @@ func (p *processor) CreateProposal(cc *api.DiscoveryChaincode, identity msp.Sign
 }
 
 func (*processor) Send(proposal *fabricPeer.SignedProposal, peers ...api.Peer) ([]*fabricPeer.ProposalResponse, error) {
-	if len(peers) == 0 {
+
+	peerCount := len(peers)
+
+	if peerCount == 0 {
 		return nil, errEndorsersEmpty
 	}
 
-	respList := make([]*fabricPeer.ProposalResponse, 0)
+	respList := make([]*fabricPeer.ProposalResponse, peerCount)
+	respChan := make(chan endorseChannelResponse)
 
-	for _, p := range peers {
-		if resp, err := p.Endorse(proposal); err != nil {
-			return nil, errors.Wrap(err, `failed to collect response from `+p.Uri())
-		} else {
-			respList = append(respList, resp)
-		}
+	// send all proposals concurrently
+	for i := 0; i < peerCount; i++ {
+		go func(p api.Peer, respChan chan endorseChannelResponse) {
+			resp, err := p.Endorse(proposal)
+			respChan <- endorseChannelResponse{Response: resp, Error: err}
+		}(peers[i], respChan)
 	}
+
+	var errOccurred bool
+
+	err := new(api.MultiError)
+
+	// collecting peer responses
+	for i := 0; i < peerCount; i++ {
+		resp := <-respChan
+		if resp.Error != nil {
+			errOccurred = true
+			err.Add(errors.Errorf("Peer %s got err: %s", peers[i].Uri(), resp.Error))
+		}
+		respList[i] = resp.Response
+	}
+
+	if errOccurred {
+		return respList, err
+	}
+
 	return respList, nil
 }
 
