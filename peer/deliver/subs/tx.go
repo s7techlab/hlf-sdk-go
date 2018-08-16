@@ -71,7 +71,7 @@ func (ts *txSubscription) handleSubscription() {
 					continue
 				}
 
-				log.Println(ts.txId)
+				log.Println(`txBlock`, ts.txId, chHeader.TxId)
 
 				if api.ChaincodeTx(chHeader.TxId) == ts.txId {
 					if txFilter.IsValid(i) {

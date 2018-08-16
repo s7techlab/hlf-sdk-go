@@ -3,6 +3,8 @@ package chaincode
 import (
 	"encoding/json"
 
+	"log"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
@@ -81,6 +83,7 @@ func (b *invokeBuilder) ArgBytes(args [][]byte) (api.ChaincodeTx, []byte, error)
 			return tx, nil, errors.Wrap(err, `failed to subscribe on tx event`)
 		} else {
 			for ev := range event {
+				log.Println(`txEvent`, ev)
 				if ev.Success {
 					return tx, peerResponses[0].Response.Payload, nil
 				} else {
