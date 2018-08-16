@@ -1,6 +1,8 @@
 package peer
 
 import (
+	"context"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
@@ -90,7 +92,7 @@ func (*processor) Send(proposal *fabricPeer.SignedProposal, peers ...api.Peer) (
 	// send all proposals concurrently
 	for i := 0; i < peerCount; i++ {
 		go func(p api.Peer, respChan chan endorseChannelResponse) {
-			resp, err := p.Endorse(proposal)
+			resp, err := p.Endorse(proposal, api.WithContext(context.Background()))
 			respChan <- endorseChannelResponse{Response: resp, Error: err}
 		}(peers[i], respChan)
 	}
