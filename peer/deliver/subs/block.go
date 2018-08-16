@@ -2,9 +2,9 @@ package subs
 
 import (
 	"context"
-	"fmt"
-
 	"log"
+
+	"fmt"
 
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
@@ -31,6 +31,8 @@ type blockSubscription struct {
 }
 
 func (b *blockSubscription) handleSubscription() {
+
+handleLoop:
 	for {
 		select {
 		case <-b.closeChan:
@@ -38,8 +40,13 @@ func (b *blockSubscription) handleSubscription() {
 		default:
 			ev, err := b.client.Recv()
 			if err != nil {
+				if err == context.Canceled {
+					return
+				}
 				b.errChan <- &api.GRPCStreamError{Err: err}
+				continue handleLoop
 			}
+
 			switch event := ev.Type.(type) {
 			case *peer.DeliverResponse_Block:
 				b.blockChan <- event.Block
