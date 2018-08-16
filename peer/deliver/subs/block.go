@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"log"
+
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/orderer"
@@ -15,6 +17,8 @@ import (
 )
 
 type blockSubscription struct {
+	ctx         context.Context
+	cancel      context.CancelFunc
 	channelName string
 	identity    msp.SigningIdentity
 	conn        *grpc.ClientConn
@@ -48,7 +52,7 @@ func (b *blockSubscription) handleSubscription() {
 
 func (b *blockSubscription) Blocks() (chan *common.Block, error) {
 	var err error
-	if b.client, err = peer.NewDeliverClient(b.conn).Deliver(context.Background()); err != nil {
+	if b.client, err = peer.NewDeliverClient(b.conn).Deliver(b.ctx); err != nil {
 		return nil, errors.Wrap(err, `failed to get deliver client`)
 	}
 
@@ -70,9 +74,18 @@ func (b *blockSubscription) Errors() chan error {
 }
 
 func (b *blockSubscription) Close() error {
+	log.Println(`Cancelling context`)
+	b.cancel()
+
+	log.Println(`Closing handleSubscription`)
 	b.closeChan <- struct{}{}
+
+	log.Println(`Closing errChan`)
 	close(b.errChan)
+
+	log.Println(`Closing blockChan`)
 	close(b.blockChan)
+
 	return b.client.CloseSend()
 }
 
@@ -85,7 +98,11 @@ func NewBlockSubscription(channelName string, identity msp.SigningIdentity, conn
 		startPos, stopPos = api.SeekNewest()()
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	return &blockSubscription{
+		ctx:         ctx,
+		cancel:      cancel,
 		channelName: channelName,
 		identity:    identity,
 		conn:        conn,
