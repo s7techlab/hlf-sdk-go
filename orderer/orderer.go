@@ -14,15 +14,12 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
+	"io"
 )
 
 const (
 	maxRecvMsgSize = 100 * 1024 * 1024
 	maxSendMsgSize = 100 * 1024 * 1024
-)
-
-var (
-	errTimeoutExceeded = errors.New(`timeout exceeded`)
 )
 
 type ErrUnexpectedStatus struct {
@@ -66,10 +63,24 @@ func (o *orderer) Broadcast(envelope *common.Envelope) (*fabricOrderer.Broadcast
 }
 
 func (o *orderer) Deliver(envelope *common.Envelope) (*common.Block, error) {
-	cli, err := o.broadcastClient.Deliver(context.Background())
+	//TODO: propagate ctx from Signature of func
+	var (
+		ctx    context.Context
+		cancel context.CancelFunc
+	)
+	if o.timeout != 0 {
+		ctx, cancel = context.WithTimeout(context.Background(), o.timeout)
+	} else {
+		ctx, cancel = context.WithCancel(context.Background())
+	}
+
+	defer cancel()
+
+	cli, err := o.broadcastClient.Deliver(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to initialize deliver client`)
 	}
+
 	defer cli.CloseSend()
 
 	if err = cli.Send(envelope); err != nil {
@@ -78,28 +89,25 @@ func (o *orderer) Deliver(envelope *common.Envelope) (*common.Block, error) {
 
 	var block *common.Block
 
-	timer := time.NewTimer(o.timeout)
-
 	for {
-		select {
-		case <-timer.C:
-			return nil, errTimeoutExceeded
-		default:
-			if resp, err := cli.Recv(); err != nil {
-				return nil, errors.Wrap(err, `failed to receive response`)
-			} else {
-				switch respType := resp.Type.(type) {
-				case *fabricOrderer.DeliverResponse_Status:
-					if respType.Status != common.Status_SUCCESS {
-						return nil, &ErrUnexpectedStatus{status: respType.Status}
-					} else {
-						return block, nil
-					}
-				case *fabricOrderer.DeliverResponse_Block:
-					block = respType.Block
+		resp, err := cli.Recv()
+		if err == io.EOF {
+			return block, nil
+		}
 
-				}
+		if err != nil {
+			return nil, errors.Wrap(err, `failed to receive response`)
+		}
+
+		switch respType := resp.Type.(type) {
+		case *fabricOrderer.DeliverResponse_Status:
+			if respType.Status != common.Status_SUCCESS {
+				return nil, &ErrUnexpectedStatus{status: respType.Status}
+			} else {
+				return block, nil
 			}
+		case *fabricOrderer.DeliverResponse_Block:
+			block = respType.Block
 		}
 	}
 }
@@ -153,4 +161,20 @@ func New(c config.OrdererConfig) (api.Orderer, error) {
 	}
 
 	return o, nil
+}
+
+// NewFromGRPC allows to initialize orderer from existing GRPC connection
+func NewFromGRPC(ctx context.Context, conn *grpc.ClientConn, grpcOptions ...grpc.DialOption) (api.Orderer, error) {
+	obj := &orderer{
+		uri:         conn.Target(),
+		conn:        conn,
+		ctx:         ctx,
+		grpcOptions: grpcOptions,
+	}
+
+	if err := obj.initBroadcastClient(); err != nil {
+		return nil, errors.Wrap(err, `failed to initialize BroadcastClient`)
+	}
+
+	return obj, nil
 }

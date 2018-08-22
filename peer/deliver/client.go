@@ -11,7 +11,6 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/peer/deliver/subs"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
 )
@@ -43,9 +42,11 @@ func (e *deliverClient) SubscribeBlock(channelName string, seekOpt ...api.EventC
 
 func (e *deliverClient) initConnection() error {
 	var err error
+
 	e.connMx.Lock()
 	defer e.connMx.Unlock()
-	if e.conn == nil || e.conn.GetState() == connectivity.Shutdown {
+
+	if e.conn == nil {
 		if e.conn, err = grpc.Dial(e.uri, e.opts...); err != nil {
 			return errors.Wrap(err, `failed to initialize grpc connection`)
 		}
@@ -93,4 +94,14 @@ func NewDeliverClient(config config.PeerConfig, identity msp.SigningIdentity, gr
 	}
 
 	return cli, nil
+}
+
+// NewFromGRPC allows to initialize orderer from existing GRPC connection
+func NewFromGRPC(conn *grpc.ClientConn, identity msp.SigningIdentity, grpcOptions ...grpc.DialOption) api.DeliverClient {
+	return &deliverClient{
+		uri:      conn.Target(),
+		conn:     conn,
+		opts:     grpcOptions,
+		identity: identity,
+	}
 }
