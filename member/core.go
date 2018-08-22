@@ -81,12 +81,15 @@ func NewCore(mspId string, configPath string, identity api.Identity, opts ...Cor
 		return nil, errors.Wrap(err, `failed to initialize crypto suite`)
 	}
 
+	core.identity = identity.GetSigningIdentity(core.cs)
+
 	if core.options.peer == nil {
 		if core.localPeer, err = peer.New(conf.LocalPeer); err != nil {
 			return nil, errors.Wrap(err, `failed to initialize local peer`)
 		}
 	} else {
 		core.localPeer = core.options.peer
+		core.localPeerDeliver = deliver.NewFromGRPC(core.localPeer.Conn(), core.identity)
 	}
 
 	if core.options.orderer == nil {
@@ -97,10 +100,10 @@ func NewCore(mspId string, configPath string, identity api.Identity, opts ...Cor
 		core.orderer = core.options.orderer
 	}
 
-	core.identity = identity.GetSigningIdentity(core.cs)
-
-	if core.localPeerDeliver, err = deliver.NewDeliverClient(conf.LocalPeer, core.identity); err != nil {
-		return nil, errors.Wrap(err, `failed to initialize event hub`)
+	if core.localPeerDeliver == nil {
+		if core.localPeerDeliver, err = deliver.NewDeliverClient(conf.LocalPeer, core.identity); err != nil {
+			return nil, errors.Wrap(err, `failed to initialize event hub`)
+		}
 	}
 
 	return &core, nil
