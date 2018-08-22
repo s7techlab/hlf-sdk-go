@@ -56,6 +56,10 @@ required = ["github.com/op/go-logging"]
     name = "github.com/docker/libnetwork"
     branch = "master"
 
+[[override]]
+    name = "google.golang.org/grpc"
+    branch = "master"
+
 [prune]
   go-tests = true
   unused-packages = true

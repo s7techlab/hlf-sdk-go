@@ -37,6 +37,7 @@ type orderer struct {
 	uri             string
 	conn            *grpc.ClientConn
 	ctx             context.Context
+	cancel          context.CancelFunc
 	connMx          sync.Mutex
 	timeout         time.Duration
 	broadcastClient fabricOrderer.AtomicBroadcastClient
@@ -118,7 +119,7 @@ func (o *orderer) initBroadcastClient() error {
 
 func New(c config.OrdererConfig) (api.Orderer, error) {
 	var err error
-	o := orderer{uri: c.Host, grpcOptions: make([]grpc.DialOption, 0)}
+	o := &orderer{uri: c.Host, grpcOptions: make([]grpc.DialOption, 0)}
 	if c.Tls.Enabled {
 		if ts, err := credentials.NewClientTLSFromFile(c.Tls.CertPath, ``); err != nil {
 			return nil, errors.Wrap(err, `failed to read tls credentials`)
@@ -142,14 +143,14 @@ func New(c config.OrdererConfig) (api.Orderer, error) {
 	))
 
 	if c.Timeout.Duration != 0 {
-		o.ctx, _ = context.WithTimeout(context.Background(), c.Timeout.Duration)
+		o.ctx, o.cancel = context.WithTimeout(context.Background(), c.Timeout.Duration)
 	} else {
-		o.ctx = context.Background()
+		o.ctx, o.cancel = context.WithCancel(context.Background())
 	}
 
 	if err = o.initBroadcastClient(); err != nil {
 		return nil, errors.Wrap(err, `failed to initialize BroadcastClient`)
 	}
 
-	return &o, nil
+	return o, nil
 }

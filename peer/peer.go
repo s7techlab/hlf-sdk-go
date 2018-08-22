@@ -61,7 +61,7 @@ func (p *peer) Conn() *grpc.ClientConn {
 }
 
 func (p *peer) Uri() string {
-	return p.uri
+	return p.conn.Target()
 }
 
 func (p *peer) Close() error {
@@ -87,7 +87,7 @@ func (p *peer) initEndorserClient() error {
 
 // New returns new peer instance based on peer config
 func New(c config.PeerConfig) (api.Peer, error) {
-	p := peer{uri: c.Host, grpcOptions: make([]grpc.DialOption, 0)}
+	p := &peer{uri: c.Host, grpcOptions: make([]grpc.DialOption, 0)}
 	if c.Tls.Enabled {
 		if ts, err := credentials.NewClientTLSFromFile(c.Tls.CertPath, ``); err != nil {
 			return nil, errors.Wrap(err, `failed to read tls credentials`)
@@ -120,14 +120,14 @@ func New(c config.PeerConfig) (api.Peer, error) {
 	if err := p.initEndorserClient(); err != nil {
 		return nil, errors.Wrap(err, `failed to initialize EndorserClient`)
 	}
-	return &p, nil
+	return p, nil
 }
 
 // NewFromGRPC allows to initialize peer from existing GRPC connection
 func NewFromGRPC(address string, conn *grpc.ClientConn, grpcOptions ...grpc.DialOption) (api.Peer, error) {
-	p := peer{conn: conn, uri: address, grpcOptions: grpcOptions}
+	p := &peer{conn: conn, uri: address, grpcOptions: grpcOptions}
 	if err := p.initEndorserClient(); err != nil {
 		return nil, errors.Wrap(err, `failed to initialize EndorserClient`)
 	}
-	return &p, nil
+	return p, nil
 }
