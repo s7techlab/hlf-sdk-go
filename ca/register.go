@@ -3,11 +3,8 @@ package ca
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
-	"reflect"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api/ca"
 )
@@ -38,34 +35,11 @@ func (c *core) Register(req ca.RegistrationRequest) (string, error) {
 		return ``, errors.Wrap(err, `failed to get response`)
 	}
 
-	defer resp.Body.Close()
+	var regResp ca.ResponseRegistration
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return ``, errors.Wrap(err, `failed to read response body`)
+	if err = c.processResponse(resp, &regResp, http.StatusCreated); err != nil {
+		return ``, err
 	}
 
-	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
-		res := ca.Response{}
-		if err = json.Unmarshal(body, &res); err != nil {
-			return ``, errors.Wrap(err, `failed to unmarshal JSON response`)
-		}
-
-		if res.Success != true {
-			return ``, &ca.ResponseError{Errors: res.Errors, Messages: res.Messages}
-		}
-
-		switch result := res.Result.(type) {
-		case map[string]interface{}:
-			var regResp ca.ResponseRegistration
-			if err = mapstructure.Decode(result, &regResp); err != nil {
-				return ``, errors.Wrap(err, `failed to decode CA response`)
-			}
-			return regResp.Secret, nil
-		default:
-			return ``, errors.Errorf("unexpected response type:%s", reflect.ValueOf(res.Result).Type().String())
-		}
-	} else {
-		return ``, errors.Errorf("http response error: %d %s", resp.StatusCode, string(body))
-	}
+	return regResp.Secret, nil
 }

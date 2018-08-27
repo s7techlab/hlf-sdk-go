@@ -1,6 +1,8 @@
 package ca
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
 	"encoding/base64"
@@ -44,6 +46,42 @@ func (c *core) createAuthToken(request []byte) (string, error) {
 	} else {
 		return fmt.Sprintf("%s.%s", baseCert, base64.StdEncoding.EncodeToString(signature)), nil
 	}
+}
+
+func (c *core) setAuthToken(req *http.Request, body []byte) error {
+	if token, err := c.createAuthToken(body); err != nil {
+		return errors.Wrap(err, `failed to create auth token`)
+	} else {
+		req.Header.Add(`Authorization`, token)
+	}
+	return nil
+}
+
+func (c *core) processResponse(resp *http.Response, out interface{}, expectedHTTPStatus int) error {
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return errors.Wrap(err, `failed to read response body`)
+	}
+
+	if resp.StatusCode != expectedHTTPStatus {
+		return api.ErrUnexpectedHTTPStatus{Status: resp.StatusCode, Body: body}
+	}
+
+	var caResp ca.Response
+	if err = json.Unmarshal(body, &caResp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal JSON response`)
+	}
+
+	if !caResp.Success {
+		return ca.ResponseError{Errors: caResp.Errors}
+	}
+
+	if err = json.Unmarshal(caResp.Result, out); err != nil {
+		return errors.Wrap(err, `failed to unmarshal JSON`)
+	}
+
+	return nil
 }
 
 func NewCore(mspId string, identity api.Identity, opts ...opt) (ca.Core, error) {
