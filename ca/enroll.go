@@ -7,12 +7,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
-	"io/ioutil"
 	"net/http"
-	"reflect"
 
 	"github.com/cloudflare/cfssl/signer"
-	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api/ca"
 )
@@ -58,50 +55,26 @@ func (c *core) Enroll(name, secret string, req *x509.CertificateRequest, opts ..
 		return nil, options.PrivateKey, errors.Wrap(err, `failed to send http request`)
 	}
 
-	defer resp.Body.Close()
+	var enrollResp ca.ResponseEnrollment
 
-	body, err := ioutil.ReadAll(resp.Body)
+	if err = c.processResponse(resp, &enrollResp, http.StatusCreated); err != nil {
+		return nil, options.PrivateKey, err
+	}
+
+	certDecoded, err := base64.StdEncoding.DecodeString(enrollResp.Cert)
 	if err != nil {
-		return nil, options.PrivateKey, errors.Wrap(err, `failed to read response body`)
+		return nil, options.PrivateKey, errors.Wrap(err, `failed to decode base64 certificate`)
 	}
 
-	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
-		res := ca.Response{}
-		if err = json.Unmarshal(body, &res); err != nil {
-			return nil, options.PrivateKey, errors.Wrap(err, `failed to unmarshal JSON response`)
-		}
-
-		if res.Success != true {
-			return nil, options.PrivateKey, &ca.ResponseError{Errors: res.Errors, Messages: res.Messages}
-		}
-
-		switch result := res.Result.(type) {
-		case map[string]interface{}:
-			var enrollResp ca.ResponseEnrollment
-			if err = mapstructure.Decode(result, &enrollResp); err != nil {
-				return nil, options.PrivateKey, errors.Wrap(err, `failed to decode CA response`)
-			}
-
-			certDecoded, err := base64.StdEncoding.DecodeString(enrollResp.Cert)
-			if err != nil {
-				return nil, options.PrivateKey, errors.Wrap(err, `failed to decode base64 certificate`)
-			}
-
-			certBlock, _ := pem.Decode(certDecoded)
-			if certBlock == nil {
-				return nil, options.PrivateKey, errors.New(`failed to decode PEM block`)
-			}
-
-			cert, err := x509.ParseCertificate(certBlock.Bytes)
-			if err != nil {
-				return nil, options.PrivateKey, errors.Wrap(err, `failed to parse certificate`)
-			}
-			return cert, options.PrivateKey, nil
-
-		default:
-			return nil, options.PrivateKey, errors.Errorf("unexpected response type:%s", reflect.ValueOf(res.Result).Type().String())
-		}
-	} else {
-		return nil, options.PrivateKey, errors.Errorf("http response error: %d %s", resp.StatusCode, string(body))
+	certBlock, _ := pem.Decode(certDecoded)
+	if certBlock == nil {
+		return nil, options.PrivateKey, errors.New(`failed to decode PEM block`)
 	}
+
+	cert, err := x509.ParseCertificate(certBlock.Bytes)
+	if err != nil {
+		return nil, options.PrivateKey, errors.Wrap(err, `failed to parse certificate`)
+	}
+
+	return cert, options.PrivateKey, nil
 }

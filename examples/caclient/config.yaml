@@ -1,0 +1,13 @@
+host: http://localhost:7054
+
+crypto:
+  type: ecdsa
+  options:
+    # Possible curves: P256, P384, P512
+    curve: P256
+    # TODO
+    # Possible algorithms for signature: (not implemented)
+    signatureAlgorithm: SHA256
+    # Possible hashing algorithms: SHA2-256, SHA2-384, SHA3-256, SHA3-384
+    hash: SHA2-256
+
