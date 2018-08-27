@@ -42,6 +42,7 @@ func (c *core) IdentityList(ctx context.Context) ([]ca.Identity, error) {
 
 func (c *core) IdentityGet(ctx context.Context, enrollId string) (*ca.Identity, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(endpointIdentityGet, c.config.Host, enrollId), nil)
+
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to create request`)
 	}
