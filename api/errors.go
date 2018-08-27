@@ -25,3 +25,12 @@ func (e *MultiError) Error() string {
 func (e *MultiError) Add(err error) {
 	e.Errors = append(e.Errors, err)
 }
+
+type ErrUnexpectedHTTPStatus struct {
+	Status int
+	Body   []byte
+}
+
+func (err ErrUnexpectedHTTPStatus) Error() string {
+	return fmt.Sprintf("unexpected HTTP status code: %d with body %s", err.Status, string(err.Body))
+}

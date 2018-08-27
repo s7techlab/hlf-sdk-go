@@ -10,12 +10,12 @@ import (
 )
 
 const (
-	endpointIdentityList = `/api/v1/identities`
-	endpointIdentityGet  = "/api/v1/identities/%s"
+	endpointIdentityList = "%s/api/v1/identities"
+	endpointIdentityGet  = "%s/api/v1/identities/%s"
 )
 
 func (c *core) IdentityList(ctx context.Context) ([]ca.Identity, error) {
-	req, err := http.NewRequest(http.MethodGet, endpointIdentityList, nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(endpointIdentityList, c.config.Host), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to create request`)
 	}
@@ -41,7 +41,7 @@ func (c *core) IdentityList(ctx context.Context) ([]ca.Identity, error) {
 }
 
 func (c *core) IdentityGet(ctx context.Context, enrollId string) (*ca.Identity, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(endpointIdentityGet, enrollId), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(endpointIdentityGet, c.config.Host, enrollId), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to create request`)
 	}
@@ -59,7 +59,7 @@ func (c *core) IdentityGet(ctx context.Context, enrollId string) (*ca.Identity, 
 
 	var identity ca.Identity
 
-	if c.processResponse(resp, &identity, http.StatusOK); err != nil {
+	if err = c.processResponse(resp, &identity, http.StatusOK); err != nil {
 		return nil, err
 	}
 

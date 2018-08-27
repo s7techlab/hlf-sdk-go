@@ -10,13 +10,13 @@ type ResponseError struct {
 	Messages []ResponseMessage
 }
 
-func (e *ResponseError) Error() string {
-	return fmt.Sprintf("CA response error messages: %s", e.joinErrors())
+func (err ResponseError) Error() string {
+	return fmt.Sprintf("CA response error messages: %s", err.joinErrors())
 }
 
-func (e *ResponseError) joinErrors() string {
-	mes := make([]string, len(e.Errors))
-	for i, m := range e.Errors {
+func (err ResponseError) joinErrors() string {
+	mes := make([]string, len(err.Errors))
+	for i, m := range err.Errors {
 		mes[i] = m.Message
 	}
 

@@ -1,9 +1,11 @@
 package ca
 
+import "encoding/json"
+
 type (
 	Response struct {
 		Success  bool              `json:"success"`
-		Result   interface{}       `json:"result"`
+		Result   json.RawMessage   `json:"result"`
 		Errors   []ResponseMessage `json:"errors"`
 		Messages []ResponseMessage `json:"messages"`
 	}
@@ -26,5 +28,9 @@ type (
 	ResponseEnrollment struct {
 		Cert       string         `json:"Cert"`
 		ServerInfo ResponseCAInfo `json:"ServerInfo"`
+	}
+
+	ResponseIdentityList struct {
+		Identities []Identity `json:"identities"`
 	}
 )
