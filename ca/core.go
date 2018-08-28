@@ -1,12 +1,11 @@
 package ca
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
-
-	"encoding/base64"
-	"fmt"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/msp"
@@ -57,16 +56,18 @@ func (c *core) setAuthToken(req *http.Request, body []byte) error {
 	return nil
 }
 
-func (c *core) processResponse(resp *http.Response, out interface{}, expectedHTTPStatus int) error {
+func (c *core) processResponse(resp *http.Response, out interface{}, expectedHTTPStatuses ...int) error {
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return errors.Wrap(err, `failed to read response body`)
 	}
 
-	if resp.StatusCode != expectedHTTPStatus {
+	if !c.expectedHTTPStatus(resp.StatusCode, expectedHTTPStatuses...) {
 		return api.ErrUnexpectedHTTPStatus{Status: resp.StatusCode, Body: body}
 	}
+
+	fmt.Println()
 
 	var caResp ca.Response
 	if err = json.Unmarshal(body, &caResp); err != nil {
@@ -82,6 +83,15 @@ func (c *core) processResponse(resp *http.Response, out interface{}, expectedHTT
 	}
 
 	return nil
+}
+
+func (c *core) expectedHTTPStatus(status int, expected ...int) bool {
+	for _, s := range expected {
+		if s == status {
+			return true
+		}
+	}
+	return false
 }
 
 func NewCore(mspId string, identity api.Identity, opts ...opt) (ca.Core, error) {

@@ -47,4 +47,20 @@ type (
 		RevokedCerts []RevokedCert
 		CRL          []byte
 	}
+
+	ResponseAffiliationList struct {
+		Name         string        `json:"name"`
+		Affiliations []Affiliation `json:"affiliations"`
+		Identities   []Identity    `json:"identities"`
+		CAName       string        `json:"caname"`
+	}
+
+	ResponseAffiliationCreate struct {
+		Name   string `json:"name"`
+		CAName string `json:"caname"`
+	}
+
+	ResponseAffiliationDelete struct {
+		ResponseAffiliationList
+	}
 )

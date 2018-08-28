@@ -19,4 +19,10 @@ type (
 		Serial string
 		AKI    string
 	}
+
+	Affiliation struct {
+		Name         string        `json:"name"`
+		Affiliations []Affiliation `json:"affiliations,omitempty"`
+		Identities   []Identity    `json:"identities,omitempty"`
+	}
 )

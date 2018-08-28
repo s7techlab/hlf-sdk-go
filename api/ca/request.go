@@ -110,4 +110,8 @@ type (
 		// GenCRL specifies whether to generate a CRL
 		GenCRL bool `def:"false" skip:"true" json:"gencrl,omitempty"`
 	}
+
+	AddAffiliationRequest struct {
+		Name string `json:"name"`
+	}
 )
