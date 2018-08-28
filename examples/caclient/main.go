@@ -49,6 +49,8 @@ func main() {
 	}
 
 	log.Println(core.CertificateList(context.Background(), apiCa.WithEnrollId(`admin`)))
+	log.Println(core.AffiliationList(context.Background()))
+	//log.Println(core.AffiliationCreate(context.Background(), `test`))
 	log.Fatalln(``)
 
 	name := `yarrrr` + RandomString(2)

@@ -28,6 +28,10 @@ func (c *core) Revoke(ctx context.Context, req ca.RevocationRequest) (*pkix.Cert
 		return nil, errors.Wrap(err, `failed to create request`)
 	}
 
+	if err = c.setAuthToken(httpReq, reqBytes); err != nil {
+		return nil, errors.Wrap(err, `failed to set auth token`)
+	}
+
 	resp, err := c.client.Do(httpReq.WithContext(ctx))
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to process request`)
