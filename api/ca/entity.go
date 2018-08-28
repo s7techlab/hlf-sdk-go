@@ -14,4 +14,9 @@ type (
 		Value string `json:"value"`
 		Ecert bool   `json:"ecert"`
 	}
+
+	RevokedCert struct {
+		Serial string
+		AKI    string
+	}
 )

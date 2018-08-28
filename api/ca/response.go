@@ -42,4 +42,9 @@ type (
 	ResponseCertificateListPEM struct {
 		PEM string `json:"PEM"`
 	}
+
+	ResponseRevoke struct {
+		RevokedCerts []RevokedCert
+		CRL          []byte
+	}
 )
