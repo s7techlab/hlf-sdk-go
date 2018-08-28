@@ -33,4 +33,13 @@ type (
 	ResponseIdentityList struct {
 		Identities []Identity `json:"identities"`
 	}
+
+	ResponseCertificateList struct {
+		CAName string                       `json:"caname"`
+		Certs  []ResponseCertificateListPEM `json:"certs"`
+	}
+
+	ResponseCertificateListPEM struct {
+		PEM string `json:"PEM"`
+	}
 )

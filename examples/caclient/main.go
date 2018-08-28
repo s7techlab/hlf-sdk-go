@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -46,6 +47,9 @@ func main() {
 	if err != nil {
 		log.Fatalln(`failed to load CA core:`, err)
 	}
+
+	log.Println(core.CertificateList(context.Background(), apiCa.WithEnrollId(`admin`)))
+	log.Fatalln(``)
 
 	name := `yarrrr` + RandomString(2)
 
