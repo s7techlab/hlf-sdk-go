@@ -13,7 +13,7 @@ import (
 // Peer is common interface for endorsing peer
 type Peer interface {
 	// Endorse sends proposal to endorsing peer and returns it's result
-	Endorse(proposal *peer.SignedProposal, opts ...PeerEndorseOpt) (*peer.ProposalResponse, error)
+	Endorse(ctx context.Context, proposal *peer.SignedProposal, opts ...PeerEndorseOpt) (*peer.ProposalResponse, error)
 	// Uri returns url used for grpc connection
 	Uri() string
 	// Conn returns instance of grpc connection
@@ -27,7 +27,7 @@ type PeerProcessor interface {
 	// CreateProposal creates signed proposal for presented cc, function and args using signing identity
 	CreateProposal(cc *DiscoveryChaincode, identity msp.SigningIdentity, fn string, args [][]byte) (*peer.SignedProposal, ChaincodeTx, error)
 	// Send sends signed proposal to endorsing peers and collects their responses
-	Send(proposal *peer.SignedProposal, peers ...Peer) ([]*peer.ProposalResponse, error)
+	Send(ctx context.Context, proposal *peer.SignedProposal, peers ...Peer) ([]*peer.ProposalResponse, error)
 }
 
 // PeerEndorseError describes peer endorse error

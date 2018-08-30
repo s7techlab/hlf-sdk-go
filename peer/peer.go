@@ -30,7 +30,7 @@ type peer struct {
 	client      fabricPeer.EndorserClient
 }
 
-func (p *peer) Endorse(proposal *fabricPeer.SignedProposal, opts ...api.PeerEndorseOpt) (*fabricPeer.ProposalResponse, error) {
+func (p *peer) Endorse(ctx context.Context, proposal *fabricPeer.SignedProposal, opts ...api.PeerEndorseOpt) (*fabricPeer.ProposalResponse, error) {
 
 	var err error
 
@@ -41,12 +41,8 @@ func (p *peer) Endorse(proposal *fabricPeer.SignedProposal, opts ...api.PeerEndo
 		}
 	}
 
-	// Use default peer context if endorse context isn't provided
-	if endorseOpts.Context == nil {
-		endorseOpts.Context = p.ctx
-	}
-
-	if resp, err := p.client.ProcessProposal(endorseOpts.Context, proposal); err != nil {
+	//TODO:  it all can be used WITHOUT THAT WRAPPER around EndorserClient
+	if resp, err := p.client.ProcessProposal(ctx, proposal); err != nil {
 		return nil, errors.Wrap(err, `failed to endorse proposal`)
 	} else {
 		if resp.Response.Status != shim.OK {

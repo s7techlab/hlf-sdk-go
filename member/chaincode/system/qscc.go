@@ -1,6 +1,7 @@
 package system
 
 import (
+	"context"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/common/util"
 	qsccPkg "github.com/hyperledger/fabric/core/scc/qscc"
@@ -18,8 +19,8 @@ type qscc struct {
 	processor api.PeerProcessor
 }
 
-func (c *qscc) GetChainInfo(channelName string) (*common.BlockchainInfo, error) {
-	if infoBytes, err := c.endorse(qsccPkg.GetChainInfo, channelName); err != nil {
+func (c *qscc) GetChainInfo(ctx context.Context, channelName string) (*common.BlockchainInfo, error) {
+	if infoBytes, err := c.endorse(ctx, qsccPkg.GetChainInfo, channelName); err != nil {
 		return nil, errors.Wrap(err, `failed to get chainInfo`)
 	} else {
 		chainInfo := new(common.BlockchainInfo)
@@ -30,8 +31,8 @@ func (c *qscc) GetChainInfo(channelName string) (*common.BlockchainInfo, error) 
 	}
 }
 
-func (c *qscc) GetBlockByNumber(channelName string, blockNumber int64) (*common.Block, error) {
-	if blockBytes, err := c.endorse(qsccPkg.GetBlockByNumber, string(blockNumber)); err != nil {
+func (c *qscc) GetBlockByNumber(ctx context.Context, channelName string, blockNumber int64) (*common.Block, error) {
+	if blockBytes, err := c.endorse(ctx, qsccPkg.GetBlockByNumber, string(blockNumber)); err != nil {
 		return nil, errors.Wrap(err, `failed to get block`)
 	} else {
 		block := new(common.Block)
@@ -42,8 +43,8 @@ func (c *qscc) GetBlockByNumber(channelName string, blockNumber int64) (*common.
 	}
 }
 
-func (c *qscc) GetBlockByHash(channelName string, blockHash []byte) (*common.Block, error) {
-	if blockBytes, err := c.endorse(qsccPkg.GetBlockByHash, string(blockHash)); err != nil {
+func (c *qscc) GetBlockByHash(ctx context.Context, channelName string, blockHash []byte) (*common.Block, error) {
+	if blockBytes, err := c.endorse(ctx, qsccPkg.GetBlockByHash, string(blockHash)); err != nil {
 		return nil, errors.Wrap(err, `failed to get block`)
 	} else {
 		block := new(common.Block)
@@ -54,8 +55,8 @@ func (c *qscc) GetBlockByHash(channelName string, blockHash []byte) (*common.Blo
 	}
 }
 
-func (c *qscc) GetTransactionByID(channelName string, tx api.ChaincodeTx) (*peer.ProcessedTransaction, error) {
-	if txBytes, err := c.endorse(qsccPkg.GetTransactionByID, string(tx)); err != nil {
+func (c *qscc) GetTransactionByID(ctx context.Context, channelName string, tx api.ChaincodeTx) (*peer.ProcessedTransaction, error) {
+	if txBytes, err := c.endorse(ctx, qsccPkg.GetTransactionByID, string(tx)); err != nil {
 		return nil, errors.Wrap(err, `failed to get transaction`)
 	} else {
 		transaction := new(peer.ProcessedTransaction)
@@ -66,8 +67,8 @@ func (c *qscc) GetTransactionByID(channelName string, tx api.ChaincodeTx) (*peer
 	}
 }
 
-func (c *qscc) GetBlockByTxID(channelName string, tx api.ChaincodeTx) (*common.Block, error) {
-	if blockBytes, err := c.endorse(qsccPkg.GetBlockByTxID, string(tx)); err != nil {
+func (c *qscc) GetBlockByTxID(ctx context.Context, channelName string, tx api.ChaincodeTx) (*common.Block, error) {
+	if blockBytes, err := c.endorse(ctx, qsccPkg.GetBlockByTxID, string(tx)); err != nil {
 		return nil, errors.Wrap(err, `failed to get block`)
 	} else {
 		block := new(common.Block)
@@ -77,13 +78,13 @@ func (c *qscc) GetBlockByTxID(channelName string, tx api.ChaincodeTx) (*common.B
 		return block, nil
 	}
 }
-func (c *qscc) endorse(fn string, args ...string) ([]byte, error) {
+func (c *qscc) endorse(ctx context.Context, fn string, args ...string) ([]byte, error) {
 	prop, _, err := c.processor.CreateProposal(&api.DiscoveryChaincode{Name: qsccName, Type: api.CCTypeGoLang}, c.identity, fn, util.ToChaincodeArgs(args...))
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to create proposal`)
 	}
 
-	resp, err := c.peer.Endorse(prop)
+	resp, err := c.peer.Endorse(ctx, prop)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to endorse proposal`)
 	}

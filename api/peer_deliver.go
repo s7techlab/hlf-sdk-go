@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"math"
 
 	"fmt"
@@ -17,11 +18,11 @@ var (
 
 type DeliverClient interface {
 	// SubscribeCC allows to subscribe on chaincode events using name of channel, chaincode and block offset
-	SubscribeCC(channelName string, ccName string, seekOpt ...EventCCSeekOption) EventCCSubscription
+	SubscribeCC(ctx context.Context, channelName string, ccName string, seekOpt ...EventCCSeekOption) EventCCSubscription
 	// SubscribeTx allows to subscribe on transaction events by id
-	SubscribeTx(channelName string, tx ChaincodeTx) TxSubscription
+	SubscribeTx(ctx context.Context, channelName string, tx ChaincodeTx) TxSubscription
 	// SubscribeBlock allows to subscribe on block events
-	SubscribeBlock(channelName string, seekOpt ...EventCCSeekOption) BlockSubscription
+	SubscribeBlock(ctx context.Context, channelName string, seekOpt ...EventCCSeekOption) BlockSubscription
 	// Close terminates eventHub grpc connection
 	Close() error
 }
