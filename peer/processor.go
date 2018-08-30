@@ -92,7 +92,7 @@ func (*processor) Send(ctx context.Context, proposal *fabricPeer.SignedProposal,
 	// send all proposals concurrently
 	for i := 0; i < peerCount; i++ {
 		go func(p api.Peer) {
-			resp, err := p.Endorse(ctx, proposal, api.WithContext(context.Background()))
+			resp, err := p.Endorse(ctx, proposal)
 			respChan <- endorseChannelResponse{Response: resp, Error: err}
 		}(peers[i])
 	}
