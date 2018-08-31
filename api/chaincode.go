@@ -95,3 +95,7 @@ type LSCC interface {
 	// Install allows to install chaincode using deployment specification
 	Install(ctx context.Context, spec *peer.ChaincodeDeploymentSpec) error
 }
+
+type CCFetcher interface {
+	Fetch(ctx context.Context, id *peer.ChaincodeID) (*peer.ChaincodeDeploymentSpec, error)
+}
