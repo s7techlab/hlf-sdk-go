@@ -14,7 +14,6 @@ type Core struct {
 	dp            api.DiscoveryProvider
 	identity      msp.SigningIdentity
 	deliverClient api.DeliverClient
-	fetcher       api.CCFetcher
 }
 
 func (c *Core) Invoke(fn string) api.ChaincodeInvokeBuilder {
@@ -41,7 +40,6 @@ func NewCore(
 	dp api.DiscoveryProvider,
 	identity msp.SigningIdentity,
 	deliverClient api.DeliverClient,
-	ccfetcher api.CCFetcher,
 ) *Core {
 	return &Core{
 		name:          ccName,
@@ -51,6 +49,5 @@ func NewCore(
 		dp:            dp,
 		identity:      identity,
 		deliverClient: deliverClient,
-		fetcher:       ccfetcher,
 	}
 }
