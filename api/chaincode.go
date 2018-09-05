@@ -37,9 +37,7 @@ type ChaincodeInvokeBuilder interface {
 	// ArgBytes set slice of bytes as argument
 	ArgBytes([][]byte) ChaincodeInvokeBuilder
 	// ArgJSON set slice of JSON-marshalled data
-	ArgJSON(in ...interface{}) (ChaincodeInvokeBuilder, error)
-	// MustArgJSON set slice of JSON-marshalled data and on error panic
-	MustArgJSON(in ...interface{}) ChaincodeInvokeBuilder
+	ArgJSON(in ...interface{}) ChaincodeInvokeBuilder
 	// ArgString set slice of strings as arguments
 	ArgString(args ...string) ChaincodeInvokeBuilder
 	// Do  do invoke with builded arguments

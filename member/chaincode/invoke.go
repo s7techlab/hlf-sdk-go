@@ -1,8 +1,10 @@
 package chaincode
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"log"
 
@@ -22,6 +24,71 @@ type invokeBuilder struct {
 	processor api.PeerProcessor
 	identity  msp.SigningIdentity
 	args      [][]byte
+	err       *errArgMap
+}
+
+// A string that might be shortened to a specified length.
+type TruncatableString struct {
+	// The shortened string. For example, if the original string was 500 bytes long and
+	// the limit of the string was 128 bytes, then this value contains the first 128
+	// bytes of the 500-byte string. Note that truncation always happens on a
+	// character boundary, to ensure that a truncated string is still valid UTF-8.
+	// Because it may contain multi-byte characters, the size of the truncated string
+	// may be less than the truncation limit.
+	Value string
+
+	// The number of bytes removed from the original string. If this
+	// value is 0, then the string was not shortened.
+	TruncatedByteCount int
+}
+
+func (t TruncatableString) String() string {
+	if t.TruncatedByteCount == 0 {
+		return t.Value
+	}
+
+	return fmt.Sprintf("%s(%d)", t.Value, t.TruncatedByteCount)
+}
+
+func makeTruncatableString(str string, size int) TruncatableString {
+	if len(str) <= size {
+		return TruncatableString{
+			Value:              str,
+			TruncatedByteCount: 0,
+		}
+	} else {
+		return TruncatableString{
+			Value:              str[0:size] + `...`,
+			TruncatedByteCount: len(str[size:]),
+		}
+	}
+}
+
+func newErrArgMap() *errArgMap {
+	return &errArgMap{
+		container: make(map[TruncatableString]error),
+	}
+}
+
+type errArgMap struct {
+	// slice of part of arg...
+	container map[TruncatableString]error
+}
+
+func (e *errArgMap) Add(arg interface{}, err error) {
+	e.container[makeTruncatableString(fmt.Sprintf("%T->%#v", arg, arg), 50)] = err
+}
+
+func (e *errArgMap) Err() error {
+	if len(e.container) == 0 {
+		return nil
+	}
+
+	buff := bytes.NewBuffer(nil)
+	for key, err := range e.container {
+		buff.WriteString(errors.Wrap(err, key.String()).Error() + "\n")
+	}
+	return errors.New(buff.String())
 }
 
 func (b *invokeBuilder) WithIdentity(identity msp.SigningIdentity) api.ChaincodeInvokeBuilder {
@@ -104,23 +171,11 @@ func (b *invokeBuilder) getTransaction(proposal *fabricPeer.SignedProposal, peer
 
 }
 
-func (b *invokeBuilder) ArgJSON(in ...interface{}) (api.ChaincodeInvokeBuilder, error) {
+func (b *invokeBuilder) ArgJSON(in ...interface{}) api.ChaincodeInvokeBuilder {
 	argBytes := make([][]byte, 0)
 	for _, arg := range in {
 		if data, err := json.Marshal(arg); err != nil {
-			return nil, errors.Wrap(err, `failed to marshal argument to JSON`)
-		} else {
-			argBytes = append(argBytes, data)
-		}
-	}
-	return b.ArgBytes(argBytes), nil
-}
-
-func (b *invokeBuilder) MustArgJSON(in ...interface{}) api.ChaincodeInvokeBuilder {
-	argBytes := make([][]byte, 0)
-	for _, arg := range in {
-		if data, err := json.Marshal(arg); err != nil {
-			panic(errors.Wrap(err, `failed to marshal argument to JSON`))
+			b.err.Add(arg, err)
 		} else {
 			argBytes = append(argBytes, data)
 		}
@@ -133,6 +188,11 @@ func (b *invokeBuilder) ArgString(args ...string) api.ChaincodeInvokeBuilder {
 }
 
 func (b *invokeBuilder) Do(ctx context.Context) (api.ChaincodeTx, []byte, error) {
+	err := b.err.Err()
+	if err != nil {
+		return ``, nil, err
+	}
+
 	endorsers, err := b.ccCore.dp.Endorsers(b.ccCore.channelName, b.ccCore.name)
 	if err != nil {
 		return ``, nil, errors.Wrap(err, `failed to get endorsers list`)
@@ -236,5 +296,11 @@ func (b *invokeBuilder) Do(ctx context.Context) (api.ChaincodeTx, []byte, error)
 
 func NewInvokeBuilder(ccCore *Core, fn string) api.ChaincodeInvokeBuilder {
 	processor := peer.NewProcessor(ccCore.channelName)
-	return &invokeBuilder{ccCore: ccCore, fn: fn, processor: processor, identity: ccCore.identity}
+	return &invokeBuilder{
+		ccCore:    ccCore,
+		fn:        fn,
+		processor: processor,
+		identity:  ccCore.identity,
+		err:       newErrArgMap(),
+	}
 }
