@@ -41,8 +41,8 @@ type orderer struct {
 	grpcOptions     []grpc.DialOption
 }
 
-func (o *orderer) Broadcast(envelope *common.Envelope) (*fabricOrderer.BroadcastResponse, error) {
-	cli, err := o.broadcastClient.Broadcast(context.Background())
+func (o *orderer) Broadcast(ctx context.Context, envelope *common.Envelope) (*fabricOrderer.BroadcastResponse, error) {
+	cli, err := o.broadcastClient.Broadcast(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to initialize broadcast client`)
 	}
@@ -62,16 +62,15 @@ func (o *orderer) Broadcast(envelope *common.Envelope) (*fabricOrderer.Broadcast
 	}
 }
 
-func (o *orderer) Deliver(envelope *common.Envelope) (*common.Block, error) {
+func (o *orderer) Deliver(ctx context.Context, envelope *common.Envelope) (*common.Block, error) {
 	//TODO: propagate ctx from Signature of func
 	var (
-		ctx    context.Context
 		cancel context.CancelFunc
 	)
 	if o.timeout != 0 {
-		ctx, cancel = context.WithTimeout(context.Background(), o.timeout)
+		ctx, cancel = context.WithTimeout(ctx, o.timeout)
 	} else {
-		ctx, cancel = context.WithCancel(context.Background())
+		ctx, cancel = context.WithCancel(ctx)
 	}
 
 	defer cancel()

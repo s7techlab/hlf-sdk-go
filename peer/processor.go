@@ -78,7 +78,7 @@ func (p *processor) CreateProposal(cc *api.DiscoveryChaincode, identity msp.Sign
 	return &fabricPeer.SignedProposal{ProposalBytes: proposal, Signature: signedBytes}, api.ChaincodeTx(txId), nil
 }
 
-func (*processor) Send(proposal *fabricPeer.SignedProposal, peers ...api.Peer) ([]*fabricPeer.ProposalResponse, error) {
+func (*processor) Send(ctx context.Context, proposal *fabricPeer.SignedProposal, peers ...api.Peer) ([]*fabricPeer.ProposalResponse, error) {
 
 	peerCount := len(peers)
 
@@ -92,7 +92,7 @@ func (*processor) Send(proposal *fabricPeer.SignedProposal, peers ...api.Peer) (
 	// send all proposals concurrently
 	for i := 0; i < peerCount; i++ {
 		go func(p api.Peer) {
-			resp, err := p.Endorse(proposal, api.WithContext(context.Background()))
+			resp, err := p.Endorse(ctx, proposal)
 			respChan <- endorseChannelResponse{Response: resp, Error: err}
 		}(peers[i])
 	}

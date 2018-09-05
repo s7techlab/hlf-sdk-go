@@ -1,6 +1,7 @@
 package channel
 
 import (
+	"context"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/orderer"
@@ -9,17 +10,17 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
-func (c *Core) Join() error {
-	channelGenesis, err := c.getGenesisBlockFromOrderer()
+func (c *Core) Join(ctx context.Context) error {
+	channelGenesis, err := c.getGenesisBlockFromOrderer(ctx)
 	if err != nil {
 		return errors.Wrap(err, `failed to retrieve genesis block from orderer`)
 	}
 
 	cscc := system.NewCSCC(c.peer, c.identity)
-	return cscc.JoinChain(c.name, channelGenesis)
+	return cscc.JoinChain(ctx, c.name, channelGenesis)
 }
 
-func (c *Core) getGenesisBlockFromOrderer() (*common.Block, error) {
+func (c *Core) getGenesisBlockFromOrderer(ctx context.Context) (*common.Block, error) {
 	ordererSeekInfo := &orderer.SeekInfo{
 		Start:    &orderer.SeekPosition{Type: &orderer.SeekPosition_Specified{Specified: &orderer.SeekSpecified{Number: 0}}},
 		Stop:     &orderer.SeekPosition{Type: &orderer.SeekPosition_Specified{Specified: &orderer.SeekSpecified{Number: 0}}},
@@ -55,5 +56,5 @@ func (c *Core) getGenesisBlockFromOrderer() (*common.Block, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to sign payload`)
 	}
-	return c.orderer.Deliver(&common.Envelope{Payload: payload, Signature: payloadSignature})
+	return c.orderer.Deliver(ctx, &common.Envelope{Payload: payload, Signature: payloadSignature})
 }

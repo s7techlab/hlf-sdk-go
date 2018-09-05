@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"log"
@@ -39,19 +40,21 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	core, err := member.NewCore(mspId, configPath, id)
+	core, err := member.NewCore(mspId, id, member.WithConfigYaml(configPath))
 	if err != nil {
 		log.Fatalln(`unable to initialize core:`, err)
 	}
 
+	ctx := context.Background()
+
 	// get chainInfo for all joined channels
-	if chInfo, err := core.System().CSCC().Channels(); err != nil {
+	if chInfo, err := core.System().CSCC().Channels(ctx); err != nil {
 		log.Fatalln(`failed to fetch channel list`)
 	} else {
 		for _, ch := range chInfo.Channels {
 			fmt.Printf("Fetching info about channel: %s\n", ch.ChannelId)
 			// get blockchain info about channel
-			if blockchainInfo, err := core.System().QSCC().GetChainInfo(ch.ChannelId); err != nil {
+			if blockchainInfo, err := core.System().QSCC().GetChainInfo(ctx, ch.ChannelId); err != nil {
 				fmt.Println(`Failed to fetch info about channel:`, err)
 			} else {
 				fmt.Printf("Block length: %d, last block: %s, prev block: %s\n", blockchainInfo.Height, base64.StdEncoding.EncodeToString(blockchainInfo.CurrentBlockHash), base64.StdEncoding.EncodeToString(blockchainInfo.PreviousBlockHash))

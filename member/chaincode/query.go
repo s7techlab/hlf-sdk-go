@@ -1,6 +1,7 @@
 package chaincode
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/hyperledger/fabric/msp"
@@ -22,7 +23,8 @@ func (q *QueryBuilder) WithIdentity(identity msp.SigningIdentity) api.ChaincodeQ
 	return q
 }
 
-func (q *QueryBuilder) AsBytes() ([]byte, error) {
+// TODO: think about interface in one style with Invoke
+func (q *QueryBuilder) AsBytes(ctx context.Context) ([]byte, error) {
 	ccDef, err := q.ccCore.dp.Chaincode(q.ccCore.channelName, q.ccCore.name)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to get chaincode definition from discovery provider`)
@@ -34,7 +36,7 @@ func (q *QueryBuilder) AsBytes() ([]byte, error) {
 	}
 
 	// query only on local peer
-	if respList, err := q.processor.Send(proposal, q.ccCore.peer); err != nil {
+	if respList, err := q.processor.Send(ctx, proposal, q.ccCore.peer); err != nil {
 		return nil, errors.Wrap(err, `failed to get proposal response from peers`)
 	} else {
 		return respList[0].Response.Payload, nil
@@ -43,8 +45,8 @@ func (q *QueryBuilder) AsBytes() ([]byte, error) {
 	return nil, nil
 }
 
-func (q *QueryBuilder) AsJSON(out interface{}) error {
-	if bytes, err := q.AsBytes(); err != nil {
+func (q *QueryBuilder) AsJSON(ctx context.Context, out interface{}) error {
+	if bytes, err := q.AsBytes(ctx); err != nil {
 		return err
 	} else {
 		if err = json.Unmarshal(bytes, out); err != nil {

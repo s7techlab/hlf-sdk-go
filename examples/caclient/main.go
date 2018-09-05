@@ -54,10 +54,11 @@ func main() {
 	log.Fatalln(``)
 
 	name := `yarrrr` + RandomString(2)
+	ctx := context.Background()
 
-	log.Println(core.Register(apiCa.RegistrationRequest{Name: name, Secret: `123321`}))
+	log.Println(core.Register(ctx, apiCa.RegistrationRequest{Name: name, Secret: `123321`}))
 
-	log.Println(core.Enroll(name, `123321`, &x509.CertificateRequest{
+	log.Println(core.Enroll(ctx, name, `123321`, &x509.CertificateRequest{
 		Subject: struct {
 			Country, Organization, OrganizationalUnit []string
 			Locality, Province                        []string

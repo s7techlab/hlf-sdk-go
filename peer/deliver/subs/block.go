@@ -128,7 +128,7 @@ func (b *blockSubscription) Close() error {
 	return b.client.CloseSend()
 }
 
-func NewBlockSubscription(channelName string, identity msp.SigningIdentity, conn *grpc.ClientConn, seekOpt ...api.EventCCSeekOption) api.BlockSubscription {
+func NewBlockSubscription(ctx context.Context, channelName string, identity msp.SigningIdentity, conn *grpc.ClientConn, seekOpt ...api.EventCCSeekOption) api.BlockSubscription {
 	var startPos, stopPos *orderer.SeekPosition
 
 	log := logger.DefaultLogger.
@@ -143,7 +143,7 @@ func NewBlockSubscription(channelName string, identity msp.SigningIdentity, conn
 		log.Debug(`Using default seekOpts`, zap.Reflect(`startPos`, startPos), zap.Reflect(`stopPos`, stopPos))
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 
 	return &blockSubscription{
 		log:         log,

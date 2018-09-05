@@ -9,11 +9,11 @@ import (
 
 type Core interface {
 	// Getting information about CA
-	CAInfo() (*ResponseCAInfo, error)
+	CAInfo(ctx context.Context) (*ResponseCAInfo, error)
 
 	// Common operations over certificates
-	Register(req RegistrationRequest) (string, error)
-	Enroll(name, secret string, req *x509.CertificateRequest, opts ...EnrollOpt) (*x509.Certificate, interface{}, error)
+	Register(ctx context.Context, req RegistrationRequest) (string, error)
+	Enroll(ctx context.Context, name, secret string, req *x509.CertificateRequest, opts ...EnrollOpt) (*x509.Certificate, interface{}, error)
 	Revoke(ctx context.Context, req RevocationRequest) (*pkix.CertificateList, error)
 
 	// Operations over identities

@@ -1,6 +1,7 @@
 package deliver
 
 import (
+	"context"
 	"sync"
 
 	"time"
@@ -28,16 +29,16 @@ type deliverClient struct {
 	connMx   sync.Mutex
 }
 
-func (e *deliverClient) SubscribeCC(channelName string, ccName string, seekOpt ...api.EventCCSeekOption) api.EventCCSubscription {
-	return subs.NewEventSubscription(channelName, ccName, e.identity, e.conn, seekOpt...)
+func (e *deliverClient) SubscribeCC(ctx context.Context, channelName string, ccName string, seekOpt ...api.EventCCSeekOption) api.EventCCSubscription {
+	return subs.NewEventSubscription(ctx, channelName, ccName, e.identity, e.conn, seekOpt...)
 }
 
-func (e *deliverClient) SubscribeTx(channelName string, txId api.ChaincodeTx) api.TxSubscription {
-	return subs.NewTxSubscription(txId, channelName, e.identity, e.conn, api.SeekNewest())
+func (e *deliverClient) SubscribeTx(ctx context.Context, channelName string, txId api.ChaincodeTx) api.TxSubscription {
+	return subs.NewTxSubscription(ctx, txId, channelName, e.identity, e.conn, api.SeekNewest())
 }
 
-func (e *deliverClient) SubscribeBlock(channelName string, seekOpt ...api.EventCCSeekOption) api.BlockSubscription {
-	return subs.NewBlockSubscription(channelName, e.identity, e.conn, seekOpt...)
+func (e *deliverClient) SubscribeBlock(ctx context.Context, channelName string, seekOpt ...api.EventCCSeekOption) api.BlockSubscription {
+	return subs.NewBlockSubscription(ctx, channelName, e.identity, e.conn, seekOpt...)
 }
 
 func (e *deliverClient) initConnection() error {
