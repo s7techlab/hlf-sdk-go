@@ -76,7 +76,7 @@ type errArgMap struct {
 }
 
 func (e *errArgMap) Add(arg interface{}, err error) {
-	e.container[makeTruncatableString(fmt.Sprintf("%T->%#v", arg, arg), 50)] = err
+	e.container[makeTruncatableString(fmt.Sprintf("%#v", arg), 50)] = err
 }
 
 func (e *errArgMap) Err() error {
