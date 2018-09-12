@@ -3,6 +3,8 @@ package member
 import (
 	"sync"
 
+	"github.com/s7techlab/hlf-sdk-go/logger"
+
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
@@ -76,6 +78,10 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 
 	if core.config == nil {
 		return nil, api.ErrEmptyConfig
+	}
+
+	if core.logger == nil {
+		core.logger = logger.DefaultLogger
 	}
 
 	if dp, err := discovery.GetProvider(core.config.Discovery.Type); err != nil {

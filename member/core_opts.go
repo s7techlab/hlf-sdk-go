@@ -39,6 +39,9 @@ func WithConfigYaml(configPath string) CoreOpt {
 		if err != nil {
 			return errors.Wrap(err, `failed to read config file`)
 		}
+
+		c.config = new(config.Config)
+
 		if err = yaml.Unmarshal(configBytes, c.config); err != nil {
 			return errors.Wrap(err, `failed to parse YAML`)
 		}

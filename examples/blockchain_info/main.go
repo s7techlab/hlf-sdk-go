@@ -39,14 +39,14 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	core, err := member.NewCore(mspId, configPath, id)
+	core, err := member.NewCore(mspId, id, member.WithConfigYaml(configPath))
 	if err != nil {
 		log.Fatalln(`unable to initialize core:`, err)
 	}
 
 	// get chainInfo for all joined channels
 	if chInfo, err := core.System().CSCC().Channels(); err != nil {
-		log.Fatalln(`failed to fetch channel list`)
+		log.Fatalln(`failed to fetch channel list:`, err)
 	} else {
 		for _, ch := range chInfo.Channels {
 			fmt.Printf("Fetching info about channel: %s\n", ch.ChannelId)
