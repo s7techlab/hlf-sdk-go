@@ -67,6 +67,8 @@ func (c *core) processResponse(resp *http.Response, out interface{}, expectedHTT
 		return api.ErrUnexpectedHTTPStatus{Status: resp.StatusCode, Body: body}
 	}
 
+	fmt.Println()
+
 	var caResp ca.Response
 	if err = json.Unmarshal(body, &caResp); err != nil {
 		return errors.Wrap(err, `failed to unmarshal JSON response`)

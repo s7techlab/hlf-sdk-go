@@ -49,7 +49,7 @@ func main() {
 
 	// get chainInfo for all joined channels
 	if chInfo, err := core.System().CSCC().Channels(ctx); err != nil {
-		log.Fatalln(`failed to fetch channel list`)
+		log.Fatalln(`failed to fetch channel list:`,err)
 	} else {
 		for _, ch := range chInfo.Channels {
 			fmt.Printf("Fetching info about channel: %s\n", ch.ChannelId)
