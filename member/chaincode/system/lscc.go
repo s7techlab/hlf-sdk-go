@@ -1,6 +1,7 @@
 package system
 
 import (
+	"context"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/common/util"
 	"github.com/hyperledger/fabric/core/common/ccprovider"
@@ -17,57 +18,57 @@ type lscc struct {
 	identity msp.SigningIdentity
 }
 
-func (c *lscc) GetChaincodeData(channelName string, ccName string) (*ccprovider.ChaincodeData, error) {
+func (c *lscc) GetChaincodeData(ctx context.Context, channelName string, ccName string) (*ccprovider.ChaincodeData, error) {
 	ccData := new(ccprovider.ChaincodeData)
-	if err := c.endorse(channelName, ccData, lsccPkg.GETCCDATA, channelName, ccName); err != nil {
+	if err := c.endorse(ctx, channelName, ccData, lsccPkg.GETCCDATA, channelName, ccName); err != nil {
 		return nil, errors.Wrap(err, `failed to get chaincode data`)
 	}
 
 	return ccData, nil
 }
 
-func (c *lscc) GetInstalledChaincodes() (*peer.ChaincodeQueryResponse, error) {
+func (c *lscc) GetInstalledChaincodes(ctx context.Context) (*peer.ChaincodeQueryResponse, error) {
 	ccData := new(peer.ChaincodeQueryResponse)
-	if err := c.endorse(``, ccData, lsccPkg.GETINSTALLEDCHAINCODES); err != nil {
+	if err := c.endorse(ctx, ``, ccData, lsccPkg.GETINSTALLEDCHAINCODES); err != nil {
 		return nil, errors.Wrap(err, `failed to get chaincodes data`)
 	}
 
 	return ccData, nil
 }
 
-func (c *lscc) GetChaincodes(channelName string) (*peer.ChaincodeQueryResponse, error) {
+func (c *lscc) GetChaincodes(ctx context.Context, channelName string) (*peer.ChaincodeQueryResponse, error) {
 	ccData := new(peer.ChaincodeQueryResponse)
-	if err := c.endorse(channelName, ccData, lsccPkg.GETCHAINCODES); err != nil {
+	if err := c.endorse(ctx, channelName, ccData, lsccPkg.GETCHAINCODES); err != nil {
 		return nil, errors.Wrap(err, `failed to get chaincodes data`)
 	}
 
 	return ccData, nil
 }
 
-func (c *lscc) GetDeploymentSpec(channelName string, ccName string) (*peer.ChaincodeDeploymentSpec, error) {
+func (c *lscc) GetDeploymentSpec(ctx context.Context, channelName string, ccName string) (*peer.ChaincodeDeploymentSpec, error) {
 	depData := new(peer.ChaincodeDeploymentSpec)
-	if err := c.endorse(channelName, depData, lsccPkg.GETDEPSPEC, channelName, ccName); err != nil {
+	if err := c.endorse(ctx, channelName, depData, lsccPkg.GETDEPSPEC, channelName, ccName); err != nil {
 		return nil, errors.Wrap(err, `failed to get deployment data`)
 	}
 	return depData, nil
 }
 
-func (c *lscc) Install(spec *peer.ChaincodeDeploymentSpec) error {
+func (c *lscc) Install(ctx context.Context, spec *peer.ChaincodeDeploymentSpec) error {
 	if specBytes, err := proto.Marshal(spec); err != nil {
 		return errors.Wrap(err, `failed to marshal protobuf`)
 	} else {
-		return c.endorse(``, nil, lsccPkg.INSTALL, string(specBytes))
+		return c.endorse(ctx, ``, nil, lsccPkg.INSTALL, string(specBytes))
 	}
 }
 
-func (c *lscc) endorse(channelName string, out proto.Message, fn string, args ...string) error {
+func (c *lscc) endorse(ctx context.Context, channelName string, out proto.Message, fn string, args ...string) error {
 	processor := peerSDK.NewProcessor(channelName)
 	prop, _, err := processor.CreateProposal(&api.DiscoveryChaincode{Name: lsccName, Type: api.CCTypeGoLang}, c.identity, fn, util.ToChaincodeArgs(args...))
 	if err != nil {
 		return errors.Wrap(err, `failed to create proposal`)
 	}
 
-	resp, err := c.peer.Endorse(prop)
+	resp, err := c.peer.Endorse(ctx, prop)
 	if err != nil {
 		return errors.Wrap(err, `failed to endorse proposal`)
 	}

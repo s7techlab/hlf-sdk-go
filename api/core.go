@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"github.com/hyperledger/fabric/msp"
 )
 
@@ -8,7 +9,7 @@ type Channel interface {
 	// Chaincode returns chaincode instance by chaincode name
 	Chaincode(name string) Chaincode
 	// Joins channel
-	Join() error
+	Join(ctx context.Context) error
 	// CSCC implements Configuration System Chaincode (CSCC)
 }
 

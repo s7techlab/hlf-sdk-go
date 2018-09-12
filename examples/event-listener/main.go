@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -48,13 +49,13 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	core, err := member.NewCore(mspId, configPath, id)
+	core, err := member.NewCore(mspId, id, member.WithConfigYaml(configPath))
 	if err != nil {
 		log.Fatalln(`unable to initialize core:`, err)
 	}
 
 	cc := core.Channel(channel).Chaincode(chaincode)
-	sub := cc.Subscribe()
+	sub := cc.Subscribe(context.Background())
 	if evChan, err := sub.Events(); err != nil {
 		log.Fatalln(`failed to subscribe on events:`, err)
 	} else {

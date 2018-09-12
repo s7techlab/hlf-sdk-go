@@ -2,6 +2,7 @@ package ca
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -11,7 +12,7 @@ import (
 
 const regEndpoint = `/api/v1/register`
 
-func (c *core) Register(req ca.RegistrationRequest) (string, error) {
+func (c *core) Register(ctx context.Context, req ca.RegistrationRequest) (string, error) {
 	reqBytes, err := json.Marshal(req)
 	if err != nil {
 		return ``, errors.Wrap(err, `failed to marshal request to JSON`)
@@ -22,7 +23,7 @@ func (c *core) Register(req ca.RegistrationRequest) (string, error) {
 		return ``, errors.Wrap(err, `failed to get auth token`)
 	}
 
-	httpReq, err := http.NewRequest(`POST`, c.config.Host+regEndpoint, bytes.NewBuffer(reqBytes))
+	httpReq, err := http.NewRequest(http.MethodPost, c.config.Host+regEndpoint, bytes.NewBuffer(reqBytes))
 	if err != nil {
 		return ``, errors.Wrap(err, `failed to create http request`)
 	}
@@ -30,7 +31,7 @@ func (c *core) Register(req ca.RegistrationRequest) (string, error) {
 	httpReq.Header.Set(`Content-Type`, `application/json`)
 	httpReq.Header.Set(`authorization`, authToken)
 
-	resp, err := c.client.Do(httpReq)
+	resp, err := c.client.Do(httpReq.WithContext(ctx))
 	if err != nil {
 		return ``, errors.Wrap(err, `failed to get response`)
 	}

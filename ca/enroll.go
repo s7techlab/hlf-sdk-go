@@ -2,6 +2,7 @@ package ca
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"crypto/x509"
 	"encoding/base64"
@@ -16,7 +17,7 @@ import (
 
 const enrollEndpoint = `/api/v1/enroll`
 
-func (c *core) Enroll(name, secret string, req *x509.CertificateRequest, opts ...ca.EnrollOpt) (*x509.Certificate, interface{}, error) {
+func (c *core) Enroll(ctx context.Context, name, secret string, req *x509.CertificateRequest, opts ...ca.EnrollOpt) (*x509.Certificate, interface{}, error) {
 	var err error
 
 	options := &ca.EnrollOpts{}
@@ -44,13 +45,13 @@ func (c *core) Enroll(name, secret string, req *x509.CertificateRequest, opts ..
 		return nil, options.PrivateKey, errors.Wrap(err, `failed to marshal CSR request to JSON`)
 	}
 
-	httpReq, err := http.NewRequest(`POST`, c.config.Host+enrollEndpoint, bytes.NewBuffer(reqBytes))
+	httpReq, err := http.NewRequest(http.MethodPost, c.config.Host+enrollEndpoint, bytes.NewBuffer(reqBytes))
 	if err != nil {
 		return nil, options.PrivateKey, errors.Wrap(err, `failed to create http request`)
 	}
 	httpReq.SetBasicAuth(name, secret)
 
-	resp, err := c.client.Do(httpReq)
+	resp, err := c.client.Do(httpReq.WithContext(ctx))
 	if err != nil {
 		return nil, options.PrivateKey, errors.Wrap(err, `failed to send http request`)
 	}
