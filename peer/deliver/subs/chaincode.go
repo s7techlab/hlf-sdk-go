@@ -2,6 +2,7 @@ package subs
 
 import (
 	"context"
+
 	"github.com/hyperledger/fabric/core/ledger/util"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
@@ -10,10 +11,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	utilSDK "github.com/s7techlab/hlf-sdk-go/util"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
 type eventSubscription struct {
+	log       *zap.Logger
 	blockSub  api.BlockSubscription
 	ccName    string
 	events    chan *peer.ChaincodeEvent
@@ -75,11 +78,13 @@ func (es *eventSubscription) Close() error {
 	return es.blockSub.Close()
 }
 
-func NewEventSubscription(ctx context.Context, channelName string, ccName string, identity msp.SigningIdentity, conn *grpc.ClientConn, seekOpt ...api.EventCCSeekOption) api.EventCCSubscription {
+func NewEventSubscription(ctx context.Context, channelName string, ccName string, identity msp.SigningIdentity, conn *grpc.ClientConn, log *zap.Logger, seekOpt ...api.EventCCSeekOption) api.EventCCSubscription {
+	l := log.Named(`EventSubscription`)
 	return &eventSubscription{
+		log:      l,
 		ccName:   ccName,
 		events:   make(chan *peer.ChaincodeEvent),
 		errChan:  make(chan error),
-		blockSub: NewBlockSubscription(ctx, channelName, identity, conn, seekOpt...),
+		blockSub: NewBlockSubscription(ctx, channelName, identity, conn, l, seekOpt...),
 	}
 }

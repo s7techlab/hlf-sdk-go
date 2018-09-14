@@ -106,7 +106,7 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 		return nil, errors.Wrap(err, `failed to set localPeer in peer pool`)
 	}
 
-	core.localPeerDeliver = deliver.NewFromGRPC(core.localPeer.Conn(), core.identity)
+	core.localPeerDeliver = deliver.NewFromGRPC(core.localPeer.Conn(), core.identity, core.logger)
 
 	if core.orderer == nil {
 		if core.orderer, err = orderer.New(core.config.Orderer); err != nil {

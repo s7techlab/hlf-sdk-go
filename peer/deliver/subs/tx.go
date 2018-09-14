@@ -2,6 +2,7 @@ package subs
 
 import (
 	"context"
+
 	"github.com/hyperledger/fabric/core/ledger/util"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
@@ -147,10 +148,12 @@ func (ts *txSubscription) Close() error {
 	return ts.blockSub.Close()
 }
 
-func NewTxSubscription(ctx context.Context, txId api.ChaincodeTx, channelName string, identity msp.SigningIdentity, conn *grpc.ClientConn, seekOpt ...api.EventCCSeekOption) api.TxSubscription {
+func NewTxSubscription(ctx context.Context, txId api.ChaincodeTx, channelName string, identity msp.SigningIdentity, conn *grpc.ClientConn, log *zap.Logger, seekOpt ...api.EventCCSeekOption) api.TxSubscription {
+	l := log.Named(`TxSubscription`)
 	return &txSubscription{
+		log:       l,
 		txId:      txId,
-		blockSub:  NewBlockSubscription(ctx, channelName, identity, conn, seekOpt...),
+		blockSub:  NewBlockSubscription(ctx, channelName, identity, conn, l, seekOpt...),
 		blockChan: make(chan *common.Block),
 		events:    make(chan api.TxEvent),
 	}
