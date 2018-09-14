@@ -11,7 +11,6 @@ import (
 	"github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/logger"
 	"github.com/s7techlab/hlf-sdk-go/util"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -128,11 +127,10 @@ func (b *blockSubscription) Close() error {
 	return b.client.CloseSend()
 }
 
-func NewBlockSubscription(ctx context.Context, channelName string, identity msp.SigningIdentity, conn *grpc.ClientConn, seekOpt ...api.EventCCSeekOption) api.BlockSubscription {
+func NewBlockSubscription(ctx context.Context, channelName string, identity msp.SigningIdentity, conn *grpc.ClientConn, log *zap.Logger, seekOpt ...api.EventCCSeekOption) api.BlockSubscription {
 	var startPos, stopPos *orderer.SeekPosition
 
-	log := logger.DefaultLogger.
-		Named(`BlockSubscription`).
+	log = log.Named(`BlockSubscription`).
 		With(zap.String(`channel`, channelName))
 
 	if len(seekOpt) > 0 {
