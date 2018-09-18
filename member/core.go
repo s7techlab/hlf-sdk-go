@@ -96,6 +96,11 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 
 	core.identity = identity.GetSigningIdentity(core.cs)
 
+	for _, mspConfig := range core.config.MSP {
+		peer.New()
+		core.peerPool.Set(mspConfig.Name)
+	}
+
 	if core.localPeer == nil {
 		if core.localPeer, err = peer.New(core.config.LocalPeer); err != nil {
 			return nil, errors.Wrap(err, `failed to initialize local peer`)

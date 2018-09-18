@@ -2,12 +2,10 @@ package api
 
 import (
 	"fmt"
-
-	"github.com/pkg/errors"
 )
 
-var (
-	ErrEmptyConfig = errors.New(`empty core configuration`)
+const (
+	ErrEmptyConfig = Error(`empty core configuration`)
 )
 
 type MultiError struct {
@@ -33,4 +31,10 @@ type ErrUnexpectedHTTPStatus struct {
 
 func (err ErrUnexpectedHTTPStatus) Error() string {
 	return fmt.Sprintf("unexpected HTTP status code: %d with body %s", err.Status, string(err.Body))
+}
+
+type Error string
+
+func (e Error) Error() string {
+	return string(e)
 }

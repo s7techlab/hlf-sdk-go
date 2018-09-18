@@ -1,13 +1,11 @@
 package api
 
-import "github.com/pkg/errors"
-
-var (
-	ErrPeerPoolUnknownInstance = errors.New(`unknown peer instance`)
-	ErrPeerAlreadySet          = errors.New(`peer already set`)
+const (
+	ErrPeerPoolUnknownInstance = Error(`unknown peer instance`)
+	ErrPeerAlreadySet          = Error(`peer already set`)
 )
 
 type PeerPool interface {
-	Get(peerUri string) (Peer, error)
-	Set(api Peer) error
+	Get(mspId string) (Peer, error)
+	Set(mspId string, api Peer) error
 }
