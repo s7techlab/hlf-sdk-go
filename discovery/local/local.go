@@ -6,12 +6,14 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/discovery"
+	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
 const Name = `local`
 
 type discoveryProvider struct {
 	opts opts
+	pool api.PeerPool
 }
 
 type opts struct {
@@ -54,7 +56,7 @@ func (d *discoveryProvider) Chaincodes(channelName string) ([]api.DiscoveryChain
 	return nil, discovery.ErrChannelNotFound
 }
 
-func (d *discoveryProvider) Endorsers(channelName string, ccName string) ([]config.PeerConfig, error) {
+func (d *discoveryProvider) Endorsers(channelName string, ccName string) ([]api.Peer, error) {
 
 	var channelFoundFlag bool
 
@@ -63,11 +65,20 @@ func (d *discoveryProvider) Endorsers(channelName string, ccName string) ([]conf
 			channelFoundFlag = true
 			for _, cc := range ch.Chaincodes {
 				if cc.Name == ccName {
-					if len(ch.Peers) > 0 {
-						return ch.Peers, nil
-					} else {
-						return nil, discovery.ErrNoEndorsers
+					mspIds, err := util.GetMSPFromPolicy(cc.Policy)
+					if err != nil {
+						return nil, errors.Wrap(err, `failed to get MSP's from policy'`)
 					}
+					peers := make([]api.Peer, 0)
+
+					for _, mspId := range mspIds {
+						if peer, err := d.pool.Get(mspId); err != nil {
+							return nil, errors.Wrap(err, `failed to get peer for MSP`)
+						} else {
+							peers = append(peers, peer)
+						}
+					}
+					return peers, nil
 				}
 			}
 		}
@@ -79,15 +90,15 @@ func (d *discoveryProvider) Endorsers(channelName string, ccName string) ([]conf
 	return nil, discovery.ErrChannelNotFound
 }
 
-func (d *discoveryProvider) Initialize(options config.DiscoveryConfigOpts) (api.DiscoveryProvider, error) {
+func (d *discoveryProvider) Initialize(options config.DiscoveryConfigOpts, pool api.PeerPool) (api.DiscoveryProvider, error) {
 	var opts opts
 	if err := mapstructure.Decode(options, &opts); err != nil {
 		return nil, errors.Wrap(err, `failed to decode params`)
 	}
 
-	return &discoveryProvider{opts: opts}, nil
+	return &discoveryProvider{opts: opts, pool: pool}, nil
 }
 
 func init() {
-	discovery.SetProvider(Name, &discoveryProvider{})
+	discovery.Register(Name, &discoveryProvider{})
 }
