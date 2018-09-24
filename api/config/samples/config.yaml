@@ -3,7 +3,7 @@ orderer:
   host: localhost:7050
   useTLS: false
   timeout: 5s
-  
+
 discovery:
   type: local
   options:
@@ -15,8 +15,7 @@ discovery:
         type: golang
         version: "0.1"
         description: system discovery chaincode
-        policy:
-        - "AND ('OPERATORMSP.admin')"
+        policy: "AND ('OPERATORMSP.admin')"
 
 crypto:
   type: ecdsa
@@ -31,7 +30,8 @@ crypto:
 msp:
 - name: OPERATORMSP
   endorsers:
-  - host: localhost:7051
+  - host: 127.0.0.1:27051
+  - host: localhost:17051
 - name: S7MSP
   endorsers:
   - host: localhost:17051

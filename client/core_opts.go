@@ -3,29 +3,15 @@ package member
 import (
 	"io/ioutil"
 
-	"go.uber.org/zap"
-
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 )
 
-type coreOptions struct {
-	peer    api.Peer
-	orderer api.Orderer
-}
-
 // CoreOpt describes opt which will be applied to coreOptions
 type CoreOpt func(c *core) error
-
-// WithPeer allows to use custom instance of peer in core
-func WithPeer(peer api.Peer) CoreOpt {
-	return func(c *core) error {
-		c.localPeer = peer
-		return nil
-	}
-}
 
 // WithOrderer allows to use custom instance of orderer in core
 func WithOrderer(orderer api.Orderer) CoreOpt {
@@ -35,6 +21,7 @@ func WithOrderer(orderer api.Orderer) CoreOpt {
 	}
 }
 
+// WithConfigYaml allows to pass path to YAML configuration file
 func WithConfigYaml(configPath string) CoreOpt {
 	return func(c *core) error {
 		configBytes, err := ioutil.ReadFile(configPath)
@@ -51,6 +38,7 @@ func WithConfigYaml(configPath string) CoreOpt {
 	}
 }
 
+// WithConfigRaw allows to pass to core created config instance
 func WithConfigRaw(config config.Config) CoreOpt {
 	return func(c *core) error {
 		c.config = &config
@@ -58,6 +46,7 @@ func WithConfigRaw(config config.Config) CoreOpt {
 	}
 }
 
+// WithLogger allows to pass custom copy of zap.Logger insteadof logger.DefaultLogger
 func WithLogger(log *zap.Logger) CoreOpt {
 	return func(c *core) error {
 		c.logger = log

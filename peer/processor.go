@@ -78,35 +78,34 @@ func (p *processor) CreateProposal(cc *api.DiscoveryChaincode, identity msp.Sign
 	return &fabricPeer.SignedProposal{ProposalBytes: proposal, Signature: signedBytes}, api.ChaincodeTx(txId), nil
 }
 
-func (*processor) Send(ctx context.Context, proposal *fabricPeer.SignedProposal, peers ...api.Peer) ([]*fabricPeer.ProposalResponse, error) {
+func (*processor) Send(ctx context.Context, proposal *fabricPeer.SignedProposal, cc *api.DiscoveryChaincode, pool api.PeerPool) ([]*fabricPeer.ProposalResponse, error) {
 
-	peerCount := len(peers)
-
-	if peerCount == 0 {
-		return nil, errEndorsersEmpty
-	}
-
-	respList := make([]*fabricPeer.ProposalResponse, peerCount)
+	respList := make([]*fabricPeer.ProposalResponse, 0)
 	respChan := make(chan endorseChannelResponse)
 
+	mspIds, err := util.GetMSPFromPolicy(cc.Policy)
+	if err != nil {
+		return nil, errors.Wrap(err, `failed to get set of MSP`)
+	}
+
 	// send all proposals concurrently
-	for i := 0; i < peerCount; i++ {
-		go func(p api.Peer) {
-			resp, err := p.Endorse(ctx, proposal)
+	for i := 0; i < len(mspIds); i++ {
+		go func(mspId string) {
+			resp, err := pool.Process(mspId, ctx, proposal)
 			respChan <- endorseChannelResponse{Response: resp, Error: err}
-		}(peers[i])
+		}(mspIds[i])
 	}
 
 	var errOccurred bool
 
-	err := new(api.MultiError)
+	mErr := new(api.MultiError)
 
 	// collecting peer responses
-	for i := 0; i < peerCount; i++ {
+	for i := 0; i < len(mspIds); i++ {
 		resp := <-respChan
 		if resp.Error != nil {
 			errOccurred = true
-			err.Add(errors.Errorf("Peer %s got err: %s", peers[i].Uri(), resp.Error))
+			mErr.Add(resp.Error)
 		}
 		respList[i] = resp.Response
 	}

@@ -12,22 +12,22 @@ const (
 )
 
 type scc struct {
-	peer     api.Peer
+	peerPool api.PeerPool
 	identity msp.SigningIdentity
 }
 
 func (c *scc) QSCC() api.QSCC {
-	return NewQSCC(c.peer, c.identity)
+	return NewQSCC(c.peerPool, c.identity)
 }
 
 func (c *scc) CSCC() api.CSCC {
-	return NewCSCC(c.peer, c.identity)
+	return NewCSCC(c.peerPool, c.identity)
 }
 
 func (c *scc) LSCC() api.LSCC {
-	return NewLSCC(c.peer, c.identity)
+	return NewLSCC(c.peerPool, c.identity)
 }
 
-func NewSCC(peer api.Peer, identity msp.SigningIdentity) api.SystemCC {
-	return &scc{peer: peer, identity: identity}
+func NewSCC(peer api.PeerPool, identity msp.SigningIdentity) api.SystemCC {
+	return &scc{peerPool: peer, identity: identity}
 }

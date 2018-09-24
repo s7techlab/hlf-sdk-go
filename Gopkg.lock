@@ -678,7 +678,7 @@
     "status",
     "tap"
   ]
-  revision = "9907ae0e57ce159e835381ed54eb271206bf7b12"
+  revision = "8ce7e6babb5ad539d8448d25aaba0708af2626ed"
 
 [[projects]]
   name = "gopkg.in/yaml.v2"
@@ -689,6 +689,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b48f7f5b34a5a4974749edc73d5b020b4d5a65f9728e7713320910a135526249"
+  inputs-digest = "6517521fe865d41d3c772dc5e2780e4e435c82c6db237810379b4001783b7ed3"
   solver-name = "gps-cdcl"
   solver-version = 1

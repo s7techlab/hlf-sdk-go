@@ -16,7 +16,6 @@ type DiscoveryProvider interface {
 	Channels() ([]DiscoveryChannel, error)
 	Chaincode(channelName string, ccName string) (*DiscoveryChaincode, error)
 	Chaincodes(channelName string) ([]DiscoveryChaincode, error)
-	Endorsers(channelName string, ccName string) ([]Peer, error)
 }
 
 type DiscoveryChannel struct {
