@@ -8,13 +8,13 @@ import (
 
 type Config struct {
 	Crypto    CryptoConfig    `yaml:"crypto"`
-	LocalPeer PeerConfig      `yaml:"local_peer"`
 	Orderer   OrdererConfig   `yaml:"orderer"`
 	Discovery DiscoveryConfig `yaml:"discovery"`
+	MSP       []MSPConfig     `yaml:"msp"`
 }
 
 type PeerConfig struct {
-	Host    string     `yaml:"host"`
+	Hosts   []string   `yaml:"hosts"`
 	Tls     TlsConfig  `yaml:"tls"`
 	GRPC    GRPCConfig `yaml:"grpc"`
 	Timeout Duration   `yaml:"timeout"`
@@ -31,6 +31,11 @@ type CAConfig struct {
 	Crypto CryptoConfig `yaml:"crypto"`
 	Host   string       `yaml:"host"`
 	Tls    TlsConfig    `yaml:"tls"`
+}
+
+type MSPConfig struct {
+	Name      string     `yaml:"name"`
+	Endorsers PeerConfig `yaml:"endorsers"`
 }
 
 type GRPCConfig struct {

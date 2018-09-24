@@ -3,6 +3,8 @@ package member
 import (
 	"io/ioutil"
 
+	"go.uber.org/zap"
+
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
@@ -52,6 +54,13 @@ func WithConfigYaml(configPath string) CoreOpt {
 func WithConfigRaw(config config.Config) CoreOpt {
 	return func(c *core) error {
 		c.config = &config
+		return nil
+	}
+}
+
+func WithLogger(log *zap.Logger) CoreOpt {
+	return func(c *core) error {
+		c.logger = log
 		return nil
 	}
 }

@@ -18,7 +18,7 @@ var (
 	ErrUnknownProvider = errors.New(`unknown discovery provider (forgotten import?)`)
 )
 
-func SetProvider(name string, p api.DiscoveryProvider) {
+func Register(name string, p api.DiscoveryProvider) {
 	providerMx.Lock()
 	defer providerMx.Unlock()
 	providerStore[name] = p

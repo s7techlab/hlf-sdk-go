@@ -198,16 +198,6 @@ func (b *invokeBuilder) Do(ctx context.Context) (api.ChaincodeTx, []byte, error)
 		return ``, nil, errors.Wrap(err, `failed to get endorsers list`)
 	}
 
-	endorsersList := make([]api.Peer, 0)
-
-	for _, ec := range endorsers {
-		if p, err := peer.New(ec); err != nil {
-			return ``, nil, errors.Wrap(err, `failed to initialize endorser`)
-		} else {
-			endorsersList = append(endorsersList, p)
-		}
-	}
-
 	cc, err := b.ccCore.dp.Chaincode(b.ccCore.channelName, b.ccCore.name)
 	if err != nil {
 		return ``, nil, errors.Wrap(err, `failed to get chaincode definition`)
@@ -218,7 +208,7 @@ func (b *invokeBuilder) Do(ctx context.Context) (api.ChaincodeTx, []byte, error)
 		return tx, nil, errors.Wrap(err, `failed to get signed proposal`)
 	}
 
-	peerResponses, err := b.processor.Send(ctx, proposal, endorsersList...)
+	peerResponses, err := b.processor.Send(ctx, proposal, endorsers...)
 	if err != nil {
 		return tx, nil, errors.Wrap(err, `failed to collect peer responses`)
 	}

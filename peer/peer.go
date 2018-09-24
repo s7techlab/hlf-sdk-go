@@ -5,14 +5,14 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	fabricPeer "github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/keepalive"
 )
 
 const (
@@ -21,13 +21,12 @@ const (
 )
 
 type peer struct {
-	uri         string
-	conn        *grpc.ClientConn
-	ctx         context.Context
-	connMx      sync.Mutex
-	grpcOptions []grpc.DialOption
-	timeout     time.Duration
-	client      fabricPeer.EndorserClient
+	log       *zap.Logger
+	endpoints []string
+	conn      *grpc.ClientConn
+	connMx    sync.Mutex
+	timeout   time.Duration
+	client    fabricPeer.EndorserClient
 }
 
 func (p *peer) Endorse(ctx context.Context, proposal *fabricPeer.SignedProposal, opts ...api.PeerEndorseOpt) (*fabricPeer.ProposalResponse, error) {
@@ -65,13 +64,8 @@ func (p *peer) Close() error {
 }
 
 func (p *peer) initEndorserClient() error {
-	var err error
 	if p.conn == nil {
-		p.connMx.Lock()
-		defer p.connMx.Unlock()
-		if p.conn, err = grpc.DialContext(p.ctx, p.uri, p.grpcOptions...); err != nil {
-			return errors.Wrap(err, `failed to initialize grpc connection`)
-		}
+		return errors.New(`empty connection`)
 	}
 
 	if p.client == nil {
@@ -82,48 +76,25 @@ func (p *peer) initEndorserClient() error {
 }
 
 // New returns new peer instance based on peer config
-func New(c config.PeerConfig) (api.Peer, error) {
-	p := &peer{uri: c.Host, grpcOptions: make([]grpc.DialOption, 0)}
-	if c.Tls.Enabled {
-		if ts, err := credentials.NewClientTLSFromFile(c.Tls.CertPath, ``); err != nil {
-			return nil, errors.Wrap(err, `failed to read tls credentials`)
-		} else {
-			p.grpcOptions = append(p.grpcOptions, grpc.WithTransportCredentials(ts))
-		}
-	} else {
-		p.grpcOptions = append(p.grpcOptions, grpc.WithInsecure())
+func New(c config.PeerConfig, log *zap.Logger) (api.Peer, error) {
+	l := log.Named(`New`)
+	conn, err := NewGRPCFromConfig(c, l)
+	if err != nil {
+		l.Debug(`Creating GRPC connection failed`, zap.Error(err))
+		return nil, errors.Wrap(err, `failed to initialize GRPC connection`)
 	}
-
-	if c.Timeout.Duration != 0 {
-		p.ctx, _ = context.WithTimeout(context.Background(), c.Timeout.Duration)
-	} else {
-		p.ctx = context.Background()
-	}
-
-	// Set KeepAlive parameters if presented
-	if c.GRPC.KeepAlive != nil {
-		p.grpcOptions = append(p.grpcOptions, grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time:    time.Duration(c.GRPC.KeepAlive.Time) * time.Second,
-			Timeout: time.Duration(c.GRPC.KeepAlive.Timeout) * time.Second,
-		}))
-	}
-
-	p.grpcOptions = append(p.grpcOptions, grpc.WithBlock(), grpc.WithDefaultCallOptions(
-		grpc.MaxCallRecvMsgSize(maxRecvMsgSize),
-		grpc.MaxCallSendMsgSize(maxSendMsgSize),
-	))
-
-	if err := p.initEndorserClient(); err != nil {
-		return nil, errors.Wrap(err, `failed to initialize EndorserClient`)
-	}
-	return p, nil
+	l.Debug(`GRPC initialized`, zap.String(`target`, conn.Target()))
+	return NewFromGRPC(conn, l)
 }
 
 // NewFromGRPC allows to initialize peer from existing GRPC connection
-func NewFromGRPC(address string, conn *grpc.ClientConn, grpcOptions ...grpc.DialOption) (api.Peer, error) {
-	p := &peer{conn: conn, uri: address, grpcOptions: grpcOptions}
+func NewFromGRPC(conn *grpc.ClientConn, log *zap.Logger) (api.Peer, error) {
+	l := log.Named(`NewFromGRPC`)
+	p := &peer{conn: conn}
 	if err := p.initEndorserClient(); err != nil {
+		l.Debug(`Failed to initialize endorser client`, zap.Error(err))
 		return nil, errors.Wrap(err, `failed to initialize EndorserClient`)
 	}
+	l.Debug(``)
 	return p, nil
 }
