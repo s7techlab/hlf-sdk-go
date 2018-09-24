@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/s7techlab/hlf-sdk-go/client"
+
 	_ "github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
 	_ "github.com/s7techlab/hlf-sdk-go/discovery/local"
 	"github.com/s7techlab/hlf-sdk-go/identity"
@@ -40,7 +41,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	core, err := member.NewCore(mspId, id, member.WithConfigYaml(configPath))
+	core, err := client.NewCore(mspId, id, client.WithConfigYaml(configPath))
 	if err != nil {
 		log.Fatalln(`unable to initialize core:`, err)
 	}
