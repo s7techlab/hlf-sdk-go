@@ -5,13 +5,12 @@ import (
 	"sync"
 	"time"
 
-	"go.uber.org/zap"
-
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	fabricPeer "github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
@@ -31,18 +30,9 @@ type peer struct {
 
 func (p *peer) Endorse(ctx context.Context, proposal *fabricPeer.SignedProposal, opts ...api.PeerEndorseOpt) (*fabricPeer.ProposalResponse, error) {
 
-	var err error
-
-	endorseOpts := new(api.PeerEndorseOpts)
-	for _, opt := range opts {
-		if err = opt(endorseOpts); err != nil {
-			return nil, errors.Wrap(err, `failed to apply option`)
-		}
-	}
-
 	//TODO:  it all can be used WITHOUT THAT WRAPPER around EndorserClient
 	if resp, err := p.client.ProcessProposal(ctx, proposal); err != nil {
-		return nil, errors.Wrap(err, `failed to endorse proposal`)
+		return nil, err
 	} else {
 		if resp.Response.Status != shim.OK {
 			return nil, api.PeerEndorseError{Status: resp.Response.Status, Message: resp.Response.Message}
@@ -95,6 +85,5 @@ func NewFromGRPC(conn *grpc.ClientConn, log *zap.Logger) (api.Peer, error) {
 		l.Debug(`Failed to initialize endorser client`, zap.Error(err))
 		return nil, errors.Wrap(err, `failed to initialize EndorserClient`)
 	}
-	l.Debug(``)
 	return p, nil
 }

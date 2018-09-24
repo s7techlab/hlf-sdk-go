@@ -14,7 +14,7 @@ type Config struct {
 }
 
 type PeerConfig struct {
-	Hosts   []string   `yaml:"hosts"`
+	Host    string     `yaml:"host"`
 	Tls     TlsConfig  `yaml:"tls"`
 	GRPC    GRPCConfig `yaml:"grpc"`
 	Timeout Duration   `yaml:"timeout"`
@@ -34,8 +34,8 @@ type CAConfig struct {
 }
 
 type MSPConfig struct {
-	Name      string     `yaml:"name"`
-	Endorsers PeerConfig `yaml:"endorsers"`
+	Name      string       `yaml:"name"`
+	Endorsers []PeerConfig `yaml:"endorsers"`
 }
 
 type GRPCConfig struct {

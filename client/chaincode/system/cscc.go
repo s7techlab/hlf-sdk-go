@@ -2,6 +2,7 @@ package system
 
 import (
 	"context"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/common/util"
 	csccPkg "github.com/hyperledger/fabric/core/scc/cscc"
@@ -14,7 +15,7 @@ import (
 )
 
 type cscc struct {
-	peer      api.Peer
+	peerPool  api.PeerPool
 	identity  msp.SigningIdentity
 	processor api.PeerProcessor
 }
@@ -71,13 +72,13 @@ func (c *cscc) endorse(ctx context.Context, fn string, args ...string) ([]byte, 
 		return nil, errors.Wrap(err, `failed to create proposal`)
 	}
 
-	resp, err := c.peer.Endorse(ctx, prop)
+	resp, err := c.peerPool.Process(c.identity.GetMSPIdentifier(), ctx, prop)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to endorse proposal`)
 	}
 	return resp.Response.Payload, nil
 }
 
-func NewCSCC(peer api.Peer, identity msp.SigningIdentity) api.CSCC {
-	return &cscc{peer: peer, identity: identity, processor: peerSDK.NewProcessor(``)}
+func NewCSCC(peerPool api.PeerPool, identity msp.SigningIdentity) api.CSCC {
+	return &cscc{peerPool: peerPool, identity: identity, processor: peerSDK.NewProcessor(``)}
 }

@@ -2,11 +2,12 @@ package channel
 
 import (
 	"context"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/orderer"
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/member/chaincode/system"
+	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
 	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
@@ -16,7 +17,7 @@ func (c *Core) Join(ctx context.Context) error {
 		return errors.Wrap(err, `failed to retrieve genesis block from orderer`)
 	}
 
-	cscc := system.NewCSCC(c.peer, c.identity)
+	cscc := system.NewCSCC(c.peerPool, c.identity)
 	return cscc.JoinChain(ctx, c.name, channelGenesis)
 }
 

@@ -14,7 +14,6 @@ var (
 	ErrNoChannels      = errors.New(`channels not found`)
 	ErrChannelNotFound = errors.New(`channel not found`)
 	ErrNoChaincodes    = errors.New(`no chaincodes on channel`)
-	ErrNoEndorsers     = errors.New(`endorsers not found`)
 	ErrUnknownProvider = errors.New(`unknown discovery provider (forgotten import?)`)
 )
 

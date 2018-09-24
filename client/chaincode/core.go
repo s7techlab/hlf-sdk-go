@@ -2,6 +2,7 @@ package chaincode
 
 import (
 	"context"
+
 	"github.com/hyperledger/fabric/msp"
 	"github.com/s7techlab/hlf-sdk-go/api"
 )
@@ -9,7 +10,7 @@ import (
 type Core struct {
 	name          string
 	channelName   string
-	peer          api.Peer
+	peerPool      api.PeerPool
 	orderer       api.Orderer
 	dp            api.DiscoveryProvider
 	identity      msp.SigningIdentity
@@ -25,7 +26,6 @@ func (c *Core) Query(fn string, args ...string) api.ChaincodeQueryBuilder {
 }
 
 func (c *Core) Install(version string) {
-
 	panic("implement me")
 }
 
@@ -33,18 +33,11 @@ func (c *Core) Subscribe(ctx context.Context, seekOption ...api.EventCCSeekOptio
 	return c.deliverClient.SubscribeCC(ctx, c.channelName, c.name, seekOption...)
 }
 
-func NewCore(
-	ccName, channelName string,
-	peer api.Peer,
-	orderer api.Orderer,
-	dp api.DiscoveryProvider,
-	identity msp.SigningIdentity,
-	deliverClient api.DeliverClient,
-) *Core {
+func NewCore(ccName, channelName string, peerPool api.PeerPool, orderer api.Orderer, dp api.DiscoveryProvider, identity msp.SigningIdentity, deliverClient api.DeliverClient) *Core {
 	return &Core{
 		name:          ccName,
 		channelName:   channelName,
-		peer:          peer,
+		peerPool:      peerPool,
 		orderer:       orderer,
 		dp:            dp,
 		identity:      identity,

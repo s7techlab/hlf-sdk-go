@@ -16,6 +16,7 @@ type QueryBuilder struct {
 	args      []string
 	identity  msp.SigningIdentity
 	processor api.PeerProcessor
+	peerPool  api.PeerPool
 }
 
 func (q *QueryBuilder) WithIdentity(identity msp.SigningIdentity) api.ChaincodeQueryBuilder {
@@ -36,7 +37,7 @@ func (q *QueryBuilder) AsBytes(ctx context.Context) ([]byte, error) {
 	}
 
 	// query only on local peer
-	if respList, err := q.processor.Send(ctx, proposal, q.ccCore.peer); err != nil {
+	if respList, err := q.processor.Send(ctx, proposal, ccDef, q.peerPool); err != nil {
 		return nil, errors.Wrap(err, `failed to get proposal response from peers`)
 	} else {
 		return respList[0].Response.Payload, nil
@@ -58,5 +59,5 @@ func (q *QueryBuilder) AsJSON(ctx context.Context, out interface{}) error {
 
 func NewQueryBuilder(ccCore *Core, identity msp.SigningIdentity, fn string, args ...string) *QueryBuilder {
 	peerProcessor := peer.NewProcessor(ccCore.channelName)
-	return &QueryBuilder{ccCore: ccCore, fn: fn, args: args, identity: identity, processor: peerProcessor}
+	return &QueryBuilder{ccCore: ccCore, fn: fn, args: args, identity: identity, processor: peerProcessor, peerPool: ccCore.peerPool}
 }

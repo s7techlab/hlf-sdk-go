@@ -1,24 +1,19 @@
 package peer
 
 import (
-	"strings"
 	"time"
-
-	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/balancer/roundrobin"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
 )
 
 func NewGRPCFromConfig(c config.PeerConfig, log *zap.Logger) (*grpc.ClientConn, error) {
-	var (
-		err         error
-		grpcOptions []grpc.DialOption
-	)
+	l := log.Named(`NewGRPCFromConfig`)
+	var grpcOptions []grpc.DialOption
 
 	if c.Tls.Enabled {
 		if ts, err := credentials.NewClientTLSFromFile(c.Tls.CertPath, ``); err != nil {
@@ -38,16 +33,10 @@ func NewGRPCFromConfig(c config.PeerConfig, log *zap.Logger) (*grpc.ClientConn, 
 		}))
 	}
 
-	grpcOptions = append(grpcOptions, grpc.WithBlock(), grpc.WithDefaultCallOptions(
+	grpcOptions = append(grpcOptions, grpc.WithDefaultCallOptions(
 		grpc.MaxCallRecvMsgSize(maxRecvMsgSize),
 		grpc.MaxCallSendMsgSize(maxSendMsgSize),
 	))
 
-	if len(c.Hosts) == 0 {
-		return nil, errors.Wrap(err, `no peer endpoints`)
-	} else {
-		grpcOptions = append(grpcOptions, grpc.WithBalancerName(roundrobin.Name))
-	}
-
-	return grpc.Dial(strings.Join(c.Hosts, `,`), grpcOptions...)
+	return grpc.Dial(c.Host, grpcOptions...)
 }

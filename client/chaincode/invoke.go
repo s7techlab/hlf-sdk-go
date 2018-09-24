@@ -22,6 +22,7 @@ type invokeBuilder struct {
 	ccCore    *Core
 	fn        string
 	processor api.PeerProcessor
+	peerPool  api.PeerPool
 	identity  msp.SigningIdentity
 	args      [][]byte
 	err       *errArgMap
@@ -193,11 +194,6 @@ func (b *invokeBuilder) Do(ctx context.Context) (api.ChaincodeTx, []byte, error)
 		return ``, nil, err
 	}
 
-	endorsers, err := b.ccCore.dp.Endorsers(b.ccCore.channelName, b.ccCore.name)
-	if err != nil {
-		return ``, nil, errors.Wrap(err, `failed to get endorsers list`)
-	}
-
 	cc, err := b.ccCore.dp.Chaincode(b.ccCore.channelName, b.ccCore.name)
 	if err != nil {
 		return ``, nil, errors.Wrap(err, `failed to get chaincode definition`)
@@ -208,7 +204,7 @@ func (b *invokeBuilder) Do(ctx context.Context) (api.ChaincodeTx, []byte, error)
 		return tx, nil, errors.Wrap(err, `failed to get signed proposal`)
 	}
 
-	peerResponses, err := b.processor.Send(ctx, proposal, endorsers...)
+	peerResponses, err := b.processor.Send(ctx, proposal, cc, b.peerPool)
 	if err != nil {
 		return tx, nil, errors.Wrap(err, `failed to collect peer responses`)
 	}
@@ -288,6 +284,7 @@ func NewInvokeBuilder(ccCore *Core, fn string) api.ChaincodeInvokeBuilder {
 	processor := peer.NewProcessor(ccCore.channelName)
 	return &invokeBuilder{
 		ccCore:    ccCore,
+		peerPool:  ccCore.peerPool,
 		fn:        fn,
 		processor: processor,
 		identity:  ccCore.identity,

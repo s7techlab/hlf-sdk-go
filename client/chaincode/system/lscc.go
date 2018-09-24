@@ -2,6 +2,7 @@ package system
 
 import (
 	"context"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/common/util"
 	"github.com/hyperledger/fabric/core/common/ccprovider"
@@ -14,7 +15,7 @@ import (
 )
 
 type lscc struct {
-	peer     api.Peer
+	peerPool api.PeerPool
 	identity msp.SigningIdentity
 }
 
@@ -68,7 +69,7 @@ func (c *lscc) endorse(ctx context.Context, channelName string, out proto.Messag
 		return errors.Wrap(err, `failed to create proposal`)
 	}
 
-	resp, err := c.peer.Endorse(ctx, prop)
+	resp, err := c.peerPool.Process(c.identity.GetMSPIdentifier(), ctx, prop)
 	if err != nil {
 		return errors.Wrap(err, `failed to endorse proposal`)
 	}
@@ -82,6 +83,6 @@ func (c *lscc) endorse(ctx context.Context, channelName string, out proto.Messag
 	return nil
 }
 
-func NewLSCC(peer api.Peer, identity msp.SigningIdentity) api.LSCC {
-	return &lscc{peer: peer, identity: identity}
+func NewLSCC(peerPool api.PeerPool, identity msp.SigningIdentity) api.LSCC {
+	return &lscc{peerPool: peerPool, identity: identity}
 }

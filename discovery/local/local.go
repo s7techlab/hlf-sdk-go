@@ -6,7 +6,6 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/discovery"
-	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
 const Name = `local`
@@ -52,40 +51,6 @@ func (d *discoveryProvider) Chaincodes(channelName string) ([]api.DiscoveryChain
 		if ch.Name == channelName {
 			return ch.Chaincodes, nil
 		}
-	}
-	return nil, discovery.ErrChannelNotFound
-}
-
-func (d *discoveryProvider) Endorsers(channelName string, ccName string) ([]api.Peer, error) {
-
-	var channelFoundFlag bool
-
-	for _, ch := range d.opts.Channels {
-		if ch.Name == channelName {
-			channelFoundFlag = true
-			for _, cc := range ch.Chaincodes {
-				if cc.Name == ccName {
-					mspIds, err := util.GetMSPFromPolicy(cc.Policy)
-					if err != nil {
-						return nil, errors.Wrap(err, `failed to get MSP's from policy'`)
-					}
-					peers := make([]api.Peer, 0)
-
-					for _, mspId := range mspIds {
-						if peer, err := d.pool.Get(mspId); err != nil {
-							return nil, errors.Wrap(err, `failed to get peer for MSP`)
-						} else {
-							peers = append(peers, peer)
-						}
-					}
-					return peers, nil
-				}
-			}
-		}
-	}
-
-	if channelFoundFlag {
-		return nil, discovery.ErrNoChannels
 	}
 	return nil, discovery.ErrChannelNotFound
 }

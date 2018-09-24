@@ -2,6 +2,9 @@ package member
 
 import (
 	"sync"
+	"time"
+
+	"github.com/s7techlab/hlf-sdk-go/peer/pool"
 
 	"github.com/s7techlab/hlf-sdk-go/logger"
 
@@ -9,13 +12,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
+	"github.com/s7techlab/hlf-sdk-go/client/channel"
 	"github.com/s7techlab/hlf-sdk-go/crypto"
 	"github.com/s7techlab/hlf-sdk-go/discovery"
-	"github.com/s7techlab/hlf-sdk-go/member/chaincode/system"
-	"github.com/s7techlab/hlf-sdk-go/member/channel"
 	"github.com/s7techlab/hlf-sdk-go/orderer"
 	"github.com/s7techlab/hlf-sdk-go/peer"
-	"github.com/s7techlab/hlf-sdk-go/peer/deliver"
 	"go.uber.org/zap"
 )
 
@@ -25,7 +27,6 @@ type core struct {
 	mspId             string
 	identity          msp.SigningIdentity
 	peerPool          api.PeerPool
-	localPeer         api.Peer
 	localPeerDeliver  api.DeliverClient
 	orderer           api.Orderer
 	discoveryProvider api.DiscoveryProvider
@@ -35,7 +36,7 @@ type core struct {
 }
 
 func (c *core) System() api.SystemCC {
-	return system.NewSCC(c.localPeer, c.identity)
+	return system.NewSCC(c.peerPool, c.identity)
 }
 
 func (c *core) CurrentIdentity() msp.SigningIdentity {
@@ -56,7 +57,7 @@ func (c *core) Channel(name string) api.Channel {
 		return ch
 	} else {
 		log.Debug(`Channel instance doesn't exist, initiating new`)
-		ch = channel.NewCore(name, c.localPeer, c.orderer, c.discoveryProvider, c.identity, c.localPeerDeliver)
+		ch = channel.NewCore(name, c.peerPool, c.orderer, c.discoveryProvider, c.identity, c.localPeerDeliver)
 		c.channels[name] = ch
 		return ch
 	}
@@ -67,7 +68,6 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 	core := &core{
 		mspId:    mspId,
 		channels: make(map[string]api.Channel),
-		peerPool: peer.NewPeerPool(),
 	}
 
 	for _, option := range opts {
@@ -84,9 +84,11 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 		core.logger = logger.DefaultLogger
 	}
 
+	core.peerPool = pool.New(core.logger)
+
 	if dp, err := discovery.GetProvider(core.config.Discovery.Type); err != nil {
 		return nil, errors.Wrap(err, `failed to get discovery provider`)
-	} else if core.discoveryProvider, err = dp.Initialize(core.config.Discovery.Options); err != nil {
+	} else if core.discoveryProvider, err = dp.Initialize(core.config.Discovery.Options, core.peerPool); err != nil {
 		return nil, errors.Wrap(err, `failed to initialize discovery provider`)
 	}
 
@@ -97,21 +99,16 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 	core.identity = identity.GetSigningIdentity(core.cs)
 
 	for _, mspConfig := range core.config.MSP {
-		peer.New()
-		core.peerPool.Set(mspConfig.Name)
-	}
-
-	if core.localPeer == nil {
-		if core.localPeer, err = peer.New(core.config.LocalPeer); err != nil {
-			return nil, errors.Wrap(err, `failed to initialize local peer`)
+		for _, peerConfig := range mspConfig.Endorsers {
+			if p, err := peer.New(peerConfig, core.logger); err != nil {
+				return nil, errors.Errorf("failed to initialize endorsers for MSP: %s:%s", mspConfig.Name, err.Error())
+			} else {
+				if err = core.peerPool.Add(mspConfig.Name, p, api.StrategyGRPC(5*time.Second)); err != nil {
+					return nil, errors.Wrap(err, `failed to add peer to pool`)
+				}
+			}
 		}
 	}
-
-	if err = core.peerPool.Set(core.localPeer); err != nil {
-		return nil, errors.Wrap(err, `failed to set localPeer in peer pool`)
-	}
-
-	core.localPeerDeliver = deliver.NewFromGRPC(core.localPeer.Conn(), core.identity, core.logger)
 
 	if core.orderer == nil {
 		if core.orderer, err = orderer.New(core.config.Orderer); err != nil {
