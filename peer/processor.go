@@ -12,10 +12,6 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
-var (
-	errEndorsersEmpty = errors.New(`no endorsers`)
-)
-
 type processor struct {
 	channelName string
 }
@@ -107,7 +103,7 @@ func (*processor) Send(ctx context.Context, proposal *fabricPeer.SignedProposal,
 			errOccurred = true
 			mErr.Add(resp.Error)
 		}
-		respList[i] = resp.Response
+		respList = append(respList, resp.Response)
 	}
 
 	if errOccurred {
