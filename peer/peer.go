@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	fabricPeer "github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
@@ -85,5 +87,6 @@ func NewFromGRPC(conn *grpc.ClientConn, log *zap.Logger) (api.Peer, error) {
 		l.Debug(`Failed to initialize endorser client`, zap.Error(err))
 		return nil, errors.Wrap(err, `failed to initialize EndorserClient`)
 	}
+	l.Debug(``)
 	return p, nil
 }
