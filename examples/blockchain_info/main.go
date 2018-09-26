@@ -15,6 +15,7 @@ import (
 )
 
 func main() {
+
 	mspId := os.Getenv(`MSP_ID`)
 	if mspId == `` {
 		log.Fatalln(`MSP_ID env must be defined`)

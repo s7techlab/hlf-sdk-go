@@ -98,13 +98,16 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 
 	core.identity = identity.GetSigningIdentity(core.cs)
 
-	for _, mspConfig := range core.config.MSP {
-		for _, peerConfig := range mspConfig.Endorsers {
-			if p, err := peer.New(peerConfig, core.logger); err != nil {
-				return nil, errors.Errorf("failed to initialize endorsers for MSP: %s:%s", mspConfig.Name, err.Error())
-			} else {
-				if err = core.peerPool.Add(mspConfig.Name, p, api.StrategyGRPC(5*time.Second)); err != nil {
-					return nil, errors.Wrap(err, `failed to add peer to pool`)
+	// if peerPool is empty, set it from config
+	if core.peerPool == nil {
+		for _, mspConfig := range core.config.MSP {
+			for _, peerConfig := range mspConfig.Endorsers {
+				if p, err := peer.New(peerConfig, core.logger); err != nil {
+					return nil, errors.Errorf("failed to initialize endorsers for MSP: %s:%s", mspConfig.Name, err.Error())
+				} else {
+					if err = core.peerPool.Add(mspConfig.Name, p, api.StrategyGRPC(5*time.Second)); err != nil {
+						return nil, errors.Wrap(err, `failed to add peer to pool`)
+					}
 				}
 			}
 		}

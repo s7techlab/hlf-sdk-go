@@ -107,7 +107,7 @@ func (*processor) Send(ctx context.Context, proposal *fabricPeer.SignedProposal,
 	}
 
 	if errOccurred {
-		return respList, err
+		return respList, mErr
 	}
 
 	return respList, nil
