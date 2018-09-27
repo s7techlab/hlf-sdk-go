@@ -36,14 +36,13 @@ func (q *QueryBuilder) AsBytes(ctx context.Context) ([]byte, error) {
 		return nil, errors.Wrap(err, `failed to create peer proposal`)
 	}
 
-	// query only on local peer
-	if respList, err := q.processor.Send(ctx, proposal, ccDef, q.peerPool); err != nil {
-		return nil, errors.Wrap(err, `failed to get proposal response from peers`)
-	} else {
-		return respList[0].Response.Payload, nil
+	// query only on peer for current signingIdentity
+	response, err := q.peerPool.Process(q.identity.GetMSPIdentifier(), ctx, proposal)
+	if err != nil {
+		return nil, errors.Wrap(err, `failed to get proposal response from peer`)
 	}
 
-	return nil, nil
+	return response.Response.Payload, nil
 }
 
 func (q *QueryBuilder) AsJSON(ctx context.Context, out interface{}) error {
