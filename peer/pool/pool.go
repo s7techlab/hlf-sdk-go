@@ -11,6 +11,7 @@ import (
 	"github.com/hyperledger/fabric/protos/peer"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"go.uber.org/zap"
+	"github.com/pkg/errors"
 )
 
 type peerPool struct {
@@ -88,38 +89,57 @@ func (p *peerPool) Process(mspId string, context context.Context, proposal *peer
 	log := p.log.Named(`Process`)
 	p.storeMx.RLock()
 	defer p.storeMx.RUnlock()
-	log.Debug(`Searching peers`, zap.String(`mspId`, mspId))
-	if peers, ok := p.store[mspId]; !ok {
-		log.Error(`No MspId found`, zap.String(`mspId`, mspId), zap.Error(api.ErrMSPNotFound))
+
+	//check MspId exists
+	log.Debug(`Searching peers for MspId`, zap.String(`mspId`, mspId))
+	peers, ok := p.store[mspId];
+	if !ok {
+		log.Error(api.ErrMSPNotFound.Error(), zap.String(`mspId`, mspId))
 		return nil, api.ErrMSPNotFound
-	} else {
-		if len(peers) == 0 {
-			log.Error(`No peers found for MspId`, zap.String(`mspId`, mspId), zap.Error(api.ErrNoPeersForMSP))
-			return nil, api.ErrNoPeersForMSP
-		} else {
-			for _, poolPeer := range peers {
-				if poolPeer.ready {
-					if propResp, err := poolPeer.peer.Endorse(context, proposal); err != nil {
-						if s, ok := status.FromError(err); ok {
-							if s.Code() == codes.Unavailable {
-								poolPeer.ready = false
-								continue
-							} else {
-								log.Debug(`Unexpected error code from endorser`, zap.Uint32(`code`, uint32(s.Code())), zap.String(`code_str`, s.Code().String()), zap.Error(s.Err()))
-							}
-						} else {
-							poolPeer.ready = false
-							continue
-						}
-					} else {
-						return propResp, nil
-					}
+	}
+
+	//check peers for MspId exists
+	if len(peers) == 0 {
+		log.Error(api.ErrNoPeersForMSP.Error(), zap.String(`mspId`, mspId))
+		return nil, api.ErrNoPeersForMSP
+	}
+	log.Debug(`Peers pool`, zap.String(`mspId`, mspId), zap.Int(`peerNum`, len(peers)))
+
+	for pos, poolPeer := range peers {
+		if !poolPeer.ready {
+			log.Debug(api.ErrPeerNotReady.Error(), zap.String(`uri`, poolPeer.peer.Uri()))
+			continue
+		}
+
+		log.Debug(`Endorse send on peer`, zap.Int(`peerPos`, pos), zap.String(`mspId`, mspId), zap.String(`uri`, poolPeer.peer.Uri()))
+		if propResp, err := poolPeer.peer.Endorse(context, proposal); err != nil {
+
+			// GRPC error
+			if s, ok := status.FromError(err); ok {
+				if s.Code() == codes.Unavailable {
+					log.Debug(`Peer GRPC unavailable`, zap.String(`mspId`, mspId), zap.String(`peer_uri`, poolPeer.peer.Uri()))
+					poolPeer.ready = false
+
 				} else {
-					continue
+					log.Debug(`Unexpected GRPC error code from peer`,
+						zap.String(`peer_uri`, poolPeer.peer.Uri()), zap.Uint32(`code`, uint32(s.Code())),
+						zap.String(`code_str`, s.Code().String()), zap.Error(s.Err()))
+
+					// not mark as not ready
 				}
+				// next mspId peer
+				continue
 			}
+
+			log.Debug(`Peer endorsement failed`, zap.String(`mspId`, mspId), zap.String(`peer_uri`, poolPeer.peer.Uri()), zap.String(`error`, err.Error()))
+			return propResp, errors.Wrap(err, poolPeer.peer.Uri())
+
+		} else {
+			log.Debug(`Endorse complete on peer`, zap.String(`mspId`, mspId), zap.String(`uri`, poolPeer.peer.Uri()))
+			return propResp, nil
 		}
 	}
+
 	return nil, api.ErrNoReadyPeersForMSP
 }
 
