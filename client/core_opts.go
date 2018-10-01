@@ -53,3 +53,11 @@ func WithLogger(log *zap.Logger) CoreOpt {
 		return nil
 	}
 }
+
+// WithPeerPool allows to add custom peer pool
+func WithPeerPool(pool api.PeerPool) CoreOpt {
+	return func(c *core) error {
+		c.peerPool = pool
+		return nil
+	}
+}
