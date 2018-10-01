@@ -134,12 +134,9 @@ func (p *peerPool) Process(mspId string, context context.Context, proposal *peer
 			log.Debug(`Peer endorsement failed`, zap.String(`mspId`, mspId), zap.String(`peer_uri`, poolPeer.peer.Uri()), zap.String(`error`, err.Error()))
 			return propResp, errors.Wrap(err, poolPeer.peer.Uri())
 
-			//} else {
-			//	log.Debug(`Endorse complete on peer`, zap.String(`mspId`, mspId), zap.String(`uri`, poolPeer.peer.Uri()))
-			//
-			//	return propResp, nil
-			//}
-
+		} else {
+			log.Debug(`Endorse complete on peer`, zap.String(`mspId`, mspId), zap.String(`uri`, poolPeer.peer.Uri()))
+			return propResp, nil
 		}
 	}
 
