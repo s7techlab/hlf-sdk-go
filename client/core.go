@@ -27,7 +27,6 @@ type core struct {
 	mspId             string
 	identity          msp.SigningIdentity
 	peerPool          api.PeerPool
-	localPeerDeliver  api.DeliverClient
 	orderer           api.Orderer
 	discoveryProvider api.DiscoveryProvider
 	channels          map[string]api.Channel
@@ -57,7 +56,7 @@ func (c *core) Channel(name string) api.Channel {
 		return ch
 	} else {
 		log.Debug(`Channel instance doesn't exist, initiating new`)
-		ch = channel.NewCore(name, c.peerPool, c.orderer, c.discoveryProvider, c.identity, c.localPeerDeliver)
+		ch = channel.NewCore(c.mspId, name, c.peerPool, c.orderer, c.discoveryProvider, c.identity)
 		c.channels[name] = ch
 		return ch
 	}
@@ -84,8 +83,6 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 		core.logger = logger.DefaultLogger
 	}
 
-	core.peerPool = pool.New(core.logger)
-
 	if dp, err := discovery.GetProvider(core.config.Discovery.Type); err != nil {
 		return nil, errors.Wrap(err, `failed to get discovery provider`)
 	} else if core.discoveryProvider, err = dp.Initialize(core.config.Discovery.Options, core.peerPool); err != nil {
@@ -100,6 +97,9 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 
 	// if peerPool is empty, set it from config
 	if core.peerPool == nil {
+
+		core.peerPool = pool.New(core.logger)
+
 		for _, mspConfig := range core.config.MSP {
 			for _, peerConfig := range mspConfig.Endorsers {
 				if p, err := peer.New(peerConfig, core.logger); err != nil {

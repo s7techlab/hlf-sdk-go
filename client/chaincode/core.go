@@ -8,13 +8,13 @@ import (
 )
 
 type Core struct {
-	name          string
-	channelName   string
-	peerPool      api.PeerPool
-	orderer       api.Orderer
-	dp            api.DiscoveryProvider
-	identity      msp.SigningIdentity
-	deliverClient api.DeliverClient
+	mspId       string
+	name        string
+	channelName string
+	peerPool    api.PeerPool
+	orderer     api.Orderer
+	dp          api.DiscoveryProvider
+	identity    msp.SigningIdentity
 }
 
 func (c *Core) Invoke(fn string) api.ChaincodeInvokeBuilder {
@@ -30,17 +30,18 @@ func (c *Core) Install(version string) {
 }
 
 func (c *Core) Subscribe(ctx context.Context, seekOption ...api.EventCCSeekOption) api.EventCCSubscription {
-	return c.deliverClient.SubscribeCC(ctx, c.channelName, c.name, seekOption...)
+	peerDeliver, _ := c.peerPool.DeliverClient(c.mspId, c.identity)
+	return peerDeliver.SubscribeCC(ctx, c.channelName, c.name, seekOption...)
 }
 
-func NewCore(ccName, channelName string, peerPool api.PeerPool, orderer api.Orderer, dp api.DiscoveryProvider, identity msp.SigningIdentity, deliverClient api.DeliverClient) *Core {
+func NewCore(mspId, ccName, channelName string, peerPool api.PeerPool, orderer api.Orderer, dp api.DiscoveryProvider, identity msp.SigningIdentity) *Core {
 	return &Core{
-		name:          ccName,
-		channelName:   channelName,
-		peerPool:      peerPool,
-		orderer:       orderer,
-		dp:            dp,
-		identity:      identity,
-		deliverClient: deliverClient,
+		mspId:       mspId,
+		name:        ccName,
+		channelName: channelName,
+		peerPool:    peerPool,
+		orderer:     orderer,
+		dp:          dp,
+		identity:    identity,
 	}
 }
