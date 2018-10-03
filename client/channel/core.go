@@ -9,21 +9,21 @@ import (
 )
 
 type Core struct {
-	name          string
-	peerPool      api.PeerPool
-	orderer       api.Orderer
-	chaincodes    map[string]*chaincode.Core
-	chaincodesMx  sync.Mutex
-	dp            api.DiscoveryProvider
-	identity      msp.SigningIdentity
-	deliverClient api.DeliverClient
+	mspId        string
+	name         string
+	peerPool     api.PeerPool
+	orderer      api.Orderer
+	chaincodes   map[string]*chaincode.Core
+	chaincodesMx sync.Mutex
+	dp           api.DiscoveryProvider
+	identity     msp.SigningIdentity
 }
 
 func (c *Core) Chaincode(name string) api.Chaincode {
 	c.chaincodesMx.Lock()
 	defer c.chaincodesMx.Unlock()
 	if cc, ok := c.chaincodes[name]; !ok {
-		cc = chaincode.NewCore(name, c.name, c.peerPool, c.orderer, c.dp, c.identity, c.deliverClient)
+		cc = chaincode.NewCore(c.mspId, name, c.name, c.peerPool, c.orderer, c.dp, c.identity)
 		c.chaincodes[name] = cc
 		return cc
 	} else {
@@ -31,6 +31,6 @@ func (c *Core) Chaincode(name string) api.Chaincode {
 	}
 }
 
-func NewCore(name string, peerPool api.PeerPool, orderer api.Orderer, dp api.DiscoveryProvider, identity msp.SigningIdentity, deliverClient api.DeliverClient) api.Channel {
-	return &Core{name: name, peerPool: peerPool, orderer: orderer, chaincodes: make(map[string]*chaincode.Core), dp: dp, identity: identity, deliverClient: deliverClient}
+func NewCore(mspId string, name string, peerPool api.PeerPool, orderer api.Orderer, dp api.DiscoveryProvider, identity msp.SigningIdentity) api.Channel {
+	return &Core{mspId: mspId, name: name, peerPool: peerPool, orderer: orderer, chaincodes: make(map[string]*chaincode.Core), dp: dp, identity: identity}
 }

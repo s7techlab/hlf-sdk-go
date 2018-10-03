@@ -4,14 +4,15 @@ import (
 	"context"
 	"sync"
 
+	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
-
 	"google.golang.org/grpc/status"
 
+	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/peer"
 	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/peer/deliver"
 	"go.uber.org/zap"
-	"github.com/pkg/errors"
 )
 
 type peerPool struct {
@@ -87,12 +88,12 @@ func (p *peerPool) poolChecker(aliveChan chan bool, peer *peerPoolPeer, ctx cont
 
 func (p *peerPool) Process(mspId string, context context.Context, proposal *peer.SignedProposal) (*peer.ProposalResponse, error) {
 	log := p.log.Named(`Process`)
-	p.storeMx.RLock()
-	defer p.storeMx.RUnlock()
+	p.storeMx.Lock()
+	defer p.storeMx.Unlock()
 
 	//check MspId exists
 	log.Debug(`Searching peers for MspId`, zap.String(`mspId`, mspId))
-	peers, ok := p.store[mspId];
+	peers, ok := p.store[mspId]
 	if !ok {
 		log.Error(api.ErrMSPNotFound.Error(), zap.String(`mspId`, mspId))
 		return nil, api.ErrMSPNotFound
@@ -101,8 +102,8 @@ func (p *peerPool) Process(mspId string, context context.Context, proposal *peer
 	//check peers for MspId exists
 	if len(peers) == 0 {
 		log.Error(api.ErrNoPeersForMSP.Error(), zap.String(`mspId`, mspId))
-		return nil, api.ErrNoPeersForMSP
 	}
+
 	log.Debug(`Peers pool`, zap.String(`mspId`, mspId), zap.Int(`peerNum`, len(peers)))
 
 	for pos, poolPeer := range peers {
@@ -137,6 +138,43 @@ func (p *peerPool) Process(mspId string, context context.Context, proposal *peer
 		} else {
 			log.Debug(`Endorse complete on peer`, zap.String(`mspId`, mspId), zap.String(`uri`, poolPeer.peer.Uri()))
 			return propResp, nil
+		}
+	}
+
+	return nil, api.ErrNoReadyPeersForMSP
+
+}
+func (p *peerPool) DeliverClient(mspId string, identity msp.SigningIdentity) (api.DeliverClient, error) {
+	poolPeer, err := p.getFirstReadyPeer(mspId)
+	if err != nil {
+		return nil, err
+	}
+
+	return deliver.NewFromGRPC(poolPeer.Conn(), identity, p.log.Named(`DeliverClient`)), nil
+}
+
+func (p *peerPool) getFirstReadyPeer(mspId string) (api.Peer, error) {
+	log := p.log.Named(`getFirstReadyPeer`)
+	p.storeMx.Lock()
+	defer p.storeMx.Unlock()
+	//check MspId exists
+	log.Debug(`Searching peers for MspId`, zap.String(`mspId`, mspId))
+	peers, ok := p.store[mspId]
+	if !ok {
+		log.Error(api.ErrMSPNotFound.Error(), zap.String(`mspId`, mspId))
+		return nil, api.ErrMSPNotFound
+	}
+
+	//check peers for MspId exists
+	if len(peers) == 0 {
+		log.Error(api.ErrNoPeersForMSP.Error(), zap.String(`mspId`, mspId))
+	}
+
+	log.Debug(`Peers pool`, zap.String(`mspId`, mspId), zap.Int(`peerNum`, len(peers)))
+
+	for _, poolPeer := range peers {
+		if poolPeer.ready == true {
+			return poolPeer.peer, nil
 		}
 	}
 

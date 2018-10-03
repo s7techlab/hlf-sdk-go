@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/hyperledger/fabric/msp"
+
 	"github.com/hyperledger/fabric/protos/peer"
 	"google.golang.org/grpc/connectivity"
 )
@@ -19,7 +21,7 @@ const (
 type PeerPool interface {
 	Add(mspId string, peer Peer, strategy PeerPoolCheckStrategy) error
 	Process(mspId string, context context.Context, proposal *peer.SignedProposal) (*peer.ProposalResponse, error)
-	//DeliverClient(mspId string) DeliverClient
+	DeliverClient(mspId string, identity msp.SigningIdentity) (DeliverClient, error)
 	Close() error
 }
 

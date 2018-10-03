@@ -31,7 +31,7 @@ msp:
 - name: OPERATORMSP
   endorsers:
   - host: 127.0.0.1:27051
-  - host: localhost:17051
+  - host: localhost:7051
 - name: S7MSP
   endorsers:
   - host: localhost:17051

@@ -221,7 +221,18 @@ func (b *invokeBuilder) Do(ctx context.Context) (api.ChaincodeTx, []byte, error)
 
 	if b.sink != nil {
 		go func() {
-			tsSub := b.ccCore.deliverClient.SubscribeTx(ctx, b.ccCore.channelName, tx)
+			peerDeliver, err := b.peerPool.DeliverClient(b.identity.GetMSPIdentifier(), b.identity)
+			if err != nil {
+				out := api.ChaincodeInvokeResponse{
+					TxID: tx, Err: errors.Wrap(err, `failed to get deliver client`),
+				}
+				select {
+				case b.sink <- out:
+				case <-ctx.Done():
+				}
+				return
+			}
+			tsSub := peerDeliver.SubscribeTx(ctx, b.ccCore.channelName, tx)
 			defer tsSub.Close()
 			event, err := tsSub.Result()
 			if err != nil {
@@ -261,7 +272,11 @@ func (b *invokeBuilder) Do(ctx context.Context) (api.ChaincodeTx, []byte, error)
 
 		return tx, peerResponses[0].Response.Payload, nil
 	} else {
-		tsSub := b.ccCore.deliverClient.SubscribeTx(ctx, b.ccCore.channelName, tx)
+		peerDeliver, err := b.peerPool.DeliverClient(b.identity.GetMSPIdentifier(), b.identity)
+		if err != nil {
+			return tx, nil, errors.Wrap(err, `failed to get delivery client`)
+		}
+		tsSub := peerDeliver.SubscribeTx(ctx, b.ccCore.channelName, tx)
 		defer tsSub.Close()
 		event, err := tsSub.Result()
 		if err != nil {
