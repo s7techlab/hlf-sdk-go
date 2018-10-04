@@ -3,7 +3,6 @@ package subs
 import (
 	"context"
 	"fmt"
-	//"log"
 
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
@@ -14,6 +13,8 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/util"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type blockSubscription struct {
@@ -47,10 +48,16 @@ handleLoop:
 			ev, err := b.client.Recv()
 			log.Debug(`Got new DeliverResponse`)
 			if err != nil {
-				if err == context.Canceled {
-					log.Debug(`Got context.Canced`)
-					return
+				if s, ok := status.FromError(err); ok {
+					switch s.Code() {
+					case codes.Canceled:
+						log.Debug(`Got context.Canceled`)
+						return
+					default:
+						log.Debug(`Got GRPC status code`, zap.Uint32(`grpc_code`, uint32(s.Code())), zap.String(`grpc_code_str`, s.Code().String()))
+					}
 				}
+
 				log.Error(`Subscription error`, zap.Error(err))
 				b.errChan <- &api.GRPCStreamError{Err: err}
 				continue handleLoop
