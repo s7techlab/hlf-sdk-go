@@ -3,12 +3,20 @@ package peer
 import (
 	"time"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
+)
+
+var (
+	retryDefaultConfig = config.GRPCRetryConfig{
+		Max:     10,
+		Timeout: config.Duration{Duration: time.Second},
+	}
 )
 
 func NewGRPCFromConfig(c config.PeerConfig, log *zap.Logger) (*grpc.ClientConn, error) {
@@ -40,6 +48,29 @@ func NewGRPCFromConfig(c config.PeerConfig, log *zap.Logger) (*grpc.ClientConn, 
 			Timeout: time.Duration(c.GRPC.KeepAlive.Timeout) * time.Second,
 		}))
 	}
+
+	var retryConfig *config.GRPCRetryConfig
+	if c.GRPC.Retry != nil {
+		l.Debug(`Using presented GRPC retry config`, zap.Reflect(`config`, *c.GRPC.Retry))
+		retryConfig = c.GRPC.Retry
+	} else {
+		l.Debug(`Using default GRPC retry config`, zap.Reflect(`config`, retryDefaultConfig))
+		retryConfig = &retryDefaultConfig
+	}
+
+	grpcOptions = append(grpcOptions,
+		grpc.WithUnaryInterceptor(
+			grpc_retry.UnaryClientInterceptor(
+				grpc_retry.WithMax(retryConfig.Max),
+				grpc_retry.WithBackoff(grpc_retry.BackoffLinear(retryConfig.Timeout.Duration)),
+			),
+		),
+		grpc.WithStreamInterceptor(
+			grpc_retry.StreamClientInterceptor(
+				grpc_retry.WithMax(retryConfig.Max),
+				grpc_retry.WithBackoff(grpc_retry.BackoffLinear(retryConfig.Timeout.Duration)),
+			)),
+	)
 
 	grpcOptions = append(grpcOptions, grpc.WithDefaultCallOptions(
 		grpc.MaxCallRecvMsgSize(maxRecvMsgSize),

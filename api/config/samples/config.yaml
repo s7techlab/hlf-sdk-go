@@ -31,7 +31,15 @@ msp:
 - name: OPERATORMSP
   endorsers:
   - host: 127.0.0.1:27051
+    grpc:
+      retry:
+        max: 2
+        timeout: 1s
   - host: localhost:7051
+    grpc:
+      retry:
+        max: 5
+        timeout: 2s
 - name: S7MSP
   endorsers:
   - host: localhost:17051

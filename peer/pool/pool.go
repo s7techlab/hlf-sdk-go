@@ -120,12 +120,10 @@ func (p *peerPool) Process(mspId string, context context.Context, proposal *peer
 				if s.Code() == codes.Unavailable {
 					log.Debug(`Peer GRPC unavailable`, zap.String(`mspId`, mspId), zap.String(`peer_uri`, poolPeer.peer.Uri()))
 					poolPeer.ready = false
-
 				} else {
 					log.Debug(`Unexpected GRPC error code from peer`,
 						zap.String(`peer_uri`, poolPeer.peer.Uri()), zap.Uint32(`code`, uint32(s.Code())),
 						zap.String(`code_str`, s.Code().String()), zap.Error(s.Err()))
-
 					// not mark as not ready
 				}
 				// next mspId peer

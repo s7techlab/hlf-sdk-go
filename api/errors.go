@@ -5,7 +5,8 @@ import (
 )
 
 const (
-	ErrEmptyConfig = Error(`empty core configuration`)
+	ErrEmptyConfig         = Error(`empty core configuration`)
+	ErrInvalidPEMStructure = Error(`invalid PEM structure`)
 )
 
 type MultiError struct {

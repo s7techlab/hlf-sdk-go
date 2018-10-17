@@ -26,17 +26,12 @@ func main() {
 		log.Fatalln(`CONFIG_PATH env must be defined`)
 	}
 
-	certPath := os.Getenv(`CERT_PATH`)
-	if certPath == `` {
-		log.Fatalln(`CERT_PATH env must be defined`)
-	}
-
-	keyPath := os.Getenv(`KEY_PATH`)
-	if keyPath == `` {
+	identityPath := os.Getenv(`IDENTITY_PATH`)
+	if identityPath == `` {
 		log.Fatalln(`KEY_PATH env must be defined`)
 	}
 
-	id, err := identity.NewMSPIdentity(mspId, certPath, keyPath)
+	id, err := identity.NewMSPIdentityFromPath(mspId, identityPath)
 
 	if err != nil {
 		log.Fatalln(err)
