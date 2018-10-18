@@ -40,6 +40,14 @@ type MSPConfig struct {
 
 type GRPCConfig struct {
 	KeepAlive *GRPCKeepAliveConfig `yaml:"keep_alive"`
+	Retry     *GRPCRetryConfig     `yaml:"retry"`
+}
+
+type GRPCRetryConfig struct {
+	// Count for max retries
+	Max uint `yaml:"max"`
+	// Timeout is used for back-off
+	Timeout Duration `yaml:"timeout"`
 }
 
 type GRPCKeepAliveConfig struct {

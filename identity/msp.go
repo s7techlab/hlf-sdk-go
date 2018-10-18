@@ -1,15 +1,12 @@
 package identity
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/sha256"
 	"crypto/x509"
 	"encoding/pem"
-	"fmt"
 	"io/ioutil"
-	"path"
 	"time"
+
+	"github.com/s7techlab/hlf-sdk-go/util"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/msp"
@@ -17,15 +14,6 @@ import (
 	mspPb "github.com/hyperledger/fabric/protos/msp"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
-)
-
-const (
-	signCertPath = `signcerts`
-	keyStorePath = `keystore`
-)
-
-var (
-	errInvalidPEMStructure = errors.New(`invalid PEM structure`)
 )
 
 type mspIdentity struct {
@@ -127,12 +115,12 @@ func NewMSPIdentity(mspId string, certPath string, keyPath string) (api.Identity
 func NewMSPIdentityBytes(mspId string, certBytes []byte, keyBytes []byte) (api.Identity, error) {
 	certPEM, _ := pem.Decode(certBytes)
 	if certPEM == nil {
-		return nil, errInvalidPEMStructure
+		return nil, api.ErrInvalidPEMStructure
 	}
 
 	keyPEM, _ := pem.Decode(keyBytes)
 	if keyPEM == nil {
-		return nil, errInvalidPEMStructure
+		return nil, api.ErrInvalidPEMStructure
 	}
 
 	cert, err := x509.ParseCertificate(certPEM.Bytes)
@@ -161,41 +149,10 @@ func NewEnrollIdentity(privateKey interface{}) (api.Identity, error) {
 }
 
 func NewMSPIdentityFromPath(mspId string, mspPath string) (api.Identity, error) {
-	_, err := ioutil.ReadDir(mspPath)
+
+	certBytes, keyBytes, err := util.LoadKeyPairFromMSP(mspPath)
 	if err != nil {
-		return nil, errors.Wrap(err, `failed to read path`)
-	}
-
-	// check signcerts/cert.pem
-	certBytes, err := ioutil.ReadFile(path.Join(mspPath, signCertPath, `cert.pem`))
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to read certificate`)
-	}
-
-	certBlock, _ := pem.Decode(certBytes)
-	if certBlock == nil {
-		return nil, errInvalidPEMStructure
-	}
-
-	cert, err := x509.ParseCertificate(certBlock.Bytes)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to parse certificate`)
-	}
-
-	var pKeyFileName string
-
-	switch pubKey := cert.PublicKey.(type) {
-	case *ecdsa.PublicKey:
-		h := sha256.New()
-		h.Write(elliptic.Marshal(pubKey.Curve, pubKey.X, pubKey.Y))
-		pKeyFileName = fmt.Sprintf("%x_sk", h.Sum(nil))
-	default:
-		return nil, errors.Errorf("unknown key format %s, ECDSA expected", cert.PublicKeyAlgorithm)
-	}
-
-	keyBytes, err := ioutil.ReadFile(path.Join(mspPath, keyStorePath, pKeyFileName))
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to ready private key file`)
+		return nil, err
 	}
 
 	return NewMSPIdentityBytes(mspId, certBytes, keyBytes)

@@ -188,6 +188,16 @@
   revision = "5ab67e519c93568ac3ee50fd6772a5bcf8aa460d"
 
 [[projects]]
+  name = "github.com/grpc-ecosystem/go-grpc-middleware"
+  packages = [
+    "retry",
+    "util/backoffutils",
+    "util/metautils"
+  ]
+  revision = "c250d6563d4d4c20252cd865923440e829844f4e"
+  version = "v1.0.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/hashicorp/go-version"
   packages = ["."]
@@ -689,6 +699,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6517521fe865d41d3c772dc5e2780e4e435c82c6db237810379b4001783b7ed3"
+  inputs-digest = "d3f66debb54d2d26f7a429e9d75fec384193ecb7b867338572c0da893da66110"
   solver-name = "gps-cdcl"
   solver-version = 1
