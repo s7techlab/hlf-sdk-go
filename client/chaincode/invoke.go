@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/golang/protobuf/proto"
+	"github.com/hyperledger/fabric/protos/utils"
+
 	"log"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
 	fabricPeer "github.com/hyperledger/fabric/protos/peer"
@@ -109,67 +111,13 @@ func (b *invokeBuilder) ArgBytes(args [][]byte) api.ChaincodeInvokeBuilder {
 
 func (b *invokeBuilder) getTransaction(proposal *fabricPeer.SignedProposal, peerResponses []*fabricPeer.ProposalResponse) (*common.Envelope, error) {
 
-	endorsements := make([]*fabricPeer.Endorsement, 0)
-	for _, resp := range peerResponses {
-		endorsements = append(endorsements, resp.Endorsement)
-	}
-
 	prop := new(fabricPeer.Proposal)
+
 	if err := proto.Unmarshal(proposal.ProposalBytes, prop); err != nil {
-		return nil, errors.Wrap(err, `failed to unmarshal proposal protobuf`)
+		return nil, errors.Wrap(err, `failed to unmarshal `)
 	}
 
-	propHeader := new(common.Header)
-	if err := proto.Unmarshal(prop.Header, propHeader); err != nil {
-		return nil, errors.Wrap(err, `failed to unmarshal proposal header protobuf`)
-	}
-
-	propPayload := new(fabricPeer.ChaincodeProposalPayload)
-	if err := proto.Unmarshal(prop.Payload, propPayload); err != nil {
-		return nil, errors.Wrap(err, `failed to unmarshal proposal payload protobuf`)
-	}
-
-	ccProposalPayload, err := proto.Marshal(&fabricPeer.ChaincodeProposalPayload{
-		Input:        propPayload.Input,
-		TransientMap: propPayload.TransientMap,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to get chaincode proposal payload`)
-	}
-
-	ccActionPayload, err := proto.Marshal(&fabricPeer.ChaincodeActionPayload{
-		Action: &fabricPeer.ChaincodeEndorsedAction{
-			ProposalResponsePayload: peerResponses[0].Payload,
-			Endorsements:            endorsements,
-		},
-		ChaincodeProposalPayload: ccProposalPayload,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to get chaincode action payload`)
-	}
-
-	txPayload, err := proto.Marshal(&fabricPeer.Transaction{
-		Actions: []*fabricPeer.TransactionAction{{Header: propHeader.SignatureHeader, Payload: ccActionPayload}},
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to get transaction payload`)
-	}
-
-	commonPayload, err := proto.Marshal(&common.Payload{
-		Header: propHeader,
-		Data:   txPayload,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to get common payload`)
-	}
-
-	signedPayload, err := b.identity.Sign(commonPayload)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to sign common payload`)
-	}
-
-	return &common.Envelope{Payload: commonPayload, Signature: signedPayload}, nil
-
+	return utils.CreateSignedTx(prop, b.identity, peerResponses...)
 }
 
 func (b *invokeBuilder) ArgJSON(in ...interface{}) api.ChaincodeInvokeBuilder {
