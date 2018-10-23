@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/retry"
+
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/orderer"
@@ -89,7 +91,7 @@ func (b *blockSubscription) Blocks() (chan *common.Block, error) {
 	var err error
 
 	log.Debug(`Initializing new DeliverClient`)
-	if b.client, err = peer.NewDeliverClient(b.conn).Deliver(b.ctx); err != nil {
+	if b.client, err = peer.NewDeliverClient(b.conn).Deliver(b.ctx, grpc_retry.Disable()); err != nil {
 		log.Error(`Initialization of DeliverClient failed`, zap.Error(err))
 		return nil, errors.Wrap(err, `failed to get deliver client`)
 	}

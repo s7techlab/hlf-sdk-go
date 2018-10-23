@@ -7,13 +7,13 @@ import (
 )
 
 type Config struct {
-	Crypto    CryptoConfig    `yaml:"crypto"`
-	Orderer   OrdererConfig   `yaml:"orderer"`
-	Discovery DiscoveryConfig `yaml:"discovery"`
-	MSP       []MSPConfig     `yaml:"msp"`
+	Crypto    CryptoConfig     `yaml:"crypto"`
+	Orderer   ConnectionConfig `yaml:"orderer"`
+	Discovery DiscoveryConfig  `yaml:"discovery"`
+	MSP       []MSPConfig      `yaml:"msp"`
 }
 
-type PeerConfig struct {
+type ConnectionConfig struct {
 	Host    string     `yaml:"host"`
 	Tls     TlsConfig  `yaml:"tls"`
 	GRPC    GRPCConfig `yaml:"grpc"`
@@ -34,8 +34,8 @@ type CAConfig struct {
 }
 
 type MSPConfig struct {
-	Name      string       `yaml:"name"`
-	Endorsers []PeerConfig `yaml:"endorsers"`
+	Name      string             `yaml:"name"`
+	Endorsers []ConnectionConfig `yaml:"endorsers"`
 }
 
 type GRPCConfig struct {

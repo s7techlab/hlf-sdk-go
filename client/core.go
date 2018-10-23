@@ -114,7 +114,7 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 	}
 
 	if core.orderer == nil {
-		if core.orderer, err = orderer.New(core.config.Orderer); err != nil {
+		if core.orderer, err = orderer.New(core.config.Orderer, core.logger); err != nil {
 			return nil, errors.Wrap(err, `failed to initialize orderer`)
 		}
 	}

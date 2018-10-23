@@ -6,20 +6,17 @@ import (
 	"sync"
 	"time"
 
+	"github.com/s7techlab/hlf-sdk-go/util"
+	"go.uber.org/zap"
+
+	"io"
+
 	"github.com/hyperledger/fabric/protos/common"
 	fabricOrderer "github.com/hyperledger/fabric/protos/orderer"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/keepalive"
-	"io"
-)
-
-const (
-	maxRecvMsgSize = 100 * 1024 * 1024
-	maxSendMsgSize = 100 * 1024 * 1024
 )
 
 type ErrUnexpectedStatus struct {
@@ -124,42 +121,22 @@ func (o *orderer) initBroadcastClient() error {
 	return nil
 }
 
-func New(c config.OrdererConfig) (api.Orderer, error) {
-	var err error
-	o := &orderer{uri: c.Host, grpcOptions: make([]grpc.DialOption, 0)}
-	if c.Tls.Enabled {
-		if ts, err := credentials.NewClientTLSFromFile(c.Tls.CertPath, ``); err != nil {
-			return nil, errors.Wrap(err, `failed to read tls credentials`)
-		} else {
-			o.grpcOptions = append(o.grpcOptions, grpc.WithTransportCredentials(ts))
-		}
-	} else {
-		o.grpcOptions = append(o.grpcOptions, grpc.WithInsecure())
+func New(c config.ConnectionConfig, log *zap.Logger) (api.Orderer, error) {
+	l := log.Named(`New`)
+	opts, err := util.NewGRPCOptionsFromConfig(c, log)
+	if err != nil {
+		l.Error(`Failed to get GRPC options`, zap.Error(err))
+		return nil, errors.Wrap(err, `failed to get GRPC options`)
 	}
 
-	if c.GRPC.KeepAlive != nil {
-		o.grpcOptions = append(o.grpcOptions, grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time:    time.Duration(c.GRPC.KeepAlive.Time) * time.Second,
-			Timeout: time.Duration(c.GRPC.KeepAlive.Timeout) * time.Second,
-		}))
+	ctx, _ := context.WithTimeout(context.Background(), c.Timeout.Duration)
+	conn, err := grpc.DialContext(ctx, c.Host, opts...)
+	if err != nil {
+		l.Error(`Failed to initialize GRPC connection`, zap.Error(err))
+		return nil, errors.Wrap(err, `failed to initialize GRPC connection`)
 	}
 
-	o.grpcOptions = append(o.grpcOptions, grpc.WithBlock(), grpc.WithDefaultCallOptions(
-		grpc.MaxCallRecvMsgSize(maxRecvMsgSize),
-		grpc.MaxCallSendMsgSize(maxSendMsgSize),
-	))
-
-	if c.Timeout.Duration != 0 {
-		o.ctx, o.cancel = context.WithTimeout(context.Background(), c.Timeout.Duration)
-	} else {
-		o.ctx, o.cancel = context.WithCancel(context.Background())
-	}
-
-	if err = o.initBroadcastClient(); err != nil {
-		return nil, errors.Wrap(err, `failed to initialize BroadcastClient`)
-	}
-
-	return o, nil
+	return NewFromGRPC(ctx, conn, opts...)
 }
 
 // NewFromGRPC allows to initialize orderer from existing GRPC connection

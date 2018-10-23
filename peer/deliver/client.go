@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/s7techlab/hlf-sdk-go/peer"
+	"github.com/s7techlab/hlf-sdk-go/util"
 
 	"go.uber.org/zap"
 
@@ -14,11 +14,6 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/peer/deliver/subs"
 	"google.golang.org/grpc"
-)
-
-const (
-	maxRecvMsgSize = 100 * 1024 * 1024
-	maxSendMsgSize = 100 * 1024 * 1024
 )
 
 type deliverClient struct {
@@ -45,13 +40,23 @@ func (e *deliverClient) Close() error {
 	return e.conn.Close()
 }
 
-func NewDeliverClient(c config.PeerConfig, identity msp.SigningIdentity, log *zap.Logger) (api.DeliverClient, error) {
+func NewDeliverClient(c config.ConnectionConfig, identity msp.SigningIdentity, log *zap.Logger) (api.DeliverClient, error) {
 	l := log.Named(`DeliverClient`)
 
-	conn, err := peer.NewGRPCFromConfig(c, l)
+	opts, err := util.NewGRPCOptionsFromConfig(c, l)
 	if err != nil {
+		l.Error(`Failed to get GRPC options`, zap.Error(err))
+		return nil, errors.Wrap(err, `failed to get GRPC options`)
+	}
+
+	ctx, _ := context.WithTimeout(context.Background(), c.Timeout.Duration)
+
+	conn, err := grpc.DialContext(ctx, c.Host, opts...)
+	if err != nil {
+		l.Error(`Failed to initialize GRPC connection`, zap.Error(err))
 		return nil, errors.Wrap(err, `failed to initialize GRPC connection`)
 	}
+
 	return NewFromGRPC(conn, identity, l), nil
 }
 
