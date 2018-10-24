@@ -4,19 +4,19 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/retry"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/orderer"
 	"github.com/hyperledger/fabric/protos/peer"
-	"github.com/pkg/errors"
+
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/util"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type blockSubscription struct {
@@ -91,7 +91,7 @@ func (b *blockSubscription) Blocks() (chan *common.Block, error) {
 	var err error
 
 	log.Debug(`Initializing new DeliverClient`)
-	if b.client, err = peer.NewDeliverClient(b.conn).Deliver(b.ctx, grpc_retry.Disable()); err != nil {
+	if b.client, err = peer.NewDeliverClient(b.conn).Deliver(b.ctx); err != nil {
 		log.Error(`Initialization of DeliverClient failed`, zap.Error(err))
 		return nil, errors.Wrap(err, `failed to get deliver client`)
 	}
