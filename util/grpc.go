@@ -70,11 +70,6 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 				grpc_retry.WithBackoff(grpc_retry.BackoffLinear(retryConfig.Timeout.Duration)),
 			),
 		),
-		grpc.WithStreamInterceptor(
-			grpc_retry.StreamClientInterceptor(
-				grpc_retry.WithMax(retryConfig.Max),
-				grpc_retry.WithBackoff(grpc_retry.BackoffLinear(retryConfig.Timeout.Duration)),
-			)),
 	)
 
 	grpcOptions = append(grpcOptions, grpc.WithDefaultCallOptions(

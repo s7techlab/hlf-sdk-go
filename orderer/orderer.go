@@ -116,8 +116,10 @@ func (o *orderer) initBroadcastClient() error {
 		if o.conn, err = grpc.DialContext(o.ctx, o.uri, o.grpcOptions...); err != nil {
 			return errors.Wrap(err, `failed to initialize grpc connection`)
 		}
-		o.broadcastClient = fabricOrderer.NewAtomicBroadcastClient(o.conn)
 	}
+
+	o.broadcastClient = fabricOrderer.NewAtomicBroadcastClient(o.conn)
+
 	return nil
 }
 
