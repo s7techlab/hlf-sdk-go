@@ -74,7 +74,7 @@ func New(c config.ConnectionConfig, log *zap.Logger) (api.Peer, error) {
 	//ctx, _ := context.WithTimeout(context.Background(), c.Timeout.Duration)
 	conn, err := grpc.Dial(c.Host, opts...)
 	if err != nil {
-		l.Error(`Failed to get GRPC options`, zap.Error(err))
+		l.Error(`Failed to initialize GRPC connection`, zap.Error(err))
 		return nil, errors.Wrap(err, `failed to initialize GRPC connection`)
 	}
 	l.Debug(`GRPC initialized`, zap.String(`target`, conn.Target()))
