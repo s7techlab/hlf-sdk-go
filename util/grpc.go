@@ -1,4 +1,4 @@
-package peer
+package util
 
 import (
 	"time"
@@ -19,8 +19,13 @@ var (
 	}
 )
 
-func NewGRPCFromConfig(c config.PeerConfig, log *zap.Logger) (*grpc.ClientConn, error) {
-	l := log.Named(`NewGRPCFromConfig`)
+const (
+	maxRecvMsgSize = 100 * 1024 * 1024
+	maxSendMsgSize = 100 * 1024 * 1024
+)
+
+func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grpc.DialOption, error) {
+	l := log.Named(`NewGRPCOptionsFromConfig`)
 	var grpcOptions []grpc.DialOption
 
 	if c.Tls.Enabled {
@@ -77,5 +82,5 @@ func NewGRPCFromConfig(c config.PeerConfig, log *zap.Logger) (*grpc.ClientConn, 
 		grpc.MaxCallSendMsgSize(maxSendMsgSize),
 	))
 
-	return grpc.Dial(c.Host, grpcOptions...)
+	return grpcOptions, nil
 }

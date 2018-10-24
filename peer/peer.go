@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/s7techlab/hlf-sdk-go/util"
+
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	fabricPeer "github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
@@ -12,11 +14,6 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-)
-
-const (
-	maxRecvMsgSize = 100 * 1024 * 1024
-	maxSendMsgSize = 100 * 1024 * 1024
 )
 
 type peer struct {
@@ -66,11 +63,18 @@ func (p *peer) initEndorserClient() error {
 }
 
 // New returns new peer instance based on peer config
-func New(c config.PeerConfig, log *zap.Logger) (api.Peer, error) {
+func New(c config.ConnectionConfig, log *zap.Logger) (api.Peer, error) {
 	l := log.Named(`New`)
-	conn, err := NewGRPCFromConfig(c, l)
+	opts, err := util.NewGRPCOptionsFromConfig(c, l)
 	if err != nil {
-		l.Debug(`Creating GRPC connection failed`, zap.Error(err))
+		l.Error(`Failed to get GRPC options`, zap.Error(err))
+		return nil, errors.Wrap(err, `Failed to get GRPC options`)
+	}
+
+	//ctx, _ := context.WithTimeout(context.Background(), c.Timeout.Duration)
+	conn, err := grpc.Dial(c.Host, opts...)
+	if err != nil {
+		l.Error(`Failed to initialize GRPC connection`, zap.Error(err))
 		return nil, errors.Wrap(err, `failed to initialize GRPC connection`)
 	}
 	l.Debug(`GRPC initialized`, zap.String(`target`, conn.Target()))
@@ -82,7 +86,7 @@ func NewFromGRPC(conn *grpc.ClientConn, log *zap.Logger) (api.Peer, error) {
 	l := log.Named(`NewFromGRPC`)
 	p := &peer{conn: conn}
 	if err := p.initEndorserClient(); err != nil {
-		l.Debug(`Failed to initialize endorser client`, zap.Error(err))
+		l.Error(`Failed to initialize endorser client`, zap.Error(err))
 		return nil, errors.Wrap(err, `failed to initialize EndorserClient`)
 	}
 	l.Debug(``)
