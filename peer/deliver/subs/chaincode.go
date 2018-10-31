@@ -4,43 +4,36 @@ import (
 	"context"
 
 	"github.com/hyperledger/fabric/core/ledger/util"
-	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/peer"
 	"github.com/hyperledger/fabric/protos/utils"
-	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	utilSDK "github.com/s7techlab/hlf-sdk-go/util"
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
 )
 
 type eventSubscription struct {
 	log       *zap.Logger
-	blockSub  api.BlockSubscription
-	ccName    string
-	events    chan *peer.ChaincodeEvent
 	blockChan chan *common.Block
+	eventChan chan *peer.ChaincodeEvent
 	errChan   chan error
+	ctx       context.Context
+	cancel    context.CancelFunc
 }
 
-func (es *eventSubscription) Events() (chan *peer.ChaincodeEvent, error) {
-	var err error
-
-	if es.blockChan, err = es.blockSub.Blocks(); err != nil {
-		return nil, errors.Wrap(err, `failed to initiate block subscription`)
-	}
-
-	go es.handleCCSubscription()
-
-	return es.events, nil
+func (es *eventSubscription) Events() chan *peer.ChaincodeEvent {
+	return es.eventChan
 }
 
 func (es *eventSubscription) Errors() chan error {
-	return es.blockSub.Errors()
+	return es.errChan
 }
 
 func (es *eventSubscription) handleCCSubscription() {
+	defer func() {
+		close(es.eventChan)
+		close(es.errChan)
+	}()
 	for {
 		select {
 		case block, ok := <-es.blockChan:
@@ -54,7 +47,7 @@ func (es *eventSubscription) handleCCSubscription() {
 						es.errChan <- &api.EnvelopeParsingError{Err: err}
 					} else {
 						if ev != nil {
-							es.events <- ev
+							es.eventChan <- ev
 						}
 					}
 				} else {
@@ -64,27 +57,26 @@ func (es *eventSubscription) handleCCSubscription() {
 					es.errChan <- &api.InvalidTxError{TxId: api.ChaincodeTx(chHeader.TxId), Code: txFilter.Flag(i)}
 				}
 			}
-		case err, ok := <-es.blockSub.Errors():
-			if !ok {
-				return
-			}
-			es.errChan <- errors.Wrap(err, `block error:`)
+		case <-es.ctx.Done():
+			return
 		}
 	}
 }
 
 func (es *eventSubscription) Close() error {
-	close(es.errChan)
-	return es.blockSub.Close()
+	es.cancel()
+	return nil
 }
 
-func NewEventSubscription(ctx context.Context, channelName string, ccName string, identity msp.SigningIdentity, conn *grpc.ClientConn, log *zap.Logger, seekOpt ...api.EventCCSeekOption) api.EventCCSubscription {
+func NewEventSubscription(ctx context.Context, blockChan chan *common.Block, log *zap.Logger) api.EventCCSubscription {
 	l := log.Named(`EventSubscription`)
+	newCtx, cancel := context.WithCancel(ctx)
 	return &eventSubscription{
-		log:      l,
-		ccName:   ccName,
-		events:   make(chan *peer.ChaincodeEvent),
-		errChan:  make(chan error),
-		blockSub: NewBlockSubscription(ctx, channelName, identity, conn, l, seekOpt...),
+		log:       l,
+		eventChan: make(chan *peer.ChaincodeEvent),
+		errChan:   make(chan error),
+		blockChan: blockChan,
+		ctx:       newCtx,
+		cancel:    cancel,
 	}
 }

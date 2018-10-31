@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+
 	"github.com/hyperledger/fabric/core/common/ccprovider"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
@@ -19,7 +20,7 @@ type Chaincode interface {
 	// Install fetches chaincode from repository and installs it on local peer
 	Install(version string)
 	// Subscribe returns subscription on chaincode events
-	Subscribe(ctx context.Context, seekOption ...EventCCSeekOption) EventCCSubscription
+	Subscribe(ctx context.Context) (EventCCSubscription, error)
 }
 
 type ChaincodeInvokeResponse struct {

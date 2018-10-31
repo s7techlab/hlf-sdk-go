@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 
+	"go.uber.org/zap"
+
 	"github.com/s7techlab/hlf-sdk-go/client"
 
 	_ "github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
@@ -24,14 +26,9 @@ func main() {
 		log.Fatalln(`CONFIG_PATH env must be defined`)
 	}
 
-	certPath := os.Getenv(`CERT_PATH`)
-	if certPath == `` {
-		log.Fatalln(`CERT_PATH env must be defined`)
-	}
-
-	keyPath := os.Getenv(`KEY_PATH`)
-	if keyPath == `` {
-		log.Fatalln(`KEY_PATH env must be defined`)
+	mspPath := os.Getenv(`MSP_PATH`)
+	if mspPath == `` {
+		log.Fatalln(`MSP_PATH env must be defined`)
 	}
 
 	channel := os.Getenv(`CHANNEL`)
@@ -44,25 +41,26 @@ func main() {
 		log.Fatalln(`CHAINCODE env must be defined`)
 	}
 
-	id, err := identity.NewMSPIdentity(mspId, certPath, keyPath)
+	id, err := identity.NewMSPIdentityFromPath(mspId, mspPath)
 
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln(`Failed to load identity:`, err)
 	}
 
-	core, err := client.NewCore(mspId, id, client.WithConfigYaml(configPath))
+	l, _ := zap.NewProduction()
+
+	core, err := client.NewCore(mspId, id, client.WithConfigYaml(configPath), client.WithLogger(l))
 	if err != nil {
 		log.Fatalln(`unable to initialize core:`, err)
 	}
 
 	cc := core.Channel(channel).Chaincode(chaincode)
-	sub := cc.Subscribe(context.Background())
-	if evChan, err := sub.Events(); err != nil {
-		log.Fatalln(`failed to subscribe on events:`, err)
-	} else {
-		fmt.Printf("Waiting for events on chaincode `%s` from channel `%s`...\n", chaincode, channel)
-		for ev := range evChan {
-			fmt.Printf("Received event: %v\n", *ev)
-		}
+	sub, err := cc.Subscribe(context.Background())
+	if err != nil {
+		log.Fatalln(`failed to get sub:`, err)
+	}
+	fmt.Printf("Waiting for events on chaincode `%s` from channel `%s`...\n", chaincode, channel)
+	for ev := range sub.Events() {
+		fmt.Printf("Received event: %v\n", *ev)
 	}
 }
