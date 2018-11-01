@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"fmt"
+
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/orderer"
 	"github.com/hyperledger/fabric/protos/peer"
@@ -18,11 +19,11 @@ var (
 
 type DeliverClient interface {
 	// SubscribeCC allows to subscribe on chaincode events using name of channel, chaincode and block offset
-	SubscribeCC(ctx context.Context, channelName string, ccName string, seekOpt ...EventCCSeekOption) EventCCSubscription
+	SubscribeCC(ctx context.Context, channelName string, ccName string) (EventCCSubscription, error)
 	// SubscribeTx allows to subscribe on transaction events by id
-	SubscribeTx(ctx context.Context, channelName string, tx ChaincodeTx) TxSubscription
-	// SubscribeBlock allows to subscribe on block events
-	SubscribeBlock(ctx context.Context, channelName string, seekOpt ...EventCCSeekOption) BlockSubscription
+	SubscribeTx(ctx context.Context, channelName string, tx ChaincodeTx) (TxSubscription, error)
+	// SubscribeBlock allows to subscribe on block events. Always returns new instance of block subscription
+	SubscribeBlock(ctx context.Context, channelName string, seekOpt ...EventCCSeekOption) (BlockSubscription, error)
 	// Close terminates eventHub grpc connection
 	Close() error
 }
@@ -61,22 +62,23 @@ func SeekRange(start, end uint64) EventCCSeekOption {
 
 // EventCCSubscription describes chaincode events subscription
 type EventCCSubscription interface {
-	// Events initiates internal GRPC stream and returns channel on chaincode events or error if stream is failed
-	Events() (chan *peer.ChaincodeEvent, error)
+	// Events initiates internal GRPC stream and returns channel on chaincode events
+	Events() chan *peer.ChaincodeEvent
 	// Errors returns errors associated with this subscription
 	Errors() chan error
-	// Close terminates internal GRPC stream
+	// Close cancels current subscription
 	Close() error
 }
 
 // EventCCSubscription describes tx subscription
 type TxSubscription interface {
-	Result() (chan TxEvent, error)
+	// returns result of current tx: success flag, original peer validation code and error if occurred
+	Result() (peer.TxValidationCode, error)
 	Close() error
 }
 
 type BlockSubscription interface {
-	Blocks() (chan *common.Block, error)
+	Blocks() chan *common.Block
 	Errors() chan error
 	Close() error
 }
@@ -92,7 +94,7 @@ type GRPCStreamError struct {
 	Err error
 }
 
-func (e *GRPCStreamError) Error() string {
+func (e GRPCStreamError) Error() string {
 	return fmt.Sprintf("grpc stream error: %s", e.Err)
 }
 
@@ -100,7 +102,7 @@ type EnvelopeParsingError struct {
 	Err error
 }
 
-func (e *EnvelopeParsingError) Error() string {
+func (e EnvelopeParsingError) Error() string {
 	return fmt.Sprintf("envelope parsing error: %s", e.Err)
 }
 
@@ -108,7 +110,7 @@ type UnknownEventTypeError struct {
 	Type string
 }
 
-func (e *UnknownEventTypeError) Error() string {
+func (e UnknownEventTypeError) Error() string {
 	return fmt.Sprintf("unknown event type: %s", e.Type)
 }
 
@@ -117,6 +119,6 @@ type InvalidTxError struct {
 	Code peer.TxValidationCode
 }
 
-func (e *InvalidTxError) Error() string {
+func (e InvalidTxError) Error() string {
 	return fmt.Sprintf("invalid tx: %s with validation code: %s", e.TxId, e.Code.String())
 }

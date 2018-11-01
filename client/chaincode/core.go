@@ -3,6 +3,8 @@ package chaincode
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"github.com/hyperledger/fabric/msp"
 	"github.com/s7techlab/hlf-sdk-go/api"
 )
@@ -29,9 +31,12 @@ func (c *Core) Install(version string) {
 	panic("implement me")
 }
 
-func (c *Core) Subscribe(ctx context.Context, seekOption ...api.EventCCSeekOption) api.EventCCSubscription {
-	peerDeliver, _ := c.peerPool.DeliverClient(c.mspId, c.identity)
-	return peerDeliver.SubscribeCC(ctx, c.channelName, c.name, seekOption...)
+func (c *Core) Subscribe(ctx context.Context) (api.EventCCSubscription, error) {
+	peerDeliver, err := c.peerPool.DeliverClient(c.mspId, c.identity)
+	if err != nil {
+		return nil, errors.Wrap(err, `failed to initiate DeliverClient`)
+	}
+	return peerDeliver.SubscribeCC(ctx, c.channelName, c.name)
 }
 
 func NewCore(mspId, ccName, channelName string, peerPool api.PeerPool, orderer api.Orderer, dp api.DiscoveryProvider, identity msp.SigningIdentity) *Core {

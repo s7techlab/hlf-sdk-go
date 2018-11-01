@@ -9,8 +9,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/protos/utils"
 
-	"log"
-
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
 	fabricPeer "github.com/hyperledger/fabric/protos/peer"
@@ -180,12 +178,21 @@ func (b *invokeBuilder) Do(ctx context.Context) (api.ChaincodeTx, []byte, error)
 				}
 				return
 			}
-			tsSub := peerDeliver.SubscribeTx(ctx, b.ccCore.channelName, tx)
-			defer tsSub.Close()
-			event, err := tsSub.Result()
+			tsSub, err := peerDeliver.SubscribeTx(ctx, b.ccCore.channelName, tx)
 			if err != nil {
+				select {
+				case b.sink <- api.ChaincodeInvokeResponse{
+					TxID: tx, Err: errors.Wrap(err, `failed to get subscription`),
+				}:
+				case <-ctx.Done():
+				}
+				return
+			}
+			defer tsSub.Close()
+
+			if _, err = tsSub.Result(); err != nil {
 				out := api.ChaincodeInvokeResponse{
-					TxID: tx, Err: errors.Wrap(err, `failed to subscribe on tx event`),
+					TxID: tx, Err: err,
 				}
 				select {
 				case b.sink <- out:
@@ -195,19 +202,9 @@ func (b *invokeBuilder) Do(ctx context.Context) (api.ChaincodeTx, []byte, error)
 
 			} else {
 				out := api.ChaincodeInvokeResponse{
-					TxID: tx,
-				}
-
-				ev, ok := <-event
-				if ok {
-					log.Println(`txEvent`, ev)
-					if ev.Success {
-						out.Payload = peerResponses[0].Response.Payload
-					} else {
-						out.Err = errors.Wrap(ev.Error, `failed to get confirmation from endorser`)
-					}
-				} else {
-					out.Err = errors.New(`failed to get tx event`)
+					TxID:    tx,
+					Payload: peerResponses[0].Response.Payload,
+					Err:     err,
 				}
 
 				select {
@@ -224,21 +221,16 @@ func (b *invokeBuilder) Do(ctx context.Context) (api.ChaincodeTx, []byte, error)
 		if err != nil {
 			return tx, nil, errors.Wrap(err, `failed to get delivery client`)
 		}
-		tsSub := peerDeliver.SubscribeTx(ctx, b.ccCore.channelName, tx)
-		defer tsSub.Close()
-		event, err := tsSub.Result()
+		tsSub, err := peerDeliver.SubscribeTx(ctx, b.ccCore.channelName, tx)
 		if err != nil {
 			return tx, nil, errors.Wrap(err, `failed to subscribe on tx event`)
+		}
+		defer tsSub.Close()
+
+		if _, err = tsSub.Result(); err != nil {
+			return tx, nil, err
 		} else {
-			for ev := range event {
-				log.Println(`txEvent`, ev)
-				if ev.Success {
-					return tx, peerResponses[0].Response.Payload, nil
-				} else {
-					return tx, nil, errors.Wrap(ev.Error, `failed to get confirmation from endorser`)
-				}
-			}
-			return tx, nil, errors.New(`failed to get tx event`)
+			return tx, peerResponses[0].Response.Payload, nil
 		}
 	}
 }
