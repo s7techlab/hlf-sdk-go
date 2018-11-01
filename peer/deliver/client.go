@@ -58,19 +58,26 @@ func (sub *dcBlockSub) addSub(ctx context.Context) (chan *common.Block, error) {
 }
 
 func (sub *dcBlockSub) handle() {
+	var err error
+	log := sub.log.Named(`handle`)
 	defer sub.blockSub.Close()
 	for {
 		select {
 		case block, ok := <-sub.blockSub.Blocks():
 			if !ok {
+				log.Error(`blockSub is closed`)
 				return
 			} else {
 				sub.listenersMx.Lock()
+				log.Debug(`Iterating over listeners`, zap.Int(`listener_count`, len(sub.listeners)))
 				for key, listener := range sub.listeners {
-					if listener.ctx.Err() != nil {
+					if err = listener.ctx.Err(); err != nil {
+						log.Debug(`Listener is done`, zap.Error(err), zap.String(`subKey`, key))
 						delete(sub.listeners, key)
 					} else {
+						log.Debug(`Sending block to sub`, zap.String(`subKey`, key))
 						listener.blockChan <- block
+						log.Debug(`Sent block to sub`, zap.String(`subKey`, key))
 					}
 				}
 				sub.listenersMx.Unlock()
@@ -112,19 +119,25 @@ func (e *deliverClient) Close() error {
 }
 
 func (e *deliverClient) initializeBlockSub(ctx context.Context, channelName string) (chan *common.Block, error) {
+	log := e.log.Named(`initializeBlockSub`).With(zap.String(`channel`, channelName))
 	var err error
 	e.blockSubStoreMx.Lock()
 	defer e.blockSubStoreMx.Unlock()
+	log.Debug(`Searching blockSub`)
 	if sub, ok := e.blockSubStore[channelName]; !ok {
+		log.Debug(`blockSub is not found, constructing new`)
 		sub = &dcBlockSub{listeners: make(map[string]*dcBlockSubListener), log: e.log.Named(`dcBlockSub`)}
 		if sub.blockSub, err = e.SubscribeBlock(ctx, channelName); err != nil {
+			log.Debug(`Failed to initiate blockSub`, zap.Error(err))
 			return nil, err
 		}
 
+		log.Debug(`Starting to handle dcBlockSub`)
 		go sub.handle()
 		e.blockSubStore[channelName] = sub
 		return sub.addSub(ctx)
 	} else {
+		log.Debug(`blockSub is found, adding to exist sub`)
 		return sub.addSub(ctx)
 	}
 }

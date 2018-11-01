@@ -71,7 +71,7 @@ func (es *eventSubscription) Close() error {
 func NewEventSubscription(ctx context.Context, blockChan chan *common.Block, log *zap.Logger) api.EventCCSubscription {
 	l := log.Named(`EventSubscription`)
 	newCtx, cancel := context.WithCancel(ctx)
-	return &eventSubscription{
+	es := eventSubscription{
 		log:       l,
 		eventChan: make(chan *peer.ChaincodeEvent),
 		errChan:   make(chan error),
@@ -79,4 +79,8 @@ func NewEventSubscription(ctx context.Context, blockChan chan *common.Block, log
 		ctx:       newCtx,
 		cancel:    cancel,
 	}
+
+	go es.handleCCSubscription()
+
+	return &es
 }

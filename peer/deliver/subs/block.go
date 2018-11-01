@@ -41,6 +41,7 @@ handleLoop:
 		ev, err := b.client.Recv()
 		log.Debug(`Got new DeliverResponse`)
 		if err != nil {
+			log.Fatal(err.Error())
 			if s, ok := status.FromError(err); ok {
 				switch s.Code() {
 				case codes.Canceled:
@@ -76,8 +77,6 @@ handleLoop:
 }
 
 func (b *blockSubscription) Blocks() chan *common.Block {
-	//log := b.log.Named(`Blocks`)
-	go b.handleSubscription()
 
 	return b.blockChan
 }

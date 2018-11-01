@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
+	"sync"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -55,12 +58,37 @@ func main() {
 	}
 
 	cc := core.Channel(channel).Chaincode(chaincode)
-	sub, err := cc.Subscribe(context.Background())
-	if err != nil {
-		log.Fatalln(`failed to get sub:`, err)
+
+	var wg sync.WaitGroup
+
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+
+		go func(idx int, wg *sync.WaitGroup) {
+			defer wg.Done()
+			sub, err := cc.Subscribe(context.Background())
+			if err != nil {
+				log.Printf("Failed to process rouitine %d: %s", idx, err)
+				return
+			}
+			defer sub.Close()
+
+			for {
+				select {
+				case ev := <-sub.Events():
+					b, _ := json.MarshalIndent(ev, ` `, "\t")
+					fmt.Printf("Routine %d, received event:\n %v\n", idx, string(b))
+				case err := <-sub.Errors():
+					log.Println(`error occurred:`, err)
+				case <-time.After(time.Duration(idx) * time.Second):
+					fmt.Printf("Routine %d is closing\n", idx)
+					return
+				}
+			}
+
+		}(i, &wg)
 	}
-	fmt.Printf("Waiting for events on chaincode `%s` from channel `%s`...\n", chaincode, channel)
-	for ev := range sub.Events() {
-		fmt.Printf("Received event: %v\n", *ev)
-	}
+
+	wg.Wait()
+
 }

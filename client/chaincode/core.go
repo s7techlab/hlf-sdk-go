@@ -10,7 +10,6 @@ import (
 )
 
 type Core struct {
-	aa          [][][][][][][][]byte
 	mspId       string
 	name        string
 	channelName string

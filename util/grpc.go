@@ -20,7 +20,7 @@ var (
 )
 
 const (
-	maxRecvMsgSize = 1000 * 1024 * 1024
+	maxRecvMsgSize = 100 * 1024 * 1024
 	maxSendMsgSize = 100 * 1024 * 1024
 )
 
