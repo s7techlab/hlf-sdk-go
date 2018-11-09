@@ -46,6 +46,10 @@ func (c *core) CryptoSuite() api.CryptoSuite {
 	return c.cs
 }
 
+func (c *core) PeerPool() api.PeerPool {
+	return c.peerPool
+}
+
 func (c *core) Channel(name string) api.Channel {
 	log := c.logger.Named(`Channel`).With(zap.String(`channel`, name))
 	c.channelMx.Lock()
