@@ -22,6 +22,8 @@ type Core interface {
 	CryptoSuite() CryptoSuite
 	// System allows access to system chaincodes
 	System() SystemCC
+	// Current peer pool
+	PeerPool() PeerPool
 }
 
 // SystemCC describes interface to access Fabric System Chaincodes
