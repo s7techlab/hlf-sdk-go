@@ -3,15 +3,13 @@ package orderer
 import (
 	"context"
 	"fmt"
-	"io"
-	"sync"
-	"time"
-
 	"github.com/hyperledger/fabric/protos/common"
 	fabricOrderer "github.com/hyperledger/fabric/protos/orderer"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"io"
+	"sync"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
@@ -32,7 +30,6 @@ type orderer struct {
 	ctx             context.Context
 	cancel          context.CancelFunc
 	connMx          sync.Mutex
-	timeout         time.Duration
 	broadcastClient fabricOrderer.AtomicBroadcastClient
 	grpcOptions     []grpc.DialOption
 }
@@ -59,18 +56,6 @@ func (o *orderer) Broadcast(ctx context.Context, envelope *common.Envelope) (*fa
 }
 
 func (o *orderer) Deliver(ctx context.Context, envelope *common.Envelope) (*common.Block, error) {
-	//TODO: propagate ctx from Signature of func
-	var (
-		cancel context.CancelFunc
-	)
-	if o.timeout != 0 {
-		ctx, cancel = context.WithTimeout(ctx, o.timeout)
-	} else {
-		ctx, cancel = context.WithCancel(ctx)
-	}
-
-	defer cancel()
-
 	cli, err := o.broadcastClient.Deliver(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to initialize deliver client`)
@@ -103,6 +88,7 @@ func (o *orderer) Deliver(ctx context.Context, envelope *common.Envelope) (*comm
 			}
 		case *fabricOrderer.DeliverResponse_Block:
 			block = respType.Block
+			return block, nil
 		}
 	}
 }

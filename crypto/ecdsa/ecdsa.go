@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	module    = `ecdsa`
+	Module    = `ecdsa`
 	curveP256 = `P256`
 	curveP384 = `P384`
 	curveP512 = `P512`
@@ -190,5 +190,5 @@ func preventMalleability(k *ecdsa.PrivateKey, S *big.Int) {
 }
 
 func init() {
-	crypto.Register(module, &ecdsaSuite{})
+	crypto.Register(Module, &ecdsaSuite{})
 }
