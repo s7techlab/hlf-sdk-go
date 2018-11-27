@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/peer/deliver"
+
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -70,11 +71,13 @@ func (p *peerPool) searchPeer(peer api.Peer, peerSet []*peerPoolPeer) bool {
 
 func (p *peerPool) poolChecker(aliveChan chan bool, peer *peerPoolPeer, ctx context.Context) {
 	log := p.log.Named(`poolChecker`)
+
 	for {
 		select {
 		case <-ctx.Done():
 			log.Debug(`Context canceled`)
 			return
+
 		case alive, ok := <-aliveChan:
 			log.Debug(`Got alive data about peer`, zap.String(`peerUri`, peer.peer.Uri()), zap.Bool(`alive`, alive))
 			if !ok {
@@ -87,12 +90,12 @@ func (p *peerPool) poolChecker(aliveChan chan bool, peer *peerPoolPeer, ctx cont
 
 func (p *peerPool) Process(mspId string, context context.Context, proposal *peer.SignedProposal) (*peer.ProposalResponse, error) {
 	log := p.log.Named(`Process`)
-	p.storeMx.Lock()
-	defer p.storeMx.Unlock()
-
+	p.storeMx.RLock()
 	//check MspId exists
 	log.Debug(`Searching peers for MspId`, zap.String(`mspId`, mspId))
 	peers, ok := p.store[mspId]
+	p.storeMx.RUnlock()
+
 	if !ok {
 		log.Error(api.ErrMSPNotFound.Error(), zap.String(`mspId`, mspId))
 		return nil, api.ErrMSPNotFound
@@ -152,11 +155,12 @@ func (p *peerPool) DeliverClient(mspId string, identity msp.SigningIdentity) (ap
 
 func (p *peerPool) getFirstReadyPeer(mspId string) (api.Peer, error) {
 	log := p.log.Named(`getFirstReadyPeer`)
-	p.storeMx.Lock()
-	defer p.storeMx.Unlock()
+	p.storeMx.RLock()
 	//check MspId exists
 	log.Debug(`Searching peers for MspId`, zap.String(`mspId`, mspId))
 	peers, ok := p.store[mspId]
+	p.storeMx.RUnlock()
+
 	if !ok {
 		log.Error(api.ErrMSPNotFound.Error(), zap.String(`mspId`, mspId))
 		return nil, api.ErrMSPNotFound
