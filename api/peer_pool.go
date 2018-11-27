@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/hyperledger/fabric/msp"
-
 	"github.com/hyperledger/fabric/protos/peer"
 	"google.golang.org/grpc/connectivity"
 )

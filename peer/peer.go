@@ -5,13 +5,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/s7techlab/hlf-sdk-go/util"
-
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	fabricPeer "github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/util"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
@@ -25,9 +24,20 @@ type peer struct {
 	client    fabricPeer.EndorserClient
 }
 
-func (p *peer) Endorse(ctx context.Context, proposal *fabricPeer.SignedProposal, opts ...api.PeerEndorseOpt) (*fabricPeer.ProposalResponse, error) {
+var (
+	defaultTimeout = 5 * time.Second
+)
 
-	//TODO:  it all can be used WITHOUT THAT WRAPPER around EndorserClient
+func (p *peer) Endorse(ctx context.Context, proposal *fabricPeer.SignedProposal, opts ...api.PeerEndorseOpt) (*fabricPeer.ProposalResponse, error) {
+	log := p.log.Named(`Endorse`)
+
+	if _, ok := ctx.Deadline(); !ok {
+		log.Debug(`Context without deadline, set timeout`, zap.Duration(`timeout`, p.timeout))
+		ctx, _ = context.WithTimeout(ctx, p.timeout)
+	} else {
+		log.Debug(`Context with deadline`)
+	}
+
 	if resp, err := p.client.ProcessProposal(ctx, proposal); err != nil {
 		return nil, err
 	} else {
@@ -78,13 +88,18 @@ func New(c config.ConnectionConfig, log *zap.Logger) (api.Peer, error) {
 		return nil, errors.Wrap(err, `failed to initialize GRPC connection`)
 	}
 	l.Debug(`GRPC initialized`, zap.String(`target`, conn.Target()))
-	return NewFromGRPC(conn, l)
+
+	timeout := c.Timeout.Duration
+	if timeout == 0 {
+		timeout = defaultTimeout
+	}
+	return NewFromGRPC(conn, l, timeout)
 }
 
 // NewFromGRPC allows to initialize peer from existing GRPC connection
-func NewFromGRPC(conn *grpc.ClientConn, log *zap.Logger) (api.Peer, error) {
+func NewFromGRPC(conn *grpc.ClientConn, log *zap.Logger, timeout time.Duration) (api.Peer, error) {
 	l := log.Named(`NewFromGRPC`)
-	p := &peer{conn: conn}
+	p := &peer{conn: conn, log: log.Named(`peer`), timeout: timeout}
 	if err := p.initEndorserClient(); err != nil {
 		l.Error(`Failed to initialize endorser client`, zap.Error(err))
 		return nil, errors.Wrap(err, `failed to initialize EndorserClient`)

@@ -2,6 +2,10 @@ package orderer
 
 import (
 	"context"
+	"os"
+	"testing"
+	"time"
+
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/utils"
 	"github.com/s7techlab/hlf-sdk-go/api"
@@ -12,9 +16,6 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/util"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
-	"os"
-	"testing"
-	"time"
 )
 
 var (
