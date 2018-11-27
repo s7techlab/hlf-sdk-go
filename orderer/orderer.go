@@ -3,17 +3,17 @@ package orderer
 import (
 	"context"
 	"fmt"
-	"github.com/hyperledger/fabric/protos/common"
-	fabricOrderer "github.com/hyperledger/fabric/protos/orderer"
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
 	"io"
 	"sync"
 
+	"github.com/hyperledger/fabric/protos/common"
+	fabricOrderer "github.com/hyperledger/fabric/protos/orderer"
+	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/util"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
 )
 
 type ErrUnexpectedStatus struct {

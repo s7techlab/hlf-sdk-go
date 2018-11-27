@@ -6,14 +6,13 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/s7techlab/hlf-sdk-go/util"
-
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/msp"
 	_ "github.com/hyperledger/fabric/msp"
 	mspPb "github.com/hyperledger/fabric/protos/msp"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
 type mspIdentity struct {

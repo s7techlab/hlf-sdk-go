@@ -4,16 +4,14 @@ import (
 	"context"
 	"sync"
 
+	"github.com/hyperledger/fabric/msp"
+	"github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/peer/deliver"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"github.com/hyperledger/fabric/msp"
-	"github.com/hyperledger/fabric/protos/peer"
-
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/peer/deliver"
 )
 
 type peerPool struct {
@@ -113,7 +111,7 @@ func (p *peerPool) Process(mspId string, context context.Context, proposal *peer
 			continue
 		}
 
-		log.Debug(`Endorse send on peer`, zap.Int(`peerPos`, pos), zap.String(`mspId`, mspId), zap.String(`uri`, poolPeer.peer.Uri()))
+		log.Debug(`Endorse sent on peer`, zap.Int(`peerPos`, pos), zap.String(`mspId`, mspId), zap.String(`uri`, poolPeer.peer.Uri()))
 		if propResp, err := poolPeer.peer.Endorse(context, proposal); err != nil {
 
 			// GRPC error

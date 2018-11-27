@@ -1,9 +1,8 @@
 package api
 
 import (
-	"fmt"
-
 	"context"
+	"fmt"
 
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/peer"
