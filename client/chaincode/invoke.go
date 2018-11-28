@@ -7,11 +7,10 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/hyperledger/fabric/protos/utils"
-
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
 	fabricPeer "github.com/hyperledger/fabric/protos/peer"
+	"github.com/hyperledger/fabric/protos/utils"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/peer"
@@ -134,35 +133,35 @@ func (b *invokeBuilder) ArgString(args ...string) api.ChaincodeInvokeBuilder {
 	return b.ArgBytes(argsToBytes(args...))
 }
 
-func (b *invokeBuilder) Do(ctx context.Context) (api.ChaincodeTx, []byte, error) {
+func (b *invokeBuilder) Do(ctx context.Context) (*fabricPeer.Response, api.ChaincodeTx, error) {
 	err := b.err.Err()
 	if err != nil {
-		return ``, nil, err
+		return nil, ``, err
 	}
 
 	cc, err := b.ccCore.dp.Chaincode(b.ccCore.channelName, b.ccCore.name)
 	if err != nil {
-		return ``, nil, errors.Wrap(err, `failed to get chaincode definition`)
+		return nil, ``, errors.Wrap(err, `failed to get chaincode definition`)
 	}
 
 	proposal, tx, err := b.processor.CreateProposal(cc, b.identity, b.fn, b.args)
 	if err != nil {
-		return tx, nil, errors.Wrap(err, `failed to get signed proposal`)
+		return nil, ``, errors.Wrap(err, `failed to get signed proposal`)
 	}
 
 	peerResponses, err := b.processor.Send(ctx, proposal, cc, b.peerPool)
 	if err != nil {
-		return tx, nil, errors.Wrap(err, `failed to collect peer responses`)
+		return nil, tx, errors.Wrap(err, `failed to collect peer responses`)
 	}
 
 	envelope, err := b.getTransaction(proposal, peerResponses)
 	if err != nil {
-		return tx, nil, errors.Wrap(err, `failed to get envelope`)
+		return nil, tx, errors.Wrap(err, `failed to get envelope`)
 	}
 
 	_, err = b.ccCore.orderer.Broadcast(ctx, envelope)
 	if err != nil {
-		return tx, nil, errors.Wrap(err, `failed to get orderer response`)
+		return nil, tx, errors.Wrap(err, `failed to get orderer response`)
 	}
 
 	if b.sink != nil {
@@ -215,22 +214,22 @@ func (b *invokeBuilder) Do(ctx context.Context) (api.ChaincodeTx, []byte, error)
 			}
 		}()
 
-		return tx, peerResponses[0].Response.Payload, nil
+		return peerResponses[0].Response, tx, nil
 	} else {
 		peerDeliver, err := b.peerPool.DeliverClient(b.identity.GetMSPIdentifier(), b.identity)
 		if err != nil {
-			return tx, nil, errors.Wrap(err, `failed to get delivery client`)
+			return nil, tx, errors.Wrap(err, `failed to get delivery client`)
 		}
 		tsSub, err := peerDeliver.SubscribeTx(ctx, b.ccCore.channelName, tx)
 		if err != nil {
-			return tx, nil, errors.Wrap(err, `failed to subscribe on tx event`)
+			return nil, tx, errors.Wrap(err, `failed to subscribe on tx event`)
 		}
 		defer tsSub.Close()
 
 		if _, err = tsSub.Result(); err != nil {
-			return tx, nil, err
+			return nil, tx, err
 		} else {
-			return tx, peerResponses[0].Response.Payload, nil
+			return peerResponses[0].Response, tx, nil
 		}
 	}
 }

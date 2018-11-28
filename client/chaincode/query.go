@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/hyperledger/fabric/msp"
+	fabricPeer "github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/peer"
@@ -26,23 +27,11 @@ func (q *QueryBuilder) WithIdentity(identity msp.SigningIdentity) api.ChaincodeQ
 
 // TODO: think about interface in one style with Invoke
 func (q *QueryBuilder) AsBytes(ctx context.Context) ([]byte, error) {
-	ccDef, err := q.ccCore.dp.Chaincode(q.ccCore.channelName, q.ccCore.name)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to get chaincode definition from discovery provider`)
+	if response, err := q.AsProposalResponse(ctx); err != nil {
+		return nil, errors.Wrap(err, `failed to get proposal response`)
+	} else {
+		return response.Response.Payload, nil
 	}
-
-	proposal, _, err := q.processor.CreateProposal(ccDef, q.identity, q.fn, argsToBytes(q.args...))
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to create peer proposal`)
-	}
-
-	// query only on peer for current signingIdentity
-	response, err := q.peerPool.Process(q.identity.GetMSPIdentifier(), ctx, proposal)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to get proposal response from peer`)
-	}
-
-	return response.Response.Payload, nil
 }
 
 func (q *QueryBuilder) AsJSON(ctx context.Context, out interface{}) error {
@@ -54,6 +43,20 @@ func (q *QueryBuilder) AsJSON(ctx context.Context, out interface{}) error {
 		}
 	}
 	return nil
+}
+
+func (q *QueryBuilder) AsProposalResponse(ctx context.Context) (*fabricPeer.ProposalResponse, error) {
+	ccDef, err := q.ccCore.dp.Chaincode(q.ccCore.channelName, q.ccCore.name)
+	if err != nil {
+		return nil, errors.Wrap(err, `failed to get chaincode definition from discovery provider`)
+	}
+
+	proposal, _, err := q.processor.CreateProposal(ccDef, q.identity, q.fn, argsToBytes(q.args...))
+	if err != nil {
+		return nil, errors.Wrap(err, `failed to create peer proposal`)
+	}
+
+	return q.peerPool.Process(q.identity.GetMSPIdentifier(), ctx, proposal)
 }
 
 func NewQueryBuilder(ccCore *Core, identity msp.SigningIdentity, fn string, args ...string) *QueryBuilder {
