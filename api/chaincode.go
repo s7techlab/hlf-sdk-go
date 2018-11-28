@@ -42,7 +42,7 @@ type ChaincodeInvokeBuilder interface {
 	// ArgString set slice of strings as arguments
 	ArgString(args ...string) ChaincodeInvokeBuilder
 	// Do  do invoke with builded arguments
-	Do(ctx context.Context) (ChaincodeTx, []byte, error)
+	Do(ctx context.Context) (*peer.Response, ChaincodeTx, error)
 }
 
 // ChaincodeQueryBuilder describe possibilities how to get query results
@@ -53,6 +53,8 @@ type ChaincodeQueryBuilder interface {
 	AsBytes(ctx context.Context) ([]byte, error)
 	// AsJSON allows to get result of querying chaincode to presented structures using JSON-unmarshalling
 	AsJSON(ctx context.Context, out interface{}) error
+	// AsProposalResponse allows to get raw peer response
+	AsProposalResponse(ctx context.Context) (*peer.ProposalResponse, error)
 }
 
 // CSCC describes Configuration System Chaincode (CSCC)
