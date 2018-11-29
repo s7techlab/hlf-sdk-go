@@ -140,7 +140,7 @@ func (p *peerPool) Process(mspId string, context context.Context, proposal *peer
 		}
 	}
 
-	return nil, api.ErrNoReadyPeersForMSP
+	return nil, api.ErrNoReadyPeers{MspId: mspId}
 
 }
 func (p *peerPool) DeliverClient(mspId string, identity msp.SigningIdentity) (api.DeliverClient, error) {
@@ -178,7 +178,7 @@ func (p *peerPool) getFirstReadyPeer(mspId string) (api.Peer, error) {
 		}
 	}
 
-	return nil, api.ErrNoReadyPeersForMSP
+	return nil, api.ErrNoReadyPeers{MspId: mspId}
 }
 
 func (p *peerPool) Close() error {
