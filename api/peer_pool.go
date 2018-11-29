@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/hyperledger/fabric/msp"
@@ -10,12 +11,20 @@ import (
 )
 
 const (
-	ErrPeerAlreadySet     = Error(`peer already set`)
-	ErrNoPeersForMSP      = Error(`no peers for presented MSP`)
-	ErrNoReadyPeersForMSP = Error(`no ready peers for presented MSP`)
-	ErrMSPNotFound        = Error(`MSP not found`)
-	ErrPeerNotReady       = Error(`peer not ready`)
+	ErrPeerAlreadySet = Error(`peer already set`)
+	ErrNoPeersForMSP  = Error(`no peers for presented MSP`)
+	//ErrNoReadyPeersForMSP = Error(`no ready peers for presented MSP`)
+	ErrMSPNotFound  = Error(`MSP not found`)
+	ErrPeerNotReady = Error(`peer not ready`)
 )
+
+type ErrNoReadyPeers struct {
+	MspId string
+}
+
+func (e ErrNoReadyPeers) Error() string {
+	return fmt.Sprintf("no ready peers for MspId: %s", e.MspId)
+}
 
 type PeerPool interface {
 	Add(mspId string, peer Peer, strategy PeerPoolCheckStrategy) error
