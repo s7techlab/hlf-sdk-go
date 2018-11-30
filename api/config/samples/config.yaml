@@ -35,6 +35,8 @@ msp:
       retry:
         max: 2
         timeout: 1s
+    # timeout for peer.DeliverClient
+    deliver_timeout: 6s
   - host: localhost:7051
     grpc:
       retry:
