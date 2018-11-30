@@ -14,7 +14,7 @@ type invoker struct {
 }
 
 func (i *invoker) Invoke(ctx context.Context, from msp.SigningIdentity, channel string, chaincode string, fn string, args [][]byte) (*peer.Response, api.ChaincodeTx, error) {
-	return i.core.Channel(channel).Chaincode(chaincode).Invoke(fn).ArgBytes(args).Do(ctx)
+	return i.core.Channel(channel).Chaincode(chaincode).Invoke(fn).WithIdentity(from).ArgBytes(args).Do(ctx)
 }
 
 func (i *invoker) Query(ctx context.Context, from msp.SigningIdentity, channel string, chaincode string, fn string, args [][]byte) (*peer.Response, error) {
@@ -23,7 +23,7 @@ func (i *invoker) Query(ctx context.Context, from msp.SigningIdentity, channel s
 		argSs = append(argSs, string(arg))
 	}
 
-	if resp, err := i.core.Channel(channel).Chaincode(chaincode).Query(fn, argSs...).AsProposalResponse(ctx); err != nil {
+	if resp, err := i.core.Channel(channel).Chaincode(chaincode).Query(fn, argSs...).WithIdentity(from).AsProposalResponse(ctx); err != nil {
 		return nil, errors.Wrap(err, `failed to query chaincode`)
 	} else {
 		return resp.Response, nil
