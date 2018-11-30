@@ -41,7 +41,7 @@ handleLoop:
 		ev, err := b.client.Recv()
 		log.Debug(`Got new DeliverResponse`)
 		if err != nil {
-			log.Fatal(err.Error())
+			log.Debug(`Got error`, zap.Error(err))
 			if s, ok := status.FromError(err); ok {
 				switch s.Code() {
 				case codes.Canceled:
