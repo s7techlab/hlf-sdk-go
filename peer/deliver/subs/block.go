@@ -47,8 +47,12 @@ handleLoop:
 				case codes.Canceled:
 					log.Debug(`Got context.Canceled`)
 					return
+				case codes.DeadlineExceeded:
+					log.Debug(`Got DeadlineExceeded`)
+					return
 				default:
 					log.Debug(`Got GRPC status code`, zap.Uint32(`grpc_code`, uint32(s.Code())), zap.String(`grpc_code_str`, s.Code().String()))
+					return
 				}
 			}
 
