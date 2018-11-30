@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"io/ioutil"
 
 	"github.com/pkg/errors"
@@ -12,6 +13,14 @@ import (
 
 // CoreOpt describes opt which will be applied to coreOptions
 type CoreOpt func(c *core) error
+
+// WithContext allows to pass custom context. Otherwise, context.Background is used
+func WithContext(ctx context.Context) CoreOpt {
+	return func(c *core) error {
+		c.ctx = ctx
+		return nil
+	}
+}
 
 // WithOrderer allows to use custom instance of orderer in core
 func WithOrderer(orderer api.Orderer) CoreOpt {

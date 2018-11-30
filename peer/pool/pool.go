@@ -8,6 +8,7 @@ import (
 	"github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/peer/deliver"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
@@ -15,6 +16,8 @@ import (
 )
 
 type peerPool struct {
+	config config.PoolConfig
+
 	log    *zap.Logger
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -149,7 +152,15 @@ func (p *peerPool) DeliverClient(mspId string, identity msp.SigningIdentity) (ap
 		return nil, err
 	}
 
-	return deliver.NewFromGRPC(poolPeer.Conn(), identity, p.log.Named(`DeliverClient`)), nil
+	var ctx context.Context
+
+	if p.config.DeliverTimeout.Duration != 0 {
+		ctx, _ = context.WithTimeout(p.ctx, p.config.DeliverTimeout.Duration)
+	} else {
+		ctx = p.ctx
+	}
+
+	return deliver.NewFromGRPC(ctx, poolPeer.Conn(), identity, p.log.Named(`DeliverClient`)), nil
 }
 
 func (p *peerPool) getFirstReadyPeer(mspId string) (api.Peer, error) {
@@ -185,7 +196,7 @@ func (p *peerPool) Close() error {
 	return nil
 }
 
-func New(log *zap.Logger) api.PeerPool {
-	ctx, cancel := context.WithCancel(context.Background())
-	return &peerPool{store: make(map[string][]*peerPoolPeer), log: log.Named(`PeerPool`), ctx: ctx, cancel: cancel}
+func New(ctx context.Context, log *zap.Logger, config config.PoolConfig) api.PeerPool {
+	ctx, cancel := context.WithCancel(ctx)
+	return &peerPool{store: make(map[string][]*peerPoolPeer), log: log.Named(`PeerPool`), ctx: ctx, cancel: cancel, config: config}
 }

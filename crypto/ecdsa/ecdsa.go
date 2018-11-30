@@ -37,6 +37,10 @@ const (
 )
 
 var (
+	DefaultOpts = config.CryptoSuiteOpts{`curve`: `P256`, `signatureAlgorithm`: `SHA256`, `hash`: `SHA2-256`}
+)
+
+var (
 	// precomputed curves half order values for efficiency
 	ecCurveHalfOrders = map[elliptic.Curve]*big.Int{
 		elliptic.P224(): new(big.Int).Rsh(elliptic.P224().Params().N, 1),

@@ -13,9 +13,11 @@ import (
 )
 
 type txSubscription struct {
-	log       *zap.Logger
-	txId      api.ChaincodeTx
+	log  *zap.Logger
+	txId api.ChaincodeTx
+
 	blockChan chan *common.Block
+	errChan   chan error
 
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -30,7 +32,7 @@ func (ts *txSubscription) Result() (peer.TxValidationCode, error) {
 		case block, ok := <-ts.blockChan:
 			if !ok {
 				log.Debug(`blockChan is closed`)
-				return 0, errors.New(`blockChan is closed`)
+				return -1, errors.New(`blockChan is closed`)
 			}
 			log.Debug(`Received block`, zap.Uint64(`number`, block.Header.Number),
 				zap.ByteString(`hash`, block.Header.DataHash),
@@ -45,7 +47,8 @@ func (ts *txSubscription) Result() (peer.TxValidationCode, error) {
 				return code, err
 			}
 		case <-ts.ctx.Done():
-			break
+			log.Debug(`Context canceled`, zap.Error(ts.ctx.Err()))
+			return -1, ts.ctx.Err()
 		}
 	}
 }
@@ -103,7 +106,7 @@ func (ts *txSubscription) Close() error {
 	return nil
 }
 
-func NewTxSubscription(ctx context.Context, txId api.ChaincodeTx, blockChan chan *common.Block, log *zap.Logger) api.TxSubscription {
+func NewTxSubscription(ctx context.Context, txId api.ChaincodeTx, blockChan chan *common.Block, errChan chan error, log *zap.Logger) api.TxSubscription {
 	l := log.Named(`TxSubscription`)
 
 	newCtx, cancel := context.WithCancel(ctx)
@@ -111,6 +114,7 @@ func NewTxSubscription(ctx context.Context, txId api.ChaincodeTx, blockChan chan
 		log:       l,
 		txId:      txId,
 		blockChan: blockChan,
+		errChan:   errChan,
 		ctx:       newCtx,
 		cancel:    cancel,
 	}
