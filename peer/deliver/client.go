@@ -94,13 +94,15 @@ func (sub *dcBlockSub) handle() {
 				return
 			}
 			sub.listenersMx.Lock()
-			for key, listener := range sub.listeners {
+			log.Debug(`Iterating over listeners`, zap.Int(`listener_count`, len(sub.listeners)))
+			for _, listener := range sub.listeners {
 				// TODO think about listener errChan
-				//if listener.ctx.Err() == nil {
-				//	listener.errChan <- err
-				//}
-				listener.cancel()
-				delete(sub.listeners, key)
+				if listener.ctx.Err() == nil {
+					log.Debug(`Listener isn't canceled, `)
+					listener.errChan <- err
+				} else {
+					listener.cancel()
+				}
 			}
 			sub.listenersMx.Unlock()
 		case <-sub.ctx.Done():

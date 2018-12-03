@@ -2,13 +2,13 @@ package deliver
 
 import (
 	"context"
-	"github.com/hyperledger/fabric/protos/peer"
 	"log"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/hyperledger/fabric/msp"
+	"github.com/hyperledger/fabric/protos/peer"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/crypto"
 	"github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
@@ -126,7 +126,9 @@ func init() {
 		log.Fatalln(err)
 	}
 
-	conn, err = grpc.Dial(os.Getenv(`PEER_HOST`), grpc.WithInsecure())
+	ctx, _ := context.WithTimeout(context.Background(), time.Second)
+
+	conn, err = grpc.DialContext(ctx, os.Getenv(`PEER_HOST`), grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Fatalln(err)
 	}
