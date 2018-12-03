@@ -4,23 +4,23 @@ import (
 	"context"
 	"sync"
 
-	"github.com/thanhpk/randstr"
-
-	"github.com/hyperledger/fabric/protos/common"
-
-	"github.com/s7techlab/hlf-sdk-go/util"
-
-	"go.uber.org/zap"
-
 	"github.com/hyperledger/fabric/msp"
+	"github.com/hyperledger/fabric/protos/common"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/peer/deliver/subs"
+	"github.com/s7techlab/hlf-sdk-go/util"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
+const (
+	subIndexLength = 5
+)
+
 type deliverClient struct {
+	ctx      context.Context
+	cancel   context.CancelFunc
 	log      *zap.Logger
 	uri      string
 	identity msp.SigningIdentity
@@ -31,6 +31,7 @@ type deliverClient struct {
 }
 
 type dcBlockSub struct {
+	ctx         context.Context
 	log         *zap.Logger
 	blockSub    api.BlockSubscription
 	listeners   map[string]*dcBlockSubListener
@@ -39,21 +40,24 @@ type dcBlockSub struct {
 
 type dcBlockSubListener struct {
 	blockChan chan *common.Block
+	errChan   chan error
 	ctx       context.Context
+	cancel    context.CancelFunc
 }
 
-func (sub *dcBlockSub) addSub(ctx context.Context) (chan *common.Block, error) {
+func (sub *dcBlockSub) addSub(ctx context.Context) (chan *common.Block, chan error, error) {
 	sub.listenersMx.Lock()
 	defer sub.listenersMx.Unlock()
 	log := sub.log.Named(`addSub`)
-	subHash := randstr.Hex(5)
+	subHash := util.RandStringBytesMaskImprSrc(subIndexLength)
 	log.Debug(`Adding new sub`, zap.String(`id`, subHash))
 	if _, ok := sub.listeners[subHash]; ok {
-		return nil, errors.New(`subs hash collision`)
+		return nil, nil, errors.New(`subs hash collision`)
 	} else {
-		newSub := dcBlockSubListener{blockChan: make(chan *common.Block), ctx: ctx}
+		newCtx, cancel := context.WithCancel(ctx)
+		newSub := dcBlockSubListener{blockChan: make(chan *common.Block), ctx: newCtx, cancel: cancel, errChan: make(chan error)}
 		sub.listeners[subHash] = &newSub
-		return newSub.blockChan, nil
+		return newSub.blockChan, newSub.errChan, nil
 	}
 }
 
@@ -72,6 +76,7 @@ func (sub *dcBlockSub) handle() {
 				log.Debug(`Iterating over listeners`, zap.Int(`listener_count`, len(sub.listeners)))
 				for key, listener := range sub.listeners {
 					if err = listener.ctx.Err(); err != nil {
+						listener.errChan <- err
 						log.Debug(`Listener is done`, zap.Error(err), zap.String(`subKey`, key))
 						delete(sub.listeners, key)
 					} else {
@@ -83,31 +88,43 @@ func (sub *dcBlockSub) handle() {
 				sub.listenersMx.Unlock()
 			}
 		case err, ok := <-sub.blockSub.Errors():
+			log.Debug(`Got blockSub error`, zap.Error(err))
 			if !ok {
+				log.Error(`blockSub is closed`)
 				return
 			}
-			switch err.(type) {
-			case api.GRPCStreamError:
-				return
+			sub.listenersMx.Lock()
+			log.Debug(`Iterating over listeners`, zap.Int(`listener_count`, len(sub.listeners)))
+			for _, listener := range sub.listeners {
+				// TODO think about listener errChan
+				if listener.ctx.Err() == nil {
+					log.Debug(`Listener isn't canceled, `)
+					listener.errChan <- err
+				} else {
+					listener.cancel()
+				}
 			}
+			sub.listenersMx.Unlock()
+		case <-sub.ctx.Done():
+			return
 		}
 	}
 }
 
 func (e *deliverClient) SubscribeCC(ctx context.Context, channelName string, ccName string) (api.EventCCSubscription, error) {
-	blockChan, err := e.initializeBlockSub(ctx, channelName)
+	blockChan, errChan, err := e.initializeBlockSub(e.ctx, channelName)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to initialize block channel`)
 	}
-	return subs.NewEventSubscription(ctx, blockChan, e.log), nil
+	return subs.NewEventSubscription(ctx, blockChan, errChan, e.log), nil
 }
 
 func (e *deliverClient) SubscribeTx(ctx context.Context, channelName string, txId api.ChaincodeTx) (api.TxSubscription, error) {
-	blockChan, err := e.initializeBlockSub(ctx, channelName)
+	blockChan, errChan, err := e.initializeBlockSub(e.ctx, channelName)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to initialize block channel`)
 	}
-	return subs.NewTxSubscription(ctx, txId, blockChan, e.log), nil
+	return subs.NewTxSubscription(ctx, txId, blockChan, errChan, e.log), nil
 }
 
 func (e *deliverClient) SubscribeBlock(ctx context.Context, channelName string, seekOpt ...api.EventCCSeekOption) (api.BlockSubscription, error) {
@@ -115,10 +132,13 @@ func (e *deliverClient) SubscribeBlock(ctx context.Context, channelName string, 
 }
 
 func (e *deliverClient) Close() error {
+	log := e.log.Named(`Close`)
+	log.Debug(`Canceling context`)
+	e.cancel()
 	return e.conn.Close()
 }
 
-func (e *deliverClient) initializeBlockSub(ctx context.Context, channelName string) (chan *common.Block, error) {
+func (e *deliverClient) initializeBlockSub(ctx context.Context, channelName string) (chan *common.Block, chan error, error) {
 	log := e.log.Named(`initializeBlockSub`).With(zap.String(`channel`, channelName))
 	var err error
 	e.blockSubStoreMx.Lock()
@@ -126,10 +146,10 @@ func (e *deliverClient) initializeBlockSub(ctx context.Context, channelName stri
 	log.Debug(`Searching blockSub`)
 	if sub, ok := e.blockSubStore[channelName]; !ok {
 		log.Debug(`blockSub is not found, constructing new`)
-		sub = &dcBlockSub{listeners: make(map[string]*dcBlockSubListener), log: e.log.Named(`dcBlockSub`)}
+		sub = &dcBlockSub{ctx: ctx, listeners: make(map[string]*dcBlockSubListener), log: e.log.Named(`dcBlockSub`)}
 		if sub.blockSub, err = e.SubscribeBlock(ctx, channelName); err != nil {
 			log.Debug(`Failed to initiate blockSub`, zap.Error(err))
-			return nil, err
+			return nil, nil, err
 		}
 
 		log.Debug(`Starting to handle dcBlockSub`)
@@ -142,32 +162,17 @@ func (e *deliverClient) initializeBlockSub(ctx context.Context, channelName stri
 	}
 }
 
-func NewDeliverClient(c config.ConnectionConfig, identity msp.SigningIdentity, log *zap.Logger) (api.DeliverClient, error) {
-	l := log.Named(`DeliverClient`)
-
-	opts, err := util.NewGRPCOptionsFromConfig(c, l)
-	if err != nil {
-		l.Error(`Failed to get GRPC options`, zap.Error(err))
-		return nil, errors.Wrap(err, `failed to get GRPC options`)
-	}
-
-	ctx, _ := context.WithTimeout(context.Background(), c.Timeout.Duration)
-
-	conn, err := grpc.DialContext(ctx, c.Host, opts...)
-	if err != nil {
-		l.Error(`Failed to initialize GRPC connection`, zap.Error(err))
-		return nil, errors.Wrap(err, `failed to initialize GRPC connection`)
-	}
-
-	return NewFromGRPC(conn, identity, l), nil
-}
-
 // NewFromGRPC allows to initialize orderer from existing GRPC connection
-func NewFromGRPC(conn *grpc.ClientConn, identity msp.SigningIdentity, log *zap.Logger) api.DeliverClient {
+func NewFromGRPC(ctx context.Context, conn *grpc.ClientConn, identity msp.SigningIdentity, log *zap.Logger) api.DeliverClient {
 	l := log.Named(`NewFromGRPC`)
 	l.Debug(`Using presented GRPC connection`, zap.String(`target`, conn.Target()))
 	l.Debug(`Using presented identity`, zap.String(`msp_id`, identity.GetMSPIdentifier()), zap.String(`id`, identity.GetIdentifier().Id))
+
+	newCtx, cancel := context.WithCancel(ctx)
+
 	return &deliverClient{
+		ctx:           newCtx,
+		cancel:        cancel,
 		log:           l,
 		uri:           conn.Target(),
 		conn:          conn,

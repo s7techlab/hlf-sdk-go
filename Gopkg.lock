@@ -197,7 +197,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:65ab75c60402c5ef4409475c930b999a9738b06951b59b4d59326bcad7dd67bd"
+  digest = "1:aeabfde768e9d27db26f8593f3574f3ed21cc5b9cc03f97a55481b37dd50934c"
   name = "github.com/golang/protobuf"
   packages = [
     "proto",
@@ -206,7 +206,6 @@
     "ptypes/duration",
     "ptypes/empty",
     "ptypes/timestamp",
-    "ptypes/wrappers",
   ]
   pruneopts = "UT"
   revision = "05f48f4eaf0e05663b562bab533cdd472238ce29"
@@ -646,21 +645,6 @@
   revision = "2a37a9eb7c3a18e2df8f98067b68de248c126871"
 
 [[projects]]
-  digest = "1:75d447ee7c6dfa97f31adfb4f03ce64edfbac3b5b92cebaee708c590d7069ee8"
-  name = "github.com/thanhpk/baseconv"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "ecdb2bce436580b7af32bd93f569dddadf3a0d4c"
-
-[[projects]]
-  digest = "1:a969535cd4d6de7d9a37be26016474318cfd13ac5ee99e9ca3df0f3230fc6d87"
-  name = "github.com/thanhpk/randstr"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "5d341746266631ff6a4bae01c59d360b803140c4"
-  version = "v1.0.2"
-
-[[projects]]
   digest = "1:3c1a69cdae3501bf75e76d0d86dc6f2b0a7421bc205c0cb7b96b19eed464a34d"
   name = "go.uber.org/atomic"
   packages = ["."]
@@ -791,15 +775,13 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:76ddf7e05484d4c94575af442d2d576defbf90ff399882c536fdcf22629f5798"
+  digest = "1:5258f91d9d304618d9dbd843aedd8af3c811189178ba6cdeb397ea9478e50b59"
   name = "google.golang.org/grpc"
   packages = [
     ".",
     "balancer",
     "balancer/base",
     "balancer/roundrobin",
-    "channelz/grpc_channelz_v1",
-    "channelz/service",
     "codes",
     "connectivity",
     "credentials",
@@ -859,11 +841,9 @@
     "github.com/mitchellh/mapstructure",
     "github.com/pkg/errors",
     "github.com/stretchr/testify/assert",
-    "github.com/thanhpk/randstr",
     "go.uber.org/zap",
     "golang.org/x/crypto/sha3",
     "google.golang.org/grpc",
-    "google.golang.org/grpc/channelz/service",
     "google.golang.org/grpc/codes",
     "google.golang.org/grpc/connectivity",
     "google.golang.org/grpc/credentials",

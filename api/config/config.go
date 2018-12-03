@@ -11,6 +11,7 @@ type Config struct {
 	Orderer   ConnectionConfig `yaml:"orderer"`
 	Discovery DiscoveryConfig  `yaml:"discovery"`
 	MSP       []MSPConfig      `yaml:"msp"`
+	Pool      PoolConfig       `yaml:"pool"`
 }
 
 type ConnectionConfig struct {
@@ -31,6 +32,10 @@ type CAConfig struct {
 	Crypto CryptoConfig `yaml:"crypto"`
 	Host   string       `yaml:"host"`
 	Tls    TlsConfig    `yaml:"tls"`
+}
+
+type PoolConfig struct {
+	DeliverTimeout Duration `yaml:"deliver_timeout"`
 }
 
 type MSPConfig struct {

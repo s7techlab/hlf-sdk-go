@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"google.golang.org/grpc/codes"
 	"math"
 
 	"fmt"
@@ -91,7 +92,8 @@ type TxEvent struct {
 
 // GRPCStreamError contains original error from GRPC stream
 type GRPCStreamError struct {
-	Err error
+	Code codes.Code
+	Err  error
 }
 
 func (e GRPCStreamError) Error() string {

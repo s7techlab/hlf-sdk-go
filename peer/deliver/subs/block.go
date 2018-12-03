@@ -3,7 +3,6 @@ package subs
 import (
 	"context"
 	"fmt"
-
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/orderer"
@@ -13,12 +12,15 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/util"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type blockSubscription struct {
-	log         *zap.Logger
+	log *zap.Logger
+
+	ctx    context.Context
+	cancel context.CancelFunc
+
 	channelName string
 	identity    msp.SigningIdentity
 	conn        *grpc.ClientConn
@@ -36,52 +38,47 @@ func (b *blockSubscription) handleSubscription() {
 	log.Debug(`Starting subscription`)
 	defer log.Debug(`Closing subscription`)
 
-handleLoop:
 	for {
-		ev, err := b.client.Recv()
-		log.Debug(`Got new DeliverResponse`)
-		if err != nil {
-			log.Debug(`Got error`, zap.Error(err))
-			if s, ok := status.FromError(err); ok {
-				switch s.Code() {
-				case codes.Canceled:
-					log.Debug(`Got context.Canceled`)
-					return
-				case codes.DeadlineExceeded:
-					log.Debug(`Got DeadlineExceeded`)
-					return
-				default:
-					log.Debug(`Got GRPC status code`, zap.Uint32(`grpc_code`, uint32(s.Code())), zap.String(`grpc_code_str`, s.Code().String()))
+		select {
+		case <-b.ctx.Done():
+			log.Debug(`Context canceled`)
+			return
+		default:
+			ev, err := b.client.Recv()
+			log.Debug(`Got new DeliverResponse`)
+			if err != nil {
+				log.Debug(`Got error`, zap.Error(err))
+				if s, ok := status.FromError(err); ok {
+					log.Error(`GRPC error`, zap.Uint32(`grpc_code`, uint32(s.Code())), zap.String(`grpc_code_str`, s.Code().String()))
+					b.errChan <- &api.GRPCStreamError{
+						Err:  s.Err(),
+						Code: s.Code(),
+					}
 					return
 				}
 			}
 
-			log.Error(`Subscription error`, zap.Error(err))
-			b.errChan <- &api.GRPCStreamError{Err: err}
-			continue handleLoop
-		}
-
-		log.Debug(`Switch DeliverResponse Type`)
-		switch event := ev.Type.(type) {
-		case *peer.DeliverResponse_Block:
-			log.Debug(`Got DeliverResponse_Block`,
-				zap.Uint64(`number`, event.Block.Header.Number),
-				zap.ByteString(`hash`, event.Block.Header.DataHash),
-				zap.ByteString(`prevHash`, event.Block.Header.PreviousHash),
-			)
-			log.Debug(`Sending block to blockChan`)
-			b.blockChan <- event.Block
-			log.Debug(`Sent block to blockChan`)
-		default:
-			log.Debug(`Got DeliverResponse UnknownType`, zap.Reflect(`type`, ev.Type))
-			b.errChan <- &api.UnknownEventTypeError{Type: fmt.Sprintf("%v", ev.Type)}
-			log.Debug(`Sent err to errChan`)
+			log.Debug(`Switch DeliverResponse Type`)
+			switch event := ev.Type.(type) {
+			case *peer.DeliverResponse_Block:
+				log.Debug(`Got DeliverResponse_Block`,
+					zap.Uint64(`number`, event.Block.Header.Number),
+					zap.ByteString(`hash`, event.Block.Header.DataHash),
+					zap.ByteString(`prevHash`, event.Block.Header.PreviousHash),
+				)
+				log.Debug(`Sending block to blockChan`)
+				b.blockChan <- event.Block
+				log.Debug(`Sent block to blockChan`)
+			default:
+				log.Debug(`Got DeliverResponse UnknownType`, zap.Reflect(`type`, ev.Type))
+				b.errChan <- &api.UnknownEventTypeError{Type: fmt.Sprintf("%v", ev.Type)}
+				log.Debug(`Sent err to errChan`)
+			}
 		}
 	}
 }
 
 func (b *blockSubscription) Blocks() chan *common.Block {
-
 	return b.blockChan
 }
 
@@ -92,6 +89,9 @@ func (b *blockSubscription) Errors() chan error {
 func (b *blockSubscription) Close() error {
 
 	log := b.log.Named(`Close`)
+
+	log.Debug(`Canceling context`)
+	b.cancel()
 
 	log.Debug(`Closing errChan`)
 	close(b.errChan)
@@ -119,7 +119,9 @@ func NewBlockSubscription(ctx context.Context, channelName string, identity msp.
 
 	log.Debug(`Initializing new DeliverClient`)
 
-	cli, err := peer.NewDeliverClient(conn).Deliver(ctx)
+	newCtx, cancel := context.WithCancel(ctx)
+
+	cli, err := peer.NewDeliverClient(conn).Deliver(newCtx)
 	if err != nil {
 		log.Error(`Initialization of DeliverClient failed`, zap.Error(err))
 		return nil, errors.Wrap(err, `failed to create DeliverClient`)
@@ -140,6 +142,8 @@ func NewBlockSubscription(ctx context.Context, channelName string, identity msp.
 
 	sub := blockSubscription{
 		log:         log,
+		ctx:         newCtx,
+		cancel:      cancel,
 		channelName: channelName,
 		client:      cli,
 		identity:    identity,

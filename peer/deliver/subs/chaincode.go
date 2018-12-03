@@ -30,10 +30,6 @@ func (es *eventSubscription) Errors() chan error {
 }
 
 func (es *eventSubscription) handleCCSubscription() {
-	defer func() {
-		close(es.eventChan)
-		close(es.errChan)
-	}()
 	for {
 		select {
 		case block, ok := <-es.blockChan:
@@ -58,23 +54,30 @@ func (es *eventSubscription) handleCCSubscription() {
 				}
 			}
 		case <-es.ctx.Done():
+			es.log.Debug(`Context canceled`, zap.Error(es.ctx.Err()))
+			es.errChan <- es.ctx.Err()
 			return
 		}
 	}
 }
 
 func (es *eventSubscription) Close() error {
+	es.log.Debug(`Cancel context`)
 	es.cancel()
+	es.log.Debug(`Closing errChan`)
+	close(es.errChan)
+	es.log.Debug(`Closing eventChan`)
+	close(es.eventChan)
 	return nil
 }
 
-func NewEventSubscription(ctx context.Context, blockChan chan *common.Block, log *zap.Logger) api.EventCCSubscription {
+func NewEventSubscription(ctx context.Context, blockChan chan *common.Block, errChan chan error, log *zap.Logger) api.EventCCSubscription {
 	l := log.Named(`EventSubscription`)
 	newCtx, cancel := context.WithCancel(ctx)
 	es := eventSubscription{
 		log:       l,
 		eventChan: make(chan *peer.ChaincodeEvent),
-		errChan:   make(chan error),
+		errChan:   errChan,
 		blockChan: blockChan,
 		ctx:       newCtx,
 		cancel:    cancel,

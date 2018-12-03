@@ -1,12 +1,9 @@
 package client
 
 import (
+	"context"
 	"sync"
 	"time"
-
-	"github.com/s7techlab/hlf-sdk-go/peer/pool"
-
-	"github.com/s7techlab/hlf-sdk-go/logger"
 
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
@@ -16,12 +13,15 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/client/channel"
 	"github.com/s7techlab/hlf-sdk-go/crypto"
 	"github.com/s7techlab/hlf-sdk-go/discovery"
+	"github.com/s7techlab/hlf-sdk-go/logger"
 	"github.com/s7techlab/hlf-sdk-go/orderer"
 	"github.com/s7techlab/hlf-sdk-go/peer"
+	"github.com/s7techlab/hlf-sdk-go/peer/pool"
 	"go.uber.org/zap"
 )
 
 type core struct {
+	ctx               context.Context
 	logger            *zap.Logger
 	config            *config.Config
 	mspId             string
@@ -83,6 +83,10 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 		return nil, api.ErrEmptyConfig
 	}
 
+	if core.ctx == nil {
+		core.ctx = context.Background()
+	}
+
 	if core.logger == nil {
 		core.logger = logger.DefaultLogger
 	}
@@ -101,9 +105,7 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 
 	// if peerPool is empty, set it from config
 	if core.peerPool == nil {
-
-		core.peerPool = pool.New(core.logger)
-
+		core.peerPool = pool.New(core.ctx, core.logger, core.config.Pool)
 		for _, mspConfig := range core.config.MSP {
 			for _, peerConfig := range mspConfig.Endorsers {
 				if p, err := peer.New(peerConfig, core.logger); err != nil {
