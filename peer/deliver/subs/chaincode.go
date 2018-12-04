@@ -55,7 +55,6 @@ func (es *eventSubscription) handleCCSubscription() {
 			}
 		case <-es.ctx.Done():
 			es.log.Debug(`Context canceled`, zap.Error(es.ctx.Err()))
-			es.errChan <- es.ctx.Err()
 			return
 		}
 	}
