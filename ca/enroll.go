@@ -33,6 +33,11 @@ func (c *core) Enroll(ctx context.Context, name, secret string, req *x509.Certif
 		}
 	}
 
+	// Add default signature algorithm if not defined
+	if req.SignatureAlgorithm == x509.UnknownSignatureAlgorithm {
+		req.SignatureAlgorithm = c.cs.GetSignatureAlgorithm()
+	}
+
 	csr, err := x509.CreateCertificateRequest(rand.Reader, req, options.PrivateKey)
 	if err != nil {
 		return nil, options.PrivateKey, errors.Wrap(err, `failed to get certificate request`)
