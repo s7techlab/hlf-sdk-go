@@ -3,6 +3,8 @@ package subs
 import (
 	"context"
 	"fmt"
+	"io"
+
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/orderer"
@@ -34,6 +36,7 @@ type blockSubscription struct {
 func (b *blockSubscription) handleSubscription() {
 
 	log := b.log.Named(`handleSubscription`)
+	defer b.closeChannels()
 
 	log.Debug(`Starting subscription`)
 	defer log.Debug(`Closing subscription`)
@@ -46,6 +49,10 @@ func (b *blockSubscription) handleSubscription() {
 		default:
 			ev, err := b.client.Recv()
 			log.Debug(`Got new DeliverResponse`)
+			if err == io.EOF {
+				log.Debug(`stream closed`)
+				return
+			}
 			if err != nil {
 				log.Debug(`Got error`, zap.Error(err))
 				if s, ok := status.FromError(err); ok {
@@ -86,19 +93,20 @@ func (b *blockSubscription) Errors() chan error {
 	return b.errChan
 }
 
-func (b *blockSubscription) Close() error {
-
-	log := b.log.Named(`Close`)
-
-	log.Debug(`Canceling context`)
-	b.cancel()
-
+func (b *blockSubscription) closeChannels() {
+	log := b.log.Named(`CloseChannels`)
 	log.Debug(`Closing errChan`)
 	close(b.errChan)
 
 	log.Debug(`Closing blockChan`)
 	close(b.blockChan)
 
+	log.Debug(`Canceling context`)
+	b.cancel()
+}
+
+func (b *blockSubscription) Close() error {
+	log := b.log.Named(`Close`)
 	log.Debug(`Trying to CloseSend of DeliverClient`)
 	return b.client.CloseSend()
 }
