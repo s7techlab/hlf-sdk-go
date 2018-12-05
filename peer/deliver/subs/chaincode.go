@@ -49,7 +49,7 @@ func (es eventSubscription) handleCCSubscription() {
 							return
 						}
 					} else {
-						if ev != nil && ev.ChaincodeId == es.ccname {
+						if ev != nil {
 							select {
 							case es.eventChan <- ev:
 							case <-es.ctx.Done():
@@ -57,7 +57,6 @@ func (es eventSubscription) handleCCSubscription() {
 							default:
 								return
 							}
-
 						}
 					}
 				} else {
@@ -97,7 +96,7 @@ func NewEventSubscription(ctx context.Context, ccname string, blockChan chan *co
 	es := &eventSubscription{
 		log:       l,
 		ccname:    ccname,
-		eventChan: make(chan *peer.ChaincodeEvent),
+		eventChan: make(chan *peer.ChaincodeEvent, 10),
 		errChan:   errChan,
 		blockChan: blockChan,
 		ctx:       ctx,
