@@ -45,6 +45,7 @@ func (b *blockSubscription) handleSubscription() {
 		select {
 		case <-b.ctx.Done():
 			log.Debug(`Context canceled`)
+			b.Close()
 			return
 		default:
 			ev, err := b.client.Recv()

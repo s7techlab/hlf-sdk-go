@@ -14,6 +14,7 @@ import (
 
 type eventSubscription struct {
 	log       *zap.Logger
+	ccname    string
 	blockChan chan *common.Block
 	eventChan chan *peer.ChaincodeEvent
 	errChan   chan error
@@ -48,7 +49,7 @@ func (es *eventSubscription) handleCCSubscription() {
 							return
 						}
 					} else {
-						if ev != nil {
+						if ev != nil && ev.ChaincodeId == es.ccname {
 							select {
 							case es.eventChan <- ev:
 							case <-es.ctx.Done():
@@ -90,11 +91,12 @@ func (es *eventSubscription) Close() error {
 	return nil
 }
 
-func NewEventSubscription(ctx context.Context, blockChan chan *common.Block, errChan chan error, stop context.CancelFunc, log *zap.Logger) api.EventCCSubscription {
+func NewEventSubscription(ctx context.Context, ccname string, blockChan chan *common.Block, errChan chan error, stop context.CancelFunc, log *zap.Logger) api.EventCCSubscription {
 	l := log.Named(`EventSubscription`)
 
 	es := eventSubscription{
 		log:       l,
+		ccname:    ccname,
 		eventChan: make(chan *peer.ChaincodeEvent),
 		errChan:   errChan,
 		blockChan: blockChan,

@@ -116,19 +116,22 @@ func (sub *dcBlockSub) handle() {
 }
 
 func (e *deliverClient) SubscribeCC(ctx context.Context, channelName string, ccName string) (api.EventCCSubscription, error) {
-	blockChan, errChan, stop, err := e.initializeBlockSub(e.ctx, channelName)
+	ctx, cancel := context.WithCancel(ctx)
+	blockSub, err := subs.NewBlockSubscription(ctx, channelName, e.identity, e.conn, e.log)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to initialize block channel`)
 	}
-	return subs.NewEventSubscription(ctx, blockChan, errChan, stop, e.log), nil
+	return subs.NewEventSubscription(ctx, ccName, blockSub.Blocks(), blockSub.Errors(), cancel, e.log), nil
 }
 
 func (e *deliverClient) SubscribeTx(ctx context.Context, channelName string, txId api.ChaincodeTx) (api.TxSubscription, error) {
-	blockChan, errChan, stop, err := e.initializeBlockSub(e.ctx, channelName)
+	ctx, cancel := context.WithCancel(ctx)
+	blockSub, err := subs.NewBlockSubscription(ctx, channelName, e.identity, e.conn, e.log)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to initialize block channel`)
 	}
-	return subs.NewTxSubscription(ctx, txId, blockChan, errChan, stop, e.log), nil
+
+	return subs.NewTxSubscription(ctx, txId, blockSub.Blocks(), blockSub.Errors(), cancel, e.log), nil
 }
 
 func (e *deliverClient) SubscribeBlock(ctx context.Context, channelName string, seekOpt ...api.EventCCSeekOption) (api.BlockSubscription, error) {
