@@ -30,7 +30,7 @@ func (es *eventSubscription) Errors() chan error {
 	return es.errChan
 }
 
-func (es *eventSubscription) handleCCSubscription() {
+func (es eventSubscription) handleCCSubscription() {
 	for {
 		select {
 		case block, ok := <-es.blockChan:
@@ -94,7 +94,7 @@ func (es *eventSubscription) Close() error {
 func NewEventSubscription(ctx context.Context, ccname string, blockChan chan *common.Block, errChan chan error, stop context.CancelFunc, log *zap.Logger) api.EventCCSubscription {
 	l := log.Named(`EventSubscription`)
 
-	es := eventSubscription{
+	es := &eventSubscription{
 		log:       l,
 		ccname:    ccname,
 		eventChan: make(chan *peer.ChaincodeEvent),
@@ -106,5 +106,5 @@ func NewEventSubscription(ctx context.Context, ccname string, blockChan chan *co
 
 	go es.handleCCSubscription()
 
-	return &es
+	return es
 }

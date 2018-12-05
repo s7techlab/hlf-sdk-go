@@ -79,7 +79,12 @@ func (b *blockSubscription) handleSubscription() {
 					zap.ByteString(`prevHash`, event.Block.Header.PreviousHash),
 				)
 				log.Debug(`Sending block to blockChan`)
-				b.blockChan <- event.Block
+				// TODO: fix that
+				select {
+				case b.blockChan <- event.Block:
+				default:
+				}
+
 				log.Debug(`Sent block to blockChan`)
 			default:
 				log.Debug(`Got DeliverResponse UnknownType`, zap.Reflect(`type`, ev.Type))
@@ -153,7 +158,7 @@ func NewBlockSubscription(ctx context.Context, channelName string, identity msp.
 		}
 	}
 
-	sub := blockSubscription{
+	sub := &blockSubscription{
 		log:         log,
 		ctx:         newCtx,
 		cancel:      cancel,
@@ -169,5 +174,5 @@ func NewBlockSubscription(ctx context.Context, channelName string, identity msp.
 
 	go sub.handleSubscription()
 
-	return &sub, nil
+	return sub, nil
 }
