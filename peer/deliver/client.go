@@ -4,14 +4,16 @@ import (
 	"context"
 	"sync"
 
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
+
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
-	"github.com/pkg/errors"
+
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/peer/deliver/subs"
 	"github.com/s7techlab/hlf-sdk-go/util"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -45,19 +47,19 @@ type dcBlockSubListener struct {
 	cancel    context.CancelFunc
 }
 
-func (sub *dcBlockSub) addSub(ctx context.Context) (chan *common.Block, chan error, error) {
+func (sub *dcBlockSub) addSub(ctx context.Context) (chan *common.Block, chan error, context.CancelFunc, error) {
 	sub.listenersMx.Lock()
 	defer sub.listenersMx.Unlock()
 	log := sub.log.Named(`addSub`)
 	subHash := util.RandStringBytesMaskImprSrc(subIndexLength)
 	log.Debug(`Adding new sub`, zap.String(`id`, subHash))
 	if _, ok := sub.listeners[subHash]; ok {
-		return nil, nil, errors.New(`subs hash collision`)
+		return nil, nil, nil, errors.New(`subs hash collision`)
 	} else {
 		newCtx, cancel := context.WithCancel(ctx)
 		newSub := dcBlockSubListener{blockChan: make(chan *common.Block), ctx: newCtx, cancel: cancel, errChan: make(chan error)}
 		sub.listeners[subHash] = &newSub
-		return newSub.blockChan, newSub.errChan, nil
+		return newSub.blockChan, newSub.errChan, cancel, nil
 	}
 }
 
@@ -65,6 +67,7 @@ func (sub *dcBlockSub) handle() {
 	var err error
 	log := sub.log.Named(`handle`)
 	defer sub.blockSub.Close()
+
 	for {
 		select {
 		case block, ok := <-sub.blockSub.Blocks():
@@ -94,6 +97,7 @@ func (sub *dcBlockSub) handle() {
 				return
 			}
 			sub.listenersMx.Lock()
+
 			log.Debug(`Iterating over listeners`, zap.Int(`listener_count`, len(sub.listeners)))
 			for _, listener := range sub.listeners {
 				// TODO think about listener errChan
@@ -112,19 +116,19 @@ func (sub *dcBlockSub) handle() {
 }
 
 func (e *deliverClient) SubscribeCC(ctx context.Context, channelName string, ccName string) (api.EventCCSubscription, error) {
-	blockChan, errChan, err := e.initializeBlockSub(e.ctx, channelName)
+	blockChan, errChan, stop, err := e.initializeBlockSub(e.ctx, channelName)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to initialize block channel`)
 	}
-	return subs.NewEventSubscription(ctx, blockChan, errChan, e.log), nil
+	return subs.NewEventSubscription(ctx, blockChan, errChan, stop, e.log), nil
 }
 
 func (e *deliverClient) SubscribeTx(ctx context.Context, channelName string, txId api.ChaincodeTx) (api.TxSubscription, error) {
-	blockChan, errChan, err := e.initializeBlockSub(e.ctx, channelName)
+	blockChan, errChan, stop, err := e.initializeBlockSub(e.ctx, channelName)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to initialize block channel`)
 	}
-	return subs.NewTxSubscription(ctx, txId, blockChan, errChan, e.log), nil
+	return subs.NewTxSubscription(ctx, txId, blockChan, errChan, stop, e.log), nil
 }
 
 func (e *deliverClient) SubscribeBlock(ctx context.Context, channelName string, seekOpt ...api.EventCCSeekOption) (api.BlockSubscription, error) {
@@ -138,7 +142,7 @@ func (e *deliverClient) Close() error {
 	return e.conn.Close()
 }
 
-func (e *deliverClient) initializeBlockSub(ctx context.Context, channelName string) (chan *common.Block, chan error, error) {
+func (e *deliverClient) initializeBlockSub(ctx context.Context, channelName string) (chan *common.Block, chan error, context.CancelFunc, error) {
 	log := e.log.Named(`initializeBlockSub`).With(zap.String(`channel`, channelName))
 	var err error
 	e.blockSubStoreMx.Lock()
@@ -149,7 +153,7 @@ func (e *deliverClient) initializeBlockSub(ctx context.Context, channelName stri
 		sub = &dcBlockSub{ctx: ctx, listeners: make(map[string]*dcBlockSubListener), log: e.log.Named(`dcBlockSub`)}
 		if sub.blockSub, err = e.SubscribeBlock(ctx, channelName); err != nil {
 			log.Debug(`Failed to initiate blockSub`, zap.Error(err))
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 
 		log.Debug(`Starting to handle dcBlockSub`)

@@ -40,17 +40,40 @@ func (es *eventSubscription) handleCCSubscription() {
 			for i, r := range block.Data.Data {
 				if txFilter.IsValid(i) {
 					if ev, err := utilSDK.GetEventFromEnvelope(r); err != nil {
-						es.errChan <- &api.EnvelopeParsingError{Err: err}
+						select {
+						case es.errChan <- &api.EnvelopeParsingError{Err: err}:
+						case <-es.ctx.Done():
+							return
+						default:
+							return
+						}
 					} else {
 						if ev != nil {
-							es.eventChan <- ev
+							select {
+							case es.eventChan <- ev:
+							case <-es.ctx.Done():
+								return
+							default:
+								return
+							}
+
 						}
 					}
 				} else {
 					env, _ := utils.GetEnvelopeFromBlock(r)
 					p, _ := utils.GetPayload(env)
 					chHeader, _ := utils.UnmarshalChannelHeader(p.Header.ChannelHeader)
-					es.errChan <- &api.InvalidTxError{TxId: api.ChaincodeTx(chHeader.TxId), Code: txFilter.Flag(i)}
+					errMsg := &api.InvalidTxError{
+						TxId: api.ChaincodeTx(chHeader.TxId),
+						Code: txFilter.Flag(i),
+					}
+					select {
+					case es.errChan <- errMsg:
+					case <-es.ctx.Done():
+						return
+					default:
+						return
+					}
 				}
 			}
 		case <-es.ctx.Done():
@@ -63,23 +86,20 @@ func (es *eventSubscription) handleCCSubscription() {
 func (es *eventSubscription) Close() error {
 	es.log.Debug(`Cancel context`)
 	es.cancel()
-	es.log.Debug(`Closing errChan`)
-	close(es.errChan)
-	es.log.Debug(`Closing eventChan`)
-	close(es.eventChan)
+	es.eventChan = nil
 	return nil
 }
 
-func NewEventSubscription(ctx context.Context, blockChan chan *common.Block, errChan chan error, log *zap.Logger) api.EventCCSubscription {
+func NewEventSubscription(ctx context.Context, blockChan chan *common.Block, errChan chan error, stop context.CancelFunc, log *zap.Logger) api.EventCCSubscription {
 	l := log.Named(`EventSubscription`)
-	newCtx, cancel := context.WithCancel(ctx)
+
 	es := eventSubscription{
 		log:       l,
 		eventChan: make(chan *peer.ChaincodeEvent),
 		errChan:   errChan,
 		blockChan: blockChan,
-		ctx:       newCtx,
-		cancel:    cancel,
+		ctx:       ctx,
+		cancel:    stop,
 	}
 
 	go es.handleCCSubscription()

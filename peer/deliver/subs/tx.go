@@ -106,16 +106,14 @@ func (ts *txSubscription) Close() error {
 	return nil
 }
 
-func NewTxSubscription(ctx context.Context, txId api.ChaincodeTx, blockChan chan *common.Block, errChan chan error, log *zap.Logger) api.TxSubscription {
+func NewTxSubscription(ctx context.Context, txId api.ChaincodeTx, blockChan chan *common.Block, errChan chan error, stop context.CancelFunc, log *zap.Logger) api.TxSubscription {
 	l := log.Named(`TxSubscription`)
-
-	newCtx, cancel := context.WithCancel(ctx)
 	return &txSubscription{
 		log:       l,
 		txId:      txId,
 		blockChan: blockChan,
 		errChan:   errChan,
 		ctx:       newCtx,
-		cancel:    cancel,
+		cancel:    stop,
 	}
 }

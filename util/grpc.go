@@ -3,10 +3,13 @@ package util
 import (
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"go.opencensus.io/trace"
 	"go.uber.org/zap"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/retry"
+	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"go.opencensus.io/plugin/ocgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
@@ -26,7 +29,16 @@ const (
 
 func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grpc.DialOption, error) {
 	l := log.Named(`NewGRPCOptionsFromConfig`)
-	var grpcOptions []grpc.DialOption
+
+	// TODO: move to config or variable options
+	grpcOptions := []grpc.DialOption{
+		grpc.WithStatsHandler(&ocgrpc.ClientHandler{
+			StartOptions: trace.StartOptions{
+				Sampler:  trace.AlwaysSample(),
+				SpanKind: trace.SpanKindClient,
+			},
+		}),
+	}
 
 	if c.Tls.Enabled {
 		l.Debug(`Using TLS credentials`)
