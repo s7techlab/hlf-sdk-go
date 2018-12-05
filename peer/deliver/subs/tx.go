@@ -113,7 +113,7 @@ func NewTxSubscription(ctx context.Context, txId api.ChaincodeTx, blockChan chan
 		txId:      txId,
 		blockChan: blockChan,
 		errChan:   errChan,
-		ctx:       newCtx,
+		ctx:       ctx,
 		cancel:    stop,
 	}
 }
