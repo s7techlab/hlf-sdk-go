@@ -58,9 +58,13 @@ func (b *blockSubscription) handleSubscription() {
 				log.Debug(`Got error`, zap.Error(err))
 				if s, ok := status.FromError(err); ok {
 					log.Error(`GRPC error`, zap.Uint32(`grpc_code`, uint32(s.Code())), zap.String(`grpc_code_str`, s.Code().String()))
-					b.errChan <- &api.GRPCStreamError{
+					errMsg := &api.GRPCStreamError{
 						Err:  s.Err(),
 						Code: s.Code(),
+					}
+					select {
+					case b.errChan <- errMsg:
+					default:
 					}
 					return
 				}
