@@ -18,7 +18,7 @@ import (
 var (
 	retryDefaultConfig = config.GRPCRetryConfig{
 		Max:     10,
-		Timeout: config.Duration{Duration: time.Second},
+		Timeout: config.Duration{Duration: 10 * time.Second},
 	}
 )
 
@@ -61,8 +61,15 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 			zap.Duration(`timeout`, time.Duration(c.GRPC.KeepAlive.Timeout)*time.Second),
 		)
 		grpcOptions = append(grpcOptions, grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time:    time.Duration(c.GRPC.KeepAlive.Time) * time.Second,
-			Timeout: time.Duration(c.GRPC.KeepAlive.Timeout) * time.Second,
+			Time:                time.Duration(c.GRPC.KeepAlive.Time) * time.Second,
+			Timeout:             time.Duration(c.GRPC.KeepAlive.Timeout) * time.Second,
+			PermitWithoutStream: true,
+		}))
+	} else {
+		grpcOptions = append(grpcOptions, grpc.WithKeepaliveParams(keepalive.ClientParameters{
+			Time:                10 * time.Second,
+			Timeout:             5 * time.Second,
+			PermitWithoutStream: true,
 		}))
 	}
 
