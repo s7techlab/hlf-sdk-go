@@ -18,15 +18,13 @@ var (
 	maxStop = &orderer.SeekPosition{Type: &orderer.SeekPosition_Specified{Specified: &orderer.SeekSpecified{Number: math.MaxUint64}}}
 )
 
-type DeliverClient interface {
+type Deliver interface {
 	// SubscribeCC allows to subscribe on chaincode events using name of channel, chaincode and block offset
-	SubscribeCC(ctx context.Context, channelName string, ccName string) (EventCCSubscription, error)
+	SubscribeCC(ctx context.Context, channelName string, ccName string, seekOpt ...EventCCSeekOption) (EventCCSubscription, error)
 	// SubscribeTx allows to subscribe on transaction events by id
 	SubscribeTx(ctx context.Context, channelName string, tx ChaincodeTx) (TxSubscription, error)
 	// SubscribeBlock allows to subscribe on block events. Always returns new instance of block subscription
 	SubscribeBlock(ctx context.Context, channelName string, seekOpt ...EventCCSeekOption) (BlockSubscription, error)
-	// Close terminates eventHub grpc connection
-	Close() error
 }
 
 type EventCCSeekOption func() (*orderer.SeekPosition, *orderer.SeekPosition)
@@ -64,9 +62,9 @@ func SeekRange(start, end uint64) EventCCSeekOption {
 // EventCCSubscription describes chaincode events subscription
 type EventCCSubscription interface {
 	// Events initiates internal GRPC stream and returns channel on chaincode events
-	Events() chan *peer.ChaincodeEvent
+	Events() <-chan *peer.ChaincodeEvent
 	// Errors returns errors associated with this subscription
-	Errors() chan error
+	Err() <-chan error
 	// Close cancels current subscription
 	Close() error
 }
@@ -79,8 +77,8 @@ type TxSubscription interface {
 }
 
 type BlockSubscription interface {
-	Blocks() chan *common.Block
-	Errors() chan error
+	Blocks() <-chan *common.Block
+	Err() <-chan error
 	Close() error
 }
 
