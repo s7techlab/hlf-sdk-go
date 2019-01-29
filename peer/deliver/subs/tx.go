@@ -7,6 +7,7 @@ import (
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/peer"
 	"github.com/hyperledger/fabric/protos/utils"
+
 	"github.com/s7techlab/hlf-sdk-go/api"
 )
 

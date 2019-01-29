@@ -154,21 +154,16 @@ func (p *peerPool) Process(mspId string, context context.Context, proposal *peer
 	return nil, lastError
 
 }
-func (p *peerPool) DeliverClient(mspId string, identity msp.SigningIdentity) (api.DeliverClient, error) {
+func (p *peerPool) DeliverClient(mspId string, identity msp.SigningIdentity) (api.Deliver, error) {
 	poolPeer, err := p.getFirstReadyPeer(mspId)
 	if err != nil {
 		return nil, err
 	}
 
-	var ctx context.Context
-
-	if p.config.DeliverTimeout.Duration != 0 {
-		ctx, _ = context.WithTimeout(p.ctx, p.config.DeliverTimeout.Duration)
-	} else {
-		ctx = p.ctx
-	}
-
-	return deliver.NewFromGRPC(ctx, poolPeer.Conn(), identity, p.log.Named(`DeliverClient`)), nil
+	return deliver.New(
+		peer.NewDeliverClient(poolPeer.Conn()),
+		identity,
+	), nil
 }
 
 func (p *peerPool) getFirstReadyPeer(mspId string) (api.Peer, error) {

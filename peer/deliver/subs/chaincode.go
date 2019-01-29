@@ -4,6 +4,7 @@ import (
 	"github.com/hyperledger/fabric/core/ledger/util"
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/peer"
+
 	utilSDK "github.com/s7techlab/hlf-sdk-go/util"
 )
 

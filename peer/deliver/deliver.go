@@ -2,17 +2,17 @@ package deliver
 
 import (
 	"context"
-	"github.com/hyperledger/fabric/protos/orderer"
-	"github.com/hyperledger/fabric/protos/peer"
-	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/util"
 	"io"
 	"sync"
 
 	"github.com/hyperledger/fabric/msp"
+	"github.com/hyperledger/fabric/protos/orderer"
+	"github.com/hyperledger/fabric/protos/peer"
+	"github.com/pkg/errors"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/peer/deliver/subs"
+	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
 // New
