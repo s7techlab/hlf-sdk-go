@@ -2,7 +2,6 @@ package pool
 
 import (
 	"context"
-	"github.com/cloudflare/cfssl/log"
 	"sync"
 
 	"github.com/hyperledger/fabric/msp"
@@ -73,7 +72,7 @@ func (p *peerPool) searchPeer(peer api.Peer, peerSet []*peerPoolPeer) bool {
 }
 
 func (p *peerPool) poolChecker(aliveChan chan bool, peer *peerPoolPeer, ctx context.Context) {
-	//log := p.log.Named(`poolChecker`)
+	log := p.log.Named(`poolChecker`)
 
 	for {
 		select {
