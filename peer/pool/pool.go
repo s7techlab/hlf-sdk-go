@@ -2,6 +2,7 @@ package pool
 
 import (
 	"context"
+	"github.com/cloudflare/cfssl/log"
 	"sync"
 
 	"github.com/hyperledger/fabric/msp"
@@ -72,19 +73,24 @@ func (p *peerPool) searchPeer(peer api.Peer, peerSet []*peerPoolPeer) bool {
 }
 
 func (p *peerPool) poolChecker(aliveChan chan bool, peer *peerPoolPeer, ctx context.Context) {
-	log := p.log.Named(`poolChecker`)
+	//log := p.log.Named(`poolChecker`)
 
 	for {
 		select {
 		case <-ctx.Done():
-			log.Debug(`Context canceled`)
+			//log.Debug(`Context canceled`)
 			return
 
 		case alive, ok := <-aliveChan:
-			log.Debug(`Got alive data about peer`, zap.String(`peerUri`, peer.peer.Uri()), zap.Bool(`alive`, alive))
+			//log.Debug(`Got alive data about peer`, zap.String(`peerUri`, peer.peer.Uri()), zap.Bool(`alive`, alive))
 			if !ok {
 				return
 			}
+
+			if !alive {
+				log.Debug(`Peer connection is dead`, zap.String(`peerUri`, peer.peer.Uri()))
+			}
+
 			peer.ready = alive
 		}
 	}
@@ -110,6 +116,8 @@ func (p *peerPool) Process(mspId string, context context.Context, proposal *peer
 
 	log.Debug(`Peers pool`, zap.String(`mspId`, mspId), zap.Int(`peerNum`, len(peers)))
 
+	var lastError error
+
 	for pos, poolPeer := range peers {
 		if !poolPeer.ready {
 			log.Debug(api.ErrPeerNotReady.Error(), zap.String(`uri`, poolPeer.peer.Uri()))
@@ -117,13 +125,13 @@ func (p *peerPool) Process(mspId string, context context.Context, proposal *peer
 		}
 
 		log.Debug(`Endorse sent on peer`, zap.Int(`peerPos`, pos), zap.String(`mspId`, mspId), zap.String(`uri`, poolPeer.peer.Uri()))
-		if propResp, err := poolPeer.peer.Endorse(context, proposal); err != nil {
 
+		if propResp, err := poolPeer.peer.Endorse(context, proposal); err != nil {
 			// GRPC error
 			if s, ok := status.FromError(err); ok {
 				if s.Code() == codes.Unavailable {
 					log.Debug(`Peer GRPC unavailable`, zap.String(`mspId`, mspId), zap.String(`peer_uri`, poolPeer.peer.Uri()))
-					poolPeer.ready = false
+					//poolPeer.ready = false
 				} else {
 					log.Debug(`Unexpected GRPC error code from peer`,
 						zap.String(`peer_uri`, poolPeer.peer.Uri()), zap.Uint32(`code`, uint32(s.Code())),
@@ -131,19 +139,25 @@ func (p *peerPool) Process(mspId string, context context.Context, proposal *peer
 					// not mark as not ready
 				}
 				// next mspId peer
+				lastError = err
 				continue
 			}
 
 			log.Debug(`Peer endorsement failed`, zap.String(`mspId`, mspId), zap.String(`peer_uri`, poolPeer.peer.Uri()), zap.String(`error`, err.Error()))
-			return propResp, errors.Wrap(err, poolPeer.peer.Uri())
 
+			return propResp, errors.Wrap(err, poolPeer.peer.Uri())
 		} else {
 			log.Debug(`Endorse complete on peer`, zap.String(`mspId`, mspId), zap.String(`uri`, poolPeer.peer.Uri()))
 			return propResp, nil
 		}
 	}
 
-	return nil, api.ErrNoReadyPeers{MspId: mspId}
+	if lastError == nil {
+		// all peers was not ready
+		return nil, api.ErrNoReadyPeers{MspId: mspId}
+	}
+
+	return nil, lastError
 
 }
 func (p *peerPool) DeliverClient(mspId string, identity msp.SigningIdentity) (api.DeliverClient, error) {

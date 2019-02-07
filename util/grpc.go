@@ -9,6 +9,7 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/opencensus/hlf"
 	"go.opencensus.io/plugin/ocgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -18,7 +19,7 @@ import (
 var (
 	retryDefaultConfig = config.GRPCRetryConfig{
 		Max:     10,
-		Timeout: config.Duration{Duration: time.Second},
+		Timeout: config.Duration{Duration: 10 * time.Second},
 	}
 )
 
@@ -32,12 +33,12 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 
 	// TODO: move to config or variable options
 	grpcOptions := []grpc.DialOption{
-		grpc.WithStatsHandler(&ocgrpc.ClientHandler{
+		grpc.WithStatsHandler(hlf.Wrap(&ocgrpc.ClientHandler{
 			StartOptions: trace.StartOptions{
 				Sampler:  trace.AlwaysSample(),
 				SpanKind: trace.SpanKindClient,
 			},
-		}),
+		})),
 	}
 
 	if c.Tls.Enabled {
@@ -61,8 +62,15 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 			zap.Duration(`timeout`, time.Duration(c.GRPC.KeepAlive.Timeout)*time.Second),
 		)
 		grpcOptions = append(grpcOptions, grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time:    time.Duration(c.GRPC.KeepAlive.Time) * time.Second,
-			Timeout: time.Duration(c.GRPC.KeepAlive.Timeout) * time.Second,
+			Time:                time.Duration(c.GRPC.KeepAlive.Time) * time.Second,
+			Timeout:             time.Duration(c.GRPC.KeepAlive.Timeout) * time.Second,
+			PermitWithoutStream: true,
+		}))
+	} else {
+		grpcOptions = append(grpcOptions, grpc.WithKeepaliveParams(keepalive.ClientParameters{
+			Time:                10 * time.Second,
+			Timeout:             5 * time.Second,
+			PermitWithoutStream: true,
 		}))
 	}
 
