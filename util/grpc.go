@@ -7,14 +7,13 @@ import (
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/retry"
+	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/opencensus/hlf"
 	"go.opencensus.io/plugin/ocgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
-
-	"github.com/grpc-ecosystem/go-grpc-middleware/retry"
-	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/opencensus/hlf"
 )
 
 var (
@@ -34,16 +33,12 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 
 	// TODO: move to config or variable options
 	grpcOptions := []grpc.DialOption{
-		grpc.WithStatsHandler(
-			hlf.Wrap(
-				&ocgrpc.ClientHandler{
-					StartOptions: trace.StartOptions{
-						Sampler:  trace.AlwaysSample(),
-						SpanKind: trace.SpanKindClient,
-					},
-				},
-			),
-		),
+		grpc.WithStatsHandler(hlf.Wrap(&ocgrpc.ClientHandler{
+			StartOptions: trace.StartOptions{
+				Sampler:  trace.AlwaysSample(),
+				SpanKind: trace.SpanKindClient,
+			},
+		})),
 	}
 
 	if c.Tls.Enabled {
