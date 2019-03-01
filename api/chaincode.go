@@ -39,14 +39,6 @@ type ChaincodeInvokeResponse struct {
 	Err     error
 }
 
-// ChaincodeBaseBuilder describes common operations available for invoke and query
-/*type ChaincodeBaseBuilder interface {
-	// WithIdentity allows to invoke chaincode from custom identity
-	WithIdentity(identity msp.SigningIdentity) ChaincodeBaseBuilder
-	// Transient allows to pass arguments to transient map
-	Transient(args TransArgs) ChaincodeBaseBuilder
-}*/
-
 // ChaincodeInvokeBuilder describes possibilities how to get invoke results
 type ChaincodeInvokeBuilder interface {
 	// WithIdentity allows to invoke chaincode from custom identity
