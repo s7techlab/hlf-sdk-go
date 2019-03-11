@@ -10,7 +10,6 @@ require (
 	github.com/c-bata/go-prompt v0.2.3
 	github.com/cloudflare/cfssl v0.0.0-20180323000720-5d63dbd981b5
 	github.com/containerd/continuity v0.0.0-20180523223233-a60600ad77f3 // indirect
-	github.com/davecgh/go-spew v1.1.0 // indirect
 	github.com/docker/docker v0.0.0-20180524115659-aa2d23a7357d // indirect
 	github.com/docker/go-connections v0.3.0 // indirect
 	github.com/docker/go-units v0.3.3 // indirect
@@ -43,7 +42,6 @@ require (
 	github.com/pierrec/lz4 v2.0.3+incompatible // indirect
 	github.com/pkg/errors v0.0.0-20180311214515-816c9085562c
 	github.com/pkg/term v0.0.0-20190109203006-aa71e9d9e942 // indirect
-	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20180503174638-e2704e165165 // indirect
 	github.com/sirupsen/logrus v1.0.5 // indirect
 	github.com/spf13/cast v1.2.0 // indirect
