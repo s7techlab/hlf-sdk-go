@@ -87,7 +87,7 @@ func (p *peerPool) poolChecker(aliveChan chan bool, peer *peerPoolPeer, ctx cont
 			}
 
 			if !alive {
-				log.Debug(`Peer connection is dead`, zap.String(`peerUri`, peer.peer.Uri()))
+				p.log.Debug(`Peer connection is dead`, zap.String(`peerUri`, peer.peer.Uri()))
 			}
 
 			peer.ready = alive
