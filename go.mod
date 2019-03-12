@@ -7,7 +7,7 @@ require (
 	github.com/Microsoft/go-winio v0.4.7 // indirect
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/Shopify/sarama v1.17.0 // indirect
-	github.com/c-bata/go-prompt v0.2.3
+	github.com/c-bata/go-prompt v0.2.3 // indirect
 	github.com/cloudflare/cfssl v0.0.0-20180323000720-5d63dbd981b5
 	github.com/containerd/continuity v0.0.0-20180523223233-a60600ad77f3 // indirect
 	github.com/docker/docker v0.0.0-20180524115659-aa2d23a7357d // indirect
