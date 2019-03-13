@@ -24,6 +24,8 @@ type Core interface {
 	System() SystemCC
 	// Current peer pool
 	PeerPool() PeerPool
+	// Chaincode installation
+	Chaincode(name string) ChaincodePackage
 }
 
 // SystemCC describes interface to access Fabric System Chaincodes

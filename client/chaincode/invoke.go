@@ -17,14 +17,15 @@ import (
 )
 
 type invokeBuilder struct {
-	sink      chan<- api.ChaincodeInvokeResponse
-	ccCore    *Core
-	fn        string
-	processor api.PeerProcessor
-	peerPool  api.PeerPool
-	identity  msp.SigningIdentity
-	args      [][]byte
-	err       *errArgMap
+	sink          chan<- api.ChaincodeInvokeResponse
+	ccCore        *Core
+	fn            string
+	processor     api.PeerProcessor
+	peerPool      api.PeerPool
+	identity      msp.SigningIdentity
+	args          [][]byte
+	transientArgs api.TransArgs
+	err           *errArgMap
 }
 
 // A string that might be shortened to a specified length.
@@ -91,7 +92,7 @@ func (e *errArgMap) Err() error {
 	return errors.New(buff.String())
 }
 
-func (b *invokeBuilder) WithIdentity(identity msp.SigningIdentity) api.ChaincodeInvokeBuilder {
+func (b *invokeBuilder) WithIdentity(identity msp.SigningIdentity) api.ChaincodeBaseBuilder {
 	b.identity = identity
 	return b
 }
@@ -103,6 +104,11 @@ func (b *invokeBuilder) Async(sink chan<- api.ChaincodeInvokeResponse) api.Chain
 
 func (b *invokeBuilder) ArgBytes(args [][]byte) api.ChaincodeInvokeBuilder {
 	b.args = args
+	return b
+}
+
+func (b *invokeBuilder) Transient(args api.TransArgs) api.ChaincodeBaseBuilder {
+	b.transientArgs = args
 	return b
 }
 
@@ -144,7 +150,7 @@ func (b *invokeBuilder) Do(ctx context.Context) (*fabricPeer.Response, api.Chain
 		return nil, ``, errors.Wrap(err, `failed to get chaincode definition`)
 	}
 
-	proposal, tx, err := b.processor.CreateProposal(cc, b.identity, b.fn, b.args)
+	proposal, tx, err := b.processor.CreateProposal(cc, b.identity, b.fn, b.args, b.transientArgs)
 	if err != nil {
 		return nil, ``, errors.Wrap(err, `failed to get signed proposal`)
 	}

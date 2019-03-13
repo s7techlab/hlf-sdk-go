@@ -67,7 +67,7 @@ func (c *cscc) Channels(ctx context.Context) (*peer.ChannelQueryResponse, error)
 }
 
 func (c *cscc) endorse(ctx context.Context, fn string, args ...string) ([]byte, error) {
-	prop, _, err := c.processor.CreateProposal(&api.DiscoveryChaincode{Name: csccName, Type: api.CCTypeGoLang}, c.identity, fn, util.ToChaincodeArgs(args...))
+	prop, _, err := c.processor.CreateProposal(&api.DiscoveryChaincode{Name: csccName, Type: api.CCTypeGoLang}, c.identity, fn, util.ToChaincodeArgs(args...), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to create proposal`)
 	}

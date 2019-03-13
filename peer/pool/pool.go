@@ -72,7 +72,7 @@ func (p *peerPool) searchPeer(peer api.Peer, peerSet []*peerPoolPeer) bool {
 }
 
 func (p *peerPool) poolChecker(aliveChan chan bool, peer *peerPoolPeer, ctx context.Context) {
-	log := p.log.Named(`poolChecker`)
+	//log := p.log.Named(`poolChecker`)
 
 	for {
 		select {
@@ -87,7 +87,7 @@ func (p *peerPool) poolChecker(aliveChan chan bool, peer *peerPoolPeer, ctx cont
 			}
 
 			if !alive {
-				log.Debug(`Peer connection is dead`, zap.String(`peerUri`, peer.peer.Uri()))
+				p.log.Debug(`Peer connection is dead`, zap.String(`peerUri`, peer.peer.Uri()))
 			}
 
 			peer.ready = alive
