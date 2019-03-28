@@ -21,7 +21,7 @@ type QueryBuilder struct {
 	transientArgs api.TransArgs
 }
 
-func (q *QueryBuilder) WithIdentity(identity msp.SigningIdentity) api.ChaincodeBaseBuilder {
+func (q *QueryBuilder) WithIdentity(identity msp.SigningIdentity) api.ChaincodeQueryBuilder {
 	q.identity = identity
 	return q
 }
@@ -60,7 +60,7 @@ func (q *QueryBuilder) AsProposalResponse(ctx context.Context) (*fabricPeer.Prop
 	return q.peerPool.Process(q.identity.GetMSPIdentifier(), ctx, proposal)
 }
 
-func (q *QueryBuilder) Transient(args api.TransArgs) api.ChaincodeBaseBuilder {
+func (q *QueryBuilder) Transient(args api.TransArgs) api.ChaincodeQueryBuilder {
 	q.transientArgs = args
 	return q
 }

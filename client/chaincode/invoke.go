@@ -92,7 +92,7 @@ func (e *errArgMap) Err() error {
 	return errors.New(buff.String())
 }
 
-func (b *invokeBuilder) WithIdentity(identity msp.SigningIdentity) api.ChaincodeBaseBuilder {
+func (b *invokeBuilder) WithIdentity(identity msp.SigningIdentity) api.ChaincodeInvokeBuilder {
 	b.identity = identity
 	return b
 }
@@ -107,7 +107,7 @@ func (b *invokeBuilder) ArgBytes(args [][]byte) api.ChaincodeInvokeBuilder {
 	return b
 }
 
-func (b *invokeBuilder) Transient(args api.TransArgs) api.ChaincodeBaseBuilder {
+func (b *invokeBuilder) Transient(args api.TransArgs) api.ChaincodeInvokeBuilder {
 	b.transientArgs = args
 	return b
 }

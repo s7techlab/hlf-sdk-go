@@ -40,16 +40,19 @@ type ChaincodeInvokeResponse struct {
 }
 
 // ChaincodeBaseBuilder describes common operations available for invoke and query
-type ChaincodeBaseBuilder interface {
+/*type ChaincodeBaseBuilder interface {
 	// WithIdentity allows to invoke chaincode from custom identity
 	WithIdentity(identity msp.SigningIdentity) ChaincodeBaseBuilder
 	// Transient allows to pass arguments to transient map
 	Transient(args TransArgs) ChaincodeBaseBuilder
-}
+}*/
 
 // ChaincodeInvokeBuilder describes possibilities how to get invoke results
 type ChaincodeInvokeBuilder interface {
-	ChaincodeBaseBuilder
+	// WithIdentity allows to invoke chaincode from custom identity
+	WithIdentity(identity msp.SigningIdentity) ChaincodeInvokeBuilder
+	// Transient allows to pass arguments to transient map
+	Transient(args TransArgs) ChaincodeInvokeBuilder
 	// Async lets get result of invoke without waiting of block commit
 	Async(chan<- ChaincodeInvokeResponse) ChaincodeInvokeBuilder
 	// ArgBytes set slice of bytes as argument
@@ -64,7 +67,10 @@ type ChaincodeInvokeBuilder interface {
 
 // ChaincodeQueryBuilder describe possibilities how to get query results
 type ChaincodeQueryBuilder interface {
-	ChaincodeBaseBuilder
+	// WithIdentity allows to invoke chaincode from custom identity
+	WithIdentity(identity msp.SigningIdentity) ChaincodeQueryBuilder
+	// Transient allows to pass arguments to transient map
+	Transient(args TransArgs) ChaincodeQueryBuilder
 	// AsBytes allows to get result of querying chaincode as byte slice
 	AsBytes(ctx context.Context) ([]byte, error)
 	// AsJSON allows to get result of querying chaincode to presented structures using JSON-unmarshalling
