@@ -63,9 +63,10 @@ type GRPCKeepAliveConfig struct {
 }
 
 type TlsConfig struct {
-	Enabled    bool   `yaml:"enabled"`
-	CertPath   string `yaml:"cert_path"`
-	CACertPath string `yaml:"ca_cert_path"`
+	Enabled      bool   `yaml:"enabled"`
+	HostOverride string `yaml:"host_override"`
+	CertPath     string `yaml:"cert_path"`
+	CACertPath   string `yaml:"ca_cert_path"`
 }
 
 type DiscoveryConfig struct {
