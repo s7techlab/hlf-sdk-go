@@ -1,6 +1,8 @@
 package util
 
 import (
+	"crypto/tls"
+	"net"
 	"time"
 
 	"github.com/pkg/errors"
@@ -43,13 +45,34 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 
 	if c.Tls.Enabled {
 		l.Debug(`Using TLS credentials`)
-		if ts, err := credentials.NewClientTLSFromFile(c.Tls.CertPath, ``); err != nil {
-			l.Error(`Failed to read TLS credentials`, zap.Error(err))
-			return nil, errors.Wrap(err, `failed to read tls credentials`)
+		var cred credentials.TransportCredentials
+		var err error
+		if c.Tls.CertPath != `` {
+			if cred, err = credentials.NewClientTLSFromFile(c.Tls.CertPath, ``); err != nil {
+				l.Error(`Failed to read TLS credentials`, zap.Error(err))
+				return nil, errors.Wrap(err, `failed to read tls credentials`)
+			} else {
+
+			}
 		} else {
-			l.Debug(`Read TLS credentials`, zap.Reflect(`cred`, ts.Info()))
-			grpcOptions = append(grpcOptions, grpc.WithTransportCredentials(ts))
+			var addr string
+			if c.Tls.HostOverride != `` {
+				l.Debug(`Overriding TLS host`, zap.String(`host`, c.Tls.HostOverride))
+				if addr, _, err = net.SplitHostPort(c.Tls.HostOverride); err != nil {
+					return nil, errors.Wrap(err, `failed to parse override tls host`)
+				}
+			} else {
+				l.Debug(`Using TLS host`, zap.String(`host`, c.Host))
+				if addr, _, err = net.SplitHostPort(c.Host); err != nil {
+					return nil, errors.Wrap(err, `failed to parse tls host`)
+				}
+			}
+
+			cred = credentials.NewTLS(&tls.Config{ServerName: addr})
 		}
+
+		l.Debug(`Read TLS credentials`, zap.Reflect(`cred`, cred.Info()))
+		grpcOptions = append(grpcOptions, grpc.WithTransportCredentials(cred))
 	} else {
 		l.Debug(`TLS is not used`)
 		grpcOptions = append(grpcOptions, grpc.WithInsecure())
