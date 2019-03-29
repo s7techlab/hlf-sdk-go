@@ -48,18 +48,20 @@ func (c *corePackage) Instantiate(ctx context.Context, channelName, path, versio
 		return errors.Wrap(err, `failed to parse endorsement policy`)
 	}
 
-	depSpec, err := c.fetcher.Fetch(ctx, &peer.ChaincodeID{
-		Name:    c.ccName,
-		Path:    path,
-		Version: version,
-	})
+	depSpec := &peer.ChaincodeDeploymentSpec{
+		ChaincodeSpec: &peer.ChaincodeSpec{
+			Type: peer.ChaincodeSpec_GOLANG,
+			ChaincodeId: &peer.ChaincodeID{
+				Name:    c.ccName,
+				Path:    path,
+				Version: version,
+			},
+		},
+		ExecEnv: peer.ChaincodeDeploymentSpec_DOCKER,
+	}
 
 	depSpec.ChaincodeSpec.Input = &peer.ChaincodeInput{
 		Args: args,
-	}
-
-	if err != nil {
-		return errors.Wrap(err, `failed to fetch package`)
 	}
 
 	prop, resp, err := c.lscc.Deploy(ctx, channelName, depSpec, ePolicy, api.WithTransientMap(transArgs))
