@@ -4,9 +4,9 @@ import (
 	"context"
 	"io/ioutil"
 
-	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 )

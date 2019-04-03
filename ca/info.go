@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api/ca"
+	"github.com/pkg/errors"
 )
 
 func (c *core) CAInfo(ctx context.Context) (*ca.ResponseCAInfo, error) {

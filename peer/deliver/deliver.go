@@ -16,7 +16,7 @@ import (
 )
 
 // New
-func New(delivercli peer.DeliverClient, identity msp.SigningIdentity) api.Deliver {
+func New(delivercli peer.DeliverClient, identity msp.SigningIdentity) api.DeliverClient {
 	return &deliverImpl{
 		cli:      delivercli,
 		identity: identity,
@@ -39,9 +39,9 @@ func (d *deliverImpl) SubscribeCC(ctx context.Context, channelName string, ccNam
 	return events.Serve(sub), nil
 }
 
-func (d *deliverImpl) SubscribeTx(ctx context.Context, channelName string, txId api.ChaincodeTx) (api.TxSubscription, error) {
+func (d *deliverImpl) SubscribeTx(ctx context.Context, channelName string, txId api.ChaincodeTx, seekOpt ...api.EventCCSeekOption) (api.TxSubscription, error) {
 	txSub := subs.NewTxSubscription(txId)
-	sub, err := d.handleSubscription(ctx, channelName, txSub.Handler)
+	sub, err := d.handleSubscription(ctx, channelName, txSub.Handler, seekOpt...)
 	if err != nil {
 		return nil, err
 	}
@@ -92,10 +92,9 @@ func makeSubscription(stream peer.Deliver_DeliverClient, blockHandler subs.Block
 		stream:       stream,
 		blockHandler: blockHandler,
 		once:         new(sync.Once),
-		//blocks: make(chan *common.Block),
-		err:  make(chan error, 1),  // only one error
-		done: make(chan *struct{}), // done will be closed after finished sub.handle
-		up:   make(chan *struct{}),
+		err:          make(chan error, 1),  // only one error
+		done:         make(chan *struct{}), // done will be closed after finished sub.handle
+		up:           make(chan *struct{}),
 	}
 
 	go s.handle()
@@ -114,6 +113,7 @@ type subscriptionImpl struct {
 }
 
 func (s *subscriptionImpl) handle() {
+	defer s.Close()
 	defer close(s.done)
 	close(s.up)
 
@@ -121,6 +121,7 @@ func (s *subscriptionImpl) handle() {
 	for {
 		ev, err := s.stream.Recv()
 		if err == io.EOF {
+			s.blockHandler(nil)
 			return
 		}
 
@@ -150,6 +151,10 @@ func (s *subscriptionImpl) Err() <-chan error {
 	return s.err
 }
 
+func (s *subscriptionImpl) Errors() chan error {
+	return s.err
+}
+
 func (s *subscriptionImpl) Close() error {
 	var err error
 
@@ -159,7 +164,6 @@ func (s *subscriptionImpl) Close() error {
 		<-s.done
 		// close all channels
 		close(s.err)
-		//close(s.blocks)
 	})
 
 	return err

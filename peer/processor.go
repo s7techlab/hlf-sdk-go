@@ -3,13 +3,13 @@ package peer
 import (
 	"context"
 
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/util"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
 	fabricPeer "github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
 type processor struct {
@@ -21,7 +21,7 @@ type endorseChannelResponse struct {
 	Error    error
 }
 
-func (p *processor) CreateProposal(cc *api.DiscoveryChaincode, identity msp.SigningIdentity, fn string, args [][]byte) (*fabricPeer.SignedProposal, api.ChaincodeTx, error) {
+func (p *processor) CreateProposal(cc *api.DiscoveryChaincode, identity msp.SigningIdentity, fn string, args [][]byte, transArgs api.TransArgs) (*fabricPeer.SignedProposal, api.ChaincodeTx, error) {
 	invSpec, err := p.invocationSpec(cc, fn, args)
 	if err != nil {
 		return nil, ``, errors.Wrap(err, `failed to get invocation spec`)
@@ -39,8 +39,7 @@ func (p *processor) CreateProposal(cc *api.DiscoveryChaincode, identity msp.Sign
 		return nil, ``, errors.Wrap(err, `failed to get channel header`)
 	}
 
-	// TODO allow to pass TransientMap
-	proposalPayload, err := proto.Marshal(&fabricPeer.ChaincodeProposalPayload{Input: invSpec, TransientMap: nil})
+	proposalPayload, err := proto.Marshal(&fabricPeer.ChaincodeProposalPayload{Input: invSpec, TransientMap: transArgs})
 	if err != nil {
 		return nil, ``, errors.Wrap(err, `failed to marshal proposal payload`)
 	}

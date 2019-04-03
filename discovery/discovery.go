@@ -3,8 +3,8 @@ package discovery
 import (
 	"sync"
 
-	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/pkg/errors"
 )
 
 var (

@@ -5,10 +5,12 @@ import (
 )
 
 type (
+	// BlockHandler  when block == nil is eq EOF and signal for terminate all sub channels
 	BlockHandler func(block *common.Block) bool
 
 	ErrorCloser interface {
 		Err() <-chan error
+		Errors() chan error
 		Close() error
 	}
 )
@@ -29,7 +31,12 @@ func (b *BlockSubscription) Blocks() <-chan *common.Block {
 }
 
 func (b *BlockSubscription) Handler(block *common.Block) bool {
-	b.blocks <- block
+	if block == nil {
+		close(b.blocks)
+	} else {
+		b.blocks <- block
+	}
+
 	return false
 }
 

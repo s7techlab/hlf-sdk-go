@@ -1,0 +1,28 @@
+variables:
+  # orderer environment variables
+  ORDERER_GENERAL_GENESISMETHOD: file
+  ORDERER_GENERAL_GENESISFILE: /builds/blockchain/monorepo/pkg/fabric-sdk/testdata/channel-artifacts/genesis.block
+  ORDERER_GENERAL_LOCALMSPID: OrdererMSP
+  ORDERER_GENERAL_LOCALMSPDIR: /builds/blockchain/monorepo/pkg/fabric-sdk/testdata/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
+  ORDERER_GENERAL_LISTENADDRESS: 0.0.0.0
+  # peer environment varivales
+
+test fabric sdk:
+  stage: test
+  image: golang:1.12
+  services:
+    - name: hyperledger/fabric-orderer:1.4
+      alias: orderer
+    - name: hyperledger/fabric-peer:1.4
+      alias: peer
+      entrypoint: ["/bin/sh","/build/blockchain/monorepo/pkg/fabric-sdk/testdata/services/peer.sh"]
+    - name: hyperledger/fabric-ca:1.4
+      alias: ca
+  before_script:
+    - wget -qO- https://github.com/gotestyourself/gotestsum/releases/download/v0.3.3/gotestsum_0.3.3_linux_amd64.tar.gz | tar xz -C /usr/bin
+  tags:
+    - docker
+  script:
+    - gotestsum --junitfile report.xml -- -mod=vendor ./pkg/fabric-sdk/...
+
+#export sdk:

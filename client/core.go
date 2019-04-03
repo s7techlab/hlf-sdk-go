@@ -5,8 +5,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hyperledger/fabric/msp"
-	"github.com/pkg/errors"
+	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
+	"github.com/s7techlab/hlf-sdk-go/client/fetcher"
+	"github.com/hyperledger/fabric/core/chaincode/platforms/golang"
+
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
@@ -17,6 +19,8 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/orderer"
 	"github.com/s7techlab/hlf-sdk-go/peer"
 	"github.com/s7techlab/hlf-sdk-go/peer/pool"
+	"github.com/hyperledger/fabric/msp"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
@@ -31,7 +35,22 @@ type core struct {
 	discoveryProvider api.DiscoveryProvider
 	channels          map[string]api.Channel
 	channelMx         sync.Mutex
+	chaincodes        map[string]api.ChaincodePackage
+	chaincodeMx       sync.Mutex
 	cs                api.CryptoSuite
+	fetcher           api.CCFetcher
+}
+
+func (c *core) Chaincode(name string) api.ChaincodePackage {
+	c.chaincodeMx.Lock()
+	defer c.chaincodeMx.Unlock()
+	if cc, ok := c.chaincodes[name]; !ok {
+		cc = chaincode.NewCorePackage(name, system.NewLSCC(c.peerPool, c.identity), c.fetcher, c.orderer, c.identity)
+		c.chaincodes[name] = cc
+		return cc
+	} else {
+		return cc
+	}
 }
 
 func (c *core) System() api.SystemCC {
@@ -69,8 +88,9 @@ func (c *core) Channel(name string) api.Channel {
 func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 	var err error
 	core := &core{
-		mspId:    mspId,
-		channels: make(map[string]api.Channel),
+		mspId:      mspId,
+		channels:   make(map[string]api.Channel),
+		chaincodes: make(map[string]api.ChaincodePackage),
 	}
 
 	for _, option := range opts {
@@ -123,6 +143,11 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 		if core.orderer, err = orderer.New(core.config.Orderer, core.logger); err != nil {
 			return nil, errors.Wrap(err, `failed to initialize orderer`)
 		}
+	}
+
+	// use chaincode fetcher for Go chaincodes by default
+	if core.fetcher == nil {
+		core.fetcher = fetcher.NewLocal(&golang.Platform{})
 	}
 
 	return core, nil

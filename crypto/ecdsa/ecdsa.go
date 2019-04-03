@@ -12,11 +12,11 @@ import (
 
 	"crypto/x509"
 
-	"github.com/mitchellh/mapstructure"
-	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/crypto"
+	"github.com/mitchellh/mapstructure"
+	"github.com/pkg/errors"
 	"golang.org/x/crypto/sha3"
 )
 

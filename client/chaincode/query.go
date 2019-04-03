@@ -4,20 +4,21 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/peer"
 	"github.com/hyperledger/fabric/msp"
 	fabricPeer "github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/peer"
 )
 
 type QueryBuilder struct {
-	ccCore    *Core
-	fn        string
-	args      []string
-	identity  msp.SigningIdentity
-	processor api.PeerProcessor
-	peerPool  api.PeerPool
+	ccCore        *Core
+	fn            string
+	args          []string
+	identity      msp.SigningIdentity
+	processor     api.PeerProcessor
+	peerPool      api.PeerPool
+	transientArgs api.TransArgs
 }
 
 func (q *QueryBuilder) WithIdentity(identity msp.SigningIdentity) api.ChaincodeQueryBuilder {
@@ -51,7 +52,7 @@ func (q *QueryBuilder) AsProposalResponse(ctx context.Context) (*fabricPeer.Prop
 		return nil, errors.Wrap(err, `failed to get chaincode definition from discovery provider`)
 	}
 
-	proposal, _, err := q.processor.CreateProposal(ccDef, q.identity, q.fn, argsToBytes(q.args...))
+	proposal, _, err := q.processor.CreateProposal(ccDef, q.identity, q.fn, argsToBytes(q.args...), q.transientArgs)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to create peer proposal`)
 	}
@@ -59,7 +60,12 @@ func (q *QueryBuilder) AsProposalResponse(ctx context.Context) (*fabricPeer.Prop
 	return q.peerPool.Process(q.identity.GetMSPIdentifier(), ctx, proposal)
 }
 
-func NewQueryBuilder(ccCore *Core, identity msp.SigningIdentity, fn string, args ...string) *QueryBuilder {
+func (q *QueryBuilder) Transient(args api.TransArgs) api.ChaincodeQueryBuilder {
+	q.transientArgs = args
+	return q
+}
+
+func NewQueryBuilder(ccCore *Core, identity msp.SigningIdentity, fn string, args ...string) api.ChaincodeQueryBuilder {
 	peerProcessor := peer.NewProcessor(ccCore.channelName)
 	return &QueryBuilder{ccCore: ccCore, fn: fn, args: args, identity: identity, processor: peerProcessor, peerPool: ccCore.peerPool}
 }

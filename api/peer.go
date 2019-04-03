@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"fmt"
-
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/peer"
 	"google.golang.org/grpc"
@@ -24,7 +23,7 @@ type Peer interface {
 // PeerProcessor is interface for processing transaction
 type PeerProcessor interface {
 	// CreateProposal creates signed proposal for presented cc, function and args using signing identity
-	CreateProposal(cc *DiscoveryChaincode, identity msp.SigningIdentity, fn string, args [][]byte) (*peer.SignedProposal, ChaincodeTx, error)
+	CreateProposal(cc *DiscoveryChaincode, identity msp.SigningIdentity, fn string, args [][]byte, transArgs TransArgs) (*peer.SignedProposal, ChaincodeTx, error)
 	// Send sends signed proposal to endorsing peers and collects their responses
 	Send(ctx context.Context, proposal *peer.SignedProposal, cc *DiscoveryChaincode, pool PeerPool) ([]*peer.ProposalResponse, error)
 }

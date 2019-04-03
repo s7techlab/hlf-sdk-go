@@ -43,13 +43,26 @@ func (ts *TxSubscription) Result() (peer.TxValidationCode, error) {
 		return r.code, r.err
 	case err, ok := <-ts.Err():
 		if !ok {
-			return -1, errors.New(`err is closed`)
+			// NOTE: sometime error can be closed early thet result
+			select {
+			case r, ok := <-ts.result:
+				if !ok {
+					return -1, errors.New(`code is closed`)
+				}
+				return r.code, r.err
+			default:
+				return -1, errors.New(`err is closed`)
+			}
 		}
 		return -1, err
 	}
 }
 
 func (ts *TxSubscription) Handler(block *common.Block) bool {
+	if block == nil {
+		close(ts.result)
+		return false
+	}
 	txFilter := util.TxValidationFlags(
 		block.GetMetadata().GetMetadata()[common.BlockMetadataIndex_TRANSACTIONS_FILTER],
 	)
@@ -73,6 +86,7 @@ func (ts *TxSubscription) Handler(block *common.Block) bool {
 			return true
 		}
 
+		//println("TXID", chHeader.TxId, txFilter.IsValid(i))
 		if api.ChaincodeTx(chHeader.TxId) == ts.txId {
 			if txFilter.IsValid(i) {
 				ts.result <- &result{code: txFilter.Flag(i), err: nil}

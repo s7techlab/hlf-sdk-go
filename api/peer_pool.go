@@ -29,7 +29,7 @@ func (e ErrNoReadyPeers) Error() string {
 type PeerPool interface {
 	Add(mspId string, peer Peer, strategy PeerPoolCheckStrategy) error
 	Process(mspId string, context context.Context, proposal *peer.SignedProposal) (*peer.ProposalResponse, error)
-	DeliverClient(mspId string, identity msp.SigningIdentity) (Deliver, error)
+	DeliverClient(mspId string, identity msp.SigningIdentity) (DeliverClient, error)
 	Close() error
 }
 

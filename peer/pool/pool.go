@@ -4,12 +4,12 @@ import (
 	"context"
 	"sync"
 
-	"github.com/hyperledger/fabric/msp"
-	"github.com/hyperledger/fabric/protos/peer"
-	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/peer/deliver"
+	"github.com/hyperledger/fabric/msp"
+	"github.com/hyperledger/fabric/protos/peer"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -87,7 +87,7 @@ func (p *peerPool) poolChecker(aliveChan chan bool, peer *peerPoolPeer, ctx cont
 			}
 
 			if !alive {
-				log.Debug(`Peer connection is dead`, zap.String(`peerUri`, peer.peer.Uri()))
+				p.log.Debug(`Peer connection is dead`, zap.String(`peerUri`, peer.peer.Uri()))
 			}
 
 			peer.ready = alive
@@ -159,16 +159,13 @@ func (p *peerPool) Process(mspId string, context context.Context, proposal *peer
 	return nil, lastError
 
 }
-func (p *peerPool) DeliverClient(mspId string, identity msp.SigningIdentity) (api.Deliver, error) {
+func (p *peerPool) DeliverClient(mspId string, identity msp.SigningIdentity) (api.DeliverClient, error) {
 	poolPeer, err := p.getFirstReadyPeer(mspId)
 	if err != nil {
 		return nil, err
 	}
 
-	return deliver.New(
-		peer.NewDeliverClient(poolPeer.Conn()),
-		identity,
-	), nil
+	return deliver.New(peer.NewDeliverClient(poolPeer.Conn()), identity), nil
 }
 
 func (p *peerPool) getFirstReadyPeer(mspId string) (api.Peer, error) {

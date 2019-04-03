@@ -22,20 +22,29 @@ type EventSubscription struct {
 	ErrorCloser
 }
 
-func (e *EventSubscription) Events() <-chan *peer.ChaincodeEvent {
+//func (e *EventSubscription) Events() <-chan *peer.ChaincodeEvent {
+//	return e.events
+//}
+
+func (e *EventSubscription) Events() chan *peer.ChaincodeEvent {
 	return e.events
 }
 
 func (e *EventSubscription) Handler(block *common.Block) bool {
-	txFilter := util.TxValidationFlags(block.Metadata.Metadata[common.BlockMetadataIndex_TRANSACTIONS_FILTER])
-	for i, r := range block.GetData().GetData() {
-		if txFilter.IsValid(i) {
-			ev, err := utilSDK.GetEventFromEnvelope(r)
-			if err != nil {
-				return true
-			}
-			if ev.GetChaincodeId() == e.chaincodeID {
-				e.events <- ev
+	if block == nil {
+		close(e.events)
+	} else {
+		txFilter := util.TxValidationFlags(block.Metadata.Metadata[common.BlockMetadataIndex_TRANSACTIONS_FILTER])
+		for i, r := range block.GetData().GetData() {
+			if txFilter.IsValid(i) {
+
+				ev, err := utilSDK.GetEventFromEnvelope(r)
+				if err != nil {
+					return true
+				}
+				if ev.GetChaincodeId() == e.chaincodeID {
+					e.events <- ev
+				}
 			}
 		}
 	}

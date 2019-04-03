@@ -6,25 +6,26 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/peer"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
 	fabricPeer "github.com/hyperledger/fabric/protos/peer"
 	"github.com/hyperledger/fabric/protos/utils"
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/peer"
 )
 
 type invokeBuilder struct {
-	sink      chan<- api.ChaincodeInvokeResponse
-	ccCore    *Core
-	fn        string
-	processor api.PeerProcessor
-	peerPool  api.PeerPool
-	identity  msp.SigningIdentity
-	args      [][]byte
-	err       *errArgMap
+	sink          chan<- api.ChaincodeInvokeResponse
+	ccCore        *Core
+	fn            string
+	processor     api.PeerProcessor
+	peerPool      api.PeerPool
+	identity      msp.SigningIdentity
+	args          [][]byte
+	transientArgs api.TransArgs
+	err           *errArgMap
 }
 
 // A string that might be shortened to a specified length.
@@ -106,6 +107,11 @@ func (b *invokeBuilder) ArgBytes(args [][]byte) api.ChaincodeInvokeBuilder {
 	return b
 }
 
+func (b *invokeBuilder) Transient(args api.TransArgs) api.ChaincodeInvokeBuilder {
+	b.transientArgs = args
+	return b
+}
+
 func (b *invokeBuilder) getTransaction(proposal *fabricPeer.SignedProposal, peerResponses []*fabricPeer.ProposalResponse) (*common.Envelope, error) {
 
 	prop := new(fabricPeer.Proposal)
@@ -144,7 +150,7 @@ func (b *invokeBuilder) Do(ctx context.Context) (*fabricPeer.Response, api.Chain
 		return nil, ``, errors.Wrap(err, `failed to get chaincode definition`)
 	}
 
-	proposal, tx, err := b.processor.CreateProposal(cc, b.identity, b.fn, b.args)
+	proposal, tx, err := b.processor.CreateProposal(cc, b.identity, b.fn, b.args, b.transientArgs)
 	if err != nil {
 		return nil, ``, errors.Wrap(err, `failed to get signed proposal`)
 	}
