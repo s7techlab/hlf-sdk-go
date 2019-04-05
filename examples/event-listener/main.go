@@ -78,6 +78,7 @@ func main() {
 					fmt.Printf("Routine %d, received event:\n %v\n", idx, string(b))
 				case err := <-sub.Errors():
 					log.Println(`error occurred:`, err)
+					return
 				case <-time.After(time.Duration(idx) * time.Second):
 					fmt.Printf("Routine %d is closing\n", idx)
 					return

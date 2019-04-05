@@ -4,12 +4,12 @@ import (
 	"context"
 	"sync"
 
-	"github.com/hyperledger/fabric/msp"
-	"github.com/hyperledger/fabric/protos/peer"
-	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/peer/deliver"
+	"github.com/hyperledger/fabric/msp"
+	"github.com/hyperledger/fabric/protos/peer"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -165,15 +165,7 @@ func (p *peerPool) DeliverClient(mspId string, identity msp.SigningIdentity) (ap
 		return nil, err
 	}
 
-	var ctx context.Context
-
-	if p.config.DeliverTimeout.Duration != 0 {
-		ctx, _ = context.WithTimeout(p.ctx, p.config.DeliverTimeout.Duration)
-	} else {
-		ctx = p.ctx
-	}
-
-	return deliver.NewFromGRPC(ctx, poolPeer.Conn(), identity, p.log.Named(`DeliverClient`)), nil
+	return deliver.New(peer.NewDeliverClient(poolPeer.Conn()), identity), nil
 }
 
 func (p *peerPool) getFirstReadyPeer(mspId string) (api.Peer, error) {

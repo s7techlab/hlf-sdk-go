@@ -1,8 +1,8 @@
 package api
 
 import (
-	"github.com/hyperledger/fabric/protos/peer"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/hyperledger/fabric/protos/peer"
 )
 
 const (

@@ -5,14 +5,15 @@ import (
 	"encoding/json"
 	"flag"
 
-	"github.com/hyperledger/fabric/common/util"
+	"log"
+
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/client"
 	_ "github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
 	_ "github.com/s7techlab/hlf-sdk-go/discovery/local"
 	"github.com/s7techlab/hlf-sdk-go/identity"
+	"github.com/hyperledger/fabric/common/util"
 	"go.uber.org/zap"
-	"log"
 )
 
 var ctx = context.Background()

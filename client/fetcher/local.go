@@ -3,10 +3,10 @@ package fetcher
 import (
 	"context"
 
+	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/hyperledger/fabric/core/chaincode/platforms"
 	"github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
 type localFetcher struct {

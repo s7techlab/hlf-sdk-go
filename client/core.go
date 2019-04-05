@@ -2,14 +2,13 @@ package client
 
 import (
 	"context"
-	"github.com/hyperledger/fabric/core/chaincode/platforms/golang"
-	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
-	"github.com/s7techlab/hlf-sdk-go/client/fetcher"
 	"sync"
 	"time"
 
-	"github.com/hyperledger/fabric/msp"
-	"github.com/pkg/errors"
+	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
+	"github.com/s7techlab/hlf-sdk-go/client/fetcher"
+	"github.com/hyperledger/fabric/core/chaincode/platforms/golang"
+
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
@@ -20,6 +19,8 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/orderer"
 	"github.com/s7techlab/hlf-sdk-go/peer"
 	"github.com/s7techlab/hlf-sdk-go/peer/pool"
+	"github.com/hyperledger/fabric/msp"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 

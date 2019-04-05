@@ -1,11 +1,11 @@
 package local
 
 import (
-	"github.com/mitchellh/mapstructure"
-	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/discovery"
+	"github.com/mitchellh/mapstructure"
+	"github.com/pkg/errors"
 )
 
 const Name = `local`

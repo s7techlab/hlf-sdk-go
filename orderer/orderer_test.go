@@ -2,18 +2,19 @@ package orderer
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
 
-	"github.com/hyperledger/fabric/msp"
-	"github.com/hyperledger/fabric/protos/utils"
+	"github.com/s7techlab/hlf-sdk-go/testdata"
+
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/crypto"
 	"github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
 	"github.com/s7techlab/hlf-sdk-go/identity"
 	"github.com/s7techlab/hlf-sdk-go/util"
+	"github.com/hyperledger/fabric/msp"
+	"github.com/hyperledger/fabric/protos/utils"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
@@ -22,7 +23,7 @@ var (
 	ord api.Orderer
 
 	sampleOrdererConfig = config.ConnectionConfig{
-		Host: `localhost:7050`,
+		Host: testdata.OrdererAddress,
 		Tls: config.TlsConfig{
 			Enabled: false,
 		},
@@ -34,16 +35,24 @@ var (
 
 	cs api.CryptoSuite
 
+	// TODO: not a best practic make context for all test pkgs
 	ctx, _ = context.WithTimeout(context.Background(), 5*time.Second)
 )
 
 func TestNew(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	var err error
 	ord, err = New(sampleOrdererConfig, log)
 	assert.NoError(t, err)
 	assert.NotNil(t, ord)
 }
 func TestOrderer_Deliver(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
 
 	// Making SeekEnvelope to seek specified block
 	startPos, endPos := api.SeekNewest()()
@@ -79,7 +88,7 @@ func init() {
 	}
 
 	// Initializing signing identity
-	mspId, err := identity.NewMSPIdentityFromPath(os.Getenv(`MSP_ID`), os.Getenv(`MSP_PATH`))
+	mspId, err := identity.NewMSPIdentityFromPath(testdata.OrdererMspId, testdata.OrdererMspPath)
 	if err != nil {
 		panic(err)
 	}

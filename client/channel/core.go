@@ -3,9 +3,9 @@ package channel
 import (
 	"sync"
 
-	"github.com/hyperledger/fabric/msp"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
+	"github.com/hyperledger/fabric/msp"
 )
 
 type Core struct {

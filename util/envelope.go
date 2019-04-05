@@ -1,6 +1,7 @@
 package util
 
 import (
+	"github.com/s7techlab/hlf-sdk-go/crypto"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/common/util"
 	"github.com/hyperledger/fabric/msp"
@@ -9,7 +10,6 @@ import (
 	"github.com/hyperledger/fabric/protos/peer"
 	"github.com/hyperledger/fabric/protos/utils"
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/crypto"
 )
 
 func SeekEnvelope(channelName string, startPos *orderer.SeekPosition, stopPos *orderer.SeekPosition, identity msp.SigningIdentity) (*common.Envelope, error) {

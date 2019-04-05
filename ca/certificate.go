@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api/ca"
+	"github.com/pkg/errors"
 )
 
 const endpointCertificateList = "%s/api/v1/certificates%s"

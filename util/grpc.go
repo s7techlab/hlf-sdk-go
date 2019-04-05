@@ -9,9 +9,9 @@ import (
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/opencensus/hlf"
+	"github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"go.opencensus.io/plugin/ocgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

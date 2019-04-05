@@ -5,8 +5,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/hyperledger/fabric/msp"
 	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/hyperledger/fabric/msp"
 )
 
 type Core struct {
