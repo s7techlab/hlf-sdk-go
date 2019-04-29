@@ -3,10 +3,6 @@ package testing
 import (
 	"context"
 	"fmt"
-	"github.com/hyperledger/fabric/protos/orderer"
-	"github.com/hyperledger/fabric/protos/utils"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 	"io"
 	"io/ioutil"
 	"os"
@@ -15,12 +11,20 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/hyperledger/fabric/protos/orderer"
+	"github.com/hyperledger/fabric/protos/utils"
+	"github.com/pkg/errors"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/peer"
 )
 
 func NewDeliverClient(rootPath string, closeWhenAllRead bool) (peer.DeliverClient, error) {
+
+	var err error
 
 	dc := &deliverClient{
 		data:             make(map[string][]*common.Block, 0),
@@ -29,7 +33,11 @@ func NewDeliverClient(rootPath string, closeWhenAllRead bool) (peer.DeliverClien
 
 	channels := make(map[string]map[int][]byte, 0)
 
-	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
+	if rootPath, err = filepath.EvalSymlinks(rootPath); err != nil {
+		return nil, errors.Wrap(err, `failed to read real path`)
+	}
+
+	err = filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -178,16 +186,20 @@ func (d *deliverClient) Send(env *common.Envelope) error {
 }
 
 func (d *deliverClient) Recv() (*peer.DeliverResponse, error) {
-	b, ok := <-d.blockService.blocks
-	if !ok {
-		return nil, io.EOF
-	}
+	select {
+	case <-d.ctx.Done():
+		return nil, d.ctx.Err()
 
-	return &peer.DeliverResponse{
-		Type: &peer.DeliverResponse_Block{
-			Block: b,
-		},
-	}, nil
+	case b, ok := <-d.blockService.blocks:
+		if !ok {
+			return nil, io.EOF
+		}
+		return &peer.DeliverResponse{
+			Type: &peer.DeliverResponse_Block{
+				Block: b,
+			},
+		}, nil
+	}
 }
 
 func (d *deliverClient) Header() (metadata.MD, error) {

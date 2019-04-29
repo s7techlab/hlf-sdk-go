@@ -31,7 +31,7 @@ type deliverImpl struct {
 func (d *deliverImpl) SubscribeCC(ctx context.Context, channelName string, ccName string, seekOpt ...api.EventCCSeekOption) (api.EventCCSubscription, error) {
 	events := subs.NewEventSubscription(ccName)
 
-	sub, err := d.handleSubscription(ctx, channelName, events.Handler)
+	sub, err := d.handleSubscription(ctx, channelName, events.Handler, seekOpt...)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func (s *subscriptionImpl) handle() {
 				return
 			default:
 				if skip := s.blockHandler(event.Block); skip {
-					continue
+					return
 				}
 			}
 		default:
