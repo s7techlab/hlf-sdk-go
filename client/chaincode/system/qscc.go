@@ -3,8 +3,6 @@ package system
 import (
 	"context"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	peerSDK "github.com/s7techlab/hlf-sdk-go/peer"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/common/util"
 	qsccPkg "github.com/hyperledger/fabric/core/scc/qscc"
@@ -12,6 +10,9 @@ import (
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
+
+	"github.com/s7techlab/hlf-sdk-go/api"
+	peerSDK "github.com/s7techlab/hlf-sdk-go/peer"
 )
 
 type qscc struct {

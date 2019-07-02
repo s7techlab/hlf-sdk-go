@@ -3,9 +3,11 @@ package deliver
 import (
 	"context"
 	"io"
+	"math"
 	"sync"
 
 	"github.com/hyperledger/fabric/msp"
+	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/orderer"
 	"github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
@@ -16,7 +18,7 @@ import (
 )
 
 // New
-func New(delivercli peer.DeliverClient, identity msp.SigningIdentity) api.DeliverClient {
+func New(delivercli peer.DeliverClient, identity msp.SigningIdentity) *deliverImpl {
 	return &deliverImpl{
 		cli:      delivercli,
 		identity: identity,
@@ -28,8 +30,95 @@ type deliverImpl struct {
 	identity msp.SigningIdentity
 }
 
+var (
+	_ api.DeliverClient = &deliverImpl{}
+)
+
+type GetBlockerInfo interface {
+	GetBlockByTxID(ctx context.Context, channelName string, tx api.ChaincodeTx) (*common.Block, error)
+}
+
+type subscribeEventOption struct {
+	fromTx   api.ChaincodeTx
+	seekOpts []api.EventCCSeekOption
+	qscc     GetBlockerInfo
+}
+
+func newEventDefaultOptions() *subscribeEventOption {
+	return &subscribeEventOption{
+		fromTx: ``,
+		seekOpts: []api.EventCCSeekOption{
+			api.SeekOldest(),
+		},
+	}
+}
+
+func FromTxID(qscc GetBlockerInfo, txid api.ChaincodeTx) func(*subscribeEventOption) error {
+	return func(opt *subscribeEventOption) error {
+		if len(txid) == 0 {
+			return nil
+		} else if qscc == nil {
+			return errors.New(`GetBlockerInfo must be set for txid filter`)
+		}
+
+		opt.fromTx = txid
+		opt.qscc = qscc
+		return nil
+	}
+}
+
+// WithDefaultSeek need if fromTxID if empty
+func WithDefaultSeek(seekOpts ...api.EventCCSeekOption) func(*subscribeEventOption) error {
+	return func(opt *subscribeEventOption) error {
+		if len(seekOpts) > 0 {
+			opt.seekOpts = seekOpts
+		}
+		return nil
+	}
+}
+
+func WithGetBlockByTx(seekOpts ...api.EventCCSeekOption) func(*subscribeEventOption) {
+	return func(opt *subscribeEventOption) {
+		if len(seekOpts) > 0 {
+			opt.seekOpts = seekOpts
+		}
+	}
+}
+
+// SubscribeEventFromTx it is just once helper for save to api version today
+func (d *deliverImpl) SubscribeEvents(ctx context.Context, channelName string, ccName string, setOpts ...func(*subscribeEventOption) error) (api.EventCCSubscription, error) {
+
+	options := newEventDefaultOptions()
+
+	for _, setOpt := range setOpts {
+		if err := setOpt(options); err != nil {
+			return nil, err
+		}
+	}
+
+	events := subs.NewEventSubscription(ccName, options.fromTx)
+
+	if len(options.fromTx) > 0 {
+		b, err := options.qscc.GetBlockByTxID(ctx, channelName, options.fromTx)
+		if err != nil {
+			return nil, err
+		}
+
+		options.seekOpts = []api.EventCCSeekOption{
+			api.SeekRange(b.Header.Number, math.MaxUint64),
+		}
+	}
+
+	sub, err := d.handleSubscription(ctx, channelName, events.Handler, options.seekOpts...)
+	if err != nil {
+		return nil, err
+	}
+
+	return events.Serve(sub), nil
+}
+
 func (d *deliverImpl) SubscribeCC(ctx context.Context, channelName string, ccName string, seekOpt ...api.EventCCSeekOption) (api.EventCCSubscription, error) {
-	events := subs.NewEventSubscription(ccName)
+	events := subs.NewEventSubscription(ccName, ``)
 
 	sub, err := d.handleSubscription(ctx, channelName, events.Handler, seekOpt...)
 	if err != nil {

@@ -5,18 +5,21 @@ import (
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/peer"
 
+	"github.com/s7techlab/hlf-sdk-go/api"
 	utilSDK "github.com/s7techlab/hlf-sdk-go/util"
 )
 
-func NewEventSubscription(cid string) *EventSubscription {
+func NewEventSubscription(cid string, fromTx api.ChaincodeTx) *EventSubscription {
 	return &EventSubscription{
 		chaincodeID: cid,
+		fromTx:      string(fromTx),
 		events:      make(chan *peer.ChaincodeEvent),
 	}
 }
 
 type EventSubscription struct {
 	chaincodeID string
+	fromTx      string
 	events      chan *peer.ChaincodeEvent
 
 	ErrorCloser
@@ -37,14 +40,30 @@ func (e *EventSubscription) Handler(block *common.Block) bool {
 		txFilter := util.TxValidationFlags(block.Metadata.Metadata[common.BlockMetadataIndex_TRANSACTIONS_FILTER])
 		for i, r := range block.GetData().GetData() {
 			if txFilter.IsValid(i) {
-
 				ev, err := utilSDK.GetEventFromEnvelope(r)
 				if err != nil {
-					return true
+					if utilSDK.IsErrUnsupportedTxType(err) {
+						continue
+					} else {
+						return true
+					}
 				}
-				if ev.GetChaincodeId() == e.chaincodeID {
-					e.events <- ev
+
+				if ev.GetChaincodeId() != e.chaincodeID {
+					continue
 				}
+
+				if len(e.fromTx) > 0 {
+					if ev.TxId != e.fromTx {
+						continue
+					} else {
+						//reset filter and go to next tx from block
+						e.fromTx = ``
+						continue
+					}
+				}
+
+				e.events <- ev
 			}
 		}
 	}
