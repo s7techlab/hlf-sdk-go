@@ -88,6 +88,7 @@ func (ts *TxSubscription) Handler(block *common.Block) bool {
 
 		//println("TXID", chHeader.TxId, txFilter.IsValid(i))
 		if api.ChaincodeTx(chHeader.TxId) == ts.txId {
+			//defer ts.ErrorCloser.Close()
 			if txFilter.IsValid(i) {
 				ts.result <- &result{code: txFilter.Flag(i), err: nil}
 				return true

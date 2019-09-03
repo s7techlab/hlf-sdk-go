@@ -70,7 +70,7 @@ func (c *qscc) GetTransactionByID(ctx context.Context, channelName string, tx ap
 }
 
 func (c *qscc) GetBlockByTxID(ctx context.Context, channelName string, tx api.ChaincodeTx) (*common.Block, error) {
-	if blockBytes, err := c.endorse(ctx, qsccPkg.GetBlockByTxID, string(tx)); err != nil {
+	if blockBytes, err := c.endorse(ctx, qsccPkg.GetBlockByTxID, channelName, string(tx)); err != nil {
 		return nil, errors.Wrap(err, `failed to get block`)
 	} else {
 		block := new(common.Block)
