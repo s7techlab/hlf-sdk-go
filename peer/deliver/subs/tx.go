@@ -29,8 +29,9 @@ type TxSubscription struct {
 	ErrorCloser
 }
 
-func (ts *TxSubscription) Serve(sub ErrorCloser) *TxSubscription {
+func (ts *TxSubscription) Serve(sub ErrorCloser, readyForHandling ReadyForHandling) *TxSubscription {
 	ts.ErrorCloser = sub
+	readyForHandling()
 	return ts
 }
 

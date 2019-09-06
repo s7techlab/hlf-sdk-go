@@ -63,14 +63,19 @@ func (e *EventSubscription) Handler(block *common.Block) bool {
 					}
 				}
 
-				e.events <- ev
+				select {
+				case e.events <- ev:
+				case <-e.ErrorCloser.Done():
+					return true
+				}
 			}
 		}
 	}
 	return false
 }
 
-func (e *EventSubscription) Serve(base ErrorCloser) *EventSubscription {
+func (e *EventSubscription) Serve(base ErrorCloser, readyForHandling ReadyForHandling) *EventSubscription {
 	e.ErrorCloser = base
+	readyForHandling()
 	return e
 }

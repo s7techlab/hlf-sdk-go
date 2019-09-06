@@ -114,7 +114,7 @@ func (d *deliverImpl) SubscribeEvents(ctx context.Context, channelName string, c
 		return nil, err
 	}
 
-	return events.Serve(sub), nil
+	return events.Serve(sub, sub.readyForHandling), nil
 }
 
 func (d *deliverImpl) SubscribeCC(ctx context.Context, channelName string, ccName string, seekOpt ...api.EventCCSeekOption) (api.EventCCSubscription, error) {
@@ -125,7 +125,7 @@ func (d *deliverImpl) SubscribeCC(ctx context.Context, channelName string, ccNam
 		return nil, err
 	}
 
-	return events.Serve(sub), nil
+	return events.Serve(sub, sub.readyForHandling), nil
 }
 
 func (d *deliverImpl) SubscribeTx(ctx context.Context, channelName string, txId api.ChaincodeTx, seekOpt ...api.EventCCSeekOption) (api.TxSubscription, error) {
@@ -135,7 +135,7 @@ func (d *deliverImpl) SubscribeTx(ctx context.Context, channelName string, txId 
 		return nil, err
 	}
 
-	return txSub.Serve(sub), nil
+	return txSub.Serve(sub, sub.readyForHandling), nil
 }
 
 func (d *deliverImpl) SubscribeBlock(ctx context.Context, channelName string, seekOpt ...api.EventCCSeekOption) (api.BlockSubscription, error) {
@@ -146,7 +146,7 @@ func (d *deliverImpl) SubscribeBlock(ctx context.Context, channelName string, se
 		return nil, err
 	}
 
-	return blocker.Serve(sub), nil
+	return blocker.Serve(sub, sub.readyForHandling), nil
 }
 
 func (d *deliverImpl) handleSubscription(ctx context.Context, channel string, blockHandler subs.BlockHandler, seekOpt ...api.EventCCSeekOption) (*subscriptionImpl, error) {
@@ -163,7 +163,9 @@ func (d *deliverImpl) handleSubscription(ctx context.Context, channel string, bl
 		return nil, errors.Wrap(err, `failed to get seek envelope`)
 	}
 
-	stream, err := d.cli.Deliver(ctx)
+	subCtx, stopSub := context.WithCancel(ctx)
+
+	stream, err := d.cli.Deliver(subCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to open deliver stream`)
 	}
@@ -173,17 +175,20 @@ func (d *deliverImpl) handleSubscription(ctx context.Context, channel string, bl
 		return nil, errors.Wrap(err, `failed to send seek envelope to stream`)
 	}
 
-	return makeSubscription(stream, blockHandler), nil
+	return makeSubscription(subCtx, stopSub, stream, blockHandler), nil
 }
 
-func makeSubscription(stream peer.Deliver_DeliverClient, blockHandler subs.BlockHandler) *subscriptionImpl {
+func makeSubscription(ctx context.Context, stop context.CancelFunc, stream peer.Deliver_DeliverClient, blockHandler subs.BlockHandler) *subscriptionImpl {
 	s := &subscriptionImpl{
+		ctx:          ctx,
+		stop:         stop,
 		stream:       stream,
 		blockHandler: blockHandler,
 		once:         new(sync.Once),
 		err:          make(chan error, 1),  // only one error
 		done:         make(chan *struct{}), // done will be closed after finished sub.handle
 		up:           make(chan *struct{}),
+		run:          make(chan *struct{}),
 	}
 
 	go s.handle()
@@ -193,18 +198,23 @@ func makeSubscription(stream peer.Deliver_DeliverClient, blockHandler subs.Block
 }
 
 type subscriptionImpl struct {
+	ctx          context.Context
+	stop         context.CancelFunc
 	blockHandler subs.BlockHandler
 	stream       peer.Deliver_DeliverClient
 	err          chan error
 	once         *sync.Once
 	done         chan *struct{}
 	up           chan *struct{}
+	run          chan *struct{}
 }
 
 func (s *subscriptionImpl) handle() {
 	defer s.Close()
 	defer close(s.done)
 	close(s.up)
+	// wait of set to handler
+	<-s.run
 
 	ctx := s.stream.Context()
 	for {
@@ -236,6 +246,14 @@ func (s *subscriptionImpl) handle() {
 	}
 }
 
+func (s *subscriptionImpl) Done() <-chan struct{} {
+	return s.ctx.Done()
+}
+
+func (s *subscriptionImpl) readyForHandling() {
+	close(s.run)
+}
+
 func (s *subscriptionImpl) Err() <-chan error {
 	return s.err
 }
@@ -249,6 +267,7 @@ func (s *subscriptionImpl) Close() error {
 
 	s.once.Do(func() {
 		err = s.stream.CloseSend()
+		s.stop()
 		//wait of stop handler
 		<-s.done
 		// close all channels
