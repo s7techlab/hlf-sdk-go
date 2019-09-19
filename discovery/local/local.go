@@ -1,11 +1,12 @@
 package local
 
 import (
+	"github.com/mitchellh/mapstructure"
+	"github.com/pkg/errors"
+
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/discovery"
-	"github.com/mitchellh/mapstructure"
-	"github.com/pkg/errors"
 )
 
 const Name = `local`
@@ -24,6 +25,16 @@ func (d *discoveryProvider) Channels() ([]api.DiscoveryChannel, error) {
 		return d.opts.Channels, nil
 	}
 	return nil, discovery.ErrNoChannels
+}
+
+func (d *discoveryProvider) Channel(channelName string) (*api.DiscoveryChannel, error) {
+	for _, ch := range d.opts.Channels {
+		if ch.Name == channelName {
+			return &ch, nil
+		}
+	}
+
+	return nil, discovery.ErrChannelNotFound
 }
 
 func (d *discoveryProvider) Chaincode(channelName string, ccName string) (*api.DiscoveryChaincode, error) {

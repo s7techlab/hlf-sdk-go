@@ -1,21 +1,26 @@
 package util
 
 import (
+	"context"
 	"crypto/tls"
+	"fmt"
 	"net"
 	"time"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/pkg/errors"
+	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/balancer/roundrobin"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/resolver"
+	"google.golang.org/grpc/resolver/manual"
 
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/opencensus/hlf"
-	"github.com/grpc-ecosystem/go-grpc-middleware/retry"
-	"go.opencensus.io/plugin/ocgrpc"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/keepalive"
 )
 
 var (
@@ -121,4 +126,29 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 	))
 
 	return grpcOptions, nil
+}
+
+func NewGRPCConnectionFromConfigs(ctx context.Context, log *zap.Logger, conf ...config.ConnectionConfig) (*grpc.ClientConn, error) {
+	// use options from first config
+	opts, err := NewGRPCOptionsFromConfig(conf[0], log)
+	if err != nil {
+		return nil, errors.Wrap(err, `failed to get GRPC options`)
+	}
+
+	addr := make([]resolver.Address, len(conf))
+	for i, cc := range conf {
+		addr[i] = resolver.Address{Addr: cc.Host}
+	}
+
+	r, _ := manual.GenerateAndRegisterManualResolver()
+	r.InitialState(resolver.State{Addresses: addr})
+
+	opts = append(opts, grpc.WithBalancerName(roundrobin.Name))
+
+	conn, err := grpc.DialContext(ctx, fmt.Sprintf("%s:///%s", r.Scheme(), `orderers`), opts...)
+	if err != nil {
+		return nil, errors.Wrap(err, `failed to initialize GRPC connection`)
+	}
+
+	return conn, nil
 }
