@@ -86,7 +86,7 @@ func (c *qscc) endorse(ctx context.Context, fn string, args ...string) ([]byte, 
 		return nil, errors.Wrap(err, `failed to create proposal`)
 	}
 
-	resp, err := c.peerPool.Process(c.identity.GetMSPIdentifier(), ctx, prop)
+	resp, err := c.peerPool.Process(ctx, c.identity.GetMSPIdentifier(), prop)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to endorse proposal`)
 	}

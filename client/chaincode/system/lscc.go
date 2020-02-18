@@ -6,14 +6,14 @@ import (
 	"github.com/hyperledger/fabric/common/util"
 	"github.com/hyperledger/fabric/protos/common"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	peerSDK "github.com/s7techlab/hlf-sdk-go/peer"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/core/common/ccprovider"
 	lsccPkg "github.com/hyperledger/fabric/core/scc/lscc"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
+	"github.com/s7techlab/hlf-sdk-go/api"
+	peerSDK "github.com/s7techlab/hlf-sdk-go/peer"
 )
 
 type lscc struct {
@@ -150,7 +150,7 @@ func (c *lscc) endorse(ctx context.Context, channelName string, fn string, args 
 }
 
 func (c *lscc) endorseProposal(ctx context.Context, prop *peer.SignedProposal) (*peer.ProposalResponse, error) {
-	resp, err := c.peerPool.Process(c.identity.GetMSPIdentifier(), ctx, prop)
+	resp, err := c.peerPool.Process(ctx, c.identity.GetMSPIdentifier(), prop)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to endorse proposal`)
 	}
