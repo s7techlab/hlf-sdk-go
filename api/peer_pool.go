@@ -28,15 +28,15 @@ func (e ErrNoReadyPeers) Error() string {
 
 type PeerPool interface {
 	Add(mspId string, peer Peer, strategy PeerPoolCheckStrategy) error
-	Process(mspId string, context context.Context, proposal *peer.SignedProposal) (*peer.ProposalResponse, error)
+	Process(ctx context.Context, mspId string, proposal *peer.SignedProposal) (*peer.ProposalResponse, error)
 	DeliverClient(mspId string, identity msp.SigningIdentity) (DeliverClient, error)
 	Close() error
 }
 
-type PeerPoolCheckStrategy func(peer Peer, alive chan bool, ctx context.Context)
+type PeerPoolCheckStrategy func(ctx context.Context, peer Peer, alive chan bool)
 
 func StrategyGRPC(d time.Duration) PeerPoolCheckStrategy {
-	return func(peer Peer, alive chan bool, ctx context.Context) {
+	return func(ctx context.Context, peer Peer, alive chan bool) {
 		t := time.NewTicker(d)
 		for {
 			select {

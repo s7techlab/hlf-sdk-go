@@ -3,8 +3,6 @@ package system
 import (
 	"context"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	peerSDK "github.com/s7techlab/hlf-sdk-go/peer"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/common/util"
 	csccPkg "github.com/hyperledger/fabric/core/scc/cscc"
@@ -12,6 +10,8 @@ import (
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
+	"github.com/s7techlab/hlf-sdk-go/api"
+	peerSDK "github.com/s7techlab/hlf-sdk-go/peer"
 )
 
 type cscc struct {
@@ -72,7 +72,7 @@ func (c *cscc) endorse(ctx context.Context, fn string, args ...string) ([]byte, 
 		return nil, errors.Wrap(err, `failed to create proposal`)
 	}
 
-	resp, err := c.peerPool.Process(c.identity.GetMSPIdentifier(), ctx, prop)
+	resp, err := c.peerPool.Process(ctx, c.identity.GetMSPIdentifier(), prop)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to endorse proposal`)
 	}

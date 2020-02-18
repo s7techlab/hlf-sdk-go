@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/peer"
 	"github.com/hyperledger/fabric/msp"
 	fabricPeer "github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/peer"
 )
 
 type QueryBuilder struct {
@@ -57,7 +57,7 @@ func (q *QueryBuilder) AsProposalResponse(ctx context.Context) (*fabricPeer.Prop
 		return nil, errors.Wrap(err, `failed to create peer proposal`)
 	}
 
-	return q.peerPool.Process(q.identity.GetMSPIdentifier(), ctx, proposal)
+	return q.peerPool.Process(ctx, q.identity.GetMSPIdentifier(), proposal)
 }
 
 func (q *QueryBuilder) Transient(args api.TransArgs) api.ChaincodeQueryBuilder {

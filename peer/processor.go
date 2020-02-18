@@ -3,13 +3,13 @@ package peer
 import (
 	"context"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/util"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
 	fabricPeer "github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
 type processor struct {
@@ -86,7 +86,7 @@ func (*processor) Send(ctx context.Context, proposal *fabricPeer.SignedProposal,
 	// send all proposals concurrently
 	for i := 0; i < len(mspIds); i++ {
 		go func(mspId string) {
-			resp, err := pool.Process(mspId, ctx, proposal)
+			resp, err := pool.Process(ctx, mspId, proposal)
 			respChan <- endorseChannelResponse{Response: resp, Error: err}
 		}(mspIds[i])
 	}
