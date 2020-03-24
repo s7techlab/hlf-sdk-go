@@ -53,6 +53,8 @@ type ChaincodeInvokeBuilder interface {
 	ArgJSON(in ...interface{}) ChaincodeInvokeBuilder
 	// ArgString set slice of strings as arguments
 	ArgString(args ...string) ChaincodeInvokeBuilder
+	// WithWaitTxForAllMsp - set logic wait for all peers when  gathering new block with current tx will be achieved
+	WithWaitTxForAllMsp(bool) ChaincodeInvokeBuilder
 	// Do makes invoke with built arguments
 	Do(ctx context.Context) (*peer.Response, ChaincodeTx, error)
 }

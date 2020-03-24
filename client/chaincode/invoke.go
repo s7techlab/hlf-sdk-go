@@ -5,15 +5,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/peer"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
 	fabricPeer "github.com/hyperledger/fabric/protos/peer"
 	"github.com/hyperledger/fabric/protos/utils"
 	"github.com/pkg/errors"
+
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/peer"
+	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
 type invokeBuilder struct {
@@ -23,6 +26,7 @@ type invokeBuilder struct {
 	processor     api.PeerProcessor
 	peerPool      api.PeerPool
 	identity      msp.SigningIdentity
+	waitOfAllMsp  bool
 	args          [][]byte
 	transientArgs api.TransArgs
 	err           *errArgMap
@@ -94,6 +98,11 @@ func (e *errArgMap) Err() error {
 
 func (b *invokeBuilder) WithIdentity(identity msp.SigningIdentity) api.ChaincodeInvokeBuilder {
 	b.identity = identity
+	return b
+}
+
+func (b *invokeBuilder) WithWaitTxForAllMsp(waitOfAllMsp bool) api.ChaincodeInvokeBuilder {
+	b.waitOfAllMsp = waitOfAllMsp
 	return b
 }
 
@@ -221,6 +230,53 @@ func (b *invokeBuilder) Do(ctx context.Context) (*fabricPeer.Response, api.Chain
 		}()
 
 		return peerResponses[0].Response, tx, nil
+	} else if b.waitOfAllMsp {
+		var (
+			mspIds, _ = util.GetMSPFromPolicy(cc.Policy)
+			errS      = make([]error, len(mspIds))
+			hasErr    = false
+			onceSet   = &sync.Once{}
+			setErr    = func() {
+				onceSet.Do(func() { hasErr = true })
+			}
+		)
+
+		txWaiter := func(j int, done func()) {
+			defer done()
+			currentMspID := mspIds[j]
+			peerDeliver, err := b.peerPool.DeliverClient(currentMspID, b.identity)
+			if err != nil {
+				setErr()
+				errS[j] = errors.Wrapf(err, "%s: failed to get delivery client", currentMspID)
+				return
+			}
+
+			tsSub, err := peerDeliver.SubscribeTx(ctx, b.ccCore.channelName, tx)
+			if err != nil {
+				setErr()
+				errS[j] = errors.Wrapf(err, "%s: failed to subscribe on tx event", currentMspID)
+				return
+			}
+			defer tsSub.Close()
+
+			if _, err = tsSub.Result(); err != nil {
+				setErr()
+				errS[j] = errors.Wrapf(err, "%s: failed to subscribe on tx event", currentMspID)
+			}
+		}
+
+		wg := new(sync.WaitGroup)
+		for i := range mspIds {
+			wg.Add(1)
+			go txWaiter(i, wg.Done)
+		}
+		wg.Wait()
+
+		if hasErr {
+			return nil, tx, &api.MultiError{Errors: errS}
+		} else {
+			return peerResponses[0].Response, tx, nil
+		}
 	} else {
 		peerDeliver, err := b.peerPool.DeliverClient(b.identity.GetMSPIdentifier(), b.identity)
 		if err != nil {
