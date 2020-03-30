@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/peer"
@@ -39,24 +38,36 @@ type ChaincodeInvokeResponse struct {
 	Err     error
 }
 
+// TxWaiter is interface for build your custom function for wait of result of tx after endorsement
+type TxWaiter interface {
+	Wait(ctx context.Context, txid ChaincodeTx) error
+}
+
+type DoOptions struct {
+	DiscoveryChaincode *DiscoveryChaincode
+	Channel            string
+	Identity           msp.SigningIdentity
+	Pool               PeerPool
+
+	TxWaiter TxWaiter
+}
+
+type DoOption func(opt *DoOptions) error
+
 // ChaincodeInvokeBuilder describes possibilities how to get invoke results
 type ChaincodeInvokeBuilder interface {
 	// WithIdentity allows to invoke chaincode from custom identity
 	WithIdentity(identity msp.SigningIdentity) ChaincodeInvokeBuilder
 	// Transient allows to pass arguments to transient map
 	Transient(args TransArgs) ChaincodeInvokeBuilder
-	// Async lets get result of invoke without waiting of block commit
-	Async(chan<- ChaincodeInvokeResponse) ChaincodeInvokeBuilder
 	// ArgBytes set slice of bytes as argument
 	ArgBytes([][]byte) ChaincodeInvokeBuilder
 	// ArgJSON set slice of JSON-marshalled data
 	ArgJSON(in ...interface{}) ChaincodeInvokeBuilder
 	// ArgString set slice of strings as arguments
 	ArgString(args ...string) ChaincodeInvokeBuilder
-	// WithWaitTxForAllMsp - set logic wait for all peers when  gathering new block with current tx will be achieved
-	WithWaitTxForAllMsp(bool) ChaincodeInvokeBuilder
 	// Do makes invoke with built arguments
-	Do(ctx context.Context) (*peer.Response, ChaincodeTx, error)
+	Do(ctx context.Context, opts ...DoOption) (*peer.Response, ChaincodeTx, error)
 }
 
 // ChaincodeQueryBuilder describe possibilities how to get query results

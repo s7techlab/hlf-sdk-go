@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sync"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/msp"
@@ -16,7 +15,6 @@ import (
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/peer"
-	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
 type invokeBuilder struct {
@@ -26,7 +24,7 @@ type invokeBuilder struct {
 	processor     api.PeerProcessor
 	peerPool      api.PeerPool
 	identity      msp.SigningIdentity
-	waitOfAllMsp  bool
+	txWaiter      api.TxWaiter
 	args          [][]byte
 	transientArgs api.TransArgs
 	err           *errArgMap
@@ -101,16 +99,6 @@ func (b *invokeBuilder) WithIdentity(identity msp.SigningIdentity) api.Chaincode
 	return b
 }
 
-func (b *invokeBuilder) WithWaitTxForAllMsp(waitOfAllMsp bool) api.ChaincodeInvokeBuilder {
-	b.waitOfAllMsp = waitOfAllMsp
-	return b
-}
-
-func (b *invokeBuilder) Async(sink chan<- api.ChaincodeInvokeResponse) api.ChaincodeInvokeBuilder {
-	b.sink = sink
-	return b
-}
-
 func (b *invokeBuilder) ArgBytes(args [][]byte) api.ChaincodeInvokeBuilder {
 	b.args = args
 	return b
@@ -148,7 +136,7 @@ func (b *invokeBuilder) ArgString(args ...string) api.ChaincodeInvokeBuilder {
 	return b.ArgBytes(argsToBytes(args...))
 }
 
-func (b *invokeBuilder) Do(ctx context.Context) (*fabricPeer.Response, api.ChaincodeTx, error) {
+func (b *invokeBuilder) Do(ctx context.Context, setters ...api.DoOption) (*fabricPeer.Response, api.ChaincodeTx, error) {
 	err := b.err.Err()
 	if err != nil {
 		return nil, ``, err
@@ -157,6 +145,24 @@ func (b *invokeBuilder) Do(ctx context.Context) (*fabricPeer.Response, api.Chain
 	cc, err := b.ccCore.dp.Chaincode(b.ccCore.channelName, b.ccCore.name)
 	if err != nil {
 		return nil, ``, errors.Wrap(err, `failed to get chaincode definition`)
+	}
+
+	doOpts := &api.DoOptions{
+		DiscoveryChaincode: cc,
+		Channel:            b.ccCore.channelName,
+		Identity:           b.identity,
+		Pool:               b.peerPool,
+	}
+
+	// set default options
+	if len(setters) == 0 {
+		setters = append(setters, WithTxWaiter(TxWaiterSelf))
+	}
+
+	for _, set := range setters {
+		if err := set(doOpts); err != nil {
+			return nil, ``, err
+		}
 	}
 
 	proposal, tx, err := b.processor.CreateProposal(cc, b.identity, b.fn, b.args, b.transientArgs)
@@ -179,121 +185,11 @@ func (b *invokeBuilder) Do(ctx context.Context) (*fabricPeer.Response, api.Chain
 		return nil, tx, errors.Wrap(err, `failed to get orderer response`)
 	}
 
-	if b.sink != nil {
-		go func() {
-			peerDeliver, err := b.peerPool.DeliverClient(b.identity.GetMSPIdentifier(), b.identity)
-			if err != nil {
-				out := api.ChaincodeInvokeResponse{
-					TxID: tx, Err: errors.Wrap(err, `failed to get deliver client`),
-				}
-				select {
-				case b.sink <- out:
-				case <-ctx.Done():
-				}
-				return
-			}
-			tsSub, err := peerDeliver.SubscribeTx(ctx, b.ccCore.channelName, tx)
-			if err != nil {
-				select {
-				case b.sink <- api.ChaincodeInvokeResponse{
-					TxID: tx, Err: errors.Wrap(err, `failed to get subscription`),
-				}:
-				case <-ctx.Done():
-				}
-				return
-			}
-			defer tsSub.Close()
-
-			if _, err = tsSub.Result(); err != nil {
-				out := api.ChaincodeInvokeResponse{
-					TxID: tx, Err: err,
-				}
-				select {
-				case b.sink <- out:
-				case <-ctx.Done():
-				}
-				return
-
-			} else {
-				out := api.ChaincodeInvokeResponse{
-					TxID:    tx,
-					Payload: peerResponses[0].Response.Payload,
-					Err:     err,
-				}
-
-				select {
-				case b.sink <- out:
-				case <-ctx.Done():
-				}
-				return
-			}
-		}()
-
-		return peerResponses[0].Response, tx, nil
-	} else if b.waitOfAllMsp {
-		var (
-			mspIds, _ = util.GetMSPFromPolicy(cc.Policy)
-			errS      = make([]error, len(mspIds))
-			hasErr    = false
-			onceSet   = &sync.Once{}
-			setErr    = func() {
-				onceSet.Do(func() { hasErr = true })
-			}
-		)
-
-		txWaiter := func(j int, done func()) {
-			defer done()
-			currentMspID := mspIds[j]
-			peerDeliver, err := b.peerPool.DeliverClient(currentMspID, b.identity)
-			if err != nil {
-				setErr()
-				errS[j] = errors.Wrapf(err, "%s: failed to get delivery client", currentMspID)
-				return
-			}
-
-			tsSub, err := peerDeliver.SubscribeTx(ctx, b.ccCore.channelName, tx)
-			if err != nil {
-				setErr()
-				errS[j] = errors.Wrapf(err, "%s: failed to subscribe on tx event", currentMspID)
-				return
-			}
-			defer tsSub.Close()
-
-			if _, err = tsSub.Result(); err != nil {
-				setErr()
-				errS[j] = errors.Wrapf(err, "%s: failed to subscribe on tx event", currentMspID)
-			}
-		}
-
-		wg := new(sync.WaitGroup)
-		for i := range mspIds {
-			wg.Add(1)
-			go txWaiter(i, wg.Done)
-		}
-		wg.Wait()
-
-		if hasErr {
-			return nil, tx, &api.MultiError{Errors: errS}
-		} else {
-			return peerResponses[0].Response, tx, nil
-		}
-	} else {
-		peerDeliver, err := b.peerPool.DeliverClient(b.identity.GetMSPIdentifier(), b.identity)
-		if err != nil {
-			return nil, tx, errors.Wrap(err, `failed to get delivery client`)
-		}
-		tsSub, err := peerDeliver.SubscribeTx(ctx, b.ccCore.channelName, tx)
-		if err != nil {
-			return nil, tx, errors.Wrap(err, `failed to subscribe on tx event`)
-		}
-		defer tsSub.Close()
-
-		if _, err = tsSub.Result(); err != nil {
-			return nil, tx, err
-		} else {
-			return peerResponses[0].Response, tx, nil
-		}
+	if err = b.txWaiter.Wait(ctx, tx); err != nil {
+		return nil, tx, err
 	}
+
+	return peerResponses[0].Response, tx, nil
 }
 
 func NewInvokeBuilder(ccCore *Core, fn string) api.ChaincodeInvokeBuilder {
@@ -304,6 +200,7 @@ func NewInvokeBuilder(ccCore *Core, fn string) api.ChaincodeInvokeBuilder {
 		fn:        fn,
 		processor: processor,
 		identity:  ccCore.identity,
-		err:       newErrArgMap(),
+
+		err: newErrArgMap(),
 	}
 }
