@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/s7techlab/hlf-sdk-go/client/chaincode/txwaiter"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/msp"
@@ -136,7 +137,7 @@ func (b *invokeBuilder) ArgString(args ...string) api.ChaincodeInvokeBuilder {
 	return b.ArgBytes(argsToBytes(args...))
 }
 
-func (b *invokeBuilder) Do(ctx context.Context, setters ...api.DoOption) (*fabricPeer.Response, api.ChaincodeTx, error) {
+func (b *invokeBuilder) Do(ctx context.Context, options ...api.DoOption) (*fabricPeer.Response, api.ChaincodeTx, error) {
 	err := b.err.Err()
 	if err != nil {
 		return nil, ``, err
@@ -149,18 +150,16 @@ func (b *invokeBuilder) Do(ctx context.Context, setters ...api.DoOption) (*fabri
 
 	doOpts := &api.DoOptions{
 		DiscoveryChaincode: cc,
-		Channel:            b.ccCore.channelName,
 		Identity:           b.identity,
 		Pool:               b.peerPool,
 	}
-
 	// set default options
-	if len(setters) == 0 {
-		setters = append(setters, WithTxWaiter(TxWaiterSelf))
+	if len(options) == 0 {
+		options = append(options, WithTxWaiter(txwaiter.Self))
 	}
 
-	for _, set := range setters {
-		if err := set(doOpts); err != nil {
+	for _, applyOpt := range options {
+		if err := applyOpt(doOpts); err != nil {
 			return nil, ``, err
 		}
 	}
@@ -185,7 +184,7 @@ func (b *invokeBuilder) Do(ctx context.Context, setters ...api.DoOption) (*fabri
 		return nil, tx, errors.Wrap(err, `failed to get orderer response`)
 	}
 
-	if err = b.txWaiter.Wait(ctx, tx); err != nil {
+	if err = b.txWaiter.Wait(ctx, b.ccCore.channelName, tx); err != nil {
 		return nil, tx, err
 	}
 

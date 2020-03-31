@@ -40,12 +40,11 @@ type ChaincodeInvokeResponse struct {
 
 // TxWaiter is interface for build your custom function for wait of result of tx after endorsement
 type TxWaiter interface {
-	Wait(ctx context.Context, txid ChaincodeTx) error
+	Wait(ctx context.Context, channel string, txid ChaincodeTx) error
 }
 
 type DoOptions struct {
 	DiscoveryChaincode *DiscoveryChaincode
-	Channel            string
 	Identity           msp.SigningIdentity
 	Pool               PeerPool
 
