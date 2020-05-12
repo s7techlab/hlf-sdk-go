@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/peer/deliver"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -164,8 +163,7 @@ func (p *peerPool) DeliverClient(mspId string, identity msp.SigningIdentity) (ap
 	if err != nil {
 		return nil, err
 	}
-
-	return deliver.New(peer.NewDeliverClient(poolPeer.Conn()), identity), nil
+	return poolPeer.DeliverClient(identity)
 }
 
 func (p *peerPool) getFirstReadyPeer(mspId string) (api.Peer, error) {

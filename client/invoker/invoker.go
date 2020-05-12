@@ -2,7 +2,6 @@ package invoker
 
 import (
 	"context"
-
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
@@ -13,18 +12,23 @@ type invoker struct {
 	core api.Core
 }
 
-const waitOfAllMspContextKey = `WaitOfAllMsp`
-
-func WaitOfAllMsp(ctx context.Context) context.Context {
-	return context.WithValue(ctx, waitOfAllMspContextKey, true)
-}
-
-func hasWaitOfAllMsp(ctx context.Context) bool {
-	return ctx.Value(waitOfAllMspContextKey) != nil
-}
-
-func (i *invoker) Invoke(ctx context.Context, from msp.SigningIdentity, channel string, chaincode string, fn string, args [][]byte, transArgs api.TransArgs) (*peer.Response, api.ChaincodeTx, error) {
-	return i.core.Channel(channel).Chaincode(chaincode).Invoke(fn).WithIdentity(from).WithWaitTxForAllMsp(hasWaitOfAllMsp(ctx)).ArgBytes(args).Transient(transArgs).Do(ctx)
+func (i *invoker) Invoke(
+	ctx context.Context,
+	from msp.SigningIdentity,
+	channel string,
+	chaincode string,
+	fn string,
+	args [][]byte,
+	transArgs api.TransArgs,
+	doOpts ...api.DoOption,
+) (*peer.Response, api.ChaincodeTx, error) {
+	return i.core.Channel(channel).
+		Chaincode(chaincode).
+		Invoke(fn).
+		WithIdentity(from).
+		ArgBytes(args).
+		Transient(transArgs).
+		Do(ctx, doOpts...)
 }
 
 func (i *invoker) Query(ctx context.Context, from msp.SigningIdentity, channel string, chaincode string, fn string, args [][]byte, transArgs api.TransArgs) (*peer.Response, error) {

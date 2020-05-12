@@ -49,10 +49,9 @@ func (w *allMspWaiter) setErr() {
 }
 
 func (w *allMspWaiter) Wait(ctx context.Context, channel string, txid api.ChaincodeTx) error {
-
 	var (
 		wg   = new(sync.WaitGroup)
-		errS = make([]error, len(w.delivers))
+		errS = make(chan error, len(w.delivers))
 	)
 
 	for i := range w.delivers {
@@ -61,15 +60,22 @@ func (w *allMspWaiter) Wait(ctx context.Context, channel string, txid api.Chainc
 			err := waitPerOne(ctx, w.delivers[j], channel, txid)
 			if err != nil {
 				w.setErr()
-				errS[j] = err
+				errS <- err
 			}
 			wg.Done()
 		}(i)
 	}
 	wg.Wait()
+	close(errS)
 
 	if w.hasErr {
-		return &api.MultiError{Errors: errS}
+		mErr := &api.MultiError{}
+		for e := range errS {
+			if e != nil {
+				mErr.Errors = append(mErr.Errors, e)
+			}
+		}
+		return mErr
 	}
 
 	return nil

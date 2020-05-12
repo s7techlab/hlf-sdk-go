@@ -5,8 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/s7techlab/hlf-sdk-go/client/chaincode/txwaiter"
-
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
@@ -15,11 +13,11 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/client/chaincode/txwaiter"
 	"github.com/s7techlab/hlf-sdk-go/peer"
 )
 
 type invokeBuilder struct {
-	sink          chan<- api.ChaincodeInvokeResponse
 	ccCore        *Core
 	fn            string
 	processor     api.PeerProcessor
@@ -163,6 +161,7 @@ func (b *invokeBuilder) Do(ctx context.Context, options ...api.DoOption) (*fabri
 			return nil, ``, err
 		}
 	}
+	b.txWaiter = doOpts.TxWaiter
 
 	proposal, tx, err := b.processor.CreateProposal(cc, b.identity, b.fn, b.args, b.transientArgs)
 	if err != nil {
