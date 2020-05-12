@@ -3,7 +3,6 @@ package chaincode_test
 import (
 	"context"
 	"fmt"
-	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
 	"strings"
 	"testing"
 
@@ -20,6 +19,7 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/client"
+	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode/txwaiter"
 	sdkinvoker "github.com/s7techlab/hlf-sdk-go/client/invoker"
 	"github.com/s7techlab/hlf-sdk-go/crypto"
