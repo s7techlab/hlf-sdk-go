@@ -89,7 +89,9 @@ func (p *peerPool) poolChecker(ctx context.Context, aliveChan chan bool, peer *p
 				p.log.Debug(`Peer connection is dead`, zap.String(`peerUri`, peer.peer.Uri()))
 			}
 
+			p.storeMx.Lock()
 			peer.ready = alive
+			p.storeMx.Unlock()
 		}
 	}
 }
