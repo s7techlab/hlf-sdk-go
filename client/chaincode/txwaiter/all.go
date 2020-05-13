@@ -10,6 +10,8 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
+// All - need use on invoke flow for check transaction codes for each organizations from endorsement policy
+// txwaiter.All  will be made to subscribe tx for each of the peer organizations from the endorsement policy
 func All(cfg *api.DoOptions) (api.TxWaiter, error) {
 	mspIds, err := util.GetMSPFromPolicy(cfg.DiscoveryChaincode.Policy)
 	if err != nil {
@@ -48,6 +50,7 @@ func (w *allMspWaiter) setErr() {
 	w.onceSet.Do(func() { w.hasErr = true })
 }
 
+// Wait - implementation of api.TxWaiter interface
 func (w *allMspWaiter) Wait(ctx context.Context, channel string, txid api.ChaincodeTx) error {
 	var (
 		wg   = new(sync.WaitGroup)

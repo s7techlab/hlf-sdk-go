@@ -9,6 +9,8 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
+// Self - default tx waiter and used on invoke flow
+// txwaiter.Self  make subscribe tx on one peer endorser organization
 func Self(cfg *api.DoOptions) (api.TxWaiter, error) {
 	return &selfPeerWaiter{
 		pool:     cfg.Pool,
@@ -21,6 +23,7 @@ type selfPeerWaiter struct {
 	identity msp.SigningIdentity
 }
 
+// Wait - implementation of api.TxWaiter interface
 func (w *selfPeerWaiter) Wait(ctx context.Context, channel string, txid api.ChaincodeTx) error {
 	mspID := w.identity.GetMSPIdentifier()
 	deliver, err := w.pool.DeliverClient(mspID, w.identity)
