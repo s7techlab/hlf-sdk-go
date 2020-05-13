@@ -392,6 +392,15 @@ func TestInvokeBuilder_Do(t *testing.T) {
 			checkDeliverByTxCalled: []string{`org1msp`, `org2msp`, `org3msp`},
 			expErr:                 errors.New("next errors occurred:\nTxId validation code failed: BAD_PAYLOAD\n"),
 		},
+		{
+			name:                   `fail all peer on make deliver`,
+			channel:                `fail-network`,
+			chaincode:              `my-chaincode`,
+			opts:                   []api.DoOption{chaincode.WithTxWaiter(txwaiter.All)},
+			checkEndorseCalled:     []string{`org1msp`, `org2msp`, `org3msp`},
+			checkDeliverByTxCalled: []string{},
+			expErr:                 errors.New("next errors occurred:\nfailed to subscribe on tx event: BOOM\nfailed to subscribe on tx event: BOOM\nfailed to subscribe on tx event: BOOM\n"),
+		},
 	} {
 		t.Run(tc.name, func(tt *testing.T) {
 			_, txid, err := invoker.Invoke(
