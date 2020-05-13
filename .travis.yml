@@ -1,0 +1,22 @@
+language: go
+
+git:
+  depth: 1
+
+dist: xenial
+
+env:
+  - GO111MODULE=on
+
+before_install:
+  - go get github.com/mattn/goveralls
+
+install:
+  - go mod vendor
+
+script:
+  - go test -v -mod=vendor ./...
+  - $GOPATH/bin/goveralls -service=travis-ci || true
+
+go:
+  - 1.14.x
