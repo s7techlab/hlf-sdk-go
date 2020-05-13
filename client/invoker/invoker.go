@@ -2,19 +2,33 @@ package invoker
 
 import (
 	"context"
-
-	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
+	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
 type invoker struct {
 	core api.Core
 }
 
-func (i *invoker) Invoke(ctx context.Context, from msp.SigningIdentity, channel string, chaincode string, fn string, args [][]byte, transArgs api.TransArgs) (*peer.Response, api.ChaincodeTx, error) {
-	return i.core.Channel(channel).Chaincode(chaincode).Invoke(fn).WithIdentity(from).ArgBytes(args).Transient(transArgs).Do(ctx)
+func (i *invoker) Invoke(
+	ctx context.Context,
+	from msp.SigningIdentity,
+	channel string,
+	chaincode string,
+	fn string,
+	args [][]byte,
+	transArgs api.TransArgs,
+	doOpts ...api.DoOption,
+) (*peer.Response, api.ChaincodeTx, error) {
+	return i.core.Channel(channel).
+		Chaincode(chaincode).
+		Invoke(fn).
+		WithIdentity(from).
+		ArgBytes(args).
+		Transient(transArgs).
+		Do(ctx, doOpts...)
 }
 
 func (i *invoker) Query(ctx context.Context, from msp.SigningIdentity, channel string, chaincode string, fn string, args [][]byte, transArgs api.TransArgs) (*peer.Response, error) {

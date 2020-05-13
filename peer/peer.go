@@ -2,15 +2,17 @@ package peer
 
 import (
 	"context"
+	"github.com/hyperledger/fabric/msp"
+	"github.com/s7techlab/hlf-sdk-go/peer/deliver"
 	"sync"
 	"time"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/util"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	fabricPeer "github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/util"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
@@ -49,6 +51,10 @@ func (p *peer) Endorse(ctx context.Context, proposal *fabricPeer.SignedProposal,
 		}
 		return resp, nil
 	}
+}
+
+func (p *peer) DeliverClient(identity msp.SigningIdentity) (api.DeliverClient, error) {
+	return deliver.New(fabricPeer.NewDeliverClient(p.conn), identity), nil
 }
 
 func (p *peer) Conn() *grpc.ClientConn {

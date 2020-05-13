@@ -5,24 +5,25 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/peer"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/common"
 	fabricPeer "github.com/hyperledger/fabric/protos/peer"
 	"github.com/hyperledger/fabric/protos/utils"
 	"github.com/pkg/errors"
+
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/client/chaincode/txwaiter"
+	"github.com/s7techlab/hlf-sdk-go/peer"
 )
 
 type invokeBuilder struct {
-	sink          chan<- api.ChaincodeInvokeResponse
 	ccCore        *Core
 	fn            string
 	processor     api.PeerProcessor
 	peerPool      api.PeerPool
 	identity      msp.SigningIdentity
+	txWaiter      api.TxWaiter
 	args          [][]byte
 	transientArgs api.TransArgs
 	err           *errArgMap
@@ -97,11 +98,6 @@ func (b *invokeBuilder) WithIdentity(identity msp.SigningIdentity) api.Chaincode
 	return b
 }
 
-func (b *invokeBuilder) Async(sink chan<- api.ChaincodeInvokeResponse) api.ChaincodeInvokeBuilder {
-	b.sink = sink
-	return b
-}
-
 func (b *invokeBuilder) ArgBytes(args [][]byte) api.ChaincodeInvokeBuilder {
 	b.args = args
 	return b
@@ -139,7 +135,7 @@ func (b *invokeBuilder) ArgString(args ...string) api.ChaincodeInvokeBuilder {
 	return b.ArgBytes(argsToBytes(args...))
 }
 
-func (b *invokeBuilder) Do(ctx context.Context) (*fabricPeer.Response, api.ChaincodeTx, error) {
+func (b *invokeBuilder) Do(ctx context.Context, options ...api.DoOption) (*fabricPeer.Response, api.ChaincodeTx, error) {
 	err := b.err.Err()
 	if err != nil {
 		return nil, ``, err
@@ -149,6 +145,23 @@ func (b *invokeBuilder) Do(ctx context.Context) (*fabricPeer.Response, api.Chain
 	if err != nil {
 		return nil, ``, errors.Wrap(err, `failed to get chaincode definition`)
 	}
+
+	doOpts := &api.DoOptions{
+		DiscoveryChaincode: cc,
+		Identity:           b.identity,
+		Pool:               b.peerPool,
+	}
+	// set default options
+	if len(options) == 0 {
+		options = append(options, WithTxWaiter(txwaiter.Self))
+	}
+
+	for _, applyOpt := range options {
+		if err := applyOpt(doOpts); err != nil {
+			return nil, ``, err
+		}
+	}
+	b.txWaiter = doOpts.TxWaiter
 
 	proposal, tx, err := b.processor.CreateProposal(cc, b.identity, b.fn, b.args, b.transientArgs)
 	if err != nil {
@@ -170,74 +183,11 @@ func (b *invokeBuilder) Do(ctx context.Context) (*fabricPeer.Response, api.Chain
 		return nil, tx, errors.Wrap(err, `failed to get orderer response`)
 	}
 
-	if b.sink != nil {
-		go func() {
-			peerDeliver, err := b.peerPool.DeliverClient(b.identity.GetMSPIdentifier(), b.identity)
-			if err != nil {
-				out := api.ChaincodeInvokeResponse{
-					TxID: tx, Err: errors.Wrap(err, `failed to get deliver client`),
-				}
-				select {
-				case b.sink <- out:
-				case <-ctx.Done():
-				}
-				return
-			}
-			tsSub, err := peerDeliver.SubscribeTx(ctx, b.ccCore.channelName, tx)
-			if err != nil {
-				select {
-				case b.sink <- api.ChaincodeInvokeResponse{
-					TxID: tx, Err: errors.Wrap(err, `failed to get subscription`),
-				}:
-				case <-ctx.Done():
-				}
-				return
-			}
-			defer tsSub.Close()
-
-			if _, err = tsSub.Result(); err != nil {
-				out := api.ChaincodeInvokeResponse{
-					TxID: tx, Err: err,
-				}
-				select {
-				case b.sink <- out:
-				case <-ctx.Done():
-				}
-				return
-
-			} else {
-				out := api.ChaincodeInvokeResponse{
-					TxID:    tx,
-					Payload: peerResponses[0].Response.Payload,
-					Err:     err,
-				}
-
-				select {
-				case b.sink <- out:
-				case <-ctx.Done():
-				}
-				return
-			}
-		}()
-
-		return peerResponses[0].Response, tx, nil
-	} else {
-		peerDeliver, err := b.peerPool.DeliverClient(b.identity.GetMSPIdentifier(), b.identity)
-		if err != nil {
-			return nil, tx, errors.Wrap(err, `failed to get delivery client`)
-		}
-		tsSub, err := peerDeliver.SubscribeTx(ctx, b.ccCore.channelName, tx)
-		if err != nil {
-			return nil, tx, errors.Wrap(err, `failed to subscribe on tx event`)
-		}
-		defer tsSub.Close()
-
-		if _, err = tsSub.Result(); err != nil {
-			return nil, tx, err
-		} else {
-			return peerResponses[0].Response, tx, nil
-		}
+	if err = b.txWaiter.Wait(ctx, b.ccCore.channelName, tx); err != nil {
+		return nil, tx, err
 	}
+
+	return peerResponses[0].Response, tx, nil
 }
 
 func NewInvokeBuilder(ccCore *Core, fn string) api.ChaincodeInvokeBuilder {
@@ -248,6 +198,7 @@ func NewInvokeBuilder(ccCore *Core, fn string) api.ChaincodeInvokeBuilder {
 		fn:        fn,
 		processor: processor,
 		identity:  ccCore.identity,
-		err:       newErrArgMap(),
+
+		err: newErrArgMap(),
 	}
 }
