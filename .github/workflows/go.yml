@@ -16,8 +16,9 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v2
       - name: Run Unit tests
+        # now with that option we can get cover from all project
         run: |
-          go test -race -covermode atomic -coverprofile=profile.cov ./...
+          go test -race -covermode=atomic -coverprofile=profile.cov -coverpkg=github.com/s7techlab/hlf-sdk-go/... ./client/...
 
       - name: Send coverage
         uses: shogo82148/actions-goveralls@v1
