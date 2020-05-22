@@ -55,13 +55,18 @@ func main() {
 	}
 
 	if *ccInstantiate {
+		var args = make([][]byte, 0)
+		if len(*ccArgs) != 0 {
+			args = util.ToChaincodeArgs(*ccArgs)
+		}
+
 		if err = core.Chaincode(*cc).Instantiate(
 			ctx,
 			*channel,
 			*ccPath,
 			*ccVersion,
 			*ccPolicy,
-			util.ToChaincodeArgs(*ccArgs),
+			args,
 			prepareTransArgs(*ccTransient),
 		); err != nil {
 			log.Fatalln(err)
