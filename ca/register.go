@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/s7techlab/hlf-sdk-go/api/ca"
 	"github.com/pkg/errors"
+	"github.com/s7techlab/hlf-sdk-go/api/ca"
 )
 
 const regEndpoint = `/api/v1/register`

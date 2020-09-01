@@ -9,8 +9,8 @@ import (
 	"github.com/hyperledger/fabric/protos/utils"
 	"github.com/pkg/errors"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/hyperledger/fabric/protos/peer"
+	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
 type corePackage struct {

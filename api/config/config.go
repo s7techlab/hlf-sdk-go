@@ -64,8 +64,10 @@ type GRPCKeepAliveConfig struct {
 
 type TlsConfig struct {
 	Enabled      bool   `yaml:"enabled"`
+	SkipVerify   bool   `yaml:"skip_verify"`
 	HostOverride string `yaml:"host_override"`
 	CertPath     string `yaml:"cert_path"`
+	KeyPath      string `yaml:"key_path"`
 	CACertPath   string `yaml:"ca_cert_path"`
 }
 

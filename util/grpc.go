@@ -3,12 +3,15 @@ package util
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
-	"net"
+	"io/ioutil"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/retry"
+	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/pkg/errors"
+	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/opencensus/hlf"
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
@@ -18,9 +21,6 @@ import (
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/resolver"
 	"google.golang.org/grpc/resolver/manual"
-
-	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/opencensus/hlf"
 )
 
 var (
@@ -48,34 +48,44 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 		})),
 	}
 
+	l.Debug(`Connection to host`, zap.String(`host`, c.Host))
+
 	if c.Tls.Enabled {
 		l.Debug(`Using TLS credentials`)
-		var cred credentials.TransportCredentials
 		var err error
-		if c.Tls.CertPath != `` {
-			if cred, err = credentials.NewClientTLSFromFile(c.Tls.CertPath, ``); err != nil {
-				l.Error(`Failed to read TLS credentials`, zap.Error(err))
-				return nil, errors.Wrap(err, `failed to read tls credentials`)
-			} else {
-
+		var tlsCfg tls.Config
+		tlsCfg.InsecureSkipVerify = c.Tls.SkipVerify
+		// if custom CA certificate is presented, use it
+		if c.Tls.CACertPath != `` {
+			log.Debug(`Using custom CA certificate`)
+			caCert, err := ioutil.ReadFile(c.Tls.CACertPath)
+			if err != nil {
+				return nil, errors.Wrap(err, `failed to read CA certificate`)
 			}
+			certPool := x509.NewCertPool()
+			if ok := certPool.AppendCertsFromPEM(caCert); !ok {
+				return nil, errors.New(`failed to append CA certificate to chain`)
+			}
+			tlsCfg.RootCAs = certPool
 		} else {
-			var addr string
-			if c.Tls.HostOverride != `` {
-				l.Debug(`Overriding TLS host`, zap.String(`host`, c.Tls.HostOverride))
-				if addr, _, err = net.SplitHostPort(c.Tls.HostOverride); err != nil {
-					return nil, errors.Wrap(err, `failed to parse override tls host`)
-				}
-			} else {
-				l.Debug(`Using TLS host`, zap.String(`host`, c.Host))
-				if addr, _, err = net.SplitHostPort(c.Host); err != nil {
-					return nil, errors.Wrap(err, `failed to parse tls host`)
-				}
+			log.Debug(`Using system CA certificates`)
+			// otherwise we use system certificates
+			if tlsCfg.RootCAs, err = x509.SystemCertPool(); err != nil {
+				return nil, errors.Wrap(err, `failed to get system cert pool`)
 			}
-
-			cred = credentials.NewTLS(&tls.Config{ServerName: addr})
+		}
+		if c.Tls.CertPath != `` {
+			// use mutual tls if certificate and pk is presented
+			if c.Tls.KeyPath != `` {
+				cert, err := tls.LoadX509KeyPair(c.Tls.CertPath, c.Tls.KeyPath)
+				if err != nil {
+					return nil, errors.Wrap(err, `failed to load client certificate`)
+				}
+				tlsCfg.Certificates = append(tlsCfg.Certificates, cert)
+			}
 		}
 
+		cred := credentials.NewTLS(&tlsCfg)
 		l.Debug(`Read TLS credentials`, zap.Reflect(`cred`, cred.Info()))
 		grpcOptions = append(grpcOptions, grpc.WithTransportCredentials(cred))
 	} else {
@@ -124,6 +134,8 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 		grpc.MaxCallRecvMsgSize(maxRecvMsgSize),
 		grpc.MaxCallSendMsgSize(maxSendMsgSize),
 	))
+
+	grpcOptions = append(grpcOptions, grpc.WithReturnConnectionError())
 
 	return grpcOptions, nil
 }
