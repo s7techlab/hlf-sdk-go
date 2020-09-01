@@ -82,16 +82,6 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 					return nil, errors.Wrap(err, `failed to load client certificate`)
 				}
 				tlsCfg.Certificates = append(tlsCfg.Certificates, cert)
-			} else {
-				// otherwise just add cert to pool
-				//cert, err := ioutil.ReadFile(c.Tls.CertPath)
-				//if err != nil {
-				//	return nil, errors.Wrap(err, `failed to read server certificate`)
-				//}
-				//if ok := tlsCfg.RootCAs.AppendCertsFromPEM(cert); !ok {
-				//	return nil, errors.New(`failed to add server certificate to chain`)
-				//}
-				//log.Debug(`Using server certificate`)
 			}
 		}
 
