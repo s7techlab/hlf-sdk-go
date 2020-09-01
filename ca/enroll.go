@@ -10,9 +10,9 @@ import (
 	"encoding/pem"
 	"net/http"
 
-	"github.com/s7techlab/hlf-sdk-go/api/ca"
 	"github.com/cloudflare/cfssl/signer"
 	"github.com/pkg/errors"
+	"github.com/s7techlab/hlf-sdk-go/api/ca"
 )
 
 const enrollEndpoint = `/api/v1/enroll`

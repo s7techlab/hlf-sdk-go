@@ -3,12 +3,12 @@ package channel
 import (
 	"context"
 
-	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
-	"github.com/s7techlab/hlf-sdk-go/util"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/orderer"
 	"github.com/pkg/errors"
+	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
+	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
 func (c *Core) Join(ctx context.Context) error {

@@ -4,12 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	testpb "google.golang.org/grpc/test/grpc_testing"
 	"io/ioutil"
 	"net"
 	"path"
@@ -18,6 +12,13 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	testpb "google.golang.org/grpc/test/grpc_testing"
 )
 
 var (

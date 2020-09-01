@@ -7,14 +7,14 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/api/ca"
-	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/crypto"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/msp"
 	mspPb "github.com/hyperledger/fabric/protos/msp"
 	"github.com/pkg/errors"
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/api/ca"
+	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/crypto"
 )
 
 type core struct {
