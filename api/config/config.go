@@ -21,10 +21,6 @@ type ConnectionConfig struct {
 	Timeout Duration   `yaml:"timeout"`
 }
 
-func (c ConnectionConfig) GetHosts() {
-
-}
-
 type OrdererConfig struct {
 	Host    string     `yaml:"host"`
 	Tls     TlsConfig  `yaml:"tls"`
