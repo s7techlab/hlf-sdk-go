@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"flag"
+	"github.com/s7techlab/cckit/extensions/encryption"
 
 	"log"
 
@@ -56,9 +57,19 @@ func main() {
 	}
 
 	if *ccInstantiate {
-		var args = make([][]byte, 0)
-		if len(*ccArgs) != 0 {
-			args = util.ToChaincodeArgs(*ccArgs)
+		transArgs := prepareTransArgs(*ccTransient)
+		arg := *ccArgs
+		chaincodeArgs := util.ToChaincodeArgs(arg)
+		key := transArgs["ENCODE_KEY"]
+		if key != nil {
+			for i, arg := range chaincodeArgs {
+				encryptBytes, err := encryption.EncryptBytes(key, arg)
+				if err != nil {
+					log.Fatalln(`unable to encrypt:`, arg, err)
+				} else {
+					chaincodeArgs[i] = encryptBytes
+				}
+			}
 		}
 
 		if err = core.Chaincode(*cc).Instantiate(
@@ -67,8 +78,8 @@ func main() {
 			*ccPath,
 			*ccVersion,
 			*ccPolicy,
-			args,
-			prepareTransArgs(*ccTransient),
+			chaincodeArgs,
+			transArgs,
 		); err != nil {
 			log.Fatalln(err)
 		}
