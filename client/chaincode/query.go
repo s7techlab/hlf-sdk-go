@@ -57,7 +57,7 @@ func (q *QueryBuilder) AsProposalResponse(ctx context.Context) (*fabricPeer.Prop
 		return nil, errors.Wrap(err, `failed to create peer proposal`)
 	}
 
-	return q.peerPool.Process(q.identity.GetMSPIdentifier(), ctx, proposal)
+	return q.peerPool.Process(ctx, q.identity.GetMSPIdentifier(), proposal)
 }
 
 func (q *QueryBuilder) Transient(args api.TransArgs) api.ChaincodeQueryBuilder {

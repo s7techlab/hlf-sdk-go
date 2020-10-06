@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/peer/deliver"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -56,8 +55,8 @@ func (p *peerPool) Add(mspId string, peer api.Peer, peerChecker api.PeerPoolChec
 func (p *peerPool) addPeer(peer api.Peer, peerSet []*peerPoolPeer, peerChecker api.PeerPoolCheckStrategy) []*peerPoolPeer {
 	pp := &peerPoolPeer{peer: peer, ready: true}
 	aliveChan := make(chan bool)
-	go peerChecker(peer, aliveChan, p.ctx)
-	go p.poolChecker(aliveChan, pp, p.ctx)
+	go peerChecker(p.ctx, peer, aliveChan)
+	go p.poolChecker(p.ctx, aliveChan, pp)
 	return append(peerSet, pp)
 }
 
@@ -71,7 +70,7 @@ func (p *peerPool) searchPeer(peer api.Peer, peerSet []*peerPoolPeer) bool {
 	return false
 }
 
-func (p *peerPool) poolChecker(aliveChan chan bool, peer *peerPoolPeer, ctx context.Context) {
+func (p *peerPool) poolChecker(ctx context.Context, aliveChan chan bool, peer *peerPoolPeer) {
 	//log := p.log.Named(`poolChecker`)
 
 	for {
@@ -90,12 +89,14 @@ func (p *peerPool) poolChecker(aliveChan chan bool, peer *peerPoolPeer, ctx cont
 				p.log.Debug(`Peer connection is dead`, zap.String(`peerUri`, peer.peer.Uri()))
 			}
 
+			p.storeMx.Lock()
 			peer.ready = alive
+			p.storeMx.Unlock()
 		}
 	}
 }
 
-func (p *peerPool) Process(mspId string, context context.Context, proposal *peer.SignedProposal) (*peer.ProposalResponse, error) {
+func (p *peerPool) Process(ctx context.Context, mspId string, proposal *peer.SignedProposal) (*peer.ProposalResponse, error) {
 	log := p.log.Named(`Process`)
 	p.storeMx.RLock()
 	//check MspId exists
@@ -125,7 +126,7 @@ func (p *peerPool) Process(mspId string, context context.Context, proposal *peer
 
 		log.Debug(`Endorse sent on peer`, zap.Int(`peerPos`, pos), zap.String(`mspId`, mspId), zap.String(`uri`, poolPeer.peer.Uri()))
 
-		if propResp, err := poolPeer.peer.Endorse(context, proposal); err != nil {
+		if propResp, err := poolPeer.peer.Endorse(ctx, proposal); err != nil {
 			// GRPC error
 			if s, ok := status.FromError(err); ok {
 				if s.Code() == codes.Unavailable {
@@ -164,16 +165,7 @@ func (p *peerPool) DeliverClient(mspId string, identity msp.SigningIdentity) (ap
 	if err != nil {
 		return nil, err
 	}
-
-	var ctx context.Context
-
-	if p.config.DeliverTimeout.Duration != 0 {
-		ctx, _ = context.WithTimeout(p.ctx, p.config.DeliverTimeout.Duration)
-	} else {
-		ctx = p.ctx
-	}
-
-	return deliver.NewFromGRPC(ctx, poolPeer.Conn(), identity, p.log.Named(`DeliverClient`)), nil
+	return poolPeer.DeliverClient(identity)
 }
 
 func (p *peerPool) getFirstReadyPeer(mspId string) (api.Peer, error) {

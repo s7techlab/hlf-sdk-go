@@ -1,6 +1,8 @@
 package util
 
 import (
+	"fmt"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/common/util"
 	"github.com/hyperledger/fabric/msp"
@@ -9,6 +11,7 @@ import (
 	"github.com/hyperledger/fabric/protos/peer"
 	"github.com/hyperledger/fabric/protos/utils"
 	"github.com/pkg/errors"
+
 	"github.com/s7techlab/hlf-sdk-go/crypto"
 )
 
@@ -67,6 +70,23 @@ func SeekEnvelope(channelName string, startPos *orderer.SeekPosition, stopPos *o
 	return &common.Envelope{Payload: payload, Signature: payloadSignature}, nil
 }
 
+type ErrUnsupportedTxType struct {
+	Type string
+}
+
+func (e *ErrUnsupportedTxType) Error() string {
+	return fmt.Sprintf("err unknown tx type: %s", e.Type)
+}
+
+func IsErrUnsupportedTxType(err error) bool {
+	switch err.(type) {
+	case *ErrUnsupportedTxType:
+		return true
+	default:
+		return false
+	}
+}
+
 func GetEventFromEnvelope(envelopeData []byte) (*peer.ChaincodeEvent, error) {
 	if envelopeData == nil {
 		return nil, errors.New(`no envelope data`)
@@ -104,7 +124,9 @@ func GetEventFromEnvelope(envelopeData []byte) (*peer.ChaincodeEvent, error) {
 						}
 					}
 				default:
-					return nil, errors.Errorf("err unknown tx type: %s", common.HeaderType_name[channelHeader.Type])
+					return nil, &ErrUnsupportedTxType{
+						Type: common.HeaderType_name[channelHeader.Type],
+					}
 				}
 			}
 		}

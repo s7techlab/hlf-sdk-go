@@ -1,109 +1,81 @@
 package subs
 
 import (
-	"context"
-
 	"github.com/hyperledger/fabric/core/ledger/util"
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/peer"
-	"github.com/hyperledger/fabric/protos/utils"
+
 	"github.com/s7techlab/hlf-sdk-go/api"
 	utilSDK "github.com/s7techlab/hlf-sdk-go/util"
-	"go.uber.org/zap"
 )
 
-type eventSubscription struct {
-	log       *zap.Logger
-	ccname    string
-	blockChan chan *common.Block
-	eventChan chan *peer.ChaincodeEvent
-	errChan   chan error
-	ctx       context.Context
-	cancel    context.CancelFunc
+func NewEventSubscription(cid string, fromTx api.ChaincodeTx) *EventSubscription {
+	return &EventSubscription{
+		chaincodeID: cid,
+		fromTx:      string(fromTx),
+		events:      make(chan *peer.ChaincodeEvent),
+	}
 }
 
-func (es *eventSubscription) Events() chan *peer.ChaincodeEvent {
-	return es.eventChan
+type EventSubscription struct {
+	chaincodeID string
+	fromTx      string
+	events      chan *peer.ChaincodeEvent
+
+	ErrorCloser
 }
 
-func (es *eventSubscription) Errors() chan error {
-	return es.errChan
+//func (e *EventSubscription) Events() <-chan *peer.ChaincodeEvent {
+//	return e.events
+//}
+
+func (e *EventSubscription) Events() chan *peer.ChaincodeEvent {
+	return e.events
 }
 
-func (es eventSubscription) handleCCSubscription() {
-	for {
-		select {
-		case block, ok := <-es.blockChan:
-			if !ok {
-				return
-			}
-			txFilter := util.TxValidationFlags(block.Metadata.Metadata[common.BlockMetadataIndex_TRANSACTIONS_FILTER])
-			for i, r := range block.Data.Data {
-				if txFilter.IsValid(i) {
-					if ev, err := utilSDK.GetEventFromEnvelope(r); err != nil {
-						select {
-						case es.errChan <- &api.EnvelopeParsingError{Err: err}:
-						case <-es.ctx.Done():
-							return
-						default:
-							return
-						}
+func (e *EventSubscription) Handler(block *common.Block) bool {
+	if block == nil {
+		close(e.events)
+	} else {
+		txFilter := util.TxValidationFlags(block.Metadata.Metadata[common.BlockMetadataIndex_TRANSACTIONS_FILTER])
+		for i, r := range block.GetData().GetData() {
+			if txFilter.IsValid(i) {
+				ev, err := utilSDK.GetEventFromEnvelope(r)
+				if err != nil {
+					if utilSDK.IsErrUnsupportedTxType(err) {
+						continue
 					} else {
-						if ev != nil {
-							select {
-							case es.eventChan <- ev:
-							case <-es.ctx.Done():
-								return
-							default:
-								return
-							}
-						}
-					}
-				} else {
-					env, _ := utils.GetEnvelopeFromBlock(r)
-					p, _ := utils.GetPayload(env)
-					chHeader, _ := utils.UnmarshalChannelHeader(p.Header.ChannelHeader)
-					errMsg := &api.InvalidTxError{
-						TxId: api.ChaincodeTx(chHeader.TxId),
-						Code: txFilter.Flag(i),
-					}
-					select {
-					case es.errChan <- errMsg:
-					case <-es.ctx.Done():
-						return
-					default:
-						return
+						return true
 					}
 				}
+
+				if ev.GetChaincodeId() != e.chaincodeID {
+					continue
+				}
+
+				if len(e.fromTx) > 0 {
+					if ev.TxId != e.fromTx {
+						continue
+					} else {
+						//reset filter and go to next tx from block
+						e.fromTx = ``
+						continue
+					}
+				}
+
+				select {
+				case e.events <- ev:
+				case <-e.ErrorCloser.Done():
+					return true
+				}
 			}
-		case <-es.ctx.Done():
-			es.log.Debug(`Context canceled`, zap.Error(es.ctx.Err()))
-			return
 		}
 	}
+	return false
 }
 
-func (es *eventSubscription) Close() error {
-	es.log.Debug(`Cancel context`)
-	es.cancel()
-	es.eventChan = nil
-	return nil
-}
-
-func NewEventSubscription(ctx context.Context, ccname string, blockChan chan *common.Block, errChan chan error, stop context.CancelFunc, log *zap.Logger) api.EventCCSubscription {
-	l := log.Named(`EventSubscription`)
-
-	es := &eventSubscription{
-		log:       l,
-		ccname:    ccname,
-		eventChan: make(chan *peer.ChaincodeEvent, 10),
-		errChan:   errChan,
-		blockChan: blockChan,
-		ctx:       ctx,
-		cancel:    stop,
-	}
-
-	go es.handleCCSubscription()
-
-	return es
+func (e *EventSubscription) Serve(base ErrorCloser, readyForHandling ReadyForHandling) *EventSubscription {
+	e.ErrorCloser = base
+	readyForHandling()
+	return e
 }

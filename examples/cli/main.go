@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"flag"
 
+	"log"
+
 	"github.com/hyperledger/fabric/common/util"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/client"
@@ -13,7 +15,6 @@ import (
 	_ "github.com/s7techlab/hlf-sdk-go/discovery/local"
 	"github.com/s7techlab/hlf-sdk-go/identity"
 	"go.uber.org/zap"
-	"log"
 )
 
 var ctx = context.Background()

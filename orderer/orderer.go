@@ -9,11 +9,12 @@ import (
 	"github.com/hyperledger/fabric/protos/common"
 	fabricOrderer "github.com/hyperledger/fabric/protos/orderer"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
+
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/util"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
 )
 
 type ErrUnexpectedStatus struct {
@@ -34,63 +35,78 @@ type orderer struct {
 	grpcOptions     []grpc.DialOption
 }
 
-func (o *orderer) Broadcast(ctx context.Context, envelope *common.Envelope) (*fabricOrderer.BroadcastResponse, error) {
+func (o *orderer) Broadcast(ctx context.Context, envelope *common.Envelope) (resp *fabricOrderer.BroadcastResponse, err error) {
 	cli, err := o.broadcastClient.Broadcast(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, `failed to initialize broadcast client`)
+		err = errors.Wrap(err, `failed to initialize broadcast client`)
+		return
 	}
-	defer cli.CloseSend()
+
+	defer func() { err = cli.CloseSend() }()
 
 	if err = cli.Send(envelope); err != nil {
-		return nil, errors.Wrap(err, `failed to send envelope`)
+		err = errors.Wrap(err, `failed to send envelope`)
+		return
 	}
 
-	if resp, err := cli.Recv(); err != nil {
-		return nil, errors.Wrap(err, `failed to receive response`)
+	if resp, err = cli.Recv(); err != nil {
+		err = errors.Wrap(err, `failed to receive response`)
+		return
 	} else {
 		if resp.Status != common.Status_SUCCESS {
-			return nil, &ErrUnexpectedStatus{status: resp.Status}
+			err = &ErrUnexpectedStatus{status: resp.Status}
+			return
 		}
-		return resp, nil
 	}
+
+	return
 }
 
-func (o *orderer) Deliver(ctx context.Context, envelope *common.Envelope) (*common.Block, error) {
+func (o *orderer) Deliver(ctx context.Context, envelope *common.Envelope) (block *common.Block, err error) {
 	cli, err := o.broadcastClient.Deliver(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, `failed to initialize deliver client`)
+		err = errors.Wrap(err, `failed to initialize deliver client`)
+		return
 	}
 
-	defer cli.CloseSend()
+	waitc := make(chan struct{}, 0)
+
+	go func() {
+		defer close(waitc)
+		for {
+			resp, errR := cli.Recv()
+			if errR == io.EOF {
+				return
+			}
+
+			if errR != nil {
+				err = errors.Wrap(errR, `failed to receive response`)
+				return
+			}
+
+			switch respType := resp.Type.(type) {
+			case *fabricOrderer.DeliverResponse_Status:
+				if respType.Status != common.Status_SUCCESS {
+					err = &ErrUnexpectedStatus{status: respType.Status}
+				} else {
+					err = nil
+					return
+				}
+			case *fabricOrderer.DeliverResponse_Block:
+				block = respType.Block
+				return
+			}
+		}
+	}()
 
 	if err = cli.Send(envelope); err != nil {
-		return nil, errors.Wrap(err, `failed to send envelope`)
+		err = errors.Wrap(err, `failed to send envelope`)
+		return
 	}
 
-	var block *common.Block
-
-	for {
-		resp, err := cli.Recv()
-		if err == io.EOF {
-			return block, nil
-		}
-
-		if err != nil {
-			return nil, errors.Wrap(err, `failed to receive response`)
-		}
-
-		switch respType := resp.Type.(type) {
-		case *fabricOrderer.DeliverResponse_Status:
-			if respType.Status != common.Status_SUCCESS {
-				return nil, &ErrUnexpectedStatus{status: respType.Status}
-			} else {
-				return block, nil
-			}
-		case *fabricOrderer.DeliverResponse_Block:
-			block = respType.Block
-			return block, nil
-		}
-	}
+	err = cli.CloseSend()
+	<-waitc
+	return
 }
 
 func (o *orderer) initBroadcastClient() error {

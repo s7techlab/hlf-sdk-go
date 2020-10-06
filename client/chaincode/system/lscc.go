@@ -2,6 +2,7 @@ package system
 
 import (
 	"context"
+
 	"github.com/hyperledger/fabric/common/util"
 	"github.com/hyperledger/fabric/protos/common"
 
@@ -149,7 +150,7 @@ func (c *lscc) endorse(ctx context.Context, channelName string, fn string, args 
 }
 
 func (c *lscc) endorseProposal(ctx context.Context, prop *peer.SignedProposal) (*peer.ProposalResponse, error) {
-	resp, err := c.peerPool.Process(c.identity.GetMSPIdentifier(), ctx, prop)
+	resp, err := c.peerPool.Process(ctx, c.identity.GetMSPIdentifier(), prop)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to endorse proposal`)
 	}

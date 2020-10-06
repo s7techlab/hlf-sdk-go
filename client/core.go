@@ -2,25 +2,27 @@ package client
 
 import (
 	"context"
-	"github.com/hyperledger/fabric/core/chaincode/platforms/golang"
-	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
-	"github.com/s7techlab/hlf-sdk-go/client/fetcher"
 	"sync"
 	"time"
 
+	"github.com/hyperledger/fabric/core/chaincode/platforms/golang"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
+
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
 	"github.com/s7techlab/hlf-sdk-go/client/channel"
+	"github.com/s7techlab/hlf-sdk-go/client/fetcher"
 	"github.com/s7techlab/hlf-sdk-go/crypto"
 	"github.com/s7techlab/hlf-sdk-go/discovery"
 	"github.com/s7techlab/hlf-sdk-go/logger"
 	"github.com/s7techlab/hlf-sdk-go/orderer"
 	"github.com/s7techlab/hlf-sdk-go/peer"
 	"github.com/s7techlab/hlf-sdk-go/peer/pool"
-	"go.uber.org/zap"
+	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
 type core struct {
@@ -77,8 +79,31 @@ func (c *core) Channel(name string) api.Channel {
 		log.Debug(`Channel instance exists`)
 		return ch
 	} else {
+		var ord api.Orderer
+
 		log.Debug(`Channel instance doesn't exist, initiating new`)
-		ch = channel.NewCore(c.mspId, name, c.peerPool, c.orderer, c.discoveryProvider, c.identity)
+		discChannel, err := c.discoveryProvider.Channel(name)
+		if err != nil {
+			log.Error(`Failed to get channel declaration in discovery`, zap.Error(err))
+		} else {
+			// if custom orderers are enabled
+			if len(discChannel.Orderers) > 0 {
+				ordConn, err := util.NewGRPCConnectionFromConfigs(c.ctx, c.logger, discChannel.Orderers...)
+				if err != nil {
+					log.Error(`Failed to initialize custom GRPC connection for orderer`, zap.String(`channel`, name), zap.Error(err))
+				}
+				if ord, err = orderer.NewFromGRPC(c.ctx, ordConn); err != nil {
+					log.Error(`Failed to construct orderer from GRPC connection`)
+				}
+			}
+		}
+
+		// using default orderer
+		if ord == nil {
+			ord = c.orderer
+		}
+
+		ch = channel.NewCore(c.mspId, name, c.peerPool, ord, c.discoveryProvider, c.identity, c.logger)
 		c.channels[name] = ch
 		return ch
 	}

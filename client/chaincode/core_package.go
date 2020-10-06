@@ -2,6 +2,7 @@ package chaincode
 
 import (
 	"context"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/common/cauthdsl"
 	"github.com/hyperledger/fabric/msp"

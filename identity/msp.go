@@ -11,6 +11,7 @@ import (
 	_ "github.com/hyperledger/fabric/msp"
 	mspPb "github.com/hyperledger/fabric/protos/msp"
 	"github.com/pkg/errors"
+
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/util"
 )
@@ -114,12 +115,12 @@ func NewMSPIdentity(mspId string, certPath string, keyPath string) (api.Identity
 func NewMSPIdentityBytes(mspId string, certBytes []byte, keyBytes []byte) (api.Identity, error) {
 	certPEM, _ := pem.Decode(certBytes)
 	if certPEM == nil {
-		return nil, api.ErrInvalidPEMStructure
+		return nil, errors.Wrap(api.ErrInvalidPEMStructure, `failed to decode certificate`)
 	}
 
 	keyPEM, _ := pem.Decode(keyBytes)
 	if keyPEM == nil {
-		return nil, api.ErrInvalidPEMStructure
+		return nil, errors.Wrap(api.ErrInvalidPEMStructure, `failed to decode private key`)
 	}
 
 	cert, err := x509.ParseCertificate(certPEM.Bytes)

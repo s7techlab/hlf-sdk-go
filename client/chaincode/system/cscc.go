@@ -23,10 +23,10 @@ type cscc struct {
 func (c *cscc) JoinChain(ctx context.Context, channelName string, genesisBlock *common.Block) error {
 	blockBytes, err := proto.Marshal(genesisBlock)
 	if err != nil {
-		return errors.Wrap(err, `failed to marshal block`)
+		return errors.Wrapf(err, "failed to marshal block %s", channelName)
 	}
 
-	_, err = c.endorse(ctx, csccPkg.JoinChain, channelName, string(blockBytes))
+	_, err = c.endorse(ctx, csccPkg.JoinChain, string(blockBytes))
 	return err
 }
 
@@ -72,7 +72,7 @@ func (c *cscc) endorse(ctx context.Context, fn string, args ...string) ([]byte, 
 		return nil, errors.Wrap(err, `failed to create proposal`)
 	}
 
-	resp, err := c.peerPool.Process(c.identity.GetMSPIdentifier(), ctx, prop)
+	resp, err := c.peerPool.Process(ctx, c.identity.GetMSPIdentifier(), prop)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to endorse proposal`)
 	}

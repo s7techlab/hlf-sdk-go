@@ -86,7 +86,7 @@ func (*processor) Send(ctx context.Context, proposal *fabricPeer.SignedProposal,
 	// send all proposals concurrently
 	for i := 0; i < len(mspIds); i++ {
 		go func(mspId string) {
-			resp, err := pool.Process(mspId, ctx, proposal)
+			resp, err := pool.Process(ctx, mspId, proposal)
 			respChan <- endorseChannelResponse{Response: resp, Error: err}
 		}(mspIds[i])
 	}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
+
 	"github.com/s7techlab/hlf-sdk-go/crypto"
 )
 

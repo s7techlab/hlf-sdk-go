@@ -1,0 +1,62 @@
+orderer:
+  host: localhost:7050
+  useTLS: false
+  timeout: 5s
+
+crypto:
+  type: ecdsa
+  options:
+    # Possible curves: P256, P384, P512
+    curve: P256
+    # Possible algorithms for signature: SHA256, SHA384, SHA512
+    signatureAlgorithm: SHA256
+    # Possible hashing algorithms: SHA2-256, SHA2-384, SHA3-256, SHA3-384
+    hash: SHA2-256
+
+discovery:
+  type: local
+  options:
+    channels:
+      - name: success-network
+        description: some channel
+        chaincodes:
+          - name: my-chaincode
+            type: golang
+            version: "0.1"
+            description: some chaincode
+            policy: "AND ('org1msp.admin','org2msp.admin','org3msp.admin')"
+      - name: fail-network
+        description: some channel
+        chaincodes:
+          - name: my-chaincode
+            type: golang
+            version: "0.1"
+            description: some chaincode
+            policy: "AND ('org1msp.admin','org2msp.admin','org3msp.admin')"
+      - name: fail-mvcc-network
+        description: some channel
+        chaincodes:
+          - name: my-chaincode
+            type: golang
+            version: "0.1"
+            description: some chaincode
+            policy: "AND ('org1msp.admin','org2msp.admin','org3msp.admin')"
+      - name: fail-invalid-org3-network
+        description: some channel
+        chaincodes:
+          - name: my-chaincode
+            type: golang
+            version: "0.1"
+            description: some chaincode
+            policy: "AND ('org1msp.admin','org2msp.admin','org3msp.admin')"
+
+msp:
+  - name: org1msp
+    endorsers:
+      - host: 127.0.0.1:7051
+  - name: org2msp
+    endorsers:
+      - host: localhost:7051
+  - name: org3msp
+    endorsers:
+      - host: localhost:7051

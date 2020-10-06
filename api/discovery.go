@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/hyperledger/fabric/protos/peer"
+
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 )
 
@@ -14,14 +15,16 @@ type DiscoveryProviderOpts map[string]interface{}
 type DiscoveryProvider interface {
 	Initialize(opts config.DiscoveryConfigOpts, pool PeerPool) (DiscoveryProvider, error)
 	Channels() ([]DiscoveryChannel, error)
+	Channel(channelName string) (*DiscoveryChannel, error)
 	Chaincode(channelName string, ccName string) (*DiscoveryChaincode, error)
 	Chaincodes(channelName string) ([]DiscoveryChaincode, error)
 }
 
 type DiscoveryChannel struct {
-	Name        string               `json:"channel_name" yaml:"name"`
-	Description string               `json:"channel_description" yaml:"description"`
-	Chaincodes  []DiscoveryChaincode `json:"chaincodes" yaml:"description"`
+	Name        string                    `json:"channel_name" yaml:"name"`
+	Description string                    `json:"channel_description" yaml:"description"`
+	Chaincodes  []DiscoveryChaincode      `json:"chaincodes" yaml:"description"`
+	Orderers    []config.ConnectionConfig `json:"orderers" yaml:"orderers"`
 }
 
 type DiscoveryChaincode struct {

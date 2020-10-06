@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"fmt"
-
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protos/peer"
 	"google.golang.org/grpc"
@@ -13,6 +12,8 @@ import (
 type Peer interface {
 	// Endorse sends proposal to endorsing peer and returns it's result
 	Endorse(ctx context.Context, proposal *peer.SignedProposal, opts ...PeerEndorseOpt) (*peer.ProposalResponse, error)
+	// Deliver
+	DeliverClient(identity msp.SigningIdentity) (DeliverClient, error)
 	// Uri returns url used for grpc connection
 	Uri() string
 	// Conn returns instance of grpc connection

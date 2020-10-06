@@ -10,6 +10,7 @@ import (
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
+
 	"github.com/s7techlab/hlf-sdk-go/api"
 	peerSDK "github.com/s7techlab/hlf-sdk-go/peer"
 )
@@ -69,7 +70,7 @@ func (c *qscc) GetTransactionByID(ctx context.Context, channelName string, tx ap
 }
 
 func (c *qscc) GetBlockByTxID(ctx context.Context, channelName string, tx api.ChaincodeTx) (*common.Block, error) {
-	if blockBytes, err := c.endorse(ctx, qsccPkg.GetBlockByTxID, string(tx)); err != nil {
+	if blockBytes, err := c.endorse(ctx, qsccPkg.GetBlockByTxID, channelName, string(tx)); err != nil {
 		return nil, errors.Wrap(err, `failed to get block`)
 	} else {
 		block := new(common.Block)
@@ -85,7 +86,7 @@ func (c *qscc) endorse(ctx context.Context, fn string, args ...string) ([]byte, 
 		return nil, errors.Wrap(err, `failed to create proposal`)
 	}
 
-	resp, err := c.peerPool.Process(c.identity.GetMSPIdentifier(), ctx, prop)
+	resp, err := c.peerPool.Process(ctx, c.identity.GetMSPIdentifier(), prop)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to endorse proposal`)
 	}
