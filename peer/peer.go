@@ -34,8 +34,6 @@ func (p *peer) Endorse(ctx context.Context, proposal *fabricPeer.SignedProposal,
 	log := p.log.Named(`Endorse`)
 
 	if _, ok := ctx.Deadline(); !ok {
-		log.Debug(`Context without deadline, set timeout`, zap.Duration(`timeout`, p.timeout))
-
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, p.timeout)
 		defer cancel()
