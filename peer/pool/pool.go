@@ -100,7 +100,6 @@ func (p *peerPool) Process(ctx context.Context, mspId string, proposal *peer.Sig
 	log := p.log.Named(`Process`)
 	p.storeMx.RLock()
 	//check MspId exists
-	log.Debug(`Searching peers for MspId`, zap.String(`mspId`, mspId))
 	peers, ok := p.store[mspId]
 	p.storeMx.RUnlock()
 

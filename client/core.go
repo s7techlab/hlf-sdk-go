@@ -74,9 +74,7 @@ func (c *core) Channel(name string) api.Channel {
 	log := c.logger.Named(`Channel`).With(zap.String(`channel`, name))
 	c.channelMx.Lock()
 	defer c.channelMx.Unlock()
-	log.Debug(`Check channel instance exists`)
 	if ch, ok := c.channels[name]; ok {
-		log.Debug(`Channel instance exists`)
 		return ch
 	} else {
 		var ord api.Orderer
