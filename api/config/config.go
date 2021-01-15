@@ -7,11 +7,13 @@ import (
 )
 
 type Config struct {
-	Crypto    CryptoConfig     `yaml:"crypto"`
-	Orderer   ConnectionConfig `yaml:"orderer"`
-	Discovery DiscoveryConfig  `yaml:"discovery"`
-	MSP       []MSPConfig      `yaml:"msp"`
-	Pool      PoolConfig       `yaml:"pool"`
+	Crypto CryptoConfig `yaml:"crypto"`
+	// Depricated: use Orderers.
+	Orderer   ConnectionConfig   `yaml:"orderer"`
+	Orderers  []ConnectionConfig `yaml:"orderers"`
+	Discovery DiscoveryConfig    `yaml:"discovery"`
+	MSP       []MSPConfig        `yaml:"msp"`
+	Pool      PoolConfig         `yaml:"pool"`
 }
 
 type ConnectionConfig struct {
