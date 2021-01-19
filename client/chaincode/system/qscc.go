@@ -2,6 +2,7 @@ package system
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/common/util"
@@ -34,7 +35,7 @@ func (c *qscc) GetChainInfo(ctx context.Context, channelName string) (*common.Bl
 }
 
 func (c *qscc) GetBlockByNumber(ctx context.Context, channelName string, blockNumber int64) (*common.Block, error) {
-	if blockBytes, err := c.endorse(ctx, qsccPkg.GetBlockByNumber, string(blockNumber)); err != nil {
+	if blockBytes, err := c.endorse(ctx, qsccPkg.GetBlockByNumber, strconv.FormatInt(blockNumber, 10)); err != nil {
 		return nil, errors.Wrap(err, `failed to get block`)
 	} else {
 		block := new(common.Block)
