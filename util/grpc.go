@@ -135,7 +135,7 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 		grpc.MaxCallSendMsgSize(maxSendMsgSize),
 	))
 
-	grpcOptions = append(grpcOptions, grpc.WithReturnConnectionError())
+	grpcOptions = append(grpcOptions, grpc.WithBlock())
 
 	return grpcOptions, nil
 }
