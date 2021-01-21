@@ -6,8 +6,8 @@ import (
 	"io"
 	"sync"
 
-	"github.com/hyperledger/fabric/protos/common"
-	fabricOrderer "github.com/hyperledger/fabric/protos/orderer"
+	"github.com/hyperledger/fabric-protos-go/common"
+	fabricOrderer "github.com/hyperledger/fabric-protos-go/orderer"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"

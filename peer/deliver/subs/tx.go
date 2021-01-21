@@ -2,11 +2,11 @@ package subs
 
 import (
 	"github.com/pkg/errors"
+	"github.com/s7techlab/hlf-sdk-go/internal/txflags"
 
-	"github.com/hyperledger/fabric/core/ledger/util"
-	"github.com/hyperledger/fabric/protos/common"
-	"github.com/hyperledger/fabric/protos/peer"
-	"github.com/hyperledger/fabric/protos/utils"
+	"github.com/hyperledger/fabric-protos-go/common"
+	"github.com/hyperledger/fabric-protos-go/peer"
+	"github.com/hyperledger/fabric/protoutil"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 )
@@ -64,24 +64,24 @@ func (ts *TxSubscription) Handler(block *common.Block) bool {
 		close(ts.result)
 		return false
 	}
-	txFilter := util.TxValidationFlags(
+	txFilter := txflags.ValidationFlags(
 		block.GetMetadata().GetMetadata()[common.BlockMetadataIndex_TRANSACTIONS_FILTER],
 	)
 
 	for i, r := range block.GetData().GetData() {
-		env, err := utils.GetEnvelopeFromBlock(r)
+		env, err := protoutil.GetEnvelopeFromBlock(r)
 		if err != nil {
 			ts.result <- &result{code: 0, err: err}
 			return true
 		}
 
-		p, err := utils.GetPayload(env)
+		p, err := protoutil.UnmarshalPayload(env.Payload)
 		if err != nil {
 			ts.result <- &result{code: 0, err: err}
 			return true
 		}
 
-		chHeader, err := utils.UnmarshalChannelHeader(p.Header.ChannelHeader)
+		chHeader, err := protoutil.UnmarshalChannelHeader(p.Header.ChannelHeader)
 		if err != nil {
 			ts.result <- &result{code: 0, err: err}
 			return true

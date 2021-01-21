@@ -2,14 +2,14 @@ package chaincode
 
 import (
 	"context"
+	"github.com/hyperledger/fabric/common/policydsl"
+	"github.com/hyperledger/fabric/protoutil"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/hyperledger/fabric/common/cauthdsl"
 	"github.com/hyperledger/fabric/msp"
-	"github.com/hyperledger/fabric/protos/utils"
 	"github.com/pkg/errors"
 
-	"github.com/hyperledger/fabric/protos/peer"
+	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
@@ -44,7 +44,7 @@ func (c *corePackage) Install(ctx context.Context, path, version string) error {
 }
 
 func (c *corePackage) Instantiate(ctx context.Context, channelName, path, version, policy string, args [][]byte, transArgs api.TransArgs) error {
-	ePolicy, err := cauthdsl.FromString(policy)
+	ePolicy, err := policydsl.FromString(policy)
 	if err != nil {
 		return errors.Wrap(err, `failed to parse endorsement policy`)
 	}
@@ -74,7 +74,7 @@ func (c *corePackage) Instantiate(ctx context.Context, channelName, path, versio
 		return errors.Wrap(err, `failed to pnmarshal proposal for make peer.Proposal`)
 	}
 
-	env, err := utils.CreateSignedTx(peerProp, c.identity, resp)
+	env, err := protoutil.CreateSignedTx(peerProp, c.identity, resp)
 	if err != nil {
 		return errors.Wrap(err, "could not assemble transaction")
 	}

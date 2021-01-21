@@ -5,9 +5,9 @@ import (
 	"context"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric/common/channelconfig"
 	"github.com/hyperledger/fabric/msp"
-	"github.com/hyperledger/fabric/protos/common"
 	"github.com/pkg/errors"
 
 	"github.com/s7techlab/hlf-sdk-go/api"

@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/hyperledger/fabric/protos/peer"
+	"github.com/hyperledger/fabric-protos-go/peer"
 
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 )

@@ -2,13 +2,13 @@ package util
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/hyperledger/fabric/common/cauthdsl"
-	"github.com/hyperledger/fabric/protos/msp"
+	"github.com/hyperledger/fabric-protos-go/msp"
+	"github.com/hyperledger/fabric/common/policydsl"
 	"github.com/pkg/errors"
 )
 
 func GetMSPFromPolicy(policy string) ([]string, error) {
-	policyEnvelope, err := cauthdsl.FromString(policy)
+	policyEnvelope, err := policydsl.FromString(policy)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to parse policy`)
 	}
