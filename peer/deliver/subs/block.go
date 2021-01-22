@@ -1,7 +1,7 @@
 package subs
 
 import (
-	"github.com/hyperledger/fabric/protos/common"
+	"github.com/hyperledger/fabric-protos-go/common"
 )
 
 type (

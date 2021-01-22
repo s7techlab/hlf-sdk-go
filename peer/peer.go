@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hyperledger/fabric/core/chaincode/shim"
-	fabricPeer "github.com/hyperledger/fabric/protos/peer"
+	"github.com/hyperledger/fabric-chaincode-go/shim"
+	fabricPeer "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"

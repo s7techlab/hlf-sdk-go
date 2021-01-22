@@ -2,9 +2,9 @@ package api
 
 import (
 	"context"
+	"github.com/hyperledger/fabric-protos-go/common"
+	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
-	"github.com/hyperledger/fabric/protos/common"
-	"github.com/hyperledger/fabric/protos/peer"
 )
 
 type ChaincodeTx string
@@ -81,18 +81,6 @@ type ChaincodeQueryBuilder interface {
 	AsJSON(ctx context.Context, out interface{}) error
 	// AsProposalResponse allows to get raw peer response
 	AsProposalResponse(ctx context.Context) (*peer.ProposalResponse, error)
-}
-
-// CSCC describes Configuration System Chaincode (CSCC)
-type CSCC interface {
-	// JoinChain allows to join channel using presented genesis block
-	JoinChain(ctx context.Context, channelName string, genesisBlock *common.Block) error
-	// GetConfigBlock returns genesis block of channel
-	GetConfigBlock(ctx context.Context, channelName string) (*common.Block, error)
-	// GetConfigTree returns configuration tree of channel
-	GetConfigTree(ctx context.Context, channelName string) (*peer.ConfigTree, error)
-	// Channels returns list of joined channels
-	Channels(ctx context.Context) (*peer.ChannelQueryResponse, error)
 }
 
 // QSCC describes Query System Chaincode (QSCC)

@@ -8,8 +8,8 @@ import (
 	"net/http"
 
 	"github.com/golang/protobuf/proto"
+	mspPb "github.com/hyperledger/fabric-protos-go/msp"
 	"github.com/hyperledger/fabric/msp"
-	mspPb "github.com/hyperledger/fabric/protos/msp"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/ca"

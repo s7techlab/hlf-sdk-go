@@ -3,9 +3,8 @@ package fetcher
 import (
 	"context"
 
+	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/core/chaincode/platforms"
-	"github.com/hyperledger/fabric/protos/peer"
-	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
@@ -15,19 +14,20 @@ type localFetcher struct {
 }
 
 func (f *localFetcher) Fetch(ctx context.Context, id *peer.ChaincodeID) (*peer.ChaincodeDeploymentSpec, error) {
-	ccBytes, err := f.r.GetDeploymentPayload(f.pl.Name(), id.Path)
-	if err != nil {
-		return nil, errors.Wrap(err, ``)
-	}
-
-	return &peer.ChaincodeDeploymentSpec{
-		ChaincodeSpec: &peer.ChaincodeSpec{
-			Type:        f.getTypeByPlatform(),
-			ChaincodeId: id,
-		},
-		CodePackage: ccBytes,
-		ExecEnv:     peer.ChaincodeDeploymentSpec_DOCKER,
-	}, nil
+	panic(`implement me`)
+	//ccBytes, err := f.r.GetDeploymentPayload(f.pl.Name(), id.Path)
+	//if err != nil {
+	//	return nil, errors.Wrap(err, ``)
+	//}
+	//
+	//return &peer.ChaincodeDeploymentSpec{
+	//	ChaincodeSpec: &peer.ChaincodeSpec{
+	//		Type:        f.getTypeByPlatform(),
+	//		ChaincodeId: id,
+	//	},
+	//	CodePackage: ccBytes,
+	//	ExecEnv:     peer.ChaincodeDeploymentSpec_DOCKER,
+	//}, nil
 }
 
 func (f *localFetcher) getTypeByPlatform() peer.ChaincodeSpec_Type {

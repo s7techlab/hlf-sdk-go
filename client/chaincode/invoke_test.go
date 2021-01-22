@@ -3,19 +3,16 @@ package chaincode_test
 import (
 	"context"
 	"fmt"
+	"github.com/hyperledger/fabric/protoutil"
 	"strings"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/pkg/errors"
-	"google.golang.org/grpc"
-
+	"github.com/hyperledger/fabric-protos-go/common"
+	"github.com/hyperledger/fabric-protos-go/orderer"
+	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
-	"github.com/hyperledger/fabric/protos/common"
-	"github.com/hyperledger/fabric/protos/orderer"
-	"github.com/hyperledger/fabric/protos/peer"
-	"github.com/hyperledger/fabric/protos/utils"
-
+	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/client"
@@ -28,6 +25,7 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/identity"
 	"github.com/s7techlab/hlf-sdk-go/logger"
 	"github.com/s7techlab/hlf-sdk-go/peer/pool"
+	"google.golang.org/grpc"
 )
 
 var (
@@ -121,12 +119,11 @@ func (p *mockPeer) Endorse(ctx context.Context, proposal *peer.SignedProposal, o
 	if err := proto.Unmarshal(proposal.ProposalBytes, prop); err != nil {
 		return nil, errors.Wrap(err, `failed to unmarshal ProposalBytes`)
 	}
-
-	header, err := utils.GetHeader(prop.Header)
+	header, err := protoutil.UnmarshalHeader(prop.Header)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to unmarshal Header`)
 	}
-	chheader, err := utils.UnmarshalChannelHeader(header.ChannelHeader)
+	chheader, err := protoutil.UnmarshalChannelHeader(header.ChannelHeader)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to unmarshal`)
 	}
@@ -145,14 +142,13 @@ func (p *mockPeer) Endorse(ctx context.Context, proposal *peer.SignedProposal, o
 		Version: `0.1`,
 	}
 
-	return utils.CreateProposalResponse(
+	return protoutil.CreateProposalResponse(
 		prop.Header,
 		prop.Payload,
 		peerResp,
 		result,
 		event,
 		ccid,
-		[]byte(`{"message": "OK"}`),
 		p.endorser,
 	)
 }
