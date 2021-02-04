@@ -2,7 +2,7 @@ package subs
 
 import (
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/internal/txflags"
+	"github.com/s7techlab/hlf-sdk-go/util/txflags"
 
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
