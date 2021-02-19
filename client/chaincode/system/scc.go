@@ -32,6 +32,7 @@ func (c *scc) LSCC() api.LSCC {
 func (c *scc) Lifecycle() api.Lifecycle {
 	return NewLifecycle(c.peerPool, c.identity)
 }
+
 func NewSCC(peer api.PeerPool, identity msp.SigningIdentity) api.SystemCC {
 	return &scc{peerPool: peer, identity: identity}
 }
