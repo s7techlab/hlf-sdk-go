@@ -4,12 +4,12 @@ package system
 
 import (
 	"context"
-	lifecycle3 "github.com/hyperledger/fabric-protos-go/peer/lifecycle"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/common/util"
 	lifecycle2 "github.com/hyperledger/fabric/core/chaincode/lifecycle"
 	"github.com/hyperledger/fabric/msp"
+	lifecycle3 "github.com/hyperledger/fabric-protos-go/peer/lifecycle"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	peerSDK "github.com/s7techlab/hlf-sdk-go/peer"
