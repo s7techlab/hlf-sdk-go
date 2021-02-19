@@ -1,5 +1,3 @@
-// +build !fabric2
-
 package api
 
 import (
