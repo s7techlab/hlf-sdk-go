@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/golang/protobuf/proto"
+	"github.com/hyperledger/fabric-protos-go/common"
+	fabricPeer "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
-	"github.com/hyperledger/fabric/protos/common"
-	fabricPeer "github.com/hyperledger/fabric/protos/peer"
-	"github.com/hyperledger/fabric/protos/utils"
+	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
@@ -116,7 +116,7 @@ func (b *invokeBuilder) getTransaction(proposal *fabricPeer.SignedProposal, peer
 		return nil, errors.Wrap(err, `failed to unmarshal `)
 	}
 
-	return utils.CreateSignedTx(prop, b.identity, peerResponses...)
+	return protoutil.CreateSignedTx(prop, b.identity, peerResponses...)
 }
 
 func (b *invokeBuilder) ArgJSON(in ...interface{}) api.ChaincodeInvokeBuilder {

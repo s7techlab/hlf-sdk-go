@@ -1,9 +1,9 @@
 package subs
 
 import (
-	"github.com/hyperledger/fabric/core/ledger/util"
-	"github.com/hyperledger/fabric/protos/common"
-	"github.com/hyperledger/fabric/protos/peer"
+	"github.com/hyperledger/fabric-protos-go/common"
+	"github.com/hyperledger/fabric-protos-go/peer"
+	"github.com/s7techlab/hlf-sdk-go/util/txflags"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 	utilSDK "github.com/s7techlab/hlf-sdk-go/util"
@@ -37,7 +37,7 @@ func (e *EventSubscription) Handler(block *common.Block) bool {
 	if block == nil {
 		close(e.events)
 	} else {
-		txFilter := util.TxValidationFlags(block.Metadata.Metadata[common.BlockMetadataIndex_TRANSACTIONS_FILTER])
+		txFilter := txflags.ValidationFlags(block.Metadata.Metadata[common.BlockMetadataIndex_TRANSACTIONS_FILTER])
 		for i, r := range block.GetData().GetData() {
 			if txFilter.IsValid(i) {
 				ev, err := utilSDK.GetEventFromEnvelope(r)

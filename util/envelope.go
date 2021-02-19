@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/hyperledger/fabric-protos-go/common"
+	"github.com/hyperledger/fabric-protos-go/orderer"
+	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/common/util"
 	"github.com/hyperledger/fabric/msp"
-	"github.com/hyperledger/fabric/protos/common"
-	"github.com/hyperledger/fabric/protos/orderer"
-	"github.com/hyperledger/fabric/protos/peer"
-	"github.com/hyperledger/fabric/protos/utils"
+	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
 
 	"github.com/s7techlab/hlf-sdk-go/crypto"
@@ -91,30 +91,30 @@ func GetEventFromEnvelope(envelopeData []byte) (*peer.ChaincodeEvent, error) {
 	if envelopeData == nil {
 		return nil, errors.New(`no envelope data`)
 	}
-	if envelope, err := utils.GetEnvelopeFromBlock(envelopeData); err != nil {
+	if envelope, err := protoutil.GetEnvelopeFromBlock(envelopeData); err != nil {
 		return nil, errors.Wrap(err, `failed to get envelope`)
 	} else {
-		if payload, err := utils.GetPayload(envelope); err != nil {
+		if payload, err := protoutil.UnmarshalPayload(envelope.Payload); err != nil {
 			return nil, errors.Wrap(err, `failed to get payload from envelope`)
 		} else {
-			if channelHeader, err := utils.UnmarshalChannelHeader(payload.Header.ChannelHeader); err != nil {
+			if channelHeader, err := protoutil.UnmarshalChannelHeader(payload.Header.ChannelHeader); err != nil {
 				return nil, errors.Wrap(err, `failed to unmarshal channel header`)
 			} else {
 				switch common.HeaderType(channelHeader.Type) {
 				case common.HeaderType_ENDORSER_TRANSACTION:
-					if tx, err := utils.GetTransaction(payload.Data); err != nil {
+					if tx, err := protoutil.UnmarshalTransaction(payload.Data); err != nil {
 						return nil, errors.Wrap(err, `failed to get transaction`)
 					} else {
-						if ccActionPayload, err := utils.GetChaincodeActionPayload(tx.Actions[0].Payload); err != nil {
+						if ccActionPayload, err := protoutil.UnmarshalChaincodeActionPayload(tx.Actions[0].Payload); err != nil {
 							return nil, errors.Wrap(err, `failed to get chaincode action payload`)
 						} else {
-							if propRespPayload, err := utils.GetProposalResponsePayload(ccActionPayload.Action.ProposalResponsePayload); err != nil {
+							if propRespPayload, err := protoutil.UnmarshalProposalResponsePayload(ccActionPayload.Action.ProposalResponsePayload); err != nil {
 								return nil, errors.Wrap(err, `failed to get proposal response payload`)
 							} else {
-								if caPayload, err := utils.GetChaincodeAction(propRespPayload.Extension); err != nil {
+								if caPayload, err := protoutil.UnmarshalChaincodeAction(propRespPayload.Extension); err != nil {
 									return nil, errors.Wrap(err, `failed to get chaincode action`)
 								} else {
-									if ccEvent, err := utils.GetChaincodeEvents(caPayload.Events); err != nil {
+									if ccEvent, err := protoutil.UnmarshalChaincodeEvents(caPayload.Events); err != nil {
 										return nil, errors.Wrap(err, `failed to get events`)
 									} else {
 										return ccEvent, nil

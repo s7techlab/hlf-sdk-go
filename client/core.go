@@ -162,8 +162,20 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 	}
 
 	if core.orderer == nil {
-		if core.orderer, err = orderer.New(core.config.Orderer, core.logger); err != nil {
-			return nil, errors.Wrap(err, `failed to initialize orderer`)
+		if len(core.config.Orderers) > 0 {
+			ordConn, err := util.NewGRPCConnectionFromConfigs(core.ctx, core.logger, core.config.Orderers...)
+			if err != nil {
+				return nil, errors.Wrap(err, `failed to initialize orderer connection`)
+			}
+			core.orderer, err = orderer.NewFromGRPC(core.ctx, ordConn)
+			if err != nil {
+				return nil, errors.Wrap(err, `failed to initialize orderer`)
+			}
+		} else {
+			core.orderer, err = orderer.New(core.config.Orderer, core.logger)
+			if err != nil {
+				return nil, errors.Wrap(err, `failed to initialize orderer`)
+			}
 		}
 	}
 
