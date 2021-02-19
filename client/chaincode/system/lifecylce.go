@@ -4,9 +4,9 @@ package system
 
 import (
 	"context"
+	lifecycle3 "github.com/hyperledger/fabric-protos-go/peer/lifecycle"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/common/util"
 	lifecycle2 "github.com/hyperledger/fabric/core/chaincode/lifecycle"
 	"github.com/hyperledger/fabric/msp"
@@ -21,12 +21,12 @@ type lifecycle struct {
 	processor api.PeerProcessor
 }
 
-func (c *lifecycle) QueryInstalledChaincodes(ctx context.Context) (*peer.ChaincodeQueryResponse, error) {
+func (c *lifecycle) QueryInstalledChaincodes(ctx context.Context) (*lifecycle3.QueryInstalledChaincodesResult, error) {
 	resp, err := c.endorse(ctx, lifecycle2.QueryInstalledChaincodesFuncName, ``)
 	if err != nil {
 		return nil, err
 	}
-	ccData := new(peer.ChaincodeQueryResponse)
+	ccData := new(lifecycle3.QueryInstalledChaincodesResult)
 	if err = proto.Unmarshal(resp, ccData); err != nil {
 		return nil, errors.Wrap(err, `failed to unmarshal protobuf`)
 	}
