@@ -34,4 +34,5 @@ type SystemCC interface {
 	CSCC() CSCC
 	QSCC() QSCC
 	LSCC() LSCC
+	Lifecycle() Lifecycle
 }

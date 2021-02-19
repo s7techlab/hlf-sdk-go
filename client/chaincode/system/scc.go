@@ -6,9 +6,10 @@ import (
 )
 
 const (
-	csccName = `cscc`
-	qsccName = `qscc`
-	lsccName = `lscc`
+	csccName      = `cscc`
+	qsccName      = `qscc`
+	lsccName      = `lscc`
+	lifecycleName = `_lifecycle`
 )
 
 type scc struct {
@@ -26,6 +27,10 @@ func (c *scc) CSCC() api.CSCC {
 
 func (c *scc) LSCC() api.LSCC {
 	return NewLSCC(c.peerPool, c.identity)
+}
+
+func (c *scc) Lifecycle() api.Lifecycle {
+	return NewLifecycle(c.peerPool, c.identity)
 }
 
 func NewSCC(peer api.PeerPool, identity msp.SigningIdentity) api.SystemCC {
