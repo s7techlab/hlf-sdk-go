@@ -9,7 +9,7 @@ require (
 	github.com/cloudflare/cfssl v0.0.0-20190510060611-9c027c93ba9e
 	github.com/containerd/continuity v0.0.0-20190426062206-aaeac12a7ffc // indirect
 	github.com/docker/go-units v0.4.0 // indirect
-	github.com/gogo/protobuf v1.3.0
+	github.com/gogo/protobuf v1.3.0 // indirect
 	github.com/golang/mock v1.3.1 // indirect
 	github.com/golang/protobuf v1.4.2
 	github.com/google/certificate-transparency-go v1.1.0 // indirect
