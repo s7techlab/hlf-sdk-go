@@ -17,6 +17,7 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/client/channel"
 	"github.com/s7techlab/hlf-sdk-go/client/fetcher"
 	"github.com/s7techlab/hlf-sdk-go/crypto"
+	"github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
 	"github.com/s7techlab/hlf-sdk-go/discovery"
 	"github.com/s7techlab/hlf-sdk-go/logger"
 	"github.com/s7techlab/hlf-sdk-go/orderer"
@@ -137,6 +138,10 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 		return nil, errors.Wrap(err, `failed to get discovery provider`)
 	} else if core.discoveryProvider, err = dp.Initialize(core.config.Discovery.Options, core.peerPool); err != nil {
 		return nil, errors.Wrap(err, `failed to initialize discovery provider`)
+	}
+
+	if core.config.Crypto.Type == `` {
+		core.config.Crypto = ecdsa.DefaultConfig
 	}
 
 	if core.cs, err = crypto.GetSuite(core.config.Crypto.Type, core.config.Crypto.Options); err != nil {

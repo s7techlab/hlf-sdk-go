@@ -15,6 +15,7 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api/ca"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/crypto"
+	"github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
 )
 
 type core struct {
@@ -108,6 +109,10 @@ func NewCore(mspId string, identity api.Identity, opts ...opt) (ca.Core, error) 
 
 	if c.config == nil {
 		return nil, api.ErrEmptyConfig
+	}
+
+	if c.config.Crypto.Type == `` {
+		c.config.Crypto = ecdsa.DefaultConfig
 	}
 
 	if c.cs, err = crypto.GetSuite(c.config.Crypto.Type, c.config.Crypto.Options); err != nil {

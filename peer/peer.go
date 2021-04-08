@@ -2,16 +2,17 @@ package peer
 
 import (
 	"context"
-	"github.com/hyperledger/fabric/msp"
-	"github.com/s7techlab/hlf-sdk-go/peer/deliver"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	fabricPeer "github.com/hyperledger/fabric-protos-go/peer"
+	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/peer/deliver"
 	"github.com/s7techlab/hlf-sdk-go/util"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -81,26 +82,25 @@ func (p *peer) initEndorserClient() error {
 
 // New returns new peer instance based on peer config
 func New(c config.ConnectionConfig, log *zap.Logger) (api.Peer, error) {
-	l := log.Named(`New`)
-	opts, err := util.NewGRPCOptionsFromConfig(c, l)
+	opts, err := util.NewGRPCOptionsFromConfig(c, log)
 	if err != nil {
-		l.Error(`Failed to get GRPC options`, zap.Error(err))
-		return nil, errors.Wrap(err, `Failed to get GRPC options`)
+		return nil, fmt.Errorf(`grpc options from config: %w`, err)
 	}
-
-	//ctx, _ := context.WithTimeout(context.Background(), c.Timeout.Duration)
-	conn, err := grpc.Dial(c.Host, opts...)
-	if err != nil {
-		l.Error(`Failed to initialize GRPC connection`, zap.Error(err))
-		return nil, errors.Wrap(err, `failed to initialize GRPC connection`)
-	}
-	l.Debug(`GRPC initialized`, zap.String(`target`, conn.Target()))
 
 	timeout := c.Timeout.Duration
 	if timeout == 0 {
 		timeout = defaultTimeout
 	}
-	return NewFromGRPC(conn, l, timeout)
+
+	//ctx, _ := context.WithTimeout(context.Background(), c.Timeout.Duration)
+	log.Debug(`dial to peer`, zap.String(`host`, c.Host), zap.Duration(`timeout`, timeout))
+	ctx, _ := context.WithTimeout(context.Background(), timeout)
+	conn, err := grpc.DialContext(ctx, c.Host, opts...)
+	if err != nil {
+		return nil, fmt.Errorf(`grpc dial to host=%s: %w`, c.Host, err)
+	}
+
+	return NewFromGRPC(conn, log, timeout)
 }
 
 // NewFromGRPC allows to initialize peer from existing GRPC connection
@@ -111,6 +111,5 @@ func NewFromGRPC(conn *grpc.ClientConn, log *zap.Logger, timeout time.Duration) 
 		l.Error(`Failed to initialize endorser client`, zap.Error(err))
 		return nil, errors.Wrap(err, `failed to initialize EndorserClient`)
 	}
-	l.Debug(``)
 	return p, nil
 }

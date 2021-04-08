@@ -36,8 +36,17 @@ const (
 	sigSHA512 = `SHA512`
 )
 
+func init() {
+	crypto.Register(Module, &ecdsaSuite{})
+}
+
 var (
 	DefaultOpts = config.CryptoSuiteOpts{`curve`: `P256`, `signatureAlgorithm`: `SHA256`, `hash`: `SHA2-256`}
+
+	DefaultConfig = config.CryptoConfig{
+		Type:    Module,
+		Options: DefaultOpts,
+	}
 )
 
 var (
@@ -191,8 +200,4 @@ func preventMalleability(k *ecdsa.PrivateKey, S *big.Int) {
 	if S.Cmp(halfOrder) == 1 {
 		S.Sub(k.Params().N, S)
 	}
-}
-
-func init() {
-	crypto.Register(Module, &ecdsaSuite{})
 }

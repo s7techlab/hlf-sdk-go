@@ -58,7 +58,7 @@ func WithConfigRaw(config config.Config) CoreOpt {
 // WithLogger allows to pass custom copy of zap.Logger insteadof logger.DefaultLogger
 func WithLogger(log *zap.Logger) CoreOpt {
 	return func(c *core) error {
-		c.logger = log
+		c.logger = log.Named(`hlf-sdk-go`)
 		return nil
 	}
 }
