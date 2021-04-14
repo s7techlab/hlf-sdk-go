@@ -30,7 +30,7 @@ var (
 	}
 
 	DefaultGRPCKeepAliveConfig = &config.GRPCKeepAliveConfig{
-		Time:    10,
+		Time:    60,
 		Timeout: 5,
 	}
 )
