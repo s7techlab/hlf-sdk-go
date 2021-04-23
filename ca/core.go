@@ -15,6 +15,7 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api/ca"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/crypto"
+	"github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
 )
 
 type core struct {
@@ -67,8 +68,6 @@ func (c *core) processResponse(resp *http.Response, out interface{}, expectedHTT
 		return api.ErrUnexpectedHTTPStatus{Status: resp.StatusCode, Body: body}
 	}
 
-	fmt.Println()
-
 	var caResp ca.Response
 	if err = json.Unmarshal(body, &caResp); err != nil {
 		return errors.Wrap(err, `failed to unmarshal JSON response`)
@@ -102,7 +101,7 @@ func NewCore(mspId string, identity api.Identity, opts ...opt) (ca.Core, error) 
 	// Applying user opts
 	for _, opt := range opts {
 		if err = opt(c); err != nil {
-			return nil, errors.Wrap(err, `failed to apply option`)
+			return nil, fmt.Errorf(`apply ca.core option: %w`, err)
 		}
 	}
 
@@ -110,8 +109,12 @@ func NewCore(mspId string, identity api.Identity, opts ...opt) (ca.Core, error) 
 		return nil, api.ErrEmptyConfig
 	}
 
+	if c.config.Crypto.Type == `` {
+		c.config.Crypto = ecdsa.DefaultConfig
+	}
+
 	if c.cs, err = crypto.GetSuite(c.config.Crypto.Type, c.config.Crypto.Options); err != nil {
-		return nil, errors.Wrap(err, `failed to initialize crypto suite`)
+		return nil, fmt.Errorf(`initialize crypto suite: %w`, err)
 	}
 
 	if c.client == nil {

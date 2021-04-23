@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/client/channel"
 	"github.com/s7techlab/hlf-sdk-go/client/fetcher"
 	"github.com/s7techlab/hlf-sdk-go/crypto"
+	"github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
 	"github.com/s7techlab/hlf-sdk-go/discovery"
 	"github.com/s7techlab/hlf-sdk-go/logger"
 	"github.com/s7techlab/hlf-sdk-go/orderer"
@@ -134,9 +136,13 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 	}
 
 	if dp, err := discovery.GetProvider(core.config.Discovery.Type); err != nil {
-		return nil, errors.Wrap(err, `failed to get discovery provider`)
+		return nil, fmt.Errorf(`get discovery provider type=%s: %w`, core.config.Discovery.Type, err)
 	} else if core.discoveryProvider, err = dp.Initialize(core.config.Discovery.Options, core.peerPool); err != nil {
 		return nil, errors.Wrap(err, `failed to initialize discovery provider`)
+	}
+
+	if core.config.Crypto.Type == `` {
+		core.config.Crypto = ecdsa.DefaultConfig
 	}
 
 	if core.cs, err = crypto.GetSuite(core.config.Crypto.Type, core.config.Crypto.Options); err != nil {
@@ -144,6 +150,8 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 	}
 
 	core.identity = identity.GetSigningIdentity(core.cs)
+
+	core.logger.Info(`initializing peer pool`, zap.Reflect(`config`, core.config.MSP))
 
 	// if peerPool is empty, set it from config
 	if core.peerPool == nil {

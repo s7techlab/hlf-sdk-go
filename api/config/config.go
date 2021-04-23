@@ -8,7 +8,7 @@ import (
 
 type Config struct {
 	Crypto CryptoConfig `yaml:"crypto"`
-	// Depricated: use Orderers.
+	// Deprecated: use Orderers.
 	Orderer   ConnectionConfig   `yaml:"orderer"`
 	Orderers  []ConnectionConfig `yaml:"orderers"`
 	Discovery DiscoveryConfig    `yaml:"discovery"`

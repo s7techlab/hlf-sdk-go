@@ -2,6 +2,7 @@ package pool
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/hyperledger/fabric-protos-go/peer"
@@ -32,19 +33,15 @@ type peerPoolPeer struct {
 
 func (p *peerPool) Add(mspId string, peer api.Peer, peerChecker api.PeerPoolCheckStrategy) error {
 	log := p.log.Named(`Add`).With(zap.String(`mspId`, mspId))
-	log.Debug(`Trying to add peer`, zap.String(`peerUri`, peer.Uri()))
+	log.Debug(`add peer`, zap.String(`peerUri`, peer.Uri()))
 	p.storeMx.Lock()
 	defer p.storeMx.Unlock()
 
-	log.Debug(`Check MspId exists`, zap.String(`mspId`, mspId))
 	if peers, ok := p.store[mspId]; !ok {
-		log.Debug(`MspId doesn't exists, creating new instance`)
 		p.store[mspId] = p.addPeer(peer, make([]*peerPoolPeer, 0), peerChecker)
 	} else {
-		log.Debug(`Searching peer in existing`, zap.String(`peerUri`, peer.Uri()))
 		if p.searchPeer(peer, peers) {
-			log.Error(`Peer already exists`, zap.String(`peerUri`, peer.Uri()))
-			return api.ErrPeerAlreadySet
+			return fmt.Errorf(`peer %s: %w`, peer.Uri(), api.ErrPeerAlreadySet)
 		} else {
 			p.store[mspId] = p.addPeer(peer, peers, peerChecker)
 		}

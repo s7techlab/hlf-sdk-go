@@ -24,9 +24,14 @@ import (
 )
 
 var (
-	retryDefaultConfig = config.GRPCRetryConfig{
+	DefaultGRPCRetryConfig = &config.GRPCRetryConfig{
 		Max:     10,
 		Timeout: config.Duration{Duration: 10 * time.Second},
+	}
+
+	DefaultGRPCKeepAliveConfig = &config.GRPCKeepAliveConfig{
+		Time:    60,
+		Timeout: 5,
 	}
 )
 
@@ -36,7 +41,6 @@ const (
 )
 
 func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grpc.DialOption, error) {
-	l := log.Named(`NewGRPCOptionsFromConfig`)
 
 	// TODO: move to config or variable options
 	grpcOptions := []grpc.DialOption{
@@ -48,16 +52,12 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 		})),
 	}
 
-	l.Debug(`Connection to host`, zap.String(`host`, c.Host))
-
 	if c.Tls.Enabled {
-		l.Debug(`Using TLS credentials`)
 		var err error
 		var tlsCfg tls.Config
 		tlsCfg.InsecureSkipVerify = c.Tls.SkipVerify
 		// if custom CA certificate is presented, use it
 		if c.Tls.CACertPath != `` {
-			log.Debug(`Using custom CA certificate`)
 			caCert, err := ioutil.ReadFile(c.Tls.CACertPath)
 			if err != nil {
 				return nil, errors.Wrap(err, `failed to read CA certificate`)
@@ -68,7 +68,6 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 			}
 			tlsCfg.RootCAs = certPool
 		} else {
-			log.Debug(`Using system CA certificates`)
 			// otherwise we use system certificates
 			if tlsCfg.RootCAs, err = x509.SystemCertPool(); err != nil {
 				return nil, errors.Wrap(err, `failed to get system cert pool`)
@@ -86,39 +85,30 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 		}
 
 		cred := credentials.NewTLS(&tlsCfg)
-		l.Debug(`Read TLS credentials`, zap.Reflect(`cred`, cred.Info()))
 		grpcOptions = append(grpcOptions, grpc.WithTransportCredentials(cred))
 	} else {
-		l.Debug(`TLS is not used`)
+
 		grpcOptions = append(grpcOptions, grpc.WithInsecure())
 	}
 
-	// Set KeepAlive parameters if presented
-	if c.GRPC.KeepAlive != nil {
-		l.Debug(`Using KeepAlive params`,
-			zap.Duration(`time`, time.Duration(c.GRPC.KeepAlive.Time)*time.Second),
-			zap.Duration(`timeout`, time.Duration(c.GRPC.KeepAlive.Timeout)*time.Second),
-		)
-		grpcOptions = append(grpcOptions, grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time:                time.Duration(c.GRPC.KeepAlive.Time) * time.Second,
-			Timeout:             time.Duration(c.GRPC.KeepAlive.Timeout) * time.Second,
-			PermitWithoutStream: true,
-		}))
-	} else {
-		grpcOptions = append(grpcOptions, grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time:                10 * time.Second,
-			Timeout:             5 * time.Second,
-			PermitWithoutStream: true,
-		}))
+	// Set default keep alive
+	if c.GRPC.KeepAlive == nil {
+		c.GRPC.KeepAlive = DefaultGRPCKeepAliveConfig
 	}
+	grpcOptions = append(grpcOptions, grpc.WithKeepaliveParams(keepalive.ClientParameters{
+		Time:                time.Duration(c.GRPC.KeepAlive.Time) * time.Second,
+		Timeout:             time.Duration(c.GRPC.KeepAlive.Timeout) * time.Second,
+		PermitWithoutStream: true,
+	}))
 
 	var retryConfig *config.GRPCRetryConfig
 	if c.GRPC.Retry != nil {
-		l.Debug(`Using presented GRPC retry config`, zap.Reflect(`config`, *c.GRPC.Retry))
 		retryConfig = c.GRPC.Retry
+	} else if c.Timeout.String() != `` {
+		retryConfig = DefaultGRPCRetryConfig
+		retryConfig.Timeout = c.Timeout
 	} else {
-		l.Debug(`Using default GRPC retry config`, zap.Reflect(`config`, retryDefaultConfig))
-		retryConfig = &retryDefaultConfig
+		retryConfig = DefaultGRPCRetryConfig
 	}
 
 	grpcOptions = append(grpcOptions,
@@ -135,6 +125,17 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 		grpc.MaxCallSendMsgSize(maxSendMsgSize),
 	))
 
+	fields := []zap.Field{
+		zap.String(`host`, c.Host),
+		zap.Bool(`tls`, c.Tls.Enabled),
+		zap.Reflect(`keep alive`, c.GRPC.KeepAlive),
+		zap.Reflect(`retry`, retryConfig),
+	}
+	if c.Tls.Enabled {
+		fields = append(fields, zap.Reflect(`retry`, c.Tls))
+	}
+
+	log.Debug(`grpc options for host`, fields...)
 	grpcOptions = append(grpcOptions, grpc.WithBlock())
 
 	return grpcOptions, nil
@@ -148,14 +149,19 @@ func NewGRPCConnectionFromConfigs(ctx context.Context, log *zap.Logger, conf ...
 	}
 
 	addr := make([]resolver.Address, len(conf))
+	var hosts []string
+
 	for i, cc := range conf {
 		addr[i] = resolver.Address{Addr: cc.Host}
+		hosts = append(hosts, cc.Host)
 	}
 
 	r, _ := manual.GenerateAndRegisterManualResolver()
 	r.InitialState(resolver.State{Addresses: addr})
 
 	opts = append(opts, grpc.WithBalancerName(roundrobin.Name))
+
+	log.Debug(`grpc dial to orderer`, zap.Strings(`hosts`, hosts))
 
 	conn, err := grpc.DialContext(ctx, fmt.Sprintf("%s:///%s", r.Scheme(), `orderers`), opts...)
 	if err != nil {
