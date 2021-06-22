@@ -21,8 +21,11 @@ func (c *scc) QSCC() api.QSCC {
 	return NewQSCC(c.peerPool, c.identity)
 }
 
-func (c *scc) CSCC() api.CSCC {
-	return NewCSCC(c.peerPool, c.identity)
+func (c *scc) CSCC(fabricVersion string) api.CSCC {
+	if fabricVersion == api.FabricVersion2 {
+		return NewCSCCV2(c.peerPool, c.identity)
+	}
+	return NewCSCCV1(c.peerPool, c.identity)
 }
 
 func (c *scc) LSCC() api.LSCC {

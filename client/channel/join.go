@@ -7,17 +7,25 @@ import (
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/orderer"
 	"github.com/pkg/errors"
+	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
 	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
-func (c *Core) Join(ctx context.Context) error {
+func (c *Core) Join(ctx context.Context, fabricVersion string) error {
 	channelGenesis, err := c.getGenesisBlockFromOrderer(ctx)
 	if err != nil {
 		return errors.Wrap(err, `failed to retrieve genesis block from orderer`)
 	}
 
-	cscc := system.NewCSCC(c.peerPool, c.identity)
+	var cscc api.CSCC
+
+	if fabricVersion == api.FabricVersion2 {
+		cscc = system.NewCSCCV2(c.peerPool, c.identity)
+	} else {
+		cscc = system.NewCSCCV1(c.peerPool, c.identity)
+	}
+
 	return cscc.JoinChain(ctx, c.name, channelGenesis)
 }
 

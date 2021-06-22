@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/client"
 	_ "github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
 	_ "github.com/s7techlab/hlf-sdk-go/discovery/local"
@@ -44,7 +45,7 @@ func main() {
 	ctx := context.Background()
 
 	// get chainInfo for all joined channels
-	if chInfo, err := core.System().CSCC().Channels(ctx); err != nil {
+	if chInfo, err := core.System().CSCC(api.FabricVersion1).GetChannels(ctx); err != nil {
 		log.Fatalln(`failed to fetch channel list:`, err)
 	} else {
 		for _, ch := range chInfo.Channels {
