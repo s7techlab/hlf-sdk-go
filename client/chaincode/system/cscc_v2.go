@@ -3,6 +3,7 @@ package system
 import (
 	"context"
 	"fmt"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric/msp"
@@ -16,7 +17,7 @@ type csccV2 struct {
 
 // These are function names from Invoke first parameter
 const (
-	GetChannelConfig     string = "GetChannelConfig"
+	GetChannelConfig string = "GetChannelConfig"
 )
 
 func (c csccV2) GetChannelConfig(ctx context.Context, channelName string) (*common.Config, error) {
@@ -34,8 +35,8 @@ func (c csccV2) GetChannelConfig(ctx context.Context, channelName string) (*comm
 func NewCSCCV2(peerPool api.PeerPool, identity msp.SigningIdentity) api.CSCC {
 	return &csccV2{
 		csccV1: &csccV1{
-			peerPool: peerPool,
-			identity: identity,
+			peerPool:  peerPool,
+			identity:  identity,
 			processor: peerSDK.NewProcessor(``),
 		},
 	}

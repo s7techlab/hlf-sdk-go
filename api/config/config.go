@@ -17,10 +17,11 @@ type Config struct {
 }
 
 type ConnectionConfig struct {
-	Host    string     `yaml:"host"`
-	Tls     TlsConfig  `yaml:"tls"`
-	GRPC    GRPCConfig `yaml:"grpc"`
-	Timeout Duration   `yaml:"timeout"`
+	Host          string     `yaml:"host"`
+	Tls           TlsConfig  `yaml:"tls"`
+	GRPC          GRPCConfig `yaml:"grpc"`
+	Timeout       Duration   `yaml:"timeout"`
+	FabricVersion string     `yaml:"fabric_version"`
 }
 
 type OrdererConfig struct {
