@@ -2,13 +2,17 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
+	"time"
 
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
+
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/peer"
 )
 
 // CoreOpt describes opt which will be applied to coreOptions
@@ -67,6 +71,23 @@ func WithLogger(log *zap.Logger) CoreOpt {
 func WithPeerPool(pool api.PeerPool) CoreOpt {
 	return func(c *core) error {
 		c.peerPool = pool
+		return nil
+	}
+}
+
+// WithPeers allows to init core with peers for specified mspID
+func WithPeers(mspID string, peers []config.ConnectionConfig) CoreOpt {
+	return func(c *core) error {
+		for _, p := range peers {
+			pp, err := peer.New(p, c.logger)
+			if err != nil {
+				return fmt.Errorf("create peer: %w", err)
+			}
+			err = c.peerPool.Add(mspID, pp, api.StrategyGRPC(5*time.Second))
+			if err != nil {
+				return fmt.Errorf("add peer to pool: %w", err)
+			}
+		}
 		return nil
 	}
 }
