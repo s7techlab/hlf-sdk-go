@@ -91,3 +91,10 @@ func WithPeers(mspID string, peers []config.ConnectionConfig) CoreOpt {
 		return nil
 	}
 }
+
+func WithFabricV2(fabricV2 bool) CoreOpt {
+	return func(c *core) error {
+		c.fabricV2 = fabricV2
+		return nil
+	}
+}
