@@ -6,11 +6,6 @@ import (
 	"github.com/hyperledger/fabric/msp"
 )
 
-const (
-	FabricVersion1 = "v1"
-	FabricVersion2 = "v2"
-)
-
 type Channel interface {
 	// Chaincode returns chaincode instance by chaincode name
 	Chaincode(name string) Chaincode
@@ -36,7 +31,7 @@ type Core interface {
 
 // SystemCC describes interface to access Fabric System Chaincodes
 type SystemCC interface {
-	CSCC(fabricVersion string) CSCC
+	CSCC() CSCC
 	QSCC() QSCC
 	LSCC() LSCC
 	Lifecycle() Lifecycle

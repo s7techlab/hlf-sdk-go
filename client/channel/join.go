@@ -20,7 +20,7 @@ func (c *Core) Join(ctx context.Context, fabricVersion string) error {
 
 	var cscc api.CSCC
 
-	if fabricVersion == api.FabricVersion2 {
+	if c.fabricV2 {
 		cscc = system.NewCSCCV2(c.peerPool, c.identity)
 	} else {
 		cscc = system.NewCSCCV1(c.peerPool, c.identity)

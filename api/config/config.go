@@ -9,7 +9,7 @@ import (
 type Config struct {
 	Crypto CryptoConfig `yaml:"crypto"`
 	// Deprecated: use Orderers.
-	Orderer   ConnectionConfig   `yaml:"orderer"`
+	Orderer   *ConnectionConfig  `yaml:"orderer"`
 	Orderers  []ConnectionConfig `yaml:"orderers"`
 	Discovery DiscoveryConfig    `yaml:"discovery"`
 	MSP       []MSPConfig        `yaml:"msp"`
@@ -17,11 +17,10 @@ type Config struct {
 }
 
 type ConnectionConfig struct {
-	Host          string     `yaml:"host"`
-	Tls           TlsConfig  `yaml:"tls"`
-	GRPC          GRPCConfig `yaml:"grpc"`
-	Timeout       Duration   `yaml:"timeout"`
-	FabricVersion string     `yaml:"fabric_version"`
+	Host    string     `yaml:"host"`
+	Tls     TlsConfig  `yaml:"tls"`
+	GRPC    GRPCConfig `yaml:"grpc"`
+	Timeout Duration   `yaml:"timeout"`
 }
 
 type OrdererConfig struct {

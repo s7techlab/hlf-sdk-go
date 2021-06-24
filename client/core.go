@@ -42,6 +42,7 @@ type core struct {
 	chaincodeMx       sync.Mutex
 	cs                api.CryptoSuite
 	fetcher           api.CCFetcher
+	fabricV2          bool
 }
 
 func (c *core) Chaincode(name string) api.ChaincodePackage {
@@ -57,7 +58,7 @@ func (c *core) Chaincode(name string) api.ChaincodePackage {
 }
 
 func (c *core) System() api.SystemCC {
-	return system.NewSCC(c.peerPool, c.identity)
+	return system.NewSCC(c.peerPool, c.identity, c.fabricV2)
 }
 
 func (c *core) CurrentIdentity() msp.SigningIdentity {
@@ -103,7 +104,8 @@ func (c *core) Channel(name string) api.Channel {
 			ord = c.orderer
 		}
 
-		ch = channel.NewCore(c.mspId, name, c.peerPool, ord, c.discoveryProvider, c.identity, c.logger)
+		ch = channel.NewCore(c.mspId, name, c.peerPool, ord,
+			c.discoveryProvider, c.identity, c.fabricV2, c.logger)
 		c.channels[name] = ch
 		return ch
 	}
@@ -179,8 +181,8 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 			if err != nil {
 				return nil, errors.Wrap(err, `failed to initialize orderer`)
 			}
-		} else {
-			core.orderer, err = orderer.New(core.config.Orderer, core.logger)
+		} else if core.config.Orderer != nil {
+			core.orderer, err = orderer.New(*core.config.Orderer, core.logger)
 			if err != nil {
 				return nil, errors.Wrap(err, `failed to initialize orderer`)
 			}
