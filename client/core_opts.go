@@ -12,6 +12,8 @@ import (
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/crypto"
+	"github.com/s7techlab/hlf-sdk-go/discovery"
 	"github.com/s7techlab/hlf-sdk-go/peer"
 )
 
@@ -75,7 +77,7 @@ func WithPeerPool(pool api.PeerPool) CoreOpt {
 	}
 }
 
-// WithPeers allows to init core with peers for specified mspID
+// WithPeers allows to init core with peers for specified mspID.
 func WithPeers(mspID string, peers []config.ConnectionConfig) CoreOpt {
 	return func(c *core) error {
 		for _, p := range peers {
@@ -92,6 +94,34 @@ func WithPeers(mspID string, peers []config.ConnectionConfig) CoreOpt {
 	}
 }
 
+// WithCrypto allows to init core crypto suite.
+func WithCrypto(cc config.CryptoConfig) CoreOpt {
+	return func(c *core) error {
+		var err error
+		c.cs, err = crypto.GetSuite(cc.Type, cc.Options)
+		if err != nil {
+			return fmt.Errorf("get crypto suite: %w", err)
+		}
+		return nil
+	}
+}
+
+// WithDiscovery allows to init core with discovery provider.
+func WithDiscovery(dc config.DiscoveryConfig) CoreOpt {
+	return func(c *core) error {
+		p, err := discovery.GetProvider(dc.Type)
+		if err != nil {
+			return fmt.Errorf("get local provider: %w", err)
+		}
+		c.discoveryProvider, err = p.Initialize(dc.Options, c.peerPool)
+		if err != nil {
+			return fmt.Errorf("initialize discovery provider: %w", err)
+		}
+		return nil
+	}
+}
+
+// WithFabricV2 toggles core to use fabric version 2.
 func WithFabricV2(fabricV2 bool) CoreOpt {
 	return func(c *core) error {
 		c.fabricV2 = fabricV2
