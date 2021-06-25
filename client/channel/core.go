@@ -19,6 +19,7 @@ type Core struct {
 	chaincodesMx sync.Mutex
 	dp           api.DiscoveryProvider
 	identity     msp.SigningIdentity
+	fabricV2     bool
 	log          *zap.Logger
 }
 
@@ -34,6 +35,18 @@ func (c *Core) Chaincode(name string) api.Chaincode {
 	}
 }
 
-func NewCore(mspId string, name string, peerPool api.PeerPool, orderer api.Orderer, dp api.DiscoveryProvider, identity msp.SigningIdentity, log *zap.Logger) api.Channel {
-	return &Core{mspId: mspId, name: name, peerPool: peerPool, orderer: orderer, chaincodes: make(map[string]*chaincode.Core), dp: dp, identity: identity, log: log}
+func NewCore(mspId string, name string, peerPool api.PeerPool,
+	orderer api.Orderer, dp api.DiscoveryProvider, identity msp.SigningIdentity,
+	fabricV2 bool, log *zap.Logger) api.Channel {
+	return &Core{
+		mspId:      mspId,
+		name:       name,
+		peerPool:   peerPool,
+		orderer:    orderer,
+		chaincodes: make(map[string]*chaincode.Core),
+		dp:         dp,
+		identity:   identity,
+		fabricV2:   fabricV2,
+		log:        log,
+	}
 }

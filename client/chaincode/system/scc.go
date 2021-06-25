@@ -15,6 +15,7 @@ const (
 type scc struct {
 	peerPool api.PeerPool
 	identity msp.SigningIdentity
+	fabricV2 bool
 }
 
 func (c *scc) QSCC() api.QSCC {
@@ -22,7 +23,10 @@ func (c *scc) QSCC() api.QSCC {
 }
 
 func (c *scc) CSCC() api.CSCC {
-	return NewCSCC(c.peerPool, c.identity)
+	if c.fabricV2 {
+		return NewCSCCV2(c.peerPool, c.identity)
+	}
+	return NewCSCCV1(c.peerPool, c.identity)
 }
 
 func (c *scc) LSCC() api.LSCC {
@@ -33,6 +37,6 @@ func (c *scc) Lifecycle() api.Lifecycle {
 	return NewLifecycle(c.peerPool, c.identity)
 }
 
-func NewSCC(peer api.PeerPool, identity msp.SigningIdentity) api.SystemCC {
-	return &scc{peerPool: peer, identity: identity}
+func NewSCC(peer api.PeerPool, identity msp.SigningIdentity, fabricV2 bool) api.SystemCC {
+	return &scc{peerPool: peer, identity: identity, fabricV2: fabricV2}
 }

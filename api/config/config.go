@@ -9,7 +9,7 @@ import (
 type Config struct {
 	Crypto CryptoConfig `yaml:"crypto"`
 	// Deprecated: use Orderers.
-	Orderer   ConnectionConfig   `yaml:"orderer"`
+	Orderer   *ConnectionConfig  `yaml:"orderer"`
 	Orderers  []ConnectionConfig `yaml:"orderers"`
 	Discovery DiscoveryConfig    `yaml:"discovery"`
 	MSP       []MSPConfig        `yaml:"msp"`
