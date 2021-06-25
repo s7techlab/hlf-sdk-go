@@ -10,7 +10,7 @@ type Channel interface {
 	// Chaincode returns chaincode instance by chaincode name
 	Chaincode(name string) Chaincode
 	// Joins channel
-	Join(ctx context.Context, fabricVersion string) error
+	Join(ctx context.Context) error
 	// CSCC implements Configuration System Chaincode (CSCC)
 }
 

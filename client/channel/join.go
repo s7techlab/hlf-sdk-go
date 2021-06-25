@@ -12,7 +12,7 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
-func (c *Core) Join(ctx context.Context, fabricVersion string) error {
+func (c *Core) Join(ctx context.Context) error {
 	channelGenesis, err := c.getGenesisBlockFromOrderer(ctx)
 	if err != nil {
 		return errors.Wrap(err, `failed to retrieve genesis block from orderer`)
