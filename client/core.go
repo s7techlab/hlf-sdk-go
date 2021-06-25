@@ -125,10 +125,6 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 		}
 	}
 
-	if core.config == nil {
-		return nil, api.ErrEmptyConfig
-	}
-
 	if core.ctx == nil {
 		core.ctx = context.Background()
 	}
@@ -137,11 +133,15 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 		core.logger = logger.DefaultLogger
 	}
 
-	if core.config.Crypto.Type == `` {
-		core.config.Crypto = ecdsa.DefaultConfig
-	}
-
 	if core.cs == nil {
+		core.logger.Info("initializing crypto suite")
+
+		if core.config == nil {
+			return nil, api.ErrEmptyConfig
+		}
+		if core.config.Crypto.Type == `` {
+			core.config.Crypto = ecdsa.DefaultConfig
+		}
 		if core.cs, err = crypto.GetSuite(core.config.Crypto.Type, core.config.Crypto.Options); err != nil {
 			return nil, errors.Wrap(err, `failed to initialize crypto suite`)
 		}
@@ -149,10 +149,13 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 
 	core.identity = identity.GetSigningIdentity(core.cs)
 
-	core.logger.Info(`initializing peer pool`, zap.Reflect(`config`, core.config.MSP))
-
 	// if peerPool is empty, set it from config
 	if core.peerPool == nil {
+		core.logger.Info("initializing peer pool")
+
+		if core.config == nil {
+			return nil, api.ErrEmptyConfig
+		}
 		core.peerPool = pool.New(core.ctx, core.logger, core.config.Pool)
 		for _, mspConfig := range core.config.MSP {
 			for _, peerConfig := range mspConfig.Endorsers {
@@ -167,7 +170,9 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 		}
 	}
 
-	if core.discoveryProvider == nil {
+	if core.discoveryProvider == nil && core.config != nil {
+		core.logger.Info("initializing discovery provider")
+
 		if dp, err := discovery.GetProvider(core.config.Discovery.Type); err != nil {
 			return nil, fmt.Errorf(`get discovery provider type=%s: %w`, core.config.Discovery.Type, err)
 		} else if core.discoveryProvider, err = dp.Initialize(core.config.Discovery.Options, core.peerPool); err != nil {
@@ -175,7 +180,8 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 		}
 	}
 
-	if core.orderer == nil {
+	if core.orderer == nil && core.config != nil {
+		core.logger.Info("initializing orderer")
 		if len(core.config.Orderers) > 0 {
 			ordConn, err := util.NewGRPCConnectionFromConfigs(core.ctx, core.logger, core.config.Orderers...)
 			if err != nil {
