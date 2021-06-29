@@ -27,6 +27,8 @@ type Core interface {
 	PeerPool() PeerPool
 	// Chaincode installation
 	Chaincode(name string) ChaincodePackage
+	// FabricV2 returns if core works in fabric v2 mode
+	FabricV2() bool
 }
 
 // SystemCC describes interface to access Fabric System Chaincodes

@@ -111,6 +111,10 @@ func (c *core) Channel(name string) api.Channel {
 	}
 }
 
+func (c *core) FabricV2() bool {
+	return c.fabricV2
+}
+
 func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 	var err error
 	core := &core{
