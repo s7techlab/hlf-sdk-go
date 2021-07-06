@@ -10,12 +10,17 @@ import (
 	"encoding/pem"
 	"net/http"
 
-	"github.com/cloudflare/cfssl/signer"
 	"github.com/pkg/errors"
+
 	"github.com/s7techlab/hlf-sdk-go/api/ca"
 )
 
 const enrollEndpoint = `/api/v1/enroll`
+
+// struct from cfssl
+type SignRequest struct {
+	Request string `json:"certificate_request"`
+}
 
 func (c *core) Enroll(ctx context.Context, name, secret string, req *x509.CertificateRequest, opts ...ca.EnrollOpt) (*x509.Certificate, interface{}, error) {
 	var err error
@@ -45,7 +50,7 @@ func (c *core) Enroll(ctx context.Context, name, secret string, req *x509.Certif
 
 	pemCsr := pem.EncodeToMemory(&pem.Block{Type: `CERTIFICATE REQUEST`, Bytes: csr})
 
-	reqBytes, err := json.Marshal(signer.SignRequest{Request: string(pemCsr)})
+	reqBytes, err := json.Marshal(SignRequest{Request: string(pemCsr)})
 	if err != nil {
 		return nil, options.PrivateKey, errors.Wrap(err, `failed to marshal CSR request to JSON`)
 	}

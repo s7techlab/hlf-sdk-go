@@ -6,12 +6,11 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
+	"strconv"
 	"time"
 
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/opencensus/hlf"
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
@@ -21,6 +20,9 @@ import (
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/resolver"
 	"google.golang.org/grpc/resolver/manual"
+
+	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/opencensus/hlf"
 )
 
 var (
@@ -148,16 +150,21 @@ func NewGRPCConnectionFromConfigs(ctx context.Context, log *zap.Logger, conf ...
 		return nil, errors.Wrap(err, `failed to get GRPC options`)
 	}
 
-	addr := make([]resolver.Address, len(conf))
-	var hosts []string
-
+	var (
+		addrs = make([]resolver.Address, len(conf))
+		hosts []string
+	)
 	for i, cc := range conf {
-		addr[i] = resolver.Address{Addr: cc.Host}
+		addrs[i] = resolver.Address{Addr: cc.Host}
 		hosts = append(hosts, cc.Host)
 	}
 
-	r, _ := manual.GenerateAndRegisterManualResolver()
-	r.InitialState(resolver.State{Addresses: addr})
+	// from removed manual.GenerateAndRegisterManualResolver
+	// todo: rewrite with grpc.WithResolvers
+	scheme := strconv.FormatInt(time.Now().UnixNano(), 36)
+	r := manual.NewBuilderWithScheme(scheme)
+	r.InitialState(resolver.State{Addresses: addrs})
+	resolver.Register(r)
 
 	opts = append(opts, grpc.WithBalancerName(roundrobin.Name))
 
