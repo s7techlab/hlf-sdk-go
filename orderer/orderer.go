@@ -42,7 +42,15 @@ func (o *orderer) Broadcast(ctx context.Context, envelope *common.Envelope) (res
 		return
 	}
 
-	defer func() { err = cli.CloseSend() }()
+	defer func() {
+		if cErr := cli.CloseSend(); cErr != nil {
+			if err == nil {
+				err = cErr
+			} else {
+				err = errors.Wrap(err, cErr.Error())
+			}
+		}
+	}()
 
 	if err = cli.Send(envelope); err != nil {
 		err = errors.Wrap(err, `failed to send envelope`)
