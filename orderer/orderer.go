@@ -8,7 +8,6 @@ import (
 
 	"github.com/hyperledger/fabric-protos-go/common"
 	fabricOrderer "github.com/hyperledger/fabric-protos-go/orderer"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
@@ -38,27 +37,28 @@ type orderer struct {
 func (o *orderer) Broadcast(ctx context.Context, envelope *common.Envelope) (resp *fabricOrderer.BroadcastResponse, err error) {
 	cli, err := o.broadcastClient.Broadcast(ctx)
 	if err != nil {
-		err = errors.Wrap(err, `failed to initialize broadcast client`)
+		err = fmt.Errorf(`initialize broadcast client: %w`, err)
 		return
 	}
 
 	defer func() {
 		if cErr := cli.CloseSend(); cErr != nil {
+			cErr = fmt.Errorf(`close client: %w`, cErr)
 			if err == nil {
 				err = cErr
 			} else {
-				err = errors.Wrap(err, cErr.Error())
+				err = fmt.Errorf(`%s: %w`, err.Error(), cErr)
 			}
 		}
 	}()
 
 	if err = cli.Send(envelope); err != nil {
-		err = errors.Wrap(err, `failed to send envelope`)
+		err = fmt.Errorf(`send envelope: %w`, err)
 		return
 	}
 
 	if resp, err = cli.Recv(); err != nil {
-		err = errors.Wrap(err, `failed to receive response`)
+		err = fmt.Errorf(`receive response: %w`, err)
 		return
 	} else {
 		if resp.Status != common.Status_SUCCESS {
@@ -73,7 +73,7 @@ func (o *orderer) Broadcast(ctx context.Context, envelope *common.Envelope) (res
 func (o *orderer) Deliver(ctx context.Context, envelope *common.Envelope) (block *common.Block, err error) {
 	cli, err := o.broadcastClient.Deliver(ctx)
 	if err != nil {
-		err = errors.Wrap(err, `failed to initialize deliver client`)
+		err = fmt.Errorf(`initialize deliver client: %w`, err)
 		return
 	}
 
@@ -88,7 +88,7 @@ func (o *orderer) Deliver(ctx context.Context, envelope *common.Envelope) (block
 			}
 
 			if errR != nil {
-				err = errors.Wrap(errR, `failed to receive response`)
+				err = fmt.Errorf(`receive response: %w`, errR)
 				return
 			}
 
@@ -108,7 +108,7 @@ func (o *orderer) Deliver(ctx context.Context, envelope *common.Envelope) (block
 	}()
 
 	if err = cli.Send(envelope); err != nil {
-		err = errors.Wrap(err, `failed to send envelope`)
+		err = fmt.Errorf(`send envelope: %w`, err)
 		return
 	}
 
@@ -123,7 +123,7 @@ func (o *orderer) initBroadcastClient() error {
 		o.connMx.Lock()
 		defer o.connMx.Unlock()
 		if o.conn, err = grpc.DialContext(o.ctx, o.uri, o.grpcOptions...); err != nil {
-			return errors.Wrap(err, `failed to initialize grpc connection`)
+			return fmt.Errorf(`initialize grpc connection: %w`, err)
 		}
 	}
 
@@ -137,14 +137,14 @@ func New(c config.ConnectionConfig, log *zap.Logger) (api.Orderer, error) {
 	opts, err := util.NewGRPCOptionsFromConfig(c, log)
 	if err != nil {
 		l.Error(`Failed to get GRPC options`, zap.Error(err))
-		return nil, errors.Wrap(err, `failed to get GRPC options`)
+		return nil, fmt.Errorf(`get GRPC options: %w`, err)
 	}
 
 	ctx, _ := context.WithTimeout(context.Background(), c.Timeout.Duration)
 	conn, err := grpc.DialContext(ctx, c.Host, opts...)
 	if err != nil {
 		l.Error(`Failed to initialize GRPC connection`, zap.Error(err))
-		return nil, errors.Wrap(err, `failed to initialize GRPC connection`)
+		return nil, fmt.Errorf(`initialize GRPC connection: %w`, err)
 	}
 
 	return NewFromGRPC(ctx, conn, opts...)
@@ -160,7 +160,7 @@ func NewFromGRPC(ctx context.Context, conn *grpc.ClientConn, grpcOptions ...grpc
 	}
 
 	if err := obj.initBroadcastClient(); err != nil {
-		return nil, errors.Wrap(err, `failed to initialize BroadcastClient`)
+		return nil, fmt.Errorf(`initialize BroadcastClient: %w`, err)
 	}
 
 	return obj, nil
