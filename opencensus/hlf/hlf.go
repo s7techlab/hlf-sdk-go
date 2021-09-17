@@ -94,7 +94,7 @@ func (w *wrapper) HandleRPC(ctx context.Context, rs stats.RPCStats) {
 			),
 		)
 	}
-	// sometimes we got cancelled context if continuous execution(asking peers etc.) isn't necessary
+	// sometimes we get cancelled context if futher execution(asking peers etc.) isn't necessary
 	// but request is fully valid and we dont want to see confusing errors in jaeger
 	if errors.Is(ctx.Err(), context.Canceled) {
 		return
