@@ -13,7 +13,7 @@ const (
 type DiscoveryProviderOpts map[string]interface{}
 
 type DiscoveryProvider interface {
-	Initialize(opts config.DiscoveryConfigOpts, pool PeerPool) (DiscoveryProvider, error)
+	Initialize(opts config.DiscoveryConfigOpts, pool PeerPool, core Core) (DiscoveryProvider, error)
 	Channels() ([]DiscoveryChannel, error)
 	Channel(channelName string) (*DiscoveryChannel, error)
 	Chaincode(channelName string, ccName string) (*DiscoveryChaincode, error)

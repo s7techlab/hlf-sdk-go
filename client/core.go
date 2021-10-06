@@ -179,7 +179,7 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 
 		if dp, err := discovery.GetProvider(core.config.Discovery.Type); err != nil {
 			return nil, fmt.Errorf(`get discovery provider type=%s: %w`, core.config.Discovery.Type, err)
-		} else if core.discoveryProvider, err = dp.Initialize(core.config.Discovery.Options, core.peerPool); err != nil {
+		} else if core.discoveryProvider, err = dp.Initialize(core.config.Discovery.Options, core.peerPool, core); err != nil {
 			return nil, errors.Wrap(err, `failed to initialize discovery provider`)
 		}
 	}

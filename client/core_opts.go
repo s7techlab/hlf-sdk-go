@@ -113,7 +113,7 @@ func WithDiscovery(dc config.DiscoveryConfig) CoreOpt {
 		if err != nil {
 			return fmt.Errorf("get local provider: %w", err)
 		}
-		c.discoveryProvider, err = p.Initialize(dc.Options, c.peerPool)
+		c.discoveryProvider, err = p.Initialize(dc.Options, c.peerPool, c)
 		if err != nil {
 			return fmt.Errorf("initialize discovery provider: %w", err)
 		}

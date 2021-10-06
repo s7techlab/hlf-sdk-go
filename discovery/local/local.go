@@ -66,7 +66,7 @@ func (d *discoveryProvider) Chaincodes(channelName string) ([]api.DiscoveryChain
 	return nil, discovery.ErrChannelNotFound
 }
 
-func (d *discoveryProvider) Initialize(options config.DiscoveryConfigOpts, pool api.PeerPool) (api.DiscoveryProvider, error) {
+func (d *discoveryProvider) Initialize(options config.DiscoveryConfigOpts, pool api.PeerPool, core api.Core) (api.DiscoveryProvider, error) {
 	var opts opts
 	if err := mapstructure.Decode(options, &opts); err != nil {
 		return nil, errors.Wrap(err, `failed to decode params`)
