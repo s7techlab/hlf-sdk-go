@@ -1,23 +1,18 @@
 package api
 
 import (
-	"github.com/hyperledger/fabric-protos-go/peer"
+	"context"
 
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 )
 
-const (
-	CCTypeGoLang = `golang`
-)
-
-type DiscoveryProviderOpts map[string]interface{}
-
 type DiscoveryProvider interface {
-	Initialize(opts config.DiscoveryConfigOpts, pool PeerPool, core Core) (DiscoveryProvider, error)
-	Channels() ([]DiscoveryChannel, error)
-	Channel(channelName string) (*DiscoveryChannel, error)
-	Chaincode(channelName string, ccName string) (*DiscoveryChaincode, error)
-	Chaincodes(channelName string) ([]DiscoveryChaincode, error)
+	// rm Initialize(opts config.DiscoveryConfigOpts, pool PeerPool, core Core) (DiscoveryProvider, error)
+	// rm Channels() ([]DiscoveryChannel, error)
+
+	// ? Channel(channelName string) (*DiscoveryChannel, error)
+	Chaincode(ctx context.Context, channelName string, ccName string) (IDiscoveryChaincode, error)
+	// ? Chaincodes(channelName string) ([]DiscoveryChaincode, error)
 }
 
 type DiscoveryChannel struct {
@@ -27,18 +22,22 @@ type DiscoveryChannel struct {
 	Orderers    []config.ConnectionConfig `json:"orderers" yaml:"orderers"`
 }
 
+type HostEndpoint struct {
+	MspID         string
+	HostAddresses []string
+}
+
+type IDiscoveryChaincode interface {
+	Endorsers() []*HostEndpoint
+	Orderers() []*HostEndpoint
+	ChaincodeName() string
+	ChaincodeVersion() string
+	ChannelName() string
+}
+
 type DiscoveryChaincode struct {
 	Name        string `json:"chaincode_name" yaml:"name"`
-	Type        string `json:"type"`
 	Version     string `json:"version"`
 	Description string `json:"description"`
 	Policy      string `json:"policy"`
-}
-
-func (c DiscoveryChaincode) GetFabricType() peer.ChaincodeSpec_Type {
-	switch c.Type {
-	case CCTypeGoLang:
-		return peer.ChaincodeSpec_GOLANG
-	}
-	return peer.ChaincodeSpec_UNDEFINED
 }

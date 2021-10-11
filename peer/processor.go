@@ -115,7 +115,6 @@ func (*processor) Send(ctx context.Context, proposal *fabricPeer.SignedProposal,
 func (p *processor) invocationSpec(ccDef *api.DiscoveryChaincode, fn string, args [][]byte) ([]byte, error) {
 	spec := &fabricPeer.ChaincodeInvocationSpec{
 		ChaincodeSpec: &fabricPeer.ChaincodeSpec{
-			Type:        ccDef.GetFabricType(),
 			ChaincodeId: &fabricPeer.ChaincodeID{Name: ccDef.Name},
 			Input:       &fabricPeer.ChaincodeInput{Args: p.prepareArgs(fn, args)},
 		},
