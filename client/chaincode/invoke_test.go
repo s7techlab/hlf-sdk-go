@@ -3,9 +3,10 @@ package chaincode_test
 import (
 	"context"
 	"fmt"
-	"github.com/hyperledger/fabric/protoutil"
 	"strings"
 	"testing"
+
+	"github.com/hyperledger/fabric/protoutil"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
@@ -21,7 +22,6 @@ import (
 	sdkinvoker "github.com/s7techlab/hlf-sdk-go/client/invoker"
 	"github.com/s7techlab/hlf-sdk-go/crypto"
 	"github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
-	_ "github.com/s7techlab/hlf-sdk-go/discovery/local"
 	"github.com/s7techlab/hlf-sdk-go/identity"
 	"github.com/s7techlab/hlf-sdk-go/logger"
 	"github.com/s7techlab/hlf-sdk-go/peer/pool"

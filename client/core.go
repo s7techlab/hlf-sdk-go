@@ -208,7 +208,7 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 
 			core.discoveryProvider, err = discovery.NewGossipDiscoveryProvider(
 				core.ctx,
-				core.config.Discovery.ConnectionConfig,
+				core.config.Discovery.DiscoveryMSPConnection,
 				core.logger,
 				identitySigner,
 				clientIdentity,

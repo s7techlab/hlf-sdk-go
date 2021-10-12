@@ -76,7 +76,7 @@ type TlsConfig struct {
 type DiscoveryConfig struct {
 	Type string `yaml:"type"`
 	// connection to local MSP which will be used for gossip discovery
-	ConnectionConfig `yaml:"type"`
+	DiscoveryMSPConnection ConnectionConfig `yaml:"discovery_msp_connection"`
 	// configuration of channels/chaincodes in local(from config) discovery type
 	Options DiscoveryConfigOpts `yaml:"options"`
 }

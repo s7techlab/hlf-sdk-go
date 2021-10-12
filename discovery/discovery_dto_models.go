@@ -21,6 +21,9 @@ func newChaincodeDTO(ccName, ccVer, chanName string) *chaincodeDTO {
 		chaincodeName:    ccName,
 		chaincodeVersion: ccVer,
 		channelName:      chanName,
+		endorsers:        make(map[string][]string),
+		orderers:         make(map[string][]string),
+		peers:            make(map[string][]string),
 	}
 }
 
@@ -81,6 +84,7 @@ type channelDTO struct {
 func newChannelDTO(chanName string) *channelDTO {
 	return &channelDTO{
 		channelName: chanName,
+		orderers:    make(map[string][]string),
 	}
 }
 

@@ -33,7 +33,6 @@ func NewGossipDiscoveryProvider(
 
 	// TODO probably we need to make a test call(ping) here to make sure user provided valid identity
 	sd := newGossipServiceDiscovery(discClient, clientIdentity)
-
 	return &GossipDiscoveryProvider{sd}, nil
 }
 

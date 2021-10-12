@@ -116,7 +116,7 @@ func (s *gossipServiceDiscovery) parseDiscoverChaincodeResponse(
 
 	for ordererMSPID := range cfg.Orderers {
 		for i := range cfg.Orderers[ordererMSPID].Endpoint {
-			hostAddr := fmt.Sprintf("%s:%s", cfg.Orderers[ordererMSPID].Endpoint[i].Host, cfg.Orderers[ordererMSPID].Endpoint[i].Port)
+			hostAddr := fmt.Sprintf("%s:%d", cfg.Orderers[ordererMSPID].Endpoint[i].Host, cfg.Orderers[ordererMSPID].Endpoint[i].Port)
 			dc.addEndpointToOrderers(ordererMSPID, hostAddr)
 		}
 	}
@@ -130,7 +130,7 @@ func (s *gossipServiceDiscovery) parseDiscoverChannelResponse(
 ) *channelDTO {
 	for ordererMSPID := range cfg.Orderers {
 		for i := range cfg.Orderers[ordererMSPID].Endpoint {
-			hostAddr := fmt.Sprintf("%s:%s", cfg.Orderers[ordererMSPID].Endpoint[i].Host, cfg.Orderers[ordererMSPID].Endpoint[i].Port)
+			hostAddr := fmt.Sprintf("%s:%d", cfg.Orderers[ordererMSPID].Endpoint[i].Host, cfg.Orderers[ordererMSPID].Endpoint[i].Port)
 			dc.addEndpointToOrderers(ordererMSPID, hostAddr)
 		}
 	}
