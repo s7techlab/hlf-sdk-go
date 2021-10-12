@@ -8,8 +8,10 @@ import (
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/discovery"
 )
+
+// implementation of api.DiscoveryProvider interface
+var _ api.DiscoveryProvider = (*LocalConfigDiscoveryProvider)(nil)
 
 type LocalConfigDiscoveryProvider struct {
 	opts opts
@@ -19,7 +21,7 @@ type opts struct {
 	Channels []api.DiscoveryChannel `yaml:"channels"`
 }
 
-func (d *LocalConfigDiscoveryProvider) Chaincode(_ context.Context, channelName string, ccName string) (api.IDiscoveryChaincode, error) {
+func (d *LocalConfigDiscoveryProvider) Chaincode(_ context.Context, channelName, ccName string) (api.ChaincodeDiscoverer, error) {
 	var channelFoundFlag bool
 
 	for _, ch := range d.opts.Channels {
@@ -32,7 +34,7 @@ func (d *LocalConfigDiscoveryProvider) Chaincode(_ context.Context, channelName 
 					// no peers
 					// endorsers := []*api.HostEndpoint{}
 
-					dc := newDiscoveryChaincode(cc.Name, cc.Version, channelName)
+					dc := newChaincodeDTO(cc.Name, cc.Version, channelName)
 					for i := range ch.Orderers {
 						mspID := "" // TODO we have no MSPID from local cfg
 						dc.addEndpointToOrderers(mspID, ch.Orderers[i].Host)
@@ -45,9 +47,32 @@ func (d *LocalConfigDiscoveryProvider) Chaincode(_ context.Context, channelName 
 	}
 
 	if channelFoundFlag {
-		return nil, discovery.ErrNoChaincodes
+		return nil, ErrNoChaincodes
 	}
-	return nil, discovery.ErrChannelNotFound
+	return nil, ErrChannelNotFound
+}
+
+func (d *LocalConfigDiscoveryProvider) Channel(_ context.Context, channelName string) (api.ChannelDiscoverer, error) {
+	var channelFoundFlag bool
+
+	for _, ch := range d.opts.Channels {
+		if ch.Name == channelName {
+			channelFoundFlag = true
+
+			dc := newChannelDTO(channelName)
+			for i := range ch.Orderers {
+				mspID := "" // TODO we have no MSPID from local cfg
+				dc.addEndpointToOrderers(mspID, ch.Orderers[i].Host)
+			}
+
+			return dc, nil
+		}
+	}
+
+	if channelFoundFlag {
+		return nil, ErrNoChaincodes
+	}
+	return nil, ErrChannelNotFound
 }
 
 func NewLocalConfigDiscoveryProvider(options config.DiscoveryConfigOpts) (api.DiscoveryProvider, error) {

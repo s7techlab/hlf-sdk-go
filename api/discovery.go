@@ -7,12 +7,23 @@ import (
 )
 
 type DiscoveryProvider interface {
-	// rm Initialize(opts config.DiscoveryConfigOpts, pool PeerPool, core Core) (DiscoveryProvider, error)
-	// rm Channels() ([]DiscoveryChannel, error)
+	Chaincode(ctx context.Context, channelName string, ccName string) (ChaincodeDiscoverer, error)
+	Channel(ctx context.Context, channelName string) (ChannelDiscoverer, error)
+}
 
-	// ? Channel(channelName string) (*DiscoveryChannel, error)
-	Chaincode(ctx context.Context, channelName string, ccName string) (IDiscoveryChaincode, error)
-	// ? Chaincodes(channelName string) ([]DiscoveryChaincode, error)
+// ChaincodeDiscoverer - looking for info about network in configs or gossip
+type ChaincodeDiscoverer interface {
+	Endorsers() []*HostEndpoint
+	ChaincodeName() string
+	ChaincodeVersion() string
+
+	ChannelDiscoverer
+}
+
+// ChannelDiscoverer - info about orderers in channel
+type ChannelDiscoverer interface {
+	Orderers() []*HostEndpoint
+	ChannelName() string
 }
 
 type DiscoveryChannel struct {
@@ -25,14 +36,6 @@ type DiscoveryChannel struct {
 type HostEndpoint struct {
 	MspID         string
 	HostAddresses []string
-}
-
-type IDiscoveryChaincode interface {
-	Endorsers() []*HostEndpoint
-	Orderers() []*HostEndpoint
-	ChaincodeName() string
-	ChaincodeVersion() string
-	ChannelName() string
 }
 
 type DiscoveryChaincode struct {

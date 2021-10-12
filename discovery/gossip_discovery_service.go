@@ -10,6 +10,7 @@ import (
 
 // gossipServiceDiscovery - fetches info about all available peers, endorsers and orderers for channel & chaincode
 // via configured gossip protocol
+// helper module for GossipDiscoveryProvider
 type gossipServiceDiscovery struct {
 	client         *discClient.Client
 	clientIdentity []byte
@@ -22,8 +23,9 @@ func newGossipServiceDiscovery(client *discClient.Client, clientIdentity []byte)
 	}
 }
 
-// Discover - find available peers, endorsers and orderers for channel & chaincode
-func (s *gossipServiceDiscovery) Discover(ctx context.Context, ccName, chanName string) (*discoveryChaincode, error) {
+// DiscoverChaincode - find available peers, endorsers and orderers for channel & chaincode
+func (s *gossipServiceDiscovery) DiscoverChaincode(ctx context.Context, ccName, chanName string) (*chaincodeDTO, error) {
+	// TODO err handling/diversification
 	req, err := discClient.
 		NewRequest().
 		OfChannel(chanName).
@@ -70,16 +72,38 @@ func (s *gossipServiceDiscovery) Discover(ctx context.Context, ccName, chanName 
 		}
 	}
 
-	dc := newDiscoveryChaincode(ccName, ccVersion, chanName)
-	return s.parseDiscoveryResponse(dc, chanEndorsers, chanPeers, chanCfg), nil
+	dc := newChaincodeDTO(ccName, ccVersion, chanName)
+	return s.parseDiscoverChaincodeResponse(dc, chanEndorsers, chanPeers, chanCfg), nil
 }
 
-func (s *gossipServiceDiscovery) parseDiscoveryResponse(
-	dc *discoveryChaincode,
+// DiscoverChannel - returns orderers for provided channel
+func (s *gossipServiceDiscovery) DiscoverChannel(ctx context.Context, chanName string) (*channelDTO, error) {
+	req := discClient.
+		NewRequest().
+		OfChannel(chanName).
+		AddConfigQuery()
+
+	res, err := s.client.Send(ctx, req, s.getAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	chanCfg, err := res.ForChannel(chanName).Config()
+	if err != nil {
+		return nil, err
+	}
+
+	dc := newChannelDTO(chanName)
+
+	return s.parseDiscoverChannelResponse(dc, chanCfg), nil
+}
+
+func (s *gossipServiceDiscovery) parseDiscoverChaincodeResponse(
+	dc *chaincodeDTO,
 	endorsers discClient.Endorsers,
 	peers []*discClient.Peer,
 	cfg *discovery.ConfigResult,
-) *discoveryChaincode {
+) *chaincodeDTO {
 	for i := range endorsers {
 		hostAddr := endorsers[i].AliveMessage.GetAliveMsg().Membership.Endpoint
 		dc.addEndpointToEndorsers(endorsers[i].MSPID, hostAddr)
@@ -90,6 +114,20 @@ func (s *gossipServiceDiscovery) parseDiscoveryResponse(
 		dc.addEndpointToEndorsers(peers[i].MSPID, hostAddr)
 	}
 
+	for ordererMSPID := range cfg.Orderers {
+		for i := range cfg.Orderers[ordererMSPID].Endpoint {
+			hostAddr := fmt.Sprintf("%s:%s", cfg.Orderers[ordererMSPID].Endpoint[i].Host, cfg.Orderers[ordererMSPID].Endpoint[i].Port)
+			dc.addEndpointToOrderers(ordererMSPID, hostAddr)
+		}
+	}
+
+	return dc
+}
+
+func (s *gossipServiceDiscovery) parseDiscoverChannelResponse(
+	dc *channelDTO,
+	cfg *discovery.ConfigResult,
+) *channelDTO {
 	for ordererMSPID := range cfg.Orderers {
 		for i := range cfg.Orderers[ordererMSPID].Endpoint {
 			hostAddr := fmt.Sprintf("%s:%s", cfg.Orderers[ordererMSPID].Endpoint[i].Host, cfg.Orderers[ordererMSPID].Endpoint[i].Port)

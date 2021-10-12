@@ -87,7 +87,6 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 		cred := credentials.NewTLS(&tlsCfg)
 		grpcOptions = append(grpcOptions, grpc.WithTransportCredentials(cred))
 	} else {
-
 		grpcOptions = append(grpcOptions, grpc.WithInsecure())
 	}
 

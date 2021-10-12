@@ -11,4 +11,10 @@ var (
 	ErrUnknownProvider = errors.New(`unknown discovery provider (forgotten import?)`)
 )
 
-type mapper 
+// ServiceDiscoveryType - what types of discovery we support
+type ServiceDiscoveryType string
+
+const (
+	LocalConfigServiceDiscoveryType ServiceDiscoveryType = "local"
+	GossipServiceDiscoveryType      ServiceDiscoveryType = "gossip"
+)

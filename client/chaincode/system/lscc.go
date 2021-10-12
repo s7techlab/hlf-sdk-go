@@ -130,7 +130,7 @@ func (c *lscc) Deploy(ctx context.Context, channelName string, spec *peer.Chainc
 	}
 
 	processor := peerSDK.NewProcessor(channelName)
-	prop, _, err := processor.CreateProposal(&api.DiscoveryChaincode{Name: lsccName, Type: api.CCTypeGoLang}, c.identity, lsccCmd, args, deployOpts.TransArgs)
+	prop, _, err := processor.CreateProposal(&api.DiscoveryChaincode{Name: lsccName}, c.identity, lsccCmd, args, deployOpts.TransArgs)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, `failed to create proposal`)
 	}
@@ -141,7 +141,7 @@ func (c *lscc) Deploy(ctx context.Context, channelName string, spec *peer.Chainc
 
 func (c *lscc) endorse(ctx context.Context, channelName string, fn string, args [][]byte, transArgs api.TransArgs) (*peer.ProposalResponse, error) {
 	processor := peerSDK.NewProcessor(channelName)
-	prop, _, err := processor.CreateProposal(&api.DiscoveryChaincode{Name: lsccName, Type: api.CCTypeGoLang}, c.identity, fn, args, transArgs)
+	prop, _, err := processor.CreateProposal(&api.DiscoveryChaincode{Name: lsccName}, c.identity, fn, args, transArgs)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to create proposal`)
 	}

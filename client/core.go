@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -83,13 +82,29 @@ func (c *core) Channel(name string) api.Channel {
 		var ord api.Orderer
 
 		log.Debug(`Channel instance doesn't exist, initiating new`)
-		discChannel, err := c.discoveryProvider.Channel(name)
+		discChannel, err := c.discoveryProvider.Channel(c.ctx, name)
 		if err != nil {
 			log.Error(`Failed to get channel declaration in discovery`, zap.Error(err))
 		} else {
 			// if custom orderers are enabled
-			if len(discChannel.Orderers) > 0 {
-				ordConn, err := util.NewGRPCConnectionFromConfigs(c.ctx, c.logger, discChannel.Orderers...)
+			if len(discChannel.Orderers()) > 0 {
+				// convert api.HostEndpoint-> grpc config.ConnectionConfig
+				grpcConnCfgs := []config.ConnectionConfig{}
+				orderers := discChannel.Orderers()
+
+				for _, orderer := range orderers {
+					if len(orderer.HostAddresses) > 0 {
+						grpcCfg := config.ConnectionConfig{
+							Host: orderer.HostAddresses[0],
+							Tls: config.TlsConfig{
+								Enabled: false,
+							},
+						}
+						grpcConnCfgs = append(grpcConnCfgs, grpcCfg)
+					}
+				}
+
+				ordConn, err := util.NewGRPCConnectionFromConfigs(c.ctx, c.logger, grpcConnCfgs...)
 				if err != nil {
 					log.Error(`Failed to initialize custom GRPC connection for orderer`, zap.String(`channel`, name), zap.Error(err))
 				}
@@ -176,11 +191,31 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 
 	if core.discoveryProvider == nil && core.config != nil {
 		core.logger.Info("initializing discovery provider")
+		switch core.config.Discovery.Type {
+		case string(discovery.LocalConfigServiceDiscoveryType):
+			core.discoveryProvider, err = discovery.NewLocalConfigDiscoveryProvider(core.config.Discovery.Options)
+			if err != nil {
+				return nil, errors.Wrap(err, `failed to initialize discovery provider`)
+			}
+		case string(discovery.GossipServiceDiscoveryType):
+			identitySigner := func(msg []byte) ([]byte, error) {
+				return core.CurrentIdentity().Sign(msg)
+			}
+			clientIdentity, err := core.CurrentIdentity().Serialize()
+			if err != nil {
+				return nil, errors.Wrap(err, `failed serialize current identity`)
+			}
 
-		if dp, err := discovery.GetProvider(core.config.Discovery.Type); err != nil {
-			return nil, fmt.Errorf(`get discovery provider type=%s: %w`, core.config.Discovery.Type, err)
-		} else if core.discoveryProvider, err = dp.Initialize(core.config.Discovery.Options, core.peerPool, core); err != nil {
-			return nil, errors.Wrap(err, `failed to initialize discovery provider`)
+			core.discoveryProvider, err = discovery.NewGossipDiscoveryProvider(
+				core.ctx,
+				core.config.Discovery.ConnectionConfig,
+				core.logger,
+				identitySigner,
+				clientIdentity,
+			)
+			if err != nil {
+				return nil, errors.Wrap(err, `failed to initialize discovery provider`)
+			}
 		}
 	}
 

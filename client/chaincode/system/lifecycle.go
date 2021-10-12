@@ -32,7 +32,7 @@ func (c *lifecycleCC) QueryInstalledChaincodes(ctx context.Context) (*lb.QueryIn
 }
 
 func (c *lifecycleCC) endorse(ctx context.Context, fn string, args ...string) ([]byte, error) {
-	prop, _, err := c.processor.CreateProposal(&api.DiscoveryChaincode{Name: lifecycleName, Type: api.CCTypeGoLang}, c.identity, fn, util.ToChaincodeArgs(args...), nil)
+	prop, _, err := c.processor.CreateProposal(&api.DiscoveryChaincode{Name: lifecycleName}, c.identity, fn, util.ToChaincodeArgs(args...), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to create proposal`)
 	}
