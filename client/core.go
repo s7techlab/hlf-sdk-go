@@ -94,13 +94,16 @@ func (c *core) Channel(name string) api.Channel {
 
 				for _, orderer := range orderers {
 					if len(orderer.HostAddresses) > 0 {
-						grpcCfg := config.ConnectionConfig{
-							Host: orderer.HostAddresses[0],
-							Tls: config.TlsConfig{
-								Enabled: false,
-							},
+						for _, hostAddr := range orderer.HostAddresses {
+							// TODO here we must fetch info from tls cfg mapper
+							grpcCfg := config.ConnectionConfig{
+								Host: hostAddr,
+								Tls: config.TlsConfig{
+									Enabled: false,
+								},
+							}
+							grpcConnCfgs = append(grpcConnCfgs, grpcCfg)
 						}
-						grpcConnCfgs = append(grpcConnCfgs, grpcCfg)
 					}
 				}
 
