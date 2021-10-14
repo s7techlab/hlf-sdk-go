@@ -18,7 +18,7 @@ type LocalConfigDiscoveryProvider struct {
 }
 
 type opts struct {
-	Channels []api.DiscoveryChannel `yaml:"channels"`
+	Channels []config.DiscoveryChannel `yaml:"channels"`
 }
 
 func (d *LocalConfigDiscoveryProvider) Chaincode(_ context.Context, channelName, ccName string) (api.ChaincodeDiscoverer, error) {

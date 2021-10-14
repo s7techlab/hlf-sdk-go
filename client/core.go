@@ -99,7 +99,10 @@ func (c *core) Channel(name string) api.Channel {
 							grpcCfg := config.ConnectionConfig{
 								Host: hostAddr,
 								Tls: config.TlsConfig{
-									Enabled: false,
+									Enabled:    true,
+									CertPath:   "/Users/bogatyr285/work/go/src/github.com/fabric-samples/first-network/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt",
+									KeyPath:    "/Users/bogatyr285/work/go/src/github.com/fabric-samples/first-network/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.key",
+									CACertPath: "/Users/bogatyr285/work/go/src/github.com/fabric-samples/first-network/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt",
 								},
 							}
 							grpcConnCfgs = append(grpcConnCfgs, grpcCfg)

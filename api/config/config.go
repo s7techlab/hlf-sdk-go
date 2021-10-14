@@ -81,7 +81,23 @@ type DiscoveryConfig struct {
 	Options DiscoveryConfigOpts `yaml:"options"`
 }
 
+// DiscoveryConfigOpts - channel configuration for local config
+// contains []DiscoveryChannel
 type DiscoveryConfigOpts map[string]interface{}
+
+type DiscoveryChannel struct {
+	Name        string               `json:"channel_name" yaml:"name"`
+	Description string               `json:"channel_description" yaml:"description"`
+	Chaincodes  []DiscoveryChaincode `json:"chaincodes" yaml:"description"`
+	Orderers    []ConnectionConfig   `json:"orderers" yaml:"orderers"`
+}
+
+type DiscoveryChaincode struct {
+	Name        string `json:"chaincode_name" yaml:"name"`
+	Version     string `json:"version"`
+	Description string `json:"description"`
+	Policy      string `json:"policy"`
+}
 
 type CryptoConfig struct {
 	Type    string          `yaml:"type"`

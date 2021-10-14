@@ -142,18 +142,12 @@ func (b *invokeBuilder) Do(ctx context.Context, options ...api.DoOption) (*fabri
 		return nil, ``, err
 	}
 
-	cc, err := b.ccCore.dp.Chaincode(ctx, b.ccCore.channelName, b.ccCore.name)
+	ccd, err := b.ccCore.dp.Chaincode(ctx, b.ccCore.channelName, b.ccCore.name)
 	if err != nil {
 		return nil, ``, errors.Wrap(err, `failed to get chaincode definition`)
 	}
 
 	doOpts := &api.DoOptions{
-		// TODO get rid of api.DiscoveryChaincode struct and pass just interface
-		DiscoveryChaincode: &api.DiscoveryChaincode{
-			Name:    cc.ChaincodeName(),
-			Version: cc.ChaincodeVersion(),
-			Policy:  "", // no policy from discoverer, no way to take it
-		},
 		Identity: b.identity,
 		Pool:     b.peerPool,
 	}
@@ -169,12 +163,22 @@ func (b *invokeBuilder) Do(ctx context.Context, options ...api.DoOption) (*fabri
 	}
 	b.txWaiter = doOpts.TxWaiter
 
-	proposal, tx, err := b.processor.CreateProposal(doOpts.DiscoveryChaincode, b.identity, b.fn, b.args, b.transientArgs)
+	proposal, tx, err := b.processor.CreateProposal(ccd.ChaincodeName(), b.identity, b.fn, b.args, b.transientArgs)
 	if err != nil {
 		return nil, ``, errors.Wrap(err, `failed to get signed proposal`)
 	}
 
-	peerResponses, err := b.processor.Send(ctx, proposal, doOpts.DiscoveryChaincode, b.peerPool)
+	getEndorsingMSPs := func(d api.ChaincodeDiscoverer) (endorsingMspIDs []string) {
+		endorsers := d.Endorsers()
+		for i := range endorsers {
+			endorsingMspIDs = append(endorsingMspIDs, endorsers[i].MspID)
+		}
+		return endorsingMspIDs
+	}
+
+	endorsingMspIDs := getEndorsingMSPs(ccd)
+
+	peerResponses, err := b.processor.Send(ctx, proposal, endorsingMspIDs, b.peerPool)
 	if err != nil {
 		return nil, tx, errors.Wrap(err, `failed to collect peer responses`)
 	}

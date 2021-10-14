@@ -7,17 +7,13 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
 // All - need use on invoke flow for check transaction codes for each organizations from endorsement policy
 // txwaiter.All  will be made to subscribe tx for each of the peer organizations from the endorsement policy
 func All(cfg *api.DoOptions) (api.TxWaiter, error) {
-	mspIds, err := util.GetMSPFromPolicy(cfg.DiscoveryChaincode.Policy)
-	if err != nil {
-		return nil, err
-	}
-
+	TODO := []string{"peer0.org1.example.com:7051", "peer0.org2.example.com:9051"}
+	mspIds := TODO
 	waiter := &allMspWaiter{
 		onceSet: new(sync.Once),
 	}

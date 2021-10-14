@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"time"
 
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
@@ -137,7 +138,7 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 
 	log.Debug(`grpc options for host`, fields...)
 	// because of it round robin is hanging
-	// grpcOptions = append(grpcOptions, grpc.WithBlock())
+	//grpcOptions = append(grpcOptions, grpc.WithBlock())
 
 	return grpcOptions, nil
 }
@@ -151,6 +152,11 @@ func NewGRPCConnectionFromConfigs(ctx context.Context, log *zap.Logger, conf ...
 	opts, err := NewGRPCOptionsFromConfig(conf[0], log)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to get GRPC options`)
+	}
+	// name is necessary for grpc balancer
+	dnsResolverName, _, err := net.SplitHostPort(conf[0].Host)
+	if err != nil {
+		return nil, fmt.Errorf("cant fetch domain name from %v", conf[0].Host)
 	}
 
 	addr := make([]resolver.Address, len(conf))
@@ -171,7 +177,7 @@ func NewGRPCConnectionFromConfigs(ctx context.Context, log *zap.Logger, conf ...
 	ctxConn, cancel := context.WithTimeout(ctx, time.Second*2)
 	defer cancel()
 
-	conn, err := grpc.DialContext(ctxConn, fmt.Sprintf("%s:///%s", r.Scheme(), `orderers`), opts...)
+	conn, err := grpc.DialContext(ctxConn, fmt.Sprintf("%s:///%s", r.Scheme(), dnsResolverName), opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to initialize GRPC connection`)
 	}

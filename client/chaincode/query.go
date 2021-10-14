@@ -47,19 +47,12 @@ func (q *QueryBuilder) AsJSON(ctx context.Context, out interface{}) error {
 }
 
 func (q *QueryBuilder) AsProposalResponse(ctx context.Context) (*fabricPeer.ProposalResponse, error) {
-	ccDef, err := q.ccCore.dp.Chaincode(ctx, q.ccCore.channelName, q.ccCore.name)
+	ccd, err := q.ccCore.dp.Chaincode(ctx, q.ccCore.channelName, q.ccCore.name)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to get chaincode definition from discovery provider`)
 	}
 
-	// TODO get rid of api.DiscoveryChaincode struct and pass just interface
-	dcc := &api.DiscoveryChaincode{
-		Name:    ccDef.ChaincodeName(),
-		Version: ccDef.ChaincodeVersion(),
-		Policy:  "", // no policy from discoverer, no way to take it
-	}
-
-	proposal, _, err := q.processor.CreateProposal(dcc, q.identity, q.fn, argsToBytes(q.args...), q.transientArgs)
+	proposal, _, err := q.processor.CreateProposal(ccd.ChaincodeName(), q.identity, q.fn, argsToBytes(q.args...), q.transientArgs)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to create peer proposal`)
 	}
