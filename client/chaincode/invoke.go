@@ -169,6 +169,7 @@ func (b *invokeBuilder) Do(ctx context.Context, options ...api.DoOption) (*fabri
 	}
 
 	getEndorsingMSPs := func(d api.ChaincodeDiscoverer) (endorsingMspIDs []string) {
+
 		endorsers := d.Endorsers()
 		for i := range endorsers {
 			endorsingMspIDs = append(endorsingMspIDs, endorsers[i].MspID)

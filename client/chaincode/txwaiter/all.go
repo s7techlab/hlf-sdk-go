@@ -11,19 +11,20 @@ import (
 
 // All - need use on invoke flow for check transaction codes for each organizations from endorsement policy
 // txwaiter.All  will be made to subscribe tx for each of the peer organizations from the endorsement policy
-func All(cfg *api.DoOptions) (api.TxWaiter, error) {
-	TODO := []string{"peer0.org1.example.com:7051", "peer0.org2.example.com:9051"}
-	mspIds := TODO
+func All(cfg *api.DoOptions, endorsingMspIDs []string) (api.TxWaiter, error) {
+	// TODO I removed endorsing peers list from DoOptions because here is the only place where its necessary
+	// add it back just for this place is bad thing
+	// if we add endorsingMspIDs param we broke tests(invoke_test.go) and need to come up with a solution
 	waiter := &allMspWaiter{
 		onceSet: new(sync.Once),
 	}
 
 	// make delivers for each mspID
 	errD := new(api.MultiError)
-	for i := range mspIds {
-		peerDeliver, err := cfg.Pool.DeliverClient(mspIds[i], cfg.Identity)
+	for i := range endorsingMspIDs {
+		peerDeliver, err := cfg.Pool.DeliverClient(endorsingMspIDs[i], cfg.Identity)
 		if err != nil {
-			errD.Add(errors.Wrapf(err, "%s: failed to get delivery client", mspIds[i]))
+			errD.Add(errors.Wrapf(err, "%s: failed to get delivery client", endorsingMspIDs[i]))
 			continue
 		}
 
