@@ -14,16 +14,11 @@ type Config struct {
 	Discovery DiscoveryConfig    `yaml:"discovery"`
 	MSP       []MSPConfig        `yaml:"msp"`
 	Pool      PoolConfig         `yaml:"pool"`
+	// if tls is enabled maps TLS certs to discovered peers
+	TLSCertsMap []TLSCertsMapperConfig `yaml:"tls_certs_map"`
 }
 
 type ConnectionConfig struct {
-	Host    string     `yaml:"host"`
-	Tls     TlsConfig  `yaml:"tls"`
-	GRPC    GRPCConfig `yaml:"grpc"`
-	Timeout Duration   `yaml:"timeout"`
-}
-
-type OrdererConfig struct {
 	Host    string     `yaml:"host"`
 	Tls     TlsConfig  `yaml:"tls"`
 	GRPC    GRPCConfig `yaml:"grpc"`
@@ -108,6 +103,11 @@ type CryptoSuiteOpts map[string]interface{}
 
 type Duration struct {
 	time.Duration
+}
+
+type TLSCertsMapperConfig struct {
+	Address   string    `yaml:"address"`
+	TlsConfig TlsConfig `yaml:"tls_config"`
 }
 
 func (d *Duration) UnmarshalYAML(unmarshal func(interface{}) error) error {

@@ -14,7 +14,8 @@ import (
 var _ api.DiscoveryProvider = (*LocalConfigDiscoveryProvider)(nil)
 
 type LocalConfigDiscoveryProvider struct {
-	opts opts
+	tlsMapper tlsConfigMapper
+	opts      opts
 }
 
 type opts struct {
@@ -34,13 +35,13 @@ func (d *LocalConfigDiscoveryProvider) Chaincode(_ context.Context, channelName,
 					// no peers
 					// endorsers := []*api.HostEndpoint{}
 
-					dc := newChaincodeDTO(cc.Name, cc.Version, channelName)
+					ccDTO := newChaincodeDTO(cc.Name, cc.Version, channelName)
 					for i := range ch.Orderers {
 						mspID := "" // TODO we have no MSPID from local cfg
-						dc.addEndpointToOrderers(mspID, ch.Orderers[i].Host)
+						ccDTO.addEndpointToOrderers(mspID, ch.Orderers[i].Host)
 					}
 
-					return dc, nil
+					return newChaincodeDiscovererTLSDecorator(ccDTO, d.tlsMapper), nil
 				}
 			}
 		}
@@ -59,13 +60,13 @@ func (d *LocalConfigDiscoveryProvider) Channel(_ context.Context, channelName st
 		if ch.Name == channelName {
 			channelFoundFlag = true
 
-			dc := newChannelDTO(channelName)
+			chanDTO := newChannelDTO(channelName)
 			for i := range ch.Orderers {
 				mspID := "" // TODO we have no MSPID from local cfg
-				dc.addEndpointToOrderers(mspID, ch.Orderers[i].Host)
+				chanDTO.addEndpointToOrderers(mspID, ch.Orderers[i].Host)
 			}
 
-			return dc, nil
+			return newChannelDiscovererTLSDecorator(chanDTO, d.tlsMapper), nil
 		}
 	}
 
@@ -75,11 +76,11 @@ func (d *LocalConfigDiscoveryProvider) Channel(_ context.Context, channelName st
 	return nil, ErrChannelNotFound
 }
 
-func NewLocalConfigDiscoveryProvider(options config.DiscoveryConfigOpts) (api.DiscoveryProvider, error) {
+func NewLocalConfigDiscoveryProvider(options config.DiscoveryConfigOpts, tlsMapper tlsConfigMapper) (api.DiscoveryProvider, error) {
 	var opts opts
 	if err := mapstructure.Decode(options, &opts); err != nil {
 		return nil, errors.Wrap(err, `failed to decode params`)
 	}
 
-	return &LocalConfigDiscoveryProvider{opts: opts}, nil
+	return &LocalConfigDiscoveryProvider{opts: opts, tlsMapper: tlsMapper}, nil
 }

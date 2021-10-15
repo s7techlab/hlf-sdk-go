@@ -2,6 +2,8 @@ package api
 
 import (
 	"context"
+
+	"github.com/s7techlab/hlf-sdk-go/api/config"
 )
 
 type DiscoveryProvider interface {
@@ -25,6 +27,12 @@ type ChannelDiscoverer interface {
 }
 
 type HostEndpoint struct {
-	MspID         string
-	HostAddresses []string
+	MspID string
+	// each host could have own tls settings
+	HostAddresses []*HostAddress
+}
+
+type HostAddress struct {
+	Address     string
+	TLSSettings config.TlsConfig
 }

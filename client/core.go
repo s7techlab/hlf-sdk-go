@@ -95,15 +95,9 @@ func (c *core) Channel(name string) api.Channel {
 				for _, orderer := range orderers {
 					if len(orderer.HostAddresses) > 0 {
 						for _, hostAddr := range orderer.HostAddresses {
-							// TODO here we must fetch info from tls cfg mapper
 							grpcCfg := config.ConnectionConfig{
-								Host: hostAddr,
-								Tls: config.TlsConfig{
-									Enabled:    true,
-									CertPath:   "/Users/bogatyr285/work/go/src/github.com/fabric-samples/first-network/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt",
-									KeyPath:    "/Users/bogatyr285/work/go/src/github.com/fabric-samples/first-network/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.key",
-									CACertPath: "/Users/bogatyr285/work/go/src/github.com/fabric-samples/first-network/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt",
-								},
+								Host: hostAddr.Address,
+								Tls:  hostAddr.TLSSettings,
 							}
 							grpcConnCfgs = append(grpcConnCfgs, grpcCfg)
 						}
@@ -197,9 +191,12 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 
 	if core.discoveryProvider == nil && core.config != nil {
 		core.logger.Info("initializing discovery provider")
+
+		tlsMapper := discovery.NewTLSCertsMapper(core.config.TLSCertsMap)
+
 		switch core.config.Discovery.Type {
 		case string(discovery.LocalConfigServiceDiscoveryType):
-			core.discoveryProvider, err = discovery.NewLocalConfigDiscoveryProvider(core.config.Discovery.Options)
+			core.discoveryProvider, err = discovery.NewLocalConfigDiscoveryProvider(core.config.Discovery.Options, tlsMapper)
 			if err != nil {
 				return nil, errors.Wrap(err, `failed to initialize discovery provider`)
 			}
@@ -218,6 +215,7 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 				core.logger,
 				identitySigner,
 				clientIdentity,
+				tlsMapper,
 			)
 			if err != nil {
 				return nil, errors.Wrap(err, `failed to initialize discovery provider`)

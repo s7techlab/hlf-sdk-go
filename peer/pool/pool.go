@@ -2,7 +2,6 @@ package pool
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/hyperledger/fabric-protos-go/peer"
@@ -40,9 +39,7 @@ func (p *peerPool) Add(mspId string, peer api.Peer, peerChecker api.PeerPoolChec
 	if peers, ok := p.store[mspId]; !ok {
 		p.store[mspId] = p.addPeer(peer, make([]*peerPoolPeer, 0), peerChecker)
 	} else {
-		if p.searchPeer(peer, peers) {
-			return fmt.Errorf(`peer %s: %w`, peer.Uri(), api.ErrPeerAlreadySet)
-		} else {
+		if !p.isPeerInPool(peer, peers) {
 			p.store[mspId] = p.addPeer(peer, peers, peerChecker)
 		}
 	}
@@ -57,7 +54,7 @@ func (p *peerPool) addPeer(peer api.Peer, peerSet []*peerPoolPeer, peerChecker a
 	return append(peerSet, pp)
 }
 
-func (p *peerPool) searchPeer(peer api.Peer, peerSet []*peerPoolPeer) bool {
+func (p *peerPool) isPeerInPool(peer api.Peer, peerSet []*peerPoolPeer) bool {
 	for _, pp := range peerSet {
 		if peer.Uri() == pp.peer.Uri() {
 			return true

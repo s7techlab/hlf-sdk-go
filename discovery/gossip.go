@@ -16,7 +16,13 @@ import (
 var _ api.DiscoveryProvider = (*GossipDiscoveryProvider)(nil)
 
 type GossipDiscoveryProvider struct {
-	sd *gossipServiceDiscovery
+	sd        *gossipServiceDiscovery
+	tlsMapper tlsConfigMapper
+}
+
+// return tls config for peers found via gossip
+type tlsConfigMapper interface {
+	tlsConfigForAddress(address string) *config.TlsConfig
 }
 
 func NewGossipDiscoveryProvider(
@@ -25,6 +31,7 @@ func NewGossipDiscoveryProvider(
 	log *zap.Logger,
 	identitySigner discClient.Signer,
 	clientIdentity []byte,
+	tlsMapper tlsConfigMapper,
 ) (*GossipDiscoveryProvider, error) {
 	discClient, err := newFabricDiscoveryClient(ctx, connCfg, log, identitySigner)
 	if err != nil {
@@ -33,7 +40,8 @@ func NewGossipDiscoveryProvider(
 
 	// TODO probably we need to make a test call(ping) here to make sure user provided valid identity
 	sd := newGossipServiceDiscovery(discClient, clientIdentity)
-	return &GossipDiscoveryProvider{sd}, nil
+
+	return &GossipDiscoveryProvider{sd: sd, tlsMapper: tlsMapper}, nil
 }
 
 // newFabricDiscoveryClient - initializes grpc fabric discovery client
@@ -66,9 +74,19 @@ func newFabricDiscoveryClient(
 }
 
 func (d *GossipDiscoveryProvider) Chaincode(ctx context.Context, channelName string, ccName string) (api.ChaincodeDiscoverer, error) {
-	return d.sd.DiscoverChaincode(ctx, ccName, channelName)
+	ccDTO, err := d.sd.DiscoverChaincode(ctx, ccName, channelName)
+	if err != nil {
+		return nil, err
+	}
+
+	return newChaincodeDiscovererTLSDecorator(ccDTO, d.tlsMapper), nil
 }
 
 func (d *GossipDiscoveryProvider) Channel(ctx context.Context, channelName string) (api.ChannelDiscoverer, error) {
-	return d.sd.DiscoverChannel(ctx, channelName)
+	chanDTO, err := d.sd.DiscoverChannel(ctx, channelName)
+	if err != nil {
+		return nil, err
+	}
+
+	return newChannelDiscovererTLSDecorator(chanDTO, d.tlsMapper), nil
 }

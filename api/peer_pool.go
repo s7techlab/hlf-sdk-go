@@ -11,8 +11,7 @@ import (
 )
 
 const (
-	ErrPeerAlreadySet = Error(`peer already set`)
-	ErrNoPeersForMSP  = Error(`no peers for presented MSP`)
+	ErrNoPeersForMSP = Error(`no peers for presented MSP`)
 	//ErrNoReadyPeersForMSP = Error(`no ready peers for presented MSP`)
 	ErrMSPNotFound  = Error(`MSP not found`)
 	ErrPeerNotReady = Error(`peer not ready`)

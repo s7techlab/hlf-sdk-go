@@ -111,7 +111,7 @@ func (s *gossipServiceDiscovery) parseDiscoverChaincodeResponse(
 
 	for i := range peers {
 		hostAddr := peers[i].AliveMessage.GetAliveMsg().Membership.Endpoint
-		dc.addEndpointToEndorsers(peers[i].MSPID, hostAddr)
+		dc.addEndpointToPeers(peers[i].MSPID, hostAddr)
 	}
 
 	for ordererMSPID := range cfg.Orderers {

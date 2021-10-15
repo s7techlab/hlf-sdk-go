@@ -8,6 +8,7 @@ import (
 
 	"github.com/hyperledger/fabric/msp"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
@@ -33,6 +34,7 @@ type Core struct {
 func (c *Core) Chaincode(serviceDiscCtx context.Context, ccName string) (api.Chaincode, error) {
 	c.chaincodesMx.Lock()
 	defer c.chaincodesMx.Unlock()
+
 	cc, ok := c.chaincodes[ccName]
 	if ok {
 		return cc, nil
@@ -45,18 +47,34 @@ func (c *Core) Chaincode(serviceDiscCtx context.Context, ccName string) (api.Cha
 
 	endorsers := cd.Endorsers()
 
-	for i := range endorsers {
-		mspID := endorsers[i].MspID
-		// TODO TLS config getter
-		peerConfig := config.ConnectionConfig{}
+	errGr, _ := errgroup.WithContext(serviceDiscCtx)
 
-		p, err := peer.New(peerConfig, c.log)
-		if err != nil {
-			return nil, fmt.Errorf("failed to initialize endorsers for MSP: %s: %w", mspID, err)
+	for i := range endorsers {
+		for j := range endorsers[i].HostAddresses {
+			hostAddr := endorsers[i].HostAddresses[j]
+
+			errGr.Go(func() error {
+				mspID := endorsers[i].MspID
+
+				grpcCfg := config.ConnectionConfig{
+					Host: hostAddr.Address,
+					Tls:  hostAddr.TLSSettings,
+				}
+
+				p, err := peer.New(grpcCfg, c.log)
+				if err != nil {
+					return fmt.Errorf("failed to initialize endorsers for MSP: %s: %w", mspID, err)
+				}
+				if err := c.peerPool.Add(mspID, p, api.StrategyGRPC(5*time.Second)); err != nil {
+					return fmt.Errorf("failed to add endorser peer to pool: %s:%w", mspID, err)
+				}
+				return nil
+			})
 		}
-		if err := c.peerPool.Add(mspID, p, api.StrategyGRPC(5*time.Second)); err != nil {
-			return nil, fmt.Errorf("failed to add endorser peer to pool: %s:%w", mspID, err)
-		}
+	}
+
+	if err := errGr.Wait(); err != nil {
+		return nil, err
 	}
 
 	cc = chaincode.NewCore(c.mspId, ccName, c.chanName, c.peerPool, c.orderer, c.dp, c.identity)

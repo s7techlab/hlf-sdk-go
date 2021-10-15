@@ -1,12 +1,17 @@
 package discovery
 
-import "github.com/s7techlab/hlf-sdk-go/api"
+import (
+	"sync"
+
+	"github.com/s7techlab/hlf-sdk-go/api"
+)
 
 // implementation of api.ChaincodeDiscoverer interface
 var _ api.ChaincodeDiscoverer = (*chaincodeDTO)(nil)
 
 // chaincodeDTO - chaincode data storage
 type chaincodeDTO struct {
+	lock sync.RWMutex
 	// key - MSPID, value host addresses
 	endorsers        map[string][]string
 	orderers         map[string][]string
@@ -18,6 +23,7 @@ type chaincodeDTO struct {
 
 func newChaincodeDTO(ccName, ccVer, chanName string) *chaincodeDTO {
 	return &chaincodeDTO{
+		lock:             sync.RWMutex{},
 		chaincodeName:    ccName,
 		chaincodeVersion: ccVer,
 		channelName:      chanName,
@@ -28,9 +34,13 @@ func newChaincodeDTO(ccName, ccVer, chanName string) *chaincodeDTO {
 }
 
 func (d *chaincodeDTO) Endorsers() []*api.HostEndpoint {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
 	return mapToArray(d.endorsers)
 }
 func (d *chaincodeDTO) Orderers() []*api.HostEndpoint {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
 	return mapToArray(d.orderers)
 }
 func (d *chaincodeDTO) ChaincodeName() string {
@@ -45,14 +55,20 @@ func (d *chaincodeDTO) ChannelName() string {
 
 // helpers
 func (d *chaincodeDTO) addEndpointToEndorsers(mspID, hostAddr string) {
+	d.lock.Lock()
+	defer d.lock.Unlock()
 	d.endorsers[mspID] = append(d.endorsers[mspID], hostAddr)
 }
 
 func (d *chaincodeDTO) addEndpointToOrderers(mspID, hostAddr string) {
+	d.lock.Lock()
+	defer d.lock.Unlock()
 	d.orderers[mspID] = append(d.orderers[mspID], hostAddr)
 }
 
 func (d *chaincodeDTO) addEndpointToPeers(mspID, hostAddr string) {
+	d.lock.Lock()
+	defer d.lock.Unlock()
 	d.peers[mspID] = append(d.peers[mspID], hostAddr)
 }
 
@@ -63,7 +79,13 @@ func mapToArray(hosts map[string][]string) []*api.HostEndpoint {
 
 		he := &api.HostEndpoint{
 			MspID:         k,
-			HostAddresses: endpoints,
+			HostAddresses: make([]*api.HostAddress, len(endpoints)),
+		}
+
+		for i := range endpoints {
+			he.HostAddresses[i] = &api.HostAddress{
+				Address: endpoints[i],
+			}
 		}
 		res = append(res, he)
 	}
@@ -77,18 +99,22 @@ var _ api.ChannelDiscoverer = (*channelDTO)(nil)
 
 // channel - info about channel orderers
 type channelDTO struct {
+	lock        sync.RWMutex
 	orderers    map[string][]string
 	channelName string
 }
 
 func newChannelDTO(chanName string) *channelDTO {
 	return &channelDTO{
+		lock:        sync.RWMutex{},
 		channelName: chanName,
 		orderers:    make(map[string][]string),
 	}
 }
 
 func (d *channelDTO) Orderers() []*api.HostEndpoint {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
 	return mapToArray(d.orderers)
 }
 
@@ -97,5 +123,7 @@ func (d *channelDTO) ChannelName() string {
 }
 
 func (d *channelDTO) addEndpointToOrderers(mspID, hostAddr string) {
+	d.lock.Lock()
+	defer d.lock.Unlock()
 	d.orderers[mspID] = append(d.orderers[mspID], hostAddr)
 }
