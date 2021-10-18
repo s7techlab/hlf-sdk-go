@@ -147,9 +147,12 @@ func (b *invokeBuilder) Do(ctx context.Context, options ...api.DoOption) (*fabri
 		return nil, ``, errors.Wrap(err, `failed to get chaincode definition`)
 	}
 
+	endorsingMspIDs := getEndorsingMSPs(ccd)
+
 	doOpts := &api.DoOptions{
-		Identity: b.identity,
-		Pool:     b.peerPool,
+		Identity:        b.identity,
+		Pool:            b.peerPool,
+		EndorsingMspIDs: endorsingMspIDs,
 	}
 	// set default options
 	if len(options) == 0 {
@@ -167,17 +170,6 @@ func (b *invokeBuilder) Do(ctx context.Context, options ...api.DoOption) (*fabri
 	if err != nil {
 		return nil, ``, errors.Wrap(err, `failed to get signed proposal`)
 	}
-
-	getEndorsingMSPs := func(d api.ChaincodeDiscoverer) (endorsingMspIDs []string) {
-
-		endorsers := d.Endorsers()
-		for i := range endorsers {
-			endorsingMspIDs = append(endorsingMspIDs, endorsers[i].MspID)
-		}
-		return endorsingMspIDs
-	}
-
-	endorsingMspIDs := getEndorsingMSPs(ccd)
 
 	peerResponses, err := b.processor.Send(ctx, proposal, endorsingMspIDs, b.peerPool)
 	if err != nil {
@@ -199,6 +191,14 @@ func (b *invokeBuilder) Do(ctx context.Context, options ...api.DoOption) (*fabri
 	}
 
 	return peerResponses[0].Response, tx, nil
+}
+
+func getEndorsingMSPs(d api.ChaincodeDiscoverer) (endorsingMspIDs []string) {
+	endorsers := d.Endorsers()
+	for i := range endorsers {
+		endorsingMspIDs = append(endorsingMspIDs, endorsers[i].MspID)
+	}
+	return endorsingMspIDs
 }
 
 func NewInvokeBuilder(ccCore *Core, fn string) api.ChaincodeInvokeBuilder {

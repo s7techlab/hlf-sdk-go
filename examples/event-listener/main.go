@@ -55,7 +55,10 @@ func main() {
 		log.Fatalln(`unable to initialize core:`, err)
 	}
 
-	cc := core.Channel(channel).Chaincode(chaincode)
+	cc, err := core.Channel(channel).Chaincode(context.Background(), chaincode)
+	if err != nil {
+		log.Fatalln(`unable to initialize channel:`, err)
+	}
 
 	var wg sync.WaitGroup
 

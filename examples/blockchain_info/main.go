@@ -5,36 +5,35 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/s7techlab/hlf-sdk-go/client"
 	_ "github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
-	_ "github.com/s7techlab/hlf-sdk-go/discovery/local"
 	"github.com/s7techlab/hlf-sdk-go/identity"
 )
 
 func main() {
+	// mspId := os.Getenv(`MSP_ID`)
+	// if mspId == `` {
+	// 	log.Fatalln(`MSP_ID env must be defined`)
+	// }
 
-	mspId := os.Getenv(`MSP_ID`)
-	if mspId == `` {
-		log.Fatalln(`MSP_ID env must be defined`)
-	}
+	// configPath := os.Getenv(`CONFIG_PATH`)
+	// if configPath == `` {
+	// 	log.Fatalln(`CONFIG_PATH env must be defined`)
+	// }
 
-	configPath := os.Getenv(`CONFIG_PATH`)
-	if configPath == `` {
-		log.Fatalln(`CONFIG_PATH env must be defined`)
-	}
+	// identityPath := os.Getenv(`IDENTITY_PATH`)
+	// if identityPath == `` {
+	// 	log.Fatalln(`KEY_PATH env must be defined`)
+	// }
+	mspId := "Org1MSP"
+	configPath := "./cfg_fab2.yaml"
 
-	identityPath := os.Getenv(`IDENTITY_PATH`)
-	if identityPath == `` {
-		log.Fatalln(`KEY_PATH env must be defined`)
-	}
-
-	id, err := identity.NewMSPIdentityFromPath(mspId, identityPath)
-
-	if err != nil {
-		log.Fatalln(err)
-	}
+	id, err := identity.NewMSPIdentity(
+		mspId,
+		"/Users/bogatyr285/work/go/src/github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/cert.pem",
+		"/Users/bogatyr285/work/go/src/github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/02a48982a93c9a1fbf7e9702f82d14578aef9662362346ecfe8b3cde50da6799_sk",
+	)
 
 	core, err := client.NewCore(mspId, id, client.WithConfigYaml(configPath))
 	if err != nil {

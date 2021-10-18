@@ -49,6 +49,8 @@ type DoOptions struct {
 	Pool     PeerPool
 
 	TxWaiter TxWaiter
+	// necessary only for 'tx waiter all'
+	EndorsingMspIDs []string
 }
 
 type DoOption func(opt *DoOptions) error
