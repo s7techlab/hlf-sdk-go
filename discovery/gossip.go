@@ -22,7 +22,7 @@ type GossipDiscoveryProvider struct {
 
 // return tls config for peers found via gossip
 type tlsConfigMapper interface {
-	tlsConfigForAddress(address string) *config.TlsConfig
+	TlsConfigForAddress(address string) *config.TlsConfig
 }
 
 func NewGossipDiscoveryProvider(
@@ -89,4 +89,13 @@ func (d *GossipDiscoveryProvider) Channel(ctx context.Context, channelName strin
 	}
 
 	return newChannelDiscovererTLSDecorator(chanDTO, d.tlsMapper), nil
+}
+
+func (d *GossipDiscoveryProvider) LocalPeers(ctx context.Context) (api.LocalPeersDiscoverer, error) {
+	localPeers, err := d.sd.LocalDiscovery(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return newLocalPeersDiscovererTLSDecorator(localPeers, d.tlsMapper), nil
 }

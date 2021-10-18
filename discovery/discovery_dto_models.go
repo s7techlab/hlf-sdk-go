@@ -127,3 +127,31 @@ func (d *channelDTO) addEndpointToOrderers(mspID, hostAddr string) {
 	defer d.lock.Unlock()
 	d.orderers[mspID] = append(d.orderers[mspID], hostAddr)
 }
+
+/* */
+// implementation of api.LocalPeersDiscoverer interface
+var _ api.LocalPeersDiscoverer = (*localPeersDTO)(nil)
+
+type localPeersDTO struct {
+	lock  sync.RWMutex
+	peers map[string][]string
+}
+
+func newLocalPeersDTO() *localPeersDTO {
+	return &localPeersDTO{
+		lock:  sync.RWMutex{},
+		peers: make(map[string][]string),
+	}
+}
+
+func (d *localPeersDTO) Peers() []*api.HostEndpoint {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+	return mapToArray(d.peers)
+}
+
+func (d *localPeersDTO) addEndpointToPeers(mspID, hostAddr string) {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	d.peers[mspID] = append(d.peers[mspID], hostAddr)
+}

@@ -208,6 +208,8 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 			if err != nil {
 				return nil, errors.Wrap(err, `failed serialize current identity`)
 			}
+			// add tls settings from mapper if they were provided
+			core.config.Discovery.DiscoveryMSPConnection.Tls = *tlsMapper.TlsConfigForAddress(core.config.Discovery.DiscoveryMSPConnection.Host)
 
 			core.discoveryProvider, err = discovery.NewGossipDiscoveryProvider(
 				core.ctx,
@@ -219,6 +221,32 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 			)
 			if err != nil {
 				return nil, errors.Wrap(err, `failed to initialize discovery provider`)
+			}
+			// discovery initialized, add local peers to the pool
+			lDiscoverer, err := core.discoveryProvider.LocalPeers(core.ctx)
+			if err != nil {
+				return nil, errors.Wrap(err, `failed to fetch local peers`)
+			}
+
+			peers := lDiscoverer.Peers()
+
+			for _, lp := range peers {
+				mspID := lp.MspID
+
+				for _, lpAddresses := range lp.HostAddresses {
+					peerCfg := config.ConnectionConfig{
+						Host: lpAddresses.Address,
+						Tls:  lpAddresses.TLSSettings,
+					}
+
+					if p, err := peer.New(peerCfg, core.logger); err != nil {
+						return nil, errors.Errorf("failed to initialize endorsers for MSP: %s:%s", mspID, err.Error())
+					} else {
+						if err = core.peerPool.Add(mspID, p, api.StrategyGRPC(5*time.Second)); err != nil {
+							return nil, errors.Wrap(err, `failed to add peer to pool`)
+						}
+					}
+				}
 			}
 		}
 	}

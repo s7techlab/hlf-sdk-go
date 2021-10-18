@@ -28,7 +28,7 @@ func NewTLSCertsMapper(certsCfg []config.TLSCertsMapperConfig) *TLSCertsMapper {
 
 // tlsConfigForAddress - get tls config for provided address
 // if config wasnt provided on startup time return disabled tls
-func (m *TLSCertsMapper) tlsConfigForAddress(address string) *config.TlsConfig {
+func (m *TLSCertsMapper) TlsConfigForAddress(address string) *config.TlsConfig {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -82,6 +82,7 @@ func (d *chaincodeDiscovererTLSDecorator) ChannelName() string {
 	return d.target.ChannelName()
 }
 
+/* */
 type channelDiscovererTLSDecorator struct {
 	target    api.ChannelDiscoverer
 	tlsMapper tlsConfigMapper
@@ -108,9 +109,30 @@ func (d *channelDiscovererTLSDecorator) ChannelName() string {
 func addTLSSettings(endpoints []*api.HostEndpoint, tlsMapper tlsConfigMapper) []*api.HostEndpoint {
 	for i := range endpoints {
 		for j := range endpoints[i].HostAddresses {
-			tlsCfg := tlsMapper.tlsConfigForAddress(endpoints[i].HostAddresses[j].Address)
+			tlsCfg := tlsMapper.TlsConfigForAddress(endpoints[i].HostAddresses[j].Address)
 			endpoints[i].HostAddresses[j].TLSSettings = *tlsCfg
 		}
 	}
 	return endpoints
+}
+
+/* */
+
+type localPeersDiscovererTLSDecorator struct {
+	target    api.LocalPeersDiscoverer
+	tlsMapper tlsConfigMapper
+}
+
+func newLocalPeersDiscovererTLSDecorator(
+	target api.LocalPeersDiscoverer,
+	tlsMapper tlsConfigMapper,
+) *localPeersDiscovererTLSDecorator {
+	return &localPeersDiscovererTLSDecorator{
+		target:    target,
+		tlsMapper: tlsMapper,
+	}
+}
+
+func (d *localPeersDiscovererTLSDecorator) Peers() []*api.HostEndpoint {
+	return addTLSSettings(d.target.Peers(), d.tlsMapper)
 }

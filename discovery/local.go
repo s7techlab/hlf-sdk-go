@@ -2,6 +2,7 @@ package discovery
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
@@ -70,6 +71,10 @@ func (d *LocalConfigProvider) Channel(_ context.Context, channelName string) (ap
 		return nil, ErrNoChaincodes
 	}
 	return nil, ErrChannelNotFound
+}
+
+func (d *LocalConfigProvider) LocalPeers(_ context.Context) (api.LocalPeersDiscoverer, error) {
+	return nil, fmt.Errorf("LocalPeers for LocalConfigProvider not implemented")
 }
 
 func NewLocalConfigProvider(options config.DiscoveryConfigOpts, tlsMapper tlsConfigMapper) (api.DiscoveryProvider, error) {

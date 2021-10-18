@@ -9,6 +9,7 @@ import (
 type DiscoveryProvider interface {
 	Chaincode(ctx context.Context, channelName string, ccName string) (ChaincodeDiscoverer, error)
 	Channel(ctx context.Context, channelName string) (ChannelDiscoverer, error)
+	LocalPeers(ctx context.Context) (LocalPeersDiscoverer, error)
 }
 
 // ChaincodeDiscoverer - looking for info about network, channel, chaincode in local configs or gossip
@@ -24,6 +25,11 @@ type ChaincodeDiscoverer interface {
 type ChannelDiscoverer interface {
 	Orderers() []*HostEndpoint
 	ChannelName() string
+}
+
+// discover local peers without providing info about channel, chaincode
+type LocalPeersDiscoverer interface {
+	Peers() []*HostEndpoint
 }
 
 type HostEndpoint struct {

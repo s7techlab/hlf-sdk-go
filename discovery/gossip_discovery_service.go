@@ -98,6 +98,26 @@ func (s *gossipServiceDiscovery) DiscoverChannel(ctx context.Context, chanName s
 	return s.parseDiscoverChannelResponse(dc, chanCfg), nil
 }
 
+// LocalDiscovery - returns local peers. Useful for peer pool initialization
+func (s *gossipServiceDiscovery) LocalDiscovery(ctx context.Context) (*localPeersDTO, error) {
+	req := discClient.
+		NewRequest().AddLocalPeersQuery()
+
+	res, err := s.client.Send(ctx, req, s.getAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	peers, err := res.ForLocal().Peers()
+	if err != nil {
+		return nil, err
+	}
+
+	dc := newLocalPeersDTO()
+
+	return s.parseDiscoverLocalPeers(dc, peers), nil
+}
+
 func (s *gossipServiceDiscovery) parseDiscoverChaincodeResponse(
 	dc *chaincodeDTO,
 	endorsers discClient.Endorsers,
@@ -119,6 +139,18 @@ func (s *gossipServiceDiscovery) parseDiscoverChaincodeResponse(
 			hostAddr := fmt.Sprintf("%s:%d", cfg.Orderers[ordererMSPID].Endpoint[i].Host, cfg.Orderers[ordererMSPID].Endpoint[i].Port)
 			dc.addEndpointToOrderers(ordererMSPID, hostAddr)
 		}
+	}
+
+	return dc
+}
+
+func (s *gossipServiceDiscovery) parseDiscoverLocalPeers(
+	dc *localPeersDTO,
+	peers []*discClient.Peer,
+) *localPeersDTO {
+	for i := range peers {
+		hostAddr := peers[i].AliveMessage.GetAliveMsg().Membership.Endpoint
+		dc.addEndpointToPeers(peers[i].MSPID, hostAddr)
 	}
 
 	return dc
