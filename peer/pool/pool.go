@@ -80,7 +80,7 @@ func (p *peerPool) poolChecker(ctx context.Context, aliveChan chan bool, peer *p
 			}
 
 			if !alive {
-				p.log.Debug(`Peer connection is dead`, zap.String(`peerUri`, peer.peer.Uri()))
+				p.log.Warn(`Peer connection is dead`, zap.String(`peerUri`, peer.peer.Uri()))
 			}
 
 			p.storeMx.Lock()
@@ -119,7 +119,8 @@ func (p *peerPool) Process(ctx context.Context, mspId string, proposal *peer.Sig
 
 		log.Debug(`Endorse sent on peer`, zap.Int(`peerPos`, pos), zap.String(`mspId`, mspId), zap.String(`uri`, poolPeer.peer.Uri()))
 
-		if propResp, err := poolPeer.peer.Endorse(ctx, proposal); err != nil {
+		propResp, err := poolPeer.peer.Endorse(ctx, proposal)
+		if err != nil {
 			// GRPC error
 			if s, ok := status.FromError(err); ok {
 				if s.Code() == codes.Unavailable {
@@ -139,10 +140,10 @@ func (p *peerPool) Process(ctx context.Context, mspId string, proposal *peer.Sig
 			log.Debug(`Peer endorsement failed`, zap.String(`mspId`, mspId), zap.String(`peer_uri`, poolPeer.peer.Uri()), zap.String(`error`, err.Error()))
 
 			return propResp, errors.Wrap(err, poolPeer.peer.Uri())
-		} else {
-			log.Debug(`Endorse complete on peer`, zap.String(`mspId`, mspId), zap.String(`uri`, poolPeer.peer.Uri()))
-			return propResp, nil
 		}
+
+		log.Debug(`Endorse complete on peer`, zap.String(`mspId`, mspId), zap.String(`uri`, poolPeer.peer.Uri()))
+		return propResp, nil
 	}
 
 	if lastError == nil {

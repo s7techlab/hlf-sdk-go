@@ -52,10 +52,9 @@ func (c *Core) Chaincode(serviceDiscCtx context.Context, ccName string) (api.Cha
 	for i := range endorsers {
 		for j := range endorsers[i].HostAddresses {
 			hostAddr := endorsers[i].HostAddresses[j]
+			mspID := endorsers[i].MspID
 
 			errGr.Go(func() error {
-				mspID := endorsers[i].MspID
-
 				grpcCfg := config.ConnectionConfig{
 					Host: hostAddr.Address,
 					Tls:  hostAddr.TLSSettings,

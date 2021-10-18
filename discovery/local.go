@@ -11,21 +11,17 @@ import (
 )
 
 // implementation of api.DiscoveryProvider interface
-var _ api.DiscoveryProvider = (*LocalConfigDiscoveryProvider)(nil)
+var _ api.DiscoveryProvider = (*LocalConfigProvider)(nil)
 
-type LocalConfigDiscoveryProvider struct {
+type LocalConfigProvider struct {
 	tlsMapper tlsConfigMapper
-	opts      opts
+	channels  []config.DiscoveryChannel `yaml:"channels"`
 }
 
-type opts struct {
-	Channels []config.DiscoveryChannel `yaml:"channels"`
-}
-
-func (d *LocalConfigDiscoveryProvider) Chaincode(_ context.Context, channelName, ccName string) (api.ChaincodeDiscoverer, error) {
+func (d *LocalConfigProvider) Chaincode(_ context.Context, channelName, ccName string) (api.ChaincodeDiscoverer, error) {
 	var channelFoundFlag bool
 
-	for _, ch := range d.opts.Channels {
+	for _, ch := range d.channels {
 		if ch.Name == channelName {
 			channelFoundFlag = true
 			for _, cc := range ch.Chaincodes {
@@ -53,10 +49,10 @@ func (d *LocalConfigDiscoveryProvider) Chaincode(_ context.Context, channelName,
 	return nil, ErrChannelNotFound
 }
 
-func (d *LocalConfigDiscoveryProvider) Channel(_ context.Context, channelName string) (api.ChannelDiscoverer, error) {
+func (d *LocalConfigProvider) Channel(_ context.Context, channelName string) (api.ChannelDiscoverer, error) {
 	var channelFoundFlag bool
 
-	for _, ch := range d.opts.Channels {
+	for _, ch := range d.channels {
 		if ch.Name == channelName {
 			channelFoundFlag = true
 
@@ -76,11 +72,11 @@ func (d *LocalConfigDiscoveryProvider) Channel(_ context.Context, channelName st
 	return nil, ErrChannelNotFound
 }
 
-func NewLocalConfigDiscoveryProvider(options config.DiscoveryConfigOpts, tlsMapper tlsConfigMapper) (api.DiscoveryProvider, error) {
-	var opts opts
-	if err := mapstructure.Decode(options, &opts); err != nil {
+func NewLocalConfigProvider(options config.DiscoveryConfigOpts, tlsMapper tlsConfigMapper) (api.DiscoveryProvider, error) {
+	var channels []config.DiscoveryChannel
+	if err := mapstructure.Decode(options, &channels); err != nil {
 		return nil, errors.Wrap(err, `failed to decode params`)
 	}
 
-	return &LocalConfigDiscoveryProvider{opts: opts, tlsMapper: tlsMapper}, nil
+	return &LocalConfigProvider{channels: channels, tlsMapper: tlsMapper}, nil
 }

@@ -196,7 +196,7 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 
 		switch core.config.Discovery.Type {
 		case string(discovery.LocalConfigServiceDiscoveryType):
-			core.discoveryProvider, err = discovery.NewLocalConfigDiscoveryProvider(core.config.Discovery.Options, tlsMapper)
+			core.discoveryProvider, err = discovery.NewLocalConfigProvider(core.config.Discovery.Options, tlsMapper)
 			if err != nil {
 				return nil, errors.Wrap(err, `failed to initialize discovery provider`)
 			}
