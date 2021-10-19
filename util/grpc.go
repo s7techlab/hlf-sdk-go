@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"sync"
 	"time"
 
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
@@ -34,6 +35,9 @@ var (
 		Time:    60,
 		Timeout: 5,
 	}
+	// NewGRPCOptionsFromConfig (called by peer.New) can be called concurrently
+	// because of reading vars above we need mutex
+	mu = sync.Mutex{}
 )
 
 const (
@@ -92,6 +96,8 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 		grpcOptions = append(grpcOptions, grpc.WithInsecure())
 	}
 
+	mu.Lock()
+	defer mu.Unlock()
 	// Set default keep alive
 	if c.GRPC.KeepAlive == nil {
 		c.GRPC.KeepAlive = DefaultGRPCKeepAliveConfig

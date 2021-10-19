@@ -53,14 +53,14 @@ func (c *Core) Chaincode(serviceDiscCtx context.Context, ccName string) (api.Cha
 		for j := range endorsers[i].HostAddresses {
 			hostAddr := endorsers[i].HostAddresses[j]
 			mspID := endorsers[i].MspID
+			grpcCfg := config.ConnectionConfig{
+				Host: hostAddr.Address,
+				Tls:  hostAddr.TLSSettings,
+			}
+			l := c.log
 
 			errGr.Go(func() error {
-				grpcCfg := config.ConnectionConfig{
-					Host: hostAddr.Address,
-					Tls:  hostAddr.TLSSettings,
-				}
-
-				p, err := peer.New(grpcCfg, c.log)
+				p, err := peer.New(grpcCfg, l)
 				if err != nil {
 					return fmt.Errorf("failed to initialize endorsers for MSP: %s: %w", mspID, err)
 				}
