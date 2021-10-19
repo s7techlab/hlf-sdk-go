@@ -31,8 +31,9 @@ func main() {
 
 	id, err := identity.NewMSPIdentity(
 		mspId,
-		"/Users/bogatyr285/work/go/src/github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/cert.pem",
-		"/Users/bogatyr285/work/go/src/github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/02a48982a93c9a1fbf7e9702f82d14578aef9662362346ecfe8b3cde50da6799_sk",
+		// PROVIDE YOUR OWN PATHS
+		"../fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/cert.pem",
+		"../fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/02a48982a93c9a1fbf7e9702f82d14578aef9662362346ecfe8b3cde50da6799_sk",
 	)
 
 	core, err := client.NewCore(mspId, id, client.WithConfigYaml(configPath))

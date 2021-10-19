@@ -4,6 +4,7 @@
 
 Alpha version, **use at your own risk!**
 
+Code example with gossip service discovery available at: `examples/cc_call`
 #### Project structure:
 
 - api - definitions of various cores such as member and operator

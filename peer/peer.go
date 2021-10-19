@@ -94,7 +94,9 @@ func New(c config.ConnectionConfig, log *zap.Logger) (api.Peer, error) {
 
 	//ctx, _ := context.WithTimeout(context.Background(), c.Timeout.Duration)
 	log.Debug(`dial to peer`, zap.String(`host`, c.Host), zap.Duration(`timeout`, timeout))
+
 	ctx, _ := context.WithTimeout(context.Background(), timeout)
+
 	conn, err := grpc.DialContext(ctx, c.Host, opts...)
 	if err != nil {
 		return nil, fmt.Errorf(`grpc dial to host=%s: %w`, c.Host, err)

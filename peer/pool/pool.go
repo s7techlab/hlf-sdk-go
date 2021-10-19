@@ -183,7 +183,7 @@ func (p *peerPool) getFirstReadyPeer(mspId string) (api.Peer, error) {
 	log.Debug(`Peers pool`, zap.String(`mspId`, mspId), zap.Int(`peerNum`, len(peers)))
 
 	for _, poolPeer := range peers {
-		if poolPeer.ready == true {
+		if poolPeer.ready {
 			return poolPeer.peer, nil
 		}
 	}
