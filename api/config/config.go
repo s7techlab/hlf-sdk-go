@@ -71,7 +71,7 @@ type TlsConfig struct {
 type DiscoveryConfig struct {
 	Type string `yaml:"type"`
 	// connection to local MSP which will be used for gossip discovery
-	Connection ConnectionConfig `yaml:"connection"`
+	Connection *ConnectionConfig `yaml:"connection"`
 	// configuration of channels/chaincodes in local(from config) discovery type
 	Options DiscoveryConfigOpts `yaml:"options"`
 }
@@ -105,7 +105,7 @@ type Duration struct {
 
 type TLSCertsMapperConfig struct {
 	Address   string    `yaml:"address"`
-	TlsConfig TlsConfig `yaml:"tls_config"`
+	TlsConfig TlsConfig `yaml:"tls"`
 }
 
 func (d *Duration) UnmarshalYAML(unmarshal func(interface{}) error) error {
