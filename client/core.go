@@ -201,6 +201,9 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 				return nil, errors.Wrap(err, `failed to initialize discovery provider`)
 			}
 		case string(discovery.GossipServiceDiscoveryType):
+			if core.config.Discovery.Connection == nil {
+				return nil, errors.Wrap(err, `discovery connection config wasn't provided. configure 'discovery.connection'`)
+			}
 			identitySigner := func(msg []byte) ([]byte, error) {
 				return core.CurrentIdentity().Sign(msg)
 			}
@@ -213,7 +216,7 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 
 			core.discoveryProvider, err = discovery.NewGossipDiscoveryProvider(
 				core.ctx,
-				core.config.Discovery.Connection,
+				*core.config.Discovery.Connection,
 				core.logger,
 				identitySigner,
 				clientIdentity,
