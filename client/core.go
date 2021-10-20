@@ -209,11 +209,11 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 				return nil, errors.Wrap(err, `failed serialize current identity`)
 			}
 			// add tls settings from mapper if they were provided
-			core.config.Discovery.DiscoveryMSPConnection.Tls = *tlsMapper.TlsConfigForAddress(core.config.Discovery.DiscoveryMSPConnection.Host)
+			core.config.Discovery.Connection.Tls = *tlsMapper.TlsConfigForAddress(core.config.Discovery.Connection.Host)
 
 			core.discoveryProvider, err = discovery.NewGossipDiscoveryProvider(
 				core.ctx,
-				core.config.Discovery.DiscoveryMSPConnection,
+				core.config.Discovery.Connection,
 				core.logger,
 				identitySigner,
 				clientIdentity,

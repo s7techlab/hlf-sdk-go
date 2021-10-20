@@ -71,7 +71,7 @@ type TlsConfig struct {
 type DiscoveryConfig struct {
 	Type string `yaml:"type"`
 	// connection to local MSP which will be used for gossip discovery
-	DiscoveryMSPConnection ConnectionConfig `yaml:"discovery_msp_connection"`
+	Connection ConnectionConfig `yaml:"connection"`
 	// configuration of channels/chaincodes in local(from config) discovery type
 	Options DiscoveryConfigOpts `yaml:"options"`
 }
@@ -81,17 +81,15 @@ type DiscoveryConfig struct {
 type DiscoveryConfigOpts map[string]interface{}
 
 type DiscoveryChannel struct {
-	Name        string               `json:"channel_name" yaml:"name"`
-	Description string               `json:"channel_description" yaml:"description"`
-	Chaincodes  []DiscoveryChaincode `json:"chaincodes" yaml:"description"`
-	Orderers    []ConnectionConfig   `json:"orderers" yaml:"orderers"`
+	Name       string               `json:"channel_name" yaml:"name"`
+	Chaincodes []DiscoveryChaincode `json:"chaincodes" yaml:"chaincodes"`
+	Orderers   []ConnectionConfig   `json:"orderers" yaml:"orderers"`
 }
 
 type DiscoveryChaincode struct {
-	Name        string `json:"chaincode_name" yaml:"name"`
-	Version     string `json:"version"`
-	Description string `json:"description"`
-	Policy      string `json:"policy"`
+	Name    string `json:"chaincode_name" yaml:"name"`
+	Version string `json:"version"`
+	Policy  string `json:"policy"`
 }
 
 type CryptoConfig struct {

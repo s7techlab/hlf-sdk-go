@@ -1,6 +1,6 @@
 discovery:
   type: gossip
-  discovery_msp_connection:
+  connection:
       host: peer0.org1.example.com:7051
       timeout: 5s 
 
