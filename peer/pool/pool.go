@@ -2,14 +2,13 @@ package pool
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	"github.com/s7techlab/hlf-sdk-go/v2/api/config"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -40,9 +39,7 @@ func (p *peerPool) Add(mspId string, peer api.Peer, peerChecker api.PeerPoolChec
 	if peers, ok := p.store[mspId]; !ok {
 		p.store[mspId] = p.addPeer(peer, make([]*peerPoolPeer, 0), peerChecker)
 	} else {
-		if p.searchPeer(peer, peers) {
-			return fmt.Errorf(`peer %s: %w`, peer.Uri(), api.ErrPeerAlreadySet)
-		} else {
+		if !p.isPeerInPool(peer, peers) {
 			p.store[mspId] = p.addPeer(peer, peers, peerChecker)
 		}
 	}
@@ -57,7 +54,7 @@ func (p *peerPool) addPeer(peer api.Peer, peerSet []*peerPoolPeer, peerChecker a
 	return append(peerSet, pp)
 }
 
-func (p *peerPool) searchPeer(peer api.Peer, peerSet []*peerPoolPeer) bool {
+func (p *peerPool) isPeerInPool(peer api.Peer, peerSet []*peerPoolPeer) bool {
 	for _, pp := range peerSet {
 		if peer.Uri() == pp.peer.Uri() {
 			return true
@@ -83,7 +80,7 @@ func (p *peerPool) poolChecker(ctx context.Context, aliveChan chan bool, peer *p
 			}
 
 			if !alive {
-				p.log.Debug(`Peer connection is dead`, zap.String(`peerUri`, peer.peer.Uri()))
+				p.log.Warn(`Peer connection is dead`, zap.String(`peerUri`, peer.peer.Uri()))
 			}
 
 			p.storeMx.Lock()
@@ -122,7 +119,8 @@ func (p *peerPool) Process(ctx context.Context, mspId string, proposal *peer.Sig
 
 		log.Debug(`Endorse sent on peer`, zap.Int(`peerPos`, pos), zap.String(`mspId`, mspId), zap.String(`uri`, poolPeer.peer.Uri()))
 
-		if propResp, err := poolPeer.peer.Endorse(ctx, proposal); err != nil {
+		propResp, err := poolPeer.peer.Endorse(ctx, proposal)
+		if err != nil {
 			// GRPC error
 			if s, ok := status.FromError(err); ok {
 				if s.Code() == codes.Unavailable {
@@ -142,10 +140,10 @@ func (p *peerPool) Process(ctx context.Context, mspId string, proposal *peer.Sig
 			log.Debug(`Peer endorsement failed`, zap.String(`mspId`, mspId), zap.String(`peer_uri`, poolPeer.peer.Uri()), zap.String(`error`, err.Error()))
 
 			return propResp, errors.Wrap(err, poolPeer.peer.Uri())
-		} else {
-			log.Debug(`Endorse complete on peer`, zap.String(`mspId`, mspId), zap.String(`uri`, poolPeer.peer.Uri()))
-			return propResp, nil
 		}
+
+		log.Debug(`Endorse complete on peer`, zap.String(`mspId`, mspId), zap.String(`uri`, poolPeer.peer.Uri()))
+		return propResp, nil
 	}
 
 	if lastError == nil {
@@ -185,7 +183,7 @@ func (p *peerPool) getFirstReadyPeer(mspId string) (api.Peer, error) {
 	log.Debug(`Peers pool`, zap.String(`mspId`, mspId), zap.Int(`peerNum`, len(peers)))
 
 	for _, poolPeer := range peers {
-		if poolPeer.ready == true {
+		if poolPeer.ready {
 			return poolPeer.peer, nil
 		}
 	}

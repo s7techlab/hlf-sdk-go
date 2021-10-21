@@ -8,7 +8,7 @@ import (
 
 type Channel interface {
 	// Chaincode returns chaincode instance by chaincode name
-	Chaincode(name string) Chaincode
+	Chaincode(ctx context.Context, name string) (Chaincode, error)
 	// Joins channel
 	Join(ctx context.Context) error
 	// CSCC implements Configuration System Chaincode (CSCC)

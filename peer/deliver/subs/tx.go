@@ -2,13 +2,13 @@ package subs
 
 import (
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/util/txflags"
+	"github.com/s7techlab/hlf-sdk-go/v2/util/txflags"
 
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/protoutil"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/v2/api"
 )
 
 func NewTxSubscription(txId api.ChaincodeTx) *TxSubscription {

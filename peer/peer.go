@@ -10,10 +10,10 @@ import (
 	fabricPeer "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/peer/deliver"
-	"github.com/s7techlab/hlf-sdk-go/util"
+	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	"github.com/s7techlab/hlf-sdk-go/v2/api/config"
+	"github.com/s7techlab/hlf-sdk-go/v2/peer/deliver"
+	"github.com/s7techlab/hlf-sdk-go/v2/util"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
@@ -94,7 +94,10 @@ func New(c config.ConnectionConfig, log *zap.Logger) (api.Peer, error) {
 
 	//ctx, _ := context.WithTimeout(context.Background(), c.Timeout.Duration)
 	log.Debug(`dial to peer`, zap.String(`host`, c.Host), zap.Duration(`timeout`, timeout))
-	ctx, _ := context.WithTimeout(context.Background(), timeout)
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
 	conn, err := grpc.DialContext(ctx, c.Host, opts...)
 	if err != nil {
 		return nil, fmt.Errorf(`grpc dial to host=%s: %w`, c.Host, err)

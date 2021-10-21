@@ -9,10 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/s7techlab/hlf-sdk-go/client"
-	_ "github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
-	_ "github.com/s7techlab/hlf-sdk-go/discovery/local"
-	"github.com/s7techlab/hlf-sdk-go/identity"
+	"github.com/s7techlab/hlf-sdk-go/v2/client"
+	_ "github.com/s7techlab/hlf-sdk-go/v2/crypto/ecdsa"
+	"github.com/s7techlab/hlf-sdk-go/v2/identity"
 	"go.uber.org/zap"
 )
 
@@ -55,7 +54,10 @@ func main() {
 		log.Fatalln(`unable to initialize core:`, err)
 	}
 
-	cc := core.Channel(channel).Chaincode(chaincode)
+	cc, err := core.Channel(channel).Chaincode(context.Background(), chaincode)
+	if err != nil {
+		log.Fatalln(`unable to initialize channel:`, err)
+	}
 
 	var wg sync.WaitGroup
 

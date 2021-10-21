@@ -9,8 +9,8 @@ import (
 	"github.com/hyperledger/fabric/common/util"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/api"
-	peerSDK "github.com/s7techlab/hlf-sdk-go/peer"
+	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	peerSDK "github.com/s7techlab/hlf-sdk-go/v2/peer"
 )
 
 // These are function names from Invoke first parameter
@@ -74,7 +74,7 @@ func (c *csccV1) GetChannels(ctx context.Context) (*peer.ChannelQueryResponse, e
 }
 
 func (c *csccV1) endorse(ctx context.Context, fn string, args ...string) ([]byte, error) {
-	prop, _, err := c.processor.CreateProposal(&api.DiscoveryChaincode{Name: csccName, Type: api.CCTypeGoLang}, c.identity, fn, util.ToChaincodeArgs(args...), nil)
+	prop, _, err := c.processor.CreateProposal(csccName, c.identity, fn, util.ToChaincodeArgs(args...), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to create proposal`)
 	}

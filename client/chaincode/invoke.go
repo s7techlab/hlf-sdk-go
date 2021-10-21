@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	fabricPeer "github.com/hyperledger/fabric-protos-go/peer"
@@ -12,9 +13,9 @@ import (
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/client/chaincode/txwaiter"
-	"github.com/s7techlab/hlf-sdk-go/peer"
+	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	"github.com/s7techlab/hlf-sdk-go/v2/client/chaincode/txwaiter"
+	"github.com/s7techlab/hlf-sdk-go/v2/peer"
 )
 
 type invokeBuilder struct {
@@ -141,15 +142,17 @@ func (b *invokeBuilder) Do(ctx context.Context, options ...api.DoOption) (*fabri
 		return nil, ``, err
 	}
 
-	cc, err := b.ccCore.dp.Chaincode(b.ccCore.channelName, b.ccCore.name)
+	ccd, err := b.ccCore.dp.Chaincode(ctx, b.ccCore.channelName, b.ccCore.name)
 	if err != nil {
 		return nil, ``, errors.Wrap(err, `failed to get chaincode definition`)
 	}
 
+	endorsingMspIDs := getEndorsingMSPs(ccd)
+
 	doOpts := &api.DoOptions{
-		DiscoveryChaincode: cc,
-		Identity:           b.identity,
-		Pool:               b.peerPool,
+		Identity:        b.identity,
+		Pool:            b.peerPool,
+		EndorsingMspIDs: endorsingMspIDs,
 	}
 	// set default options
 	if len(options) == 0 {
@@ -163,12 +166,12 @@ func (b *invokeBuilder) Do(ctx context.Context, options ...api.DoOption) (*fabri
 	}
 	b.txWaiter = doOpts.TxWaiter
 
-	proposal, tx, err := b.processor.CreateProposal(cc, b.identity, b.fn, b.args, b.transientArgs)
+	proposal, tx, err := b.processor.CreateProposal(ccd.ChaincodeName(), b.identity, b.fn, b.args, b.transientArgs)
 	if err != nil {
 		return nil, ``, errors.Wrap(err, `failed to get signed proposal`)
 	}
 
-	peerResponses, err := b.processor.Send(ctx, proposal, cc, b.peerPool)
+	peerResponses, err := b.processor.Send(ctx, proposal, endorsingMspIDs, b.peerPool)
 	if err != nil {
 		return nil, tx, errors.Wrap(err, `failed to collect peer responses`)
 	}
@@ -188,6 +191,14 @@ func (b *invokeBuilder) Do(ctx context.Context, options ...api.DoOption) (*fabri
 	}
 
 	return peerResponses[0].Response, tx, nil
+}
+
+func getEndorsingMSPs(d api.ChaincodeDiscoverer) (endorsingMspIDs []string) {
+	endorsers := d.Endorsers()
+	for i := range endorsers {
+		endorsingMspIDs = append(endorsingMspIDs, endorsers[i].MspID)
+	}
+	return endorsingMspIDs
 }
 
 func NewInvokeBuilder(ccCore *Core, fn string) api.ChaincodeInvokeBuilder {

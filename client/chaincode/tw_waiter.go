@@ -1,7 +1,7 @@
 package chaincode
 
 import (
-	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/v2/api"
 )
 
 // TxWaitBuilder function signature for plugable setter on Do options

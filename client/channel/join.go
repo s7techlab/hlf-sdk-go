@@ -7,9 +7,9 @@ import (
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/orderer"
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
-	"github.com/s7techlab/hlf-sdk-go/util"
+	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	"github.com/s7techlab/hlf-sdk-go/v2/client/chaincode/system"
+	"github.com/s7techlab/hlf-sdk-go/v2/util"
 )
 
 func (c *Core) Join(ctx context.Context) error {
@@ -26,7 +26,7 @@ func (c *Core) Join(ctx context.Context) error {
 		cscc = system.NewCSCCV1(c.peerPool, c.identity)
 	}
 
-	return cscc.JoinChain(ctx, c.name, channelGenesis)
+	return cscc.JoinChain(ctx, c.chanName, channelGenesis)
 }
 
 func (c *Core) getGenesisBlockFromOrderer(ctx context.Context) (*common.Block, error) {
@@ -46,7 +46,7 @@ func (c *Core) getGenesisBlockFromOrderer(ctx context.Context) (*common.Block, e
 		return nil, errors.Wrap(err, `failed to get new txId`)
 	}
 
-	chHeader, err := util.NewChannelHeader(common.HeaderType_DELIVER_SEEK_INFO, txId, c.name, 0, nil)
+	chHeader, err := util.NewChannelHeader(common.HeaderType_DELIVER_SEEK_INFO, txId, c.chanName, 0, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to get channel header`)
 	}

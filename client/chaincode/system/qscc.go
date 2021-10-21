@@ -12,8 +12,8 @@ import (
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	peerSDK "github.com/s7techlab/hlf-sdk-go/peer"
+	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	peerSDK "github.com/s7techlab/hlf-sdk-go/v2/peer"
 )
 
 type qscc struct {
@@ -82,7 +82,7 @@ func (c *qscc) GetBlockByTxID(ctx context.Context, channelName string, tx api.Ch
 	}
 }
 func (c *qscc) endorse(ctx context.Context, fn string, args ...string) ([]byte, error) {
-	prop, _, err := c.processor.CreateProposal(&api.DiscoveryChaincode{Name: qsccName, Type: api.CCTypeGoLang}, c.identity, fn, util.ToChaincodeArgs(args...), nil)
+	prop, _, err := c.processor.CreateProposal(qsccName, c.identity, fn, util.ToChaincodeArgs(args...), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to create proposal`)
 	}

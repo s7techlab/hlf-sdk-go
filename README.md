@@ -1,9 +1,10 @@
 ## S7 Hyperledger Fabric SDK
 
-[![Coverage Status](https://coveralls.io/repos/github/s7techlab/hlf-sdk-go/badge.svg)](https://coveralls.io/github/s7techlab/hlf-sdk-go)
+[![Coverage Status](https://coveralls.io/repos/github/s7techlab/hlf-sdk-go/v2/badge.svg)](https://coveralls.io/github/s7techlab/hlf-sdk-go/v2)
 
 Alpha version, **use at your own risk!**
 
+Code example with gossip service discovery available at: `examples/cc_call`
 #### Project structure:
 
 - api - definitions of various cores such as member and operator

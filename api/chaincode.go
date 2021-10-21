@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
@@ -44,11 +45,12 @@ type TxWaiter interface {
 }
 
 type DoOptions struct {
-	DiscoveryChaincode *DiscoveryChaincode
-	Identity           msp.SigningIdentity
-	Pool               PeerPool
+	Identity msp.SigningIdentity
+	Pool     PeerPool
 
 	TxWaiter TxWaiter
+	// necessary only for 'tx waiter all'
+	EndorsingMspIDs []string
 }
 
 type DoOption func(opt *DoOptions) error

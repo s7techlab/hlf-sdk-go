@@ -10,11 +10,10 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/crypto"
-	"github.com/s7techlab/hlf-sdk-go/discovery"
-	"github.com/s7techlab/hlf-sdk-go/peer"
+	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	"github.com/s7techlab/hlf-sdk-go/v2/api/config"
+	"github.com/s7techlab/hlf-sdk-go/v2/crypto"
+	"github.com/s7techlab/hlf-sdk-go/v2/peer"
 )
 
 // CoreOpt describes opt which will be applied to coreOptions
@@ -101,21 +100,6 @@ func WithCrypto(cc config.CryptoConfig) CoreOpt {
 		c.cs, err = crypto.GetSuite(cc.Type, cc.Options)
 		if err != nil {
 			return fmt.Errorf("get crypto suite: %w", err)
-		}
-		return nil
-	}
-}
-
-// WithDiscovery allows to init core with discovery provider.
-func WithDiscovery(dc config.DiscoveryConfig) CoreOpt {
-	return func(c *core) error {
-		p, err := discovery.GetProvider(dc.Type)
-		if err != nil {
-			return fmt.Errorf("get local provider: %w", err)
-		}
-		c.discoveryProvider, err = p.Initialize(dc.Options, c.peerPool)
-		if err != nil {
-			return fmt.Errorf("initialize discovery provider: %w", err)
 		}
 		return nil
 	}

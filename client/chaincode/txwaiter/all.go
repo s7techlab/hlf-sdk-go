@@ -6,28 +6,22 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/util"
+	"github.com/s7techlab/hlf-sdk-go/v2/api"
 )
 
 // All - need use on invoke flow for check transaction codes for each organizations from endorsement policy
 // txwaiter.All  will be made to subscribe tx for each of the peer organizations from the endorsement policy
 func All(cfg *api.DoOptions) (api.TxWaiter, error) {
-	mspIds, err := util.GetMSPFromPolicy(cfg.DiscoveryChaincode.Policy)
-	if err != nil {
-		return nil, err
-	}
-
 	waiter := &allMspWaiter{
 		onceSet: new(sync.Once),
 	}
 
 	// make delivers for each mspID
 	errD := new(api.MultiError)
-	for i := range mspIds {
-		peerDeliver, err := cfg.Pool.DeliverClient(mspIds[i], cfg.Identity)
+	for i := range cfg.EndorsingMspIDs {
+		peerDeliver, err := cfg.Pool.DeliverClient(cfg.EndorsingMspIDs[i], cfg.Identity)
 		if err != nil {
-			errD.Add(errors.Wrapf(err, "%s: failed to get delivery client", mspIds[i]))
+			errD.Add(errors.Wrapf(err, "%s: failed to get delivery client", cfg.EndorsingMspIDs[i]))
 			continue
 		}
 
