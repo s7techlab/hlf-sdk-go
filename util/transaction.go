@@ -7,7 +7,7 @@ import (
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
 
-	"github.com/s7techlab/hlf-sdk-go/crypto"
+	"github.com/s7techlab/hlf-sdk-go/v2/crypto"
 )
 
 // NewTxWithNonce generates new transaction id with crypto nonce

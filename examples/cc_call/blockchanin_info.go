@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/s7techlab/hlf-sdk-go/client"
-	_ "github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
-	"github.com/s7techlab/hlf-sdk-go/identity"
+	"github.com/s7techlab/hlf-sdk-go/v2/client"
+	_ "github.com/s7techlab/hlf-sdk-go/v2/crypto/ecdsa"
+	"github.com/s7techlab/hlf-sdk-go/v2/identity"
 )
 
 func main() {

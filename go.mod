@@ -1,4 +1,4 @@
-module github.com/s7techlab/hlf-sdk-go
+module github.com/s7techlab/hlf-sdk-go/v2
 
 go 1.12
 

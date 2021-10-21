@@ -3,7 +3,7 @@ package discovery
 import (
 	"sync"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/v2/api"
 )
 
 // implementation of api.ChaincodeDiscoverer interface

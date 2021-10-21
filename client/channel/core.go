@@ -10,10 +10,10 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
-	"github.com/s7techlab/hlf-sdk-go/peer"
+	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	"github.com/s7techlab/hlf-sdk-go/v2/api/config"
+	"github.com/s7techlab/hlf-sdk-go/v2/client/chaincode"
+	"github.com/s7techlab/hlf-sdk-go/v2/peer"
 )
 
 type Core struct {

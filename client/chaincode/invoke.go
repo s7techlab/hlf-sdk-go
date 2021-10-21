@@ -13,9 +13,9 @@ import (
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/client/chaincode/txwaiter"
-	"github.com/s7techlab/hlf-sdk-go/peer"
+	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	"github.com/s7techlab/hlf-sdk-go/v2/client/chaincode/txwaiter"
+	"github.com/s7techlab/hlf-sdk-go/v2/peer"
 )
 
 type invokeBuilder struct {

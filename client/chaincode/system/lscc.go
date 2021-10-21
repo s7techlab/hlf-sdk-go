@@ -12,8 +12,8 @@ import (
 	lsccPkg "github.com/hyperledger/fabric/core/scc/lscc"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/api"
-	peerSDK "github.com/s7techlab/hlf-sdk-go/peer"
+	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	peerSDK "github.com/s7techlab/hlf-sdk-go/v2/peer"
 )
 
 type lscc struct {

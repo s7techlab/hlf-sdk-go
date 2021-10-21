@@ -10,10 +10,10 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/crypto"
-	"github.com/s7techlab/hlf-sdk-go/peer"
+	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	"github.com/s7techlab/hlf-sdk-go/v2/api/config"
+	"github.com/s7techlab/hlf-sdk-go/v2/crypto"
+	"github.com/s7techlab/hlf-sdk-go/v2/peer"
 )
 
 // CoreOpt describes opt which will be applied to coreOptions

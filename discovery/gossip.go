@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	discClient "github.com/hyperledger/fabric/discovery/client"
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/util"
+	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	"github.com/s7techlab/hlf-sdk-go/v2/api/config"
+	"github.com/s7techlab/hlf-sdk-go/v2/util"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )

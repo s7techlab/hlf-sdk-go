@@ -3,8 +3,8 @@ package discovery
 import (
 	"sync"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	"github.com/s7techlab/hlf-sdk-go/v2/api/config"
 )
 
 // implementation of tlsConfigMapper interface

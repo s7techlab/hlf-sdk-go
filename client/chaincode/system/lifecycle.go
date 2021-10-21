@@ -9,8 +9,8 @@ import (
 	"github.com/hyperledger/fabric/core/chaincode/lifecycle"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/api"
-	peerSDK "github.com/s7techlab/hlf-sdk-go/peer"
+	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	peerSDK "github.com/s7techlab/hlf-sdk-go/v2/peer"
 )
 
 type lifecycleCC struct {
