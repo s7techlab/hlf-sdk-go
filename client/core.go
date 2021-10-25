@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	fabOrderer "github.com/hyperledger/fabric-protos-go/orderer"
+	fabPeer "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/core/chaincode/platforms/golang"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
@@ -25,6 +27,9 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/v2/peer/pool"
 	"github.com/s7techlab/hlf-sdk-go/v2/util"
 )
+
+// implementation of api.DiscoveryProvider interface
+var _ api.Core = (*core)(nil)
 
 type core struct {
 	ctx               context.Context
@@ -128,6 +133,37 @@ func (c *core) Channel(name string) api.Channel {
 
 func (c *core) FabricV2() bool {
 	return c.fabricV2
+}
+
+func (c *core) ChannelChaincode(ctx context.Context, chanName string, ccName string) (api.Chaincode, error) {
+	return c.Channel(chanName).Chaincode(ctx, ccName)
+}
+
+func (c *core) Events(
+	ctx context.Context,
+	chanName string,
+	ccName string,
+	eventCCSeekOption ...func() (*fabOrderer.SeekPosition, *fabOrderer.SeekPosition),
+) (chan *fabPeer.ChaincodeEvent, error) {
+	identity := c.CurrentIdentity()
+	mspID := identity.GetMSPIdentifier()
+
+	dc, err := c.PeerPool().DeliverClient(mspID, identity)
+	if err != nil {
+		return nil, err
+	}
+
+	seekOpts := []api.EventCCSeekOption{}
+	for i := range eventCCSeekOption {
+		seekOpts = append(seekOpts, eventCCSeekOption[i])
+	}
+
+	subcription, err := dc.SubscribeCC(ctx, chanName, ccName, seekOpts...)
+	if err != nil {
+		return nil, err
+	}
+
+	return subcription.Events(), nil
 }
 
 func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, error) {
