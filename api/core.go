@@ -31,9 +31,9 @@ type Core interface {
 	Chaincode(name string) ChaincodePackage
 	// FabricV2 returns if core works in fabric v2 mode
 	FabricV2() bool
-	// shortcut for Channel().Chaincode
+	// ChannelChaincode - shortcut for Channel().Chaincode
 	ChannelChaincode(ctx context.Context, chanName string, ccName string) (Chaincode, error)
-	// shortcut for PeerPool().DeliverClient(...).SubscribeCC(...).Events()
+	// Events - shortcut for PeerPool().DeliverClient(...).SubscribeCC(...).Events()
 	// subscribe on chaincode events using name of channel, chaincode and block offset
 	Events(
 		ctx context.Context,
