@@ -28,7 +28,7 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/v2/util"
 )
 
-// implementation of api.DiscoveryProvider interface
+// implementation of api.Сore interface
 var _ api.Core = (*core)(nil)
 
 type core struct {
