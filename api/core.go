@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 
+	"github.com/hyperledger/fabric-protos-go/orderer"
+	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
 )
 
@@ -29,6 +31,16 @@ type Core interface {
 	Chaincode(name string) ChaincodePackage
 	// FabricV2 returns if core works in fabric v2 mode
 	FabricV2() bool
+	// ChannelChaincode - shortcut for Channel().Chaincode
+	ChannelChaincode(ctx context.Context, chanName string, ccName string) (Chaincode, error)
+	// Events - shortcut for PeerPool().DeliverClient(...).SubscribeCC(...).Events()
+	// subscribe on chaincode events using name of channel, chaincode and block offset
+	Events(
+		ctx context.Context,
+		channelName string,
+		ccName string,
+		eventCCSeekOption ...func() (*orderer.SeekPosition, *orderer.SeekPosition),
+	) (chan *peer.ChaincodeEvent, error)
 }
 
 // SystemCC describes interface to access Fabric System Chaincodes
