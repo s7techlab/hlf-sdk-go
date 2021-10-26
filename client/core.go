@@ -135,17 +135,16 @@ func (c *core) FabricV2() bool {
 	return c.fabricV2
 }
 
-func (c *core) ChannelChaincode(ctx context.Context, chanName string, ccName string) (api.Chaincode, error) {
-	return c.Channel(chanName).Chaincode(ctx, ccName)
-}
-
 func (c *core) Events(
 	ctx context.Context,
 	chanName string,
 	ccName string,
+	identity msp.SigningIdentity,
 	eventCCSeekOption ...func() (*fabOrderer.SeekPosition, *fabOrderer.SeekPosition),
 ) (chan *fabPeer.ChaincodeEvent, error) {
-	identity := c.CurrentIdentity()
+	if identity == nil {
+		identity = c.CurrentIdentity()
+	}
 	mspID := identity.GetMSPIdentifier()
 
 	dc, err := c.PeerPool().DeliverClient(mspID, identity)
@@ -164,6 +163,63 @@ func (c *core) Events(
 	}
 
 	return subcription.Events(), nil
+}
+
+func (c *core) Invoke(
+	ctx context.Context,
+	chanName string,
+	ccName string,
+	args [][]byte,
+	identity msp.SigningIdentity,
+	transient map[string][]byte,
+) (*fabPeer.Response, string, error) {
+	if identity == nil {
+		identity = c.CurrentIdentity()
+	}
+
+	ccAPI, err := c.Channel(chanName).Chaincode(ctx, ccName)
+	if err != nil {
+		return nil, "", err
+	}
+
+	res, tx, err := ccAPI.Invoke(string(args[0])).
+		ArgBytes(args[1:]).
+		WithIdentity(identity).
+		Transient(transient).
+		Do(ctx)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return res, string(tx), nil
+}
+
+func (c *core) Query(
+	ctx context.Context,
+	chanName string,
+	ccName string,
+	args [][]byte,
+	identity msp.SigningIdentity,
+	transient map[string][]byte,
+) (*fabPeer.ProposalResponse, error) {
+	if identity == nil {
+		identity = c.CurrentIdentity()
+	}
+
+	ccAPI, err := c.Channel(chanName).Chaincode(ctx, ccName)
+	if err != nil {
+		return nil, err
+	}
+
+	argsStrings := make([]string, 0)
+	for _, arg := range args {
+		argsStrings = append(argsStrings, string(arg))
+	}
+
+	return ccAPI.Query(argsStrings[0], argsStrings[1:]...).
+		WithIdentity(identity).
+		Transient(transient).
+		AsProposalResponse(ctx)
 }
 
 func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, error) {

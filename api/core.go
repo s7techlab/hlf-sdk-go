@@ -31,16 +31,36 @@ type Core interface {
 	Chaincode(name string) ChaincodePackage
 	// FabricV2 returns if core works in fabric v2 mode
 	FabricV2() bool
-	// ChannelChaincode - shortcut for Channel().Chaincode
-	ChannelChaincode(ctx context.Context, chanName string, ccName string) (Chaincode, error)
 	// Events - shortcut for PeerPool().DeliverClient(...).SubscribeCC(...).Events()
 	// subscribe on chaincode events using name of channel, chaincode and block offset
+	// if provided 'identity' is 'nil' default one will be set
 	Events(
 		ctx context.Context,
 		channelName string,
 		ccName string,
+		identity msp.SigningIdentity,
 		eventCCSeekOption ...func() (*orderer.SeekPosition, *orderer.SeekPosition),
 	) (chan *peer.ChaincodeEvent, error)
+	// Invoke - shortcut for invoking chanincodes
+	// if provided 'identity' is 'nil' default one will be set
+	Invoke(
+		ctx context.Context,
+		chanName string,
+		ccName string,
+		args [][]byte,
+		identity msp.SigningIdentity,
+		transient map[string][]byte,
+	) (res *peer.Response, chaincodeTx string, err error)
+	// Query - shortcut for querying chanincodes
+	// if provided 'identity' is 'nil' default one will be set
+	Query(
+		ctx context.Context,
+		chanName string,
+		ccName string,
+		args [][]byte,
+		identity msp.SigningIdentity,
+		transient map[string][]byte,
+	) (*peer.ProposalResponse, error)
 }
 
 // SystemCC describes interface to access Fabric System Chaincodes
