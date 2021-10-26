@@ -43,6 +43,9 @@ type Core interface {
 	) (chan *peer.ChaincodeEvent, error)
 	// Invoke - shortcut for invoking chanincodes
 	// if provided 'identity' is 'nil' default one will be set
+	// txWaiterType - param which identify transaction waiting policy.
+	// available: 'self'(wait for one peer of endorser org), 'all'(wait for each organizations from endorsement policy)
+	// default is 'self'(even if you pass empty string)
 	Invoke(
 		ctx context.Context,
 		chanName string,
@@ -50,6 +53,7 @@ type Core interface {
 		args [][]byte,
 		identity msp.SigningIdentity,
 		transient map[string][]byte,
+		txWaiterType string,
 	) (res *peer.Response, chaincodeTx string, err error)
 	// Query - shortcut for querying chanincodes
 	// if provided 'identity' is 'nil' default one will be set
@@ -62,6 +66,13 @@ type Core interface {
 		transient map[string][]byte,
 	) (*peer.ProposalResponse, error)
 }
+
+// types which identify tx "wait'er" policy
+// we dont make it as alias for preventing binding to our lib
+const (
+	TxWaiterSelfType string = "self"
+	TxWaiterAllType  string = "all"
+)
 
 // SystemCC describes interface to access Fabric System Chaincodes
 type SystemCC interface {

@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/v2/api/config"
 	"github.com/s7techlab/hlf-sdk-go/v2/client/chaincode"
 	"github.com/s7techlab/hlf-sdk-go/v2/client/chaincode/system"
+	"github.com/s7techlab/hlf-sdk-go/v2/client/chaincode/txwaiter"
 	"github.com/s7techlab/hlf-sdk-go/v2/client/channel"
 	"github.com/s7techlab/hlf-sdk-go/v2/client/fetcher"
 	"github.com/s7techlab/hlf-sdk-go/v2/crypto"
@@ -172,7 +174,21 @@ func (c *core) Invoke(
 	args [][]byte,
 	identity msp.SigningIdentity,
 	transient map[string][]byte,
+	txWaiterType string,
 ) (*fabPeer.Response, string, error) {
+	doOpts := []api.DoOption{}
+
+	switch txWaiterType {
+	case "":
+		doOpts = append(doOpts, chaincode.WithTxWaiter(txwaiter.Self))
+	case api.TxWaiterSelfType:
+		doOpts = append(doOpts, chaincode.WithTxWaiter(txwaiter.Self))
+	case api.TxWaiterAllType:
+		doOpts = append(doOpts, chaincode.WithTxWaiter(txwaiter.All))
+	default:
+		return nil, "", fmt.Errorf("invalid tx waiter type. got %v, available: '%v', '%v'", txWaiterType, api.TxWaiterSelfType, api.TxWaiterAllType)
+	}
+
 	if identity == nil {
 		identity = c.CurrentIdentity()
 	}
@@ -186,7 +202,7 @@ func (c *core) Invoke(
 		ArgBytes(args[1:]).
 		WithIdentity(identity).
 		Transient(transient).
-		Do(ctx)
+		Do(ctx, doOpts...)
 	if err != nil {
 		return nil, "", err
 	}
