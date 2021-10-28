@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/golang/protobuf/proto"
 	mspPb "github.com/hyperledger/fabric-protos-go/msp"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
@@ -16,6 +15,7 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/v2/api/config"
 	"github.com/s7techlab/hlf-sdk-go/v2/crypto"
 	"github.com/s7techlab/hlf-sdk-go/v2/crypto/ecdsa"
+	"google.golang.org/protobuf/proto"
 )
 
 type core struct {

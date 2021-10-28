@@ -13,9 +13,12 @@ func main() {
 	id, err := identity.NewMSPIdentity(
 		mspId,
 		// PROVIDE YOUR OWN PATHS
-		"../fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/cert.pem",
-		"../fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/02a48982a93c9a1fbf7e9702f82d14578aef9662362346ecfe8b3cde50da6799_sk",
+		"../../../../github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/cert.pem",
+		"../../../../github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/02a48982a93c9a1fbf7e9702f82d14578aef9662362346ecfe8b3cde50da6799_sk",
 	)
+	if err != nil {
+		log.Fatalf("connection.invoke: %v", err)
+	}
 
 	core, err := client.NewCore(mspId, id, client.WithConfigYaml("./cfg.yaml"))
 	if err != nil {
@@ -33,5 +36,11 @@ func main() {
 		log.Fatalf("connection.invoke: %v", err)
 	}
 
-	log.Print("Invoked", tx, res)
+	log.Print("Invoked: ", tx, res)
+
+	res2, err := cc.Query("ReadAsset", "asset1").AsBytes(context.Background())
+	if err != nil {
+		log.Fatalf("connection.query: %v", err)
+	}
+	log.Print("Queried: ", string(res2))
 }

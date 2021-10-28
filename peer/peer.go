@@ -3,7 +3,6 @@ package peer
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/hyperledger/fabric-chaincode-go/shim"
@@ -19,12 +18,10 @@ import (
 )
 
 type peer struct {
-	log       *zap.Logger
-	endpoints []string
-	conn      *grpc.ClientConn
-	connMx    sync.Mutex
-	timeout   time.Duration
-	client    fabricPeer.EndorserClient
+	log     *zap.Logger
+	conn    *grpc.ClientConn
+	timeout time.Duration
+	client  fabricPeer.EndorserClient
 }
 
 var (
@@ -32,24 +29,22 @@ var (
 )
 
 func (p *peer) Endorse(ctx context.Context, proposal *fabricPeer.SignedProposal, opts ...api.PeerEndorseOpt) (*fabricPeer.ProposalResponse, error) {
-	log := p.log.Named(`Endorse`)
-
 	if _, ok := ctx.Deadline(); !ok {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, p.timeout)
 		defer cancel()
-	} else {
-		log.Debug(`Context with deadline`)
 	}
 
-	if resp, err := p.client.ProcessProposal(ctx, proposal); err != nil {
+	resp, err := p.client.ProcessProposal(ctx, proposal)
+	if err != nil {
 		return nil, err
-	} else {
-		if resp.Response.Status != shim.OK {
-			return nil, api.PeerEndorseError{Status: resp.Response.Status, Message: resp.Response.Message}
-		}
-		return resp, nil
 	}
+
+	if resp.Response.Status != shim.OK {
+		return nil, api.PeerEndorseError{Status: resp.Response.Status, Message: resp.Response.Message}
+	}
+
+	return resp, nil
 }
 
 func (p *peer) DeliverClient(identity msp.SigningIdentity) (api.DeliverClient, error) {

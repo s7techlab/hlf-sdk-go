@@ -167,11 +167,13 @@ func (d *deliverImpl) handleSubscription(ctx context.Context, channel string, bl
 
 	stream, err := d.cli.Deliver(subCtx)
 	if err != nil {
+		stopSub()
 		return nil, errors.Wrap(err, `failed to open deliver stream`)
 	}
 
 	err = stream.Send(seek)
 	if err != nil {
+		stopSub()
 		return nil, errors.Wrap(err, `failed to send seek envelope to stream`)
 	}
 

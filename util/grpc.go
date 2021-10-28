@@ -132,6 +132,8 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 		grpc.MaxCallSendMsgSize(maxSendMsgSize),
 	))
 
+	grpcOptions = append(grpcOptions, grpc.WithBlock())
+
 	fields := []zap.Field{
 		zap.String(`host`, c.Host),
 		zap.Bool(`tls`, c.Tls.Enabled),
@@ -143,8 +145,6 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 	}
 
 	log.Debug(`grpc options for host`, fields...)
-	// because of it round robin is hanging
-	//grpcOptions = append(grpcOptions, grpc.WithBlock())
 
 	return grpcOptions, nil
 }
@@ -159,7 +159,7 @@ func NewGRPCConnectionFromConfigs(ctx context.Context, log *zap.Logger, conf ...
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to get GRPC options`)
 	}
-	// name is necessary for grpc balancer
+	// name is necessary for grpc balancer and address verification in tls certs
 	dnsResolverName, _, err := net.SplitHostPort(conf[0].Host)
 	if err != nil {
 		return nil, fmt.Errorf("cant fetch domain name from %v", conf[0].Host)
