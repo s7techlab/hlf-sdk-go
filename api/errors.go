@@ -14,7 +14,7 @@ type MultiError struct {
 }
 
 func (e *MultiError) Error() string {
-	errStr := fmt.Sprintf("next errors occurred:\n")
+	errStr := "next errors occurred:\n"
 	for _, err := range e.Errors {
 		errStr += fmt.Sprintf("%s\n", err.Error())
 	}

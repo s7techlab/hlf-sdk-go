@@ -29,8 +29,7 @@ type mspSigningIdentity struct {
 }
 
 func (s *mspIdentity) GetSigningIdentity(cs api.CryptoSuite) msp.SigningIdentity {
-	id := new(mspSigningIdentity)
-	id = s.signingIdentity
+	id := s.signingIdentity
 	id.cryptoSuite = cs
 	return id
 }

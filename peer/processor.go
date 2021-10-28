@@ -3,13 +3,13 @@ package peer
 import (
 	"context"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	fabricPeer "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/v2/api"
 	"github.com/s7techlab/hlf-sdk-go/v2/util"
+	"google.golang.org/protobuf/proto"
 )
 
 type processor struct {

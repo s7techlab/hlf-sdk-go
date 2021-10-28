@@ -59,11 +59,11 @@ func makeTruncatableString(str string, size int) TruncatableString {
 			Value:              str,
 			TruncatedByteCount: 0,
 		}
-	} else {
-		return TruncatableString{
-			Value:              str[0:size] + `...`,
-			TruncatedByteCount: len(str[size:]),
-		}
+	}
+
+	return TruncatableString{
+		Value:              str[0:size] + `...`,
+		TruncatedByteCount: len(str[size:]),
 	}
 }
 

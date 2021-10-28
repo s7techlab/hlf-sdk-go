@@ -7,13 +7,12 @@ import (
 )
 
 type Config struct {
-	Crypto CryptoConfig `yaml:"crypto"`
-	// Deprecated: use Orderers.
-	Orderer   *ConnectionConfig  `yaml:"orderer"`
+	Crypto    CryptoConfig       `yaml:"crypto"`
 	Orderers  []ConnectionConfig `yaml:"orderers"`
 	Discovery DiscoveryConfig    `yaml:"discovery"`
-	MSP       []MSPConfig        `yaml:"msp"`
-	Pool      PoolConfig         `yaml:"pool"`
+	// peer pool for local configuration without gossip discovery
+	MSP  []MSPConfig `yaml:"msp"`
+	Pool PoolConfig  `yaml:"pool"`
 	// if tls is enabled maps TLS certs to discovered peers
 	TLSCertsMap []TLSCertsMapperConfig `yaml:"tls_certs_map"`
 }
