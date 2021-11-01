@@ -367,6 +367,12 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 					}
 				}
 			}
+		default:
+			return nil, fmt.Errorf("unknown discovery type=%v. available: %v, %v",
+				core.config.Discovery.Type,
+				discovery.LocalConfigServiceDiscoveryType,
+				discovery.GossipServiceDiscoveryType,
+			)
 		}
 	}
 
