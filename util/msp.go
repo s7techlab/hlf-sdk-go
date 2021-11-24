@@ -15,6 +15,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	"go.uber.org/zap"
 )
 
 const (
@@ -66,9 +67,9 @@ func LoadKeyPairFromMSP(mspPath string) ([]byte, []byte, error) {
 	return certBytes, keyBytes, nil
 }
 
-// GetKeypairByCert - takes certificate PEM bytes and tries to find suitable(by hash) private key
+// LoadKeypairByCert - takes certificate raw bytes and tries to find suitable(by hash) private key
 // in 'keystore' dir
-func GetKeypairByCert(mspPath string, certRawBytes []byte) (*x509.Certificate, interface{}, error) {
+func LoadKeypairByCert(mspPath string, certRawBytes []byte) (*x509.Certificate, interface{}, error) {
 	certPEMBytes, _ := pem.Decode(certRawBytes)
 	if certPEMBytes == nil {
 		return nil, nil, errors.Errorf("no pem content for file")
@@ -118,9 +119,9 @@ func getPrivateKeyFilename(cert *x509.Certificate) (string, error) {
 	}
 }
 
-// GetPemMaterialFromDir - read all files from dir and parse it as PEM blocks
-func GetPemMaterialFromDir(dir string) ([][]byte, error) {
-	//log.Debug("Reading directory ", zap.String("dir", dir))
+// ReadAllFilesFromDir - read all files from dir
+func ReadAllFilesFromDir(dir string) ([][]byte, error) {
+	log := zap.L().Named(`GetPemMaterialFromDir`)
 
 	_, err := os.Stat(dir)
 	if os.IsNotExist(err) {
@@ -138,21 +139,21 @@ func GetPemMaterialFromDir(dir string) ([][]byte, error) {
 
 		f, err := os.Stat(fullName)
 		if err != nil {
-			//log.Warn("Failed to stat", zap.Any("fullName", fullName), zap.Error(err))
+			log.Warn("Failed to stat", zap.Any("fullName", fullName), zap.Error(err))
 			continue
 		}
 		if f.IsDir() {
 			continue
 		}
 
-		//log.Debug("Inspecting file", zap.String(fullName))
+		log.Debug("Inspecting file", zap.String("fullName", fullName))
 
 		item, err := ioutil.ReadFile(fullName)
 		if err != nil {
 			return nil, errors.Wrapf(err, "reading from file %s failed", fullName)
 		}
 		if err != nil {
-			//log.Warn("Failed reading file %s: %s", fullName, err)
+			log.Warn("Failed reading file", zap.String("fullName", fullName), zap.Error(err))
 			continue
 		}
 

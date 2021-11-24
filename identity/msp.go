@@ -193,13 +193,13 @@ func NewMSPIndentitiesFromPath(mspID string, mspPath string) (*MSPIndentities, e
 	adminDir := filepath.Join(mspPath, admincertsPath)
 	_, err := os.Stat(adminDir)
 	if !os.IsNotExist(err) {
-		adminCerts, err := util.GetPemMaterialFromDir(adminDir)
+		adminCerts, err := util.ReadAllFilesFromDir(adminDir)
 		if err != nil {
 			return nil, err
 		}
 
 		for _, adminCertBytes := range adminCerts {
-			cert, key, err := util.GetKeypairByCert(mspPath, adminCertBytes)
+			cert, key, err := util.LoadKeypairByCert(mspPath, adminCertBytes)
 			if err != nil {
 				return nil, err
 			}
@@ -213,13 +213,13 @@ func NewMSPIndentitiesFromPath(mspID string, mspPath string) (*MSPIndentities, e
 	userDir := filepath.Join(mspPath, userscertsPath)
 	_, err = os.Stat(userDir)
 	if !os.IsNotExist(err) {
-		userCerts, err := util.GetPemMaterialFromDir(userDir)
+		userCerts, err := util.ReadAllFilesFromDir(userDir)
 		if err != nil {
 			return nil, err
 		}
 
 		for _, userCertBytes := range userCerts {
-			cert, key, err := util.GetKeypairByCert(mspPath, userCertBytes)
+			cert, key, err := util.LoadKeypairByCert(mspPath, userCertBytes)
 			if err != nil {
 				return nil, err
 			}
@@ -231,7 +231,7 @@ func NewMSPIndentitiesFromPath(mspID string, mspPath string) (*MSPIndentities, e
 
 	// signcert
 	signCertsDir := filepath.Join(mspPath, signcertsPath)
-	signCerts, err := util.GetPemMaterialFromDir(signCertsDir)
+	signCerts, err := util.ReadAllFilesFromDir(signCertsDir)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +239,7 @@ func NewMSPIndentitiesFromPath(mspID string, mspPath string) (*MSPIndentities, e
 		return nil, errors.Wrap(err, `'signcerts' folder is emprty`)
 	}
 
-	cert, key, err := util.GetKeypairByCert(mspPath, signCerts[0])
+	cert, key, err := util.LoadKeypairByCert(mspPath, signCerts[0])
 	if err != nil {
 		return nil, err
 	}
