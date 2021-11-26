@@ -4,6 +4,8 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -155,5 +157,95 @@ func NewMSPIdentityFromPath(mspId string, mspPath string) (api.Identity, error) 
 	}
 
 	return NewMSPIdentityBytes(mspId, certBytes, keyBytes)
+}
 
+/* */
+
+// MSPIndentities - contains all parsed identities from msp folder
+// Should be used instead of single `api.Identity` which contains ONLY msp identity
+type MSPIndentities struct {
+	// identity from 'signcerts'
+	MSP api.Identity
+	// identities from 'admincerts'
+	Admins []api.Identity
+	// indentities from 'users'
+	Users []api.Identity
+}
+
+// TODO some handy methods?
+
+// NewMSPIndentitiesFromPath - parse all certificates(msp,admins,users) from MSP folder.
+// Came to replace legacy `util.LoadKeyPairFromMSP` method
+func NewMSPIndentitiesFromPath(mspID string, mspPath string) (*MSPIndentities, error) {
+	const (
+		admincertsPath = "admincerts"
+		signcertsPath  = "signcerts"
+		userscertsPath = "user"
+	)
+
+	mspIndentities := &MSPIndentities{
+		Admins: make([]api.Identity, 0),
+		MSP:    nil,
+		Users:  make([]api.Identity, 0),
+	}
+
+	// admin certs
+	adminDir := filepath.Join(mspPath, admincertsPath)
+	_, err := os.Stat(adminDir)
+	if !os.IsNotExist(err) {
+		adminCerts, err := util.ReadAllFilesFromDir(adminDir)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, adminCertBytes := range adminCerts {
+			cert, key, err := util.LoadKeypairByCert(mspPath, adminCertBytes)
+			if err != nil {
+				return nil, err
+			}
+
+			idnt, _ := NewMSPIdentityRaw(mspID, cert, key)
+			mspIndentities.Admins = append(mspIndentities.Admins, idnt)
+		}
+	}
+
+	// user certs
+	userDir := filepath.Join(mspPath, userscertsPath)
+	_, err = os.Stat(userDir)
+	if !os.IsNotExist(err) {
+		userCerts, err := util.ReadAllFilesFromDir(userDir)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, userCertBytes := range userCerts {
+			cert, key, err := util.LoadKeypairByCert(mspPath, userCertBytes)
+			if err != nil {
+				return nil, err
+			}
+
+			idnt, _ := NewMSPIdentityRaw(mspID, cert, key)
+			mspIndentities.Users = append(mspIndentities.Users, idnt)
+		}
+	}
+
+	// signcert
+	signCertsDir := filepath.Join(mspPath, signcertsPath)
+	signCerts, err := util.ReadAllFilesFromDir(signCertsDir)
+	if err != nil {
+		return nil, err
+	}
+	if len(signCerts) == 0 {
+		return nil, errors.Wrap(err, `'signcerts' folder is emprty`)
+	}
+
+	cert, key, err := util.LoadKeypairByCert(mspPath, signCerts[0])
+	if err != nil {
+		return nil, err
+	}
+
+	idnt, _ := NewMSPIdentityRaw(mspID, cert, key)
+	mspIndentities.MSP = idnt
+
+	return mspIndentities, nil
 }
