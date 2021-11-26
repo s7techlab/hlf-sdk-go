@@ -8,9 +8,12 @@ import (
 
 	"github.com/hyperledger/fabric-protos-go/common"
 	fabricOrderer "github.com/hyperledger/fabric-protos-go/orderer"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
 	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	"github.com/s7techlab/hlf-sdk-go/v2/api/config"
+	"github.com/s7techlab/hlf-sdk-go/v2/util"
 )
 
 type ErrUnexpectedStatus struct {
@@ -25,6 +28,7 @@ type orderer struct {
 	uri             string
 	conn            *grpc.ClientConn
 	ctx             context.Context
+	cancel          context.CancelFunc
 	connMx          sync.Mutex
 	broadcastClient fabricOrderer.AtomicBroadcastClient
 	grpcOptions     []grpc.DialOption
@@ -126,6 +130,24 @@ func (o *orderer) initBroadcastClient() error {
 	o.broadcastClient = fabricOrderer.NewAtomicBroadcastClient(o.conn)
 
 	return nil
+}
+
+func New(c config.ConnectionConfig, log *zap.Logger) (api.Orderer, error) {
+	l := log.Named(`New`)
+	opts, err := util.NewGRPCOptionsFromConfig(c, log)
+	if err != nil {
+		l.Error(`Failed to get GRPC options`, zap.Error(err))
+		return nil, fmt.Errorf(`get GRPC options: %w`, err)
+	}
+
+	ctx, _ := context.WithTimeout(context.Background(), c.Timeout.Duration)
+	conn, err := grpc.DialContext(ctx, c.Host, opts...)
+	if err != nil {
+		l.Error(`Failed to initialize GRPC connection`, zap.Error(err))
+		return nil, fmt.Errorf(`initialize GRPC connection: %w`, err)
+	}
+
+	return NewFromGRPC(ctx, conn, opts...)
 }
 
 // NewFromGRPC allows to initialize orderer from existing GRPC connection
