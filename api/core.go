@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 
-	"github.com/hyperledger/fabric-protos-go/orderer"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
 )
@@ -39,7 +38,7 @@ type Core interface {
 		channelName string,
 		ccName string,
 		identity msp.SigningIdentity,
-		eventCCSeekOption ...func() (*orderer.SeekPosition, *orderer.SeekPosition),
+		blockRange ...int64,
 	) (chan *peer.ChaincodeEvent, error)
 	// Invoke - shortcut for invoking chanincodes
 	// if provided 'identity' is 'nil' default one will be set

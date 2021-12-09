@@ -3,10 +3,11 @@ package client
 import (
 	"context"
 	"fmt"
+	"math"
 	"sync"
 	"time"
 
-	fabOrderer "github.com/hyperledger/fabric-protos-go/orderer"
+	ordererproto "github.com/hyperledger/fabric-protos-go/orderer"
 	fabPeer "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/core/chaincode/platforms/golang"
 	"github.com/hyperledger/fabric/msp"
@@ -142,12 +143,59 @@ func (c *core) FabricV2() bool {
 	return c.fabricV2
 }
 
+func (c *core) SeekOptByBlockRange(ctx context.Context, channel string, blockRangeFrom, blockRangeTo int64) (api.EventCCSeekOption, error) {
+	var seekFrom, seekTo uint64
+
+	// Same as seek Newest
+	if blockRangeFrom == 0 && blockRangeTo == 0 {
+		// no seek opt, no error
+		return nil, nil
+	}
+
+	switch {
+	case blockRangeFrom == 0:
+		fallthrough
+	case blockRangeFrom > 0:
+		seekFrom = uint64(blockRangeFrom)
+	case blockRangeFrom < 0:
+		// from  -{x} means we need to look x blocks back for events
+		// thus we need to  know current channel height
+		channelInfo, err := c.System().QSCC().GetChainInfo(ctx, channel)
+		if err != nil {
+			return nil, fmt.Errorf(`get channel height: %w`, err)
+		}
+
+		seekFrom = channelInfo.Height - uint64(blockRangeFrom)
+		c.logger.Debug(`seek by block range`,
+			zap.Uint64(`channel height`, channelInfo.Height),
+			zap.Uint64(`seek from`, seekFrom))
+	}
+
+	switch {
+	case blockRangeTo == 0:
+		seekTo = math.MaxUint64
+	case blockRangeTo > 0:
+		seekTo = uint64(blockRangeTo)
+	case blockRangeTo < 0:
+		seekTo = math.MaxUint64 - uint64(blockRangeTo)
+	}
+
+	return func() (*ordererproto.SeekPosition, *ordererproto.SeekPosition) {
+		return &ordererproto.SeekPosition{
+				Type: &ordererproto.SeekPosition_Specified{Specified: &ordererproto.SeekSpecified{Number: seekFrom}}},
+			&ordererproto.SeekPosition{
+				Type: &ordererproto.SeekPosition_Specified{Specified: &ordererproto.SeekSpecified{Number: seekTo}}}
+
+	}, nil
+
+}
+
 func (c *core) Events(
 	ctx context.Context,
 	chanName string,
 	ccName string,
 	identity msp.SigningIdentity,
-	eventCCSeekOption ...func() (*fabOrderer.SeekPosition, *fabOrderer.SeekPosition),
+	blockRange ...int64,
 ) (chan *fabPeer.ChaincodeEvent, error) {
 	if identity == nil {
 		identity = c.CurrentIdentity()
@@ -159,9 +207,26 @@ func (c *core) Events(
 		return nil, err
 	}
 
-	seekOpts := []api.EventCCSeekOption{}
-	for i := range eventCCSeekOption {
-		seekOpts = append(seekOpts, eventCCSeekOption[i])
+	var (
+		blockRangeFrom, blockRangeTo int64
+		seekOpts                     []api.EventCCSeekOption
+	)
+
+	if len(blockRange) > 0 {
+		blockRangeFrom = blockRange[0]
+	}
+
+	if len(blockRange) > 1 {
+		blockRangeTo = blockRange[1]
+	}
+
+	seekOpt, err := c.SeekOptByBlockRange(ctx, chanName, blockRangeFrom, blockRangeTo)
+	if err != nil {
+		return nil, err
+	}
+
+	if seekOpt != nil {
+		seekOpts = append(seekOpts, seekOpt)
 	}
 
 	subcription, err := dc.SubscribeCC(ctx, chanName, ccName, seekOpts...)
