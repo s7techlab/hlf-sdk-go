@@ -63,7 +63,7 @@ type Core interface {
 		args [][]byte,
 		identity msp.SigningIdentity,
 		transient map[string][]byte,
-	) (*peer.ProposalResponse, error)
+	) (*peer.Response, error)
 }
 
 // types which identify tx "wait'er" policy

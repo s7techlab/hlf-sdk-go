@@ -60,6 +60,16 @@ func (q *QueryBuilder) AsProposalResponse(ctx context.Context) (*fabricPeer.Prop
 	return q.peerPool.Process(ctx, q.identity.GetMSPIdentifier(), proposal)
 }
 
+// Do makes invoke with built arguments
+func (q *QueryBuilder) Do(ctx context.Context) (*fabricPeer.Response, error) {
+	res, err := q.AsProposalResponse(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Response, nil
+}
+
 func (q *QueryBuilder) Transient(args api.TransArgs) api.ChaincodeQueryBuilder {
 	q.transientArgs = args
 	return q
