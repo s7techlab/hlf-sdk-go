@@ -287,7 +287,7 @@ func (c *core) Query(
 	args [][]byte,
 	identity msp.SigningIdentity,
 	transient map[string][]byte,
-) (*fabPeer.ProposalResponse, error) {
+) (*fabPeer.Response, error) {
 	if identity == nil {
 		identity = c.CurrentIdentity()
 	}
@@ -305,7 +305,7 @@ func (c *core) Query(
 	return ccAPI.Query(argsStrings[0], argsStrings[1:]...).
 		WithIdentity(identity).
 		Transient(transient).
-		AsProposalResponse(ctx)
+		Do(ctx)
 }
 
 func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, error) {

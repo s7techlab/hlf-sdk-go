@@ -25,9 +25,9 @@ type Chaincode interface {
 }
 
 type ChaincodePackage interface {
-	// Allows to get latest version of chaincode
+	// Latest allows to get latest version of chaincode
 	Latest(ctx context.Context) (*peer.ChaincodeDeploymentSpec, error)
-	// Installs chaincode using defined chaincode fetcher
+	// Install chaincode using defined chaincode fetcher
 	Install(ctx context.Context, path, version string) error
 	// Instantiate chaincode on channel with presented params
 	Instantiate(ctx context.Context, channelName, path, version, policy string, args [][]byte, transArgs TransArgs) error
@@ -83,6 +83,8 @@ type ChaincodeQueryBuilder interface {
 	AsJSON(ctx context.Context, out interface{}) error
 	// AsProposalResponse allows to get raw peer response
 	AsProposalResponse(ctx context.Context) (*peer.ProposalResponse, error)
+	// Do makes query with built arguments
+	Do(ctx context.Context) (*peer.Response, error)
 }
 
 // QSCC describes Query System Chaincode (QSCC)
