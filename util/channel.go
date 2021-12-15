@@ -3,7 +3,6 @@ package util
 import (
 	"bytes"
 	"context"
-	"fmt"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
@@ -42,7 +41,7 @@ func ProceedChannelUpdate(
 	ids []msp.SigningIdentity,
 ) error {
 	if len(ids) == 0 {
-		return fmt.Errorf("no signing identities provided")
+		return errors.New("no signing identities provided")
 	}
 
 	confUpdBytes, err := proto.Marshal(update)
