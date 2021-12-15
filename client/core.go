@@ -146,6 +146,9 @@ func (c *core) FabricV2() bool {
 func (c *core) SeekOptByBlockRange(ctx context.Context, channel string, blockRangeFrom, blockRangeTo int64) (api.EventCCSeekOption, error) {
 	var seekFrom, seekTo uint64
 
+	c.logger.Debug(`seek by block range`,
+		zap.Int64(`from`, blockRangeFrom), zap.Int64(`to`, blockRangeTo))
+
 	// Same as seek Newest
 	if blockRangeFrom == 0 && blockRangeTo == 0 {
 		// no seek opt, no error
@@ -158,17 +161,16 @@ func (c *core) SeekOptByBlockRange(ctx context.Context, channel string, blockRan
 	case blockRangeFrom > 0:
 		seekFrom = uint64(blockRangeFrom)
 	case blockRangeFrom < 0:
+
 		// from  -{x} means we need to look x blocks back for events
 		// thus we need to  know current channel height
 		channelInfo, err := c.System().QSCC().GetChainInfo(ctx, channel)
 		if err != nil {
 			return nil, fmt.Errorf(`get channel height: %w`, err)
 		}
-
-		seekFrom = channelInfo.Height - uint64(blockRangeFrom)
-		c.logger.Debug(`seek by block range`,
-			zap.Uint64(`channel height`, channelInfo.Height),
-			zap.Uint64(`seek from`, seekFrom))
+		c.logger.Debug(`get channel info for calculate negative block from`,
+			zap.Uint64(`channel_height`, channelInfo.Height))
+		seekFrom = uint64(int64(channelInfo.Height) + blockRangeFrom)
 	}
 
 	switch {
@@ -177,8 +179,12 @@ func (c *core) SeekOptByBlockRange(ctx context.Context, channel string, blockRan
 	case blockRangeTo > 0:
 		seekTo = uint64(blockRangeTo)
 	case blockRangeTo < 0:
-		seekTo = math.MaxUint64 - uint64(blockRangeTo)
+		seekTo = math.MaxUint64 - uint64(-blockRangeTo)
 	}
+
+	c.logger.Debug(`seek opts`,
+		zap.Uint64(`seek from`, seekFrom),
+		zap.Uint64(`seek to`, seekTo))
 
 	return func() (*ordererproto.SeekPosition, *ordererproto.SeekPosition) {
 		return &ordererproto.SeekPosition{
@@ -200,6 +206,8 @@ func (c *core) Events(
 	if identity == nil {
 		identity = c.CurrentIdentity()
 	}
+
+	c.logger.Debug(`block range`, zap.Reflect(`slice`, blockRange))
 	mspID := identity.GetMSPIdentifier()
 
 	dc, err := c.PeerPool().DeliverClient(mspID, identity)
