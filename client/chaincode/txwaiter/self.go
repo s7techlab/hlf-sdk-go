@@ -18,6 +18,14 @@ func Self(cfg *api.DoOptions) (api.TxWaiter, error) {
 	}, nil
 }
 
+// NewSelfPeerWaiter returns waiter for one peer of endorser organization
+func NewSelfPeerWaiter(pool api.PeerPool, identity msp.SigningIdentity) api.TxWaiter {
+	return &selfPeerWaiter{
+		pool:     pool,
+		identity: identity,
+	}
+}
+
 type selfPeerWaiter struct {
 	pool     api.PeerPool
 	identity msp.SigningIdentity

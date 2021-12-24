@@ -5,12 +5,15 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/hyperledger/fabric-protos-go/peer"
 	lb "github.com/hyperledger/fabric-protos-go/peer/lifecycle"
 	"github.com/hyperledger/fabric/core/chaincode/lifecycle"
 	"github.com/hyperledger/fabric/msp"
+	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
 
 	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	"github.com/s7techlab/hlf-sdk-go/v2/client/chaincode/txwaiter"
 	peerSDK "github.com/s7techlab/hlf-sdk-go/v2/peer"
 )
 
@@ -61,6 +64,66 @@ func (c *lifecycleCC) InstallChaincode(ctx context.Context, installArgs *lb.Inst
 	}
 
 	return ccResult, nil
+}
+
+// ApproveFromMyOrg approves chaincode package on a channel
+func (c *lifecycleCC) ApproveFromMyOrg(
+	ctx context.Context,
+	channelID string,
+	broadcastClient api.Orderer,
+	approveArgs *lb.ApproveChaincodeDefinitionForMyOrgArgs,
+) error {
+	var (
+		args      []byte
+		resp      *peer.ProposalResponse
+		processor api.PeerProcessor
+		tx        api.ChaincodeTx
+		err       error
+	)
+
+	if args, err = proto.Marshal(approveArgs); err != nil {
+		return fmt.Errorf("marshal args: %w", err)
+	}
+	processor = peerSDK.NewProcessor(channelID)
+
+	prop, tx, err := processor.CreateProposal(
+		lifecycleName,
+		c.identity,
+		lifecycle.ApproveChaincodeDefinitionForMyOrgFuncName,
+		[][]byte{args},
+		nil,
+	)
+	if err != nil {
+		return errors.Wrap(err, `failed to create proposal`)
+	}
+
+	resp, err = c.peerPool.Process(ctx, c.identity.GetMSPIdentifier(), prop)
+	if err != nil {
+		return errors.Wrap(err, `failed to endorse proposal`)
+	}
+
+	peerProp := new(peer.Proposal)
+	err = proto.Unmarshal(prop.ProposalBytes, peerProp)
+	if err != nil {
+		return errors.Wrap(err, `failed to unmarshal proposal for make peer.Proposal`)
+	}
+
+	env, err := protoutil.CreateSignedTx(peerProp, c.identity, resp)
+	if err != nil {
+		return errors.Wrap(err, "could not assemble transaction")
+	}
+	waiter := txwaiter.NewSelfPeerWaiter(c.peerPool, c.identity)
+
+	if _, err = broadcastClient.Broadcast(ctx, env); err != nil {
+		return fmt.Errorf("broadcast envelope: %w", err)
+	}
+
+	err = waiter.Wait(ctx, channelID, tx)
+	if err != nil {
+		return fmt.Errorf("waiting for transaction: %w", err)
+	}
+
+	return nil
 }
 
 func (c *lifecycleCC) endorse(ctx context.Context, fn string, args ...[]byte) ([]byte, error) {

@@ -13,4 +13,7 @@ type Lifecycle interface {
 
 	// InstallChaincode install chaincode on a peer
 	InstallChaincode(ctx context.Context, installArgs *lb.InstallChaincodeArgs) (*lb.InstallChaincodeResult, error)
+
+	// ApproveFromMyOrg approves chaincode package on a channel
+	ApproveFromMyOrg(ctx context.Context, channelID string, broadcastClient Orderer, approveArgs *lb.ApproveChaincodeDefinitionForMyOrgArgs) error
 }
