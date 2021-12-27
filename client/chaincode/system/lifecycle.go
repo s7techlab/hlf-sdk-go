@@ -10,7 +10,6 @@ import (
 	"github.com/hyperledger/fabric/core/chaincode/lifecycle"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protoutil"
-	"github.com/pkg/errors"
 
 	"github.com/s7techlab/hlf-sdk-go/v2/api"
 	"github.com/s7techlab/hlf-sdk-go/v2/client/chaincode/txwaiter"
@@ -38,7 +37,7 @@ func (c *lifecycleCC) QueryInstalledChaincodes(ctx context.Context) (*lb.QueryIn
 	}
 	ccData := new(lb.QueryInstalledChaincodesResult)
 	if err = proto.Unmarshal(resp, ccData); err != nil {
-		return nil, errors.Wrap(err, `failed to unmarshal protobuf`)
+		return nil, fmt.Errorf(`failed to unmarshal protobuf: %w`, err)
 	}
 	return ccData, nil
 }
@@ -94,23 +93,23 @@ func (c *lifecycleCC) ApproveFromMyOrg(
 		nil,
 	)
 	if err != nil {
-		return errors.Wrap(err, `failed to create proposal`)
+		return fmt.Errorf(`failed to create proposal: %w`, err)
 	}
 
 	resp, err = c.peerPool.Process(ctx, c.identity.GetMSPIdentifier(), prop)
 	if err != nil {
-		return errors.Wrap(err, `failed to endorse proposal`)
+		return fmt.Errorf(`failed to endorse proposal: %w`, err)
 	}
 
 	peerProp := new(peer.Proposal)
 	err = proto.Unmarshal(prop.ProposalBytes, peerProp)
 	if err != nil {
-		return errors.Wrap(err, `failed to unmarshal proposal for make peer.Proposal`)
+		return fmt.Errorf(`failed to unmarshal proposal: %w`, err)
 	}
 
 	env, err := protoutil.CreateSignedTx(peerProp, c.identity, resp)
 	if err != nil {
-		return errors.Wrap(err, "could not assemble transaction")
+		return fmt.Errorf(`create signed transaction: %w`, err)
 	}
 	waiter := txwaiter.NewSelfPeerWaiter(c.peerPool, c.identity)
 
@@ -129,12 +128,12 @@ func (c *lifecycleCC) ApproveFromMyOrg(
 func (c *lifecycleCC) endorse(ctx context.Context, fn string, args ...[]byte) ([]byte, error) {
 	prop, _, err := c.processor.CreateProposal(lifecycleName, c.identity, fn, args, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, `failed to create proposal`)
+		return nil, fmt.Errorf(`failed to create proposal: %w`, err)
 	}
 
 	resp, err := c.peerPool.Process(ctx, c.identity.GetMSPIdentifier(), prop)
 	if err != nil {
-		return nil, errors.Wrap(err, `failed to endorse proposal`)
+		return nil, fmt.Errorf(`failed to endorse proposal: %w`, err)
 	}
 	return resp.Response.Payload, nil
 }
