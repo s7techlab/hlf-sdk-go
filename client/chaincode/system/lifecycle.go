@@ -5,14 +5,11 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/hyperledger/fabric-protos-go/peer"
 	lb "github.com/hyperledger/fabric-protos-go/peer/lifecycle"
 	"github.com/hyperledger/fabric/core/chaincode/lifecycle"
 	"github.com/hyperledger/fabric/msp"
-	"github.com/hyperledger/fabric/protoutil"
 
 	"github.com/s7techlab/hlf-sdk-go/v2/api"
-	"github.com/s7techlab/hlf-sdk-go/v2/client/chaincode/txwaiter"
 	peerSDK "github.com/s7techlab/hlf-sdk-go/v2/peer"
 )
 
@@ -31,7 +28,7 @@ type lifecycleCC struct {
 
 // QueryInstalledChaincodes returns installed chaincodes list
 func (c *lifecycleCC) QueryInstalledChaincodes(ctx context.Context) (*lb.QueryInstalledChaincodesResult, error) {
-	resp, err := c.endorse(ctx, lifecycle.QueryInstalledChaincodesFuncName, []byte(``))
+	resp, err := c.endorse(ctx, ``, lifecycle.QueryInstalledChaincodesFuncName, []byte(``))
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +49,7 @@ func (c *lifecycleCC) InstallChaincode(ctx context.Context, installArgs *lb.Inst
 	if args, err = proto.Marshal(installArgs); err != nil {
 		return nil, fmt.Errorf("marshal args: %w", err)
 	}
-	resp, err = c.endorse(ctx, lifecycle.InstallChaincodeFuncName, args)
+	resp, err = c.endorse(ctx, ``, lifecycle.InstallChaincodeFuncName, args)
 	if err != nil {
 		return nil, err
 	}
@@ -68,65 +65,59 @@ func (c *lifecycleCC) InstallChaincode(ctx context.Context, installArgs *lb.Inst
 // ApproveFromMyOrg approves chaincode package on a channel
 func (c *lifecycleCC) ApproveFromMyOrg(
 	ctx context.Context,
-	channelID string,
-	broadcastClient api.Orderer,
-	approveArgs *lb.ApproveChaincodeDefinitionForMyOrgArgs,
-) error {
+	channel api.Channel,
+	approveArgs *lb.ApproveChaincodeDefinitionForMyOrgArgs) error {
 	var (
-		args      []byte
-		resp      *peer.ProposalResponse
-		processor api.PeerProcessor
-		tx        api.ChaincodeTx
-		err       error
+		args []byte
+		cc   api.Chaincode
+		err  error
 	)
-
 	if args, err = proto.Marshal(approveArgs); err != nil {
 		return fmt.Errorf("marshal args: %w", err)
 	}
-	processor = peerSDK.NewProcessor(channelID)
-
-	prop, tx, err := processor.CreateProposal(
-		lifecycleName,
-		c.identity,
-		lifecycle.ApproveChaincodeDefinitionForMyOrgFuncName,
-		[][]byte{args},
-		nil,
-	)
+	cc, err = channel.Chaincode(ctx, lifecycleName)
 	if err != nil {
-		return fmt.Errorf(`failed to create proposal: %w`, err)
+		return fmt.Errorf("initalize chaincode: %w", err)
 	}
 
-	resp, err = c.peerPool.Process(ctx, c.identity.GetMSPIdentifier(), prop)
-	if err != nil {
-		return fmt.Errorf(`failed to endorse proposal: %w`, err)
-	}
+	_, _, err = cc.Invoke(lifecycle.ApproveChaincodeDefinitionForMyOrgFuncName).
+		WithIdentity(c.identity).
+		ArgBytes([][]byte{args}).
+		Do(ctx, api.WithEndorsingMpsIDs([]string{c.identity.GetMSPIdentifier()}))
 
-	peerProp := new(peer.Proposal)
-	err = proto.Unmarshal(prop.ProposalBytes, peerProp)
 	if err != nil {
-		return fmt.Errorf(`failed to unmarshal proposal: %w`, err)
-	}
-
-	env, err := protoutil.CreateSignedTx(peerProp, c.identity, resp)
-	if err != nil {
-		return fmt.Errorf(`create signed transaction: %w`, err)
-	}
-	waiter := txwaiter.NewSelfPeerWaiter(c.peerPool, c.identity)
-
-	if _, err = broadcastClient.Broadcast(ctx, env); err != nil {
-		return fmt.Errorf("broadcast envelope: %w", err)
-	}
-
-	err = waiter.Wait(ctx, channelID, tx)
-	if err != nil {
-		return fmt.Errorf("waiting for transaction: %w", err)
+		return fmt.Errorf("invoke chaincode: %w", err)
 	}
 
 	return nil
 }
 
-func (c *lifecycleCC) endorse(ctx context.Context, fn string, args ...[]byte) ([]byte, error) {
-	prop, _, err := c.processor.CreateProposal(lifecycleName, c.identity, fn, args, nil)
+// CheckCommitReadiness returns commitments statuses of participants on chaincode definition
+func (c *lifecycleCC) CheckCommitReadiness(ctx context.Context, channelID string, args *lb.CheckCommitReadinessArgs) (
+	*lb.CheckCommitReadinessResult, error) {
+	var (
+		argsBytes []byte
+		resp      []byte
+		err       error
+	)
+	if argsBytes, err = proto.Marshal(args); err != nil {
+		return nil, fmt.Errorf("marshal args: %w", err)
+	}
+	resp, err = c.endorse(ctx, channelID, lifecycle.CheckCommitReadinessFuncName, argsBytes)
+	if err != nil {
+		return nil, fmt.Errorf(`failed to endorse proposal: %w`, err)
+	}
+	result := new(lb.CheckCommitReadinessResult)
+	if err = proto.Unmarshal(resp, result); err != nil {
+		return nil, fmt.Errorf("unmarshal proposal response: %w", err)
+	}
+
+	return result, nil
+}
+
+func (c *lifecycleCC) endorse(ctx context.Context, channel string, fn string, args ...[]byte) ([]byte, error) {
+	processor := peerSDK.NewProcessor(channel)
+	prop, _, err := processor.CreateProposal(lifecycleName, c.identity, fn, args, nil)
 	if err != nil {
 		return nil, fmt.Errorf(`failed to create proposal: %w`, err)
 	}

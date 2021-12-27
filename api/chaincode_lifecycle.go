@@ -15,5 +15,8 @@ type Lifecycle interface {
 	InstallChaincode(ctx context.Context, installArgs *lb.InstallChaincodeArgs) (*lb.InstallChaincodeResult, error)
 
 	// ApproveFromMyOrg approves chaincode package on a channel
-	ApproveFromMyOrg(ctx context.Context, channelID string, broadcastClient Orderer, approveArgs *lb.ApproveChaincodeDefinitionForMyOrgArgs) error
+	ApproveFromMyOrg(ctx context.Context, channel Channel, approvseArgs *lb.ApproveChaincodeDefinitionForMyOrgArgs) error
+
+	// CheckCommitReadiness returns commitments statuses of participants on chaincode definition
+	CheckCommitReadiness(ctx context.Context, channelID string, args *lb.CheckCommitReadinessArgs) (*lb.CheckCommitReadinessResult, error)
 }
