@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/client/channel"
 	"github.com/s7techlab/hlf-sdk-go/client/fetcher"
 	"github.com/s7techlab/hlf-sdk-go/crypto"
+	"github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
 	"github.com/s7techlab/hlf-sdk-go/discovery"
 	"github.com/s7techlab/hlf-sdk-go/logger"
 	"github.com/s7techlab/hlf-sdk-go/orderer"
@@ -40,6 +42,7 @@ type core struct {
 	chaincodeMx       sync.Mutex
 	cs                api.CryptoSuite
 	fetcher           api.CCFetcher
+	fabricV2          bool
 }
 
 func (c *core) Chaincode(name string) api.ChaincodePackage {
@@ -55,7 +58,7 @@ func (c *core) Chaincode(name string) api.ChaincodePackage {
 }
 
 func (c *core) System() api.SystemCC {
-	return system.NewSCC(c.peerPool, c.identity)
+	return system.NewSCC(c.peerPool, c.identity, c.fabricV2)
 }
 
 func (c *core) CurrentIdentity() msp.SigningIdentity {
@@ -101,10 +104,15 @@ func (c *core) Channel(name string) api.Channel {
 			ord = c.orderer
 		}
 
-		ch = channel.NewCore(c.mspId, name, c.peerPool, ord, c.discoveryProvider, c.identity, c.logger)
+		ch = channel.NewCore(c.mspId, name, c.peerPool, ord,
+			c.discoveryProvider, c.identity, c.fabricV2, c.logger)
 		c.channels[name] = ch
 		return ch
 	}
+}
+
+func (c *core) FabricV2() bool {
+	return c.fabricV2
 }
 
 func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, error) {
@@ -121,10 +129,6 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 		}
 	}
 
-	if core.config == nil {
-		return nil, api.ErrEmptyConfig
-	}
-
 	if core.ctx == nil {
 		core.ctx = context.Background()
 	}
@@ -133,20 +137,29 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 		core.logger = logger.DefaultLogger
 	}
 
-	if dp, err := discovery.GetProvider(core.config.Discovery.Type); err != nil {
-		return nil, errors.Wrap(err, `failed to get discovery provider`)
-	} else if core.discoveryProvider, err = dp.Initialize(core.config.Discovery.Options, core.peerPool); err != nil {
-		return nil, errors.Wrap(err, `failed to initialize discovery provider`)
-	}
+	if core.cs == nil {
+		core.logger.Info("initializing crypto suite")
 
-	if core.cs, err = crypto.GetSuite(core.config.Crypto.Type, core.config.Crypto.Options); err != nil {
-		return nil, errors.Wrap(err, `failed to initialize crypto suite`)
+		if core.config == nil {
+			return nil, api.ErrEmptyConfig
+		}
+		if core.config.Crypto.Type == `` {
+			core.config.Crypto = ecdsa.DefaultConfig
+		}
+		if core.cs, err = crypto.GetSuite(core.config.Crypto.Type, core.config.Crypto.Options); err != nil {
+			return nil, errors.Wrap(err, `failed to initialize crypto suite`)
+		}
 	}
 
 	core.identity = identity.GetSigningIdentity(core.cs)
 
 	// if peerPool is empty, set it from config
 	if core.peerPool == nil {
+		core.logger.Info("initializing peer pool")
+
+		if core.config == nil {
+			return nil, api.ErrEmptyConfig
+		}
 		core.peerPool = pool.New(core.ctx, core.logger, core.config.Pool)
 		for _, mspConfig := range core.config.MSP {
 			for _, peerConfig := range mspConfig.Endorsers {
@@ -161,7 +174,18 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 		}
 	}
 
-	if core.orderer == nil {
+	if core.discoveryProvider == nil && core.config != nil {
+		core.logger.Info("initializing discovery provider")
+
+		if dp, err := discovery.GetProvider(core.config.Discovery.Type); err != nil {
+			return nil, fmt.Errorf(`get discovery provider type=%s: %w`, core.config.Discovery.Type, err)
+		} else if core.discoveryProvider, err = dp.Initialize(core.config.Discovery.Options, core.peerPool); err != nil {
+			return nil, errors.Wrap(err, `failed to initialize discovery provider`)
+		}
+	}
+
+	if core.orderer == nil && core.config != nil {
+		core.logger.Info("initializing orderer")
 		if len(core.config.Orderers) > 0 {
 			ordConn, err := util.NewGRPCConnectionFromConfigs(core.ctx, core.logger, core.config.Orderers...)
 			if err != nil {
@@ -171,8 +195,8 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 			if err != nil {
 				return nil, errors.Wrap(err, `failed to initialize orderer`)
 			}
-		} else {
-			core.orderer, err = orderer.New(core.config.Orderer, core.logger)
+		} else if core.config.Orderer != nil {
+			core.orderer, err = orderer.New(*core.config.Orderer, core.logger)
 			if err != nil {
 				return nil, errors.Wrap(err, `failed to initialize orderer`)
 			}

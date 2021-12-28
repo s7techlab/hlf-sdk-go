@@ -44,7 +44,7 @@ func main() {
 	ctx := context.Background()
 
 	// get chainInfo for all joined channels
-	if chInfo, err := core.System().CSCC().Channels(ctx); err != nil {
+	if chInfo, err := core.System().CSCC().GetChannels(ctx); err != nil {
 		log.Fatalln(`failed to fetch channel list:`, err)
 	} else {
 		for _, ch := range chInfo.Channels {

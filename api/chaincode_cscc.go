@@ -1,9 +1,8 @@
-// +build !fabric2
-
 package api
 
 import (
 	"context"
+
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
 )
@@ -14,8 +13,8 @@ type CSCC interface {
 	JoinChain(ctx context.Context, channelName string, genesisBlock *common.Block) error
 	// GetConfigBlock returns genesis block of channel
 	GetConfigBlock(ctx context.Context, channelName string) (*common.Block, error)
-	// GetConfigTree returns configuration tree of channel
-	GetConfigTree(ctx context.Context, channelName string) (*peer.ConfigTree, error)
-	// Channels returns list of joined channels
-	Channels(ctx context.Context) (*peer.ChannelQueryResponse, error)
+	// GetChannelConfig returns channel configuration
+	GetChannelConfig(ctx context.Context, channelName string) (*common.Config, error)
+	// GetChannels returns list of joined channels
+	GetChannels(ctx context.Context) (*peer.ChannelQueryResponse, error)
 }

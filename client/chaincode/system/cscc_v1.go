@@ -1,5 +1,3 @@
-// +build !fabric2
-
 package system
 
 import (
@@ -23,13 +21,13 @@ const (
 	GetConfigTree  string = `GetConfigTree`
 )
 
-type cscc struct {
+type csccV1 struct {
 	peerPool  api.PeerPool
 	identity  msp.SigningIdentity
 	processor api.PeerProcessor
 }
 
-func (c *cscc) JoinChain(ctx context.Context, channelName string, genesisBlock *common.Block) error {
+func (c *csccV1) JoinChain(ctx context.Context, channelName string, genesisBlock *common.Block) error {
 	blockBytes, err := proto.Marshal(genesisBlock)
 	if err != nil {
 		return errors.Wrapf(err, "failed to marshal block %s", channelName)
@@ -39,7 +37,7 @@ func (c *cscc) JoinChain(ctx context.Context, channelName string, genesisBlock *
 	return err
 }
 
-func (c *cscc) GetConfigBlock(ctx context.Context, channelName string) (*common.Block, error) {
+func (c *csccV1) GetConfigBlock(ctx context.Context, channelName string) (*common.Block, error) {
 	resp, err := c.endorse(ctx, GetConfigBlock, channelName)
 	if err != nil {
 		return nil, err
@@ -51,7 +49,7 @@ func (c *cscc) GetConfigBlock(ctx context.Context, channelName string) (*common.
 	return block, nil
 }
 
-func (c *cscc) GetConfigTree(ctx context.Context, channelName string) (*peer.ConfigTree, error) {
+func (c *csccV1) GetChannelConfig(ctx context.Context, channelName string) (*common.Config, error) {
 	resp, err := c.endorse(ctx, GetConfigTree, channelName)
 	if err != nil {
 		return nil, err
@@ -60,10 +58,10 @@ func (c *cscc) GetConfigTree(ctx context.Context, channelName string) (*peer.Con
 	if err = proto.Unmarshal(resp, configTree); err != nil {
 		return nil, errors.Wrap(err, `failed to unmarshal protobuf`)
 	}
-	return configTree, nil
+	return configTree.ChannelConfig, nil
 }
 
-func (c *cscc) Channels(ctx context.Context) (*peer.ChannelQueryResponse, error) {
+func (c *csccV1) GetChannels(ctx context.Context) (*peer.ChannelQueryResponse, error) {
 	resp, err := c.endorse(ctx, GetChannels)
 	if err != nil {
 		return nil, err
@@ -75,7 +73,7 @@ func (c *cscc) Channels(ctx context.Context) (*peer.ChannelQueryResponse, error)
 	return channelResp, nil
 }
 
-func (c *cscc) endorse(ctx context.Context, fn string, args ...string) ([]byte, error) {
+func (c *csccV1) endorse(ctx context.Context, fn string, args ...string) ([]byte, error) {
 	prop, _, err := c.processor.CreateProposal(&api.DiscoveryChaincode{Name: csccName, Type: api.CCTypeGoLang}, c.identity, fn, util.ToChaincodeArgs(args...), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to create proposal`)
@@ -88,6 +86,6 @@ func (c *cscc) endorse(ctx context.Context, fn string, args ...string) ([]byte, 
 	return resp.Response.Payload, nil
 }
 
-func NewCSCC(peerPool api.PeerPool, identity msp.SigningIdentity) api.CSCC {
-	return &cscc{peerPool: peerPool, identity: identity, processor: peerSDK.NewProcessor(``)}
+func NewCSCCV1(peerPool api.PeerPool, identity msp.SigningIdentity) api.CSCC {
+	return &csccV1{peerPool: peerPool, identity: identity, processor: peerSDK.NewProcessor(``)}
 }
