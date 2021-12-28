@@ -147,24 +147,25 @@ func (b *invokeBuilder) Do(ctx context.Context, options ...api.DoOption) (*fabri
 		return nil, ``, errors.Wrap(err, `failed to get chaincode definition`)
 	}
 
-	endorsingMspIDs := getEndorsingMSPs(ccd)
-
+	// set default options
 	doOpts := &api.DoOptions{
 		Identity:        b.identity,
 		Pool:            b.peerPool,
-		EndorsingMspIDs: endorsingMspIDs,
+		EndorsingMspIDs: getEndorsingMSPs(ccd),
 	}
-	// set default options
 	if len(options) == 0 {
 		options = append(options, WithTxWaiter(txwaiter.Self))
 	}
 
+	// apply options
 	for _, applyOpt := range options {
 		if err := applyOpt(doOpts); err != nil {
 			return nil, ``, err
 		}
 	}
 	b.txWaiter = doOpts.TxWaiter
+
+	endorsingMspIDs := doOpts.EndorsingMspIDs
 
 	proposal, tx, err := b.processor.CreateProposal(ccd.ChaincodeName(), b.identity, b.fn, b.args, b.transientArgs)
 	if err != nil {

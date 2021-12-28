@@ -55,6 +55,14 @@ type DoOptions struct {
 
 type DoOption func(opt *DoOptions) error
 
+func WithEndorsingMpsIDs(mspIDs []string) DoOption {
+	return func(opt *DoOptions) error {
+		opt.EndorsingMspIDs = mspIDs
+
+		return nil
+	}
+}
+
 // ChaincodeInvokeBuilder describes possibilities how to get invoke results
 type ChaincodeInvokeBuilder interface {
 	// WithIdentity allows to invoke chaincode from custom identity

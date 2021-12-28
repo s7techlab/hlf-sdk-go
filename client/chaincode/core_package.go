@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/hyperledger/fabric-protos-go/peer"
+
 	"github.com/s7techlab/hlf-sdk-go/v2/api"
 )
 
@@ -72,7 +73,7 @@ func (c *corePackage) Instantiate(ctx context.Context, channelName, path, versio
 	peerProp := new(peer.Proposal)
 	err = proto.Unmarshal(prop.ProposalBytes, peerProp)
 	if err != nil {
-		return errors.Wrap(err, `failed to pnmarshal proposal for make peer.Proposal`)
+		return errors.Wrap(err, `failed to unmarshal proposal for make peer.Proposal`)
 	}
 
 	env, err := protoutil.CreateSignedTx(peerProp, c.identity, resp)
