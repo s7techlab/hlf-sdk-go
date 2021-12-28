@@ -19,4 +19,7 @@ type Lifecycle interface {
 
 	// CheckCommitReadiness returns commitments statuses of participants on chaincode definition
 	CheckCommitReadiness(ctx context.Context, channelID string, args *lb.CheckCommitReadinessArgs) (*lb.CheckCommitReadinessResult, error)
+
+	// Commit the chaincode definition on the channel
+	Commit(ctx context.Context, channel Channel, commitArgs *lb.CommitChaincodeDefinitionArgs) (*lb.CommitChaincodeDefinitionResult, error)
 }

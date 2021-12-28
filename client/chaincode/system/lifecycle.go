@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/hyperledger/fabric-protos-go/peer"
 	lb "github.com/hyperledger/fabric-protos-go/peer/lifecycle"
 	"github.com/hyperledger/fabric/core/chaincode/lifecycle"
 	"github.com/hyperledger/fabric/msp"
@@ -15,15 +16,14 @@ import (
 
 // NewLifecycle returns an implementation of api.Lifecycle interface
 func NewLifecycle(peerPool api.PeerPool, identity msp.SigningIdentity) api.Lifecycle {
-	return &lifecycleCC{peerPool: peerPool, identity: identity, processor: peerSDK.NewProcessor(``)}
+	return &lifecycleCC{peerPool: peerPool, identity: identity}
 }
 
 var _ api.Lifecycle = (*lifecycleCC)(nil)
 
 type lifecycleCC struct {
-	peerPool  api.PeerPool
-	identity  msp.SigningIdentity
-	processor api.PeerProcessor
+	peerPool api.PeerPool
+	identity msp.SigningIdentity
 }
 
 // QueryInstalledChaincodes returns installed chaincodes list
@@ -110,6 +110,39 @@ func (c *lifecycleCC) CheckCommitReadiness(ctx context.Context, channelID string
 	result := new(lb.CheckCommitReadinessResult)
 	if err = proto.Unmarshal(resp, result); err != nil {
 		return nil, fmt.Errorf("unmarshal proposal response: %w", err)
+	}
+
+	return result, nil
+}
+
+// Commit the chaincode definition on the channel
+func (c *lifecycleCC) Commit(ctx context.Context, channel api.Channel, commitArgs *lb.CommitChaincodeDefinitionArgs) (
+	*lb.CommitChaincodeDefinitionResult, error) {
+	var (
+		args []byte
+		cc   api.Chaincode
+		resp *peer.Response
+		err  error
+	)
+	if args, err = proto.Marshal(commitArgs); err != nil {
+		return nil, fmt.Errorf("marshal args: %w", err)
+	}
+	cc, err = channel.Chaincode(ctx, lifecycleName)
+	if err != nil {
+		return nil, fmt.Errorf("initalize chaincode: %w", err)
+	}
+
+	resp, _, err = cc.Invoke(lifecycle.CommitChaincodeDefinitionFuncName).
+		WithIdentity(c.identity).
+		ArgBytes([][]byte{args}).
+		Do(ctx)
+
+	if err != nil {
+		return nil, fmt.Errorf("invoke chaincode: %w", err)
+	}
+	result := new(lb.CommitChaincodeDefinitionResult)
+	if err = proto.Unmarshal(resp.Payload, result); err != nil {
+		return nil, fmt.Errorf("unmarshal peer response: %w", err)
 	}
 
 	return result, nil
