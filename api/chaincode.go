@@ -83,6 +83,8 @@ type ChaincodeInvokeBuilder interface {
 type ChaincodeQueryBuilder interface {
 	// WithIdentity allows to invoke chaincode from custom identity
 	WithIdentity(identity msp.SigningIdentity) ChaincodeQueryBuilder
+	// WithArguments allows to query chaincode with arguments
+	WithArguments(argBytes [][]byte) ChaincodeQueryBuilder
 	// Transient allows to pass arguments to transient map
 	Transient(args TransArgs) ChaincodeQueryBuilder
 	// AsBytes allows to get result of querying chaincode as byte slice

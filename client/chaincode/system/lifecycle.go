@@ -148,6 +148,72 @@ func (c *lifecycleCC) Commit(ctx context.Context, channel api.Channel, commitArg
 	return result, nil
 }
 
+// QueryChaincodeDefinition returns chaincode definition committed on the channel
+func (c *lifecycleCC) QueryChaincodeDefinition(
+	ctx context.Context, channel api.Channel, args *lb.QueryChaincodeDefinitionArgs) (
+	*lb.QueryChaincodeDefinitionResult, error) {
+	var (
+		cc       api.Chaincode
+		argBytes []byte
+		err      error
+		resp     *peer.Response
+	)
+	cc, err = channel.Chaincode(ctx, lifecycleName)
+	if err != nil {
+		return nil, fmt.Errorf("initalize chaincode: %w", err)
+	}
+	if argBytes, err = proto.Marshal(args); err != nil {
+		return nil, fmt.Errorf("marshal args: %w", err)
+	}
+	resp, err = cc.Query(lifecycle.QueryChaincodeDefinitionFuncName).
+		WithArguments([][]byte{argBytes}).
+		Do(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("query chancode: %w", err)
+	}
+
+	result := new(lb.QueryChaincodeDefinitionResult)
+	if err = proto.Unmarshal(resp.Payload, result); err != nil {
+		return nil, fmt.Errorf("unmarshal response: %w", err)
+	}
+
+	return result, nil
+}
+
+// QueryChaincodeDefinitions returns chaincode definitions committed on the channel
+func (c *lifecycleCC) QueryChaincodeDefinitions(
+	ctx context.Context,
+	channel api.Channel,
+	args *lb.QueryChaincodeDefinitionsArgs) (
+	*lb.QueryChaincodeDefinitionsResult, error) {
+	var (
+		cc       api.Chaincode
+		argBytes []byte
+		err      error
+		resp     *peer.Response
+	)
+	cc, err = channel.Chaincode(ctx, lifecycleName)
+	if err != nil {
+		return nil, fmt.Errorf("initalize chaincode: %w", err)
+	}
+	if argBytes, err = proto.Marshal(args); err != nil {
+		return nil, fmt.Errorf("marshal args: %w", err)
+	}
+	resp, err = cc.Query(lifecycle.QueryChaincodeDefinitionsFuncName).
+		WithArguments([][]byte{argBytes}).
+		Do(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("query chancode: %w", err)
+	}
+
+	result := new(lb.QueryChaincodeDefinitionsResult)
+	if err = proto.Unmarshal(resp.Payload, result); err != nil {
+		return nil, fmt.Errorf("unmarshal response: %w", err)
+	}
+
+	return result, nil
+}
+
 func (c *lifecycleCC) endorse(ctx context.Context, channel string, fn string, args ...[]byte) ([]byte, error) {
 	processor := peerSDK.NewProcessor(channel)
 	prop, _, err := processor.CreateProposal(lifecycleName, c.identity, fn, args, nil)

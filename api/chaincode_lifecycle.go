@@ -22,4 +22,10 @@ type Lifecycle interface {
 
 	// Commit the chaincode definition on the channel
 	Commit(ctx context.Context, channel Channel, commitArgs *lb.CommitChaincodeDefinitionArgs) (*lb.CommitChaincodeDefinitionResult, error)
+
+	// QueryChaincodeDefinition returns chaincode definition committed on the channel
+	QueryChaincodeDefinition(ctx context.Context, channel Channel, args *lb.QueryChaincodeDefinitionArgs) (*lb.QueryChaincodeDefinitionResult, error)
+
+	// QueryChaincodeDefinitions returns chaincode definitions committed on the channel
+	QueryChaincodeDefinitions(ctx context.Context, channel Channel, args *lb.QueryChaincodeDefinitionsArgs) (*lb.QueryChaincodeDefinitionsResult, error)
 }
