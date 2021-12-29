@@ -13,9 +13,11 @@ import (
 )
 
 var (
-	oldest  = &orderer.SeekPosition{Type: &orderer.SeekPosition_Oldest{Oldest: &orderer.SeekOldest{}}}
-	newest  = &orderer.SeekPosition{Type: &orderer.SeekPosition_Newest{Newest: &orderer.SeekNewest{}}}
-	maxStop = &orderer.SeekPosition{Type: &orderer.SeekPosition_Specified{Specified: &orderer.SeekSpecified{Number: math.MaxUint64}}}
+	SeekFromOldest = &orderer.SeekPosition{
+		Type: &orderer.SeekPosition_Oldest{Oldest: &orderer.SeekOldest{}}}
+	SeekFromNewest = &orderer.SeekPosition{
+		Type: &orderer.SeekPosition_Newest{Newest: &orderer.SeekNewest{}}}
+	SeekToMax = SeekSpecified(math.MaxUint64)
 )
 
 type DeliverClient interface {
@@ -32,14 +34,14 @@ type EventCCSeekOption func() (*orderer.SeekPosition, *orderer.SeekPosition)
 // SeekNewest sets offset to new channel blocks
 func SeekNewest() EventCCSeekOption {
 	return func() (*orderer.SeekPosition, *orderer.SeekPosition) {
-		return newest, maxStop
+		return SeekFromNewest, SeekToMax
 	}
 }
 
 // SeekOldest sets offset to channel blocks from beginning
 func SeekOldest() EventCCSeekOption {
 	return func() (*orderer.SeekPosition, *orderer.SeekPosition) {
-		return oldest, maxStop
+		return SeekFromOldest, SeekToMax
 	}
 }
 
@@ -51,11 +53,21 @@ func SeekSingle(num uint64) EventCCSeekOption {
 	}
 }
 
+// SeekSpecified returns orderer.SeekPosition_Specified position
+func SeekSpecified(number uint64) *orderer.SeekPosition {
+	return &orderer.SeekPosition{Type: &orderer.SeekPosition_Specified{Specified: &orderer.SeekSpecified{Number: number}}}
+}
+
 // SeekRange sets offset from one block to another by their numbers
 func SeekRange(start, end uint64) EventCCSeekOption {
+	var seekFrom *orderer.SeekPosition
+	if start == 0 {
+		seekFrom = SeekFromOldest
+	} else {
+		seekFrom = SeekSpecified(start)
+	}
 	return func() (*orderer.SeekPosition, *orderer.SeekPosition) {
-		return &orderer.SeekPosition{Type: &orderer.SeekPosition_Specified{Specified: &orderer.SeekSpecified{Number: start}}},
-			&orderer.SeekPosition{Type: &orderer.SeekPosition_Specified{Specified: &orderer.SeekSpecified{Number: end}}}
+		return seekFrom, SeekSpecified(end)
 	}
 }
 
