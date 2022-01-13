@@ -14,6 +14,37 @@ import (
 	peerSDK "github.com/s7techlab/hlf-sdk-go/v2/peer"
 )
 
+type packageLifecycle struct {
+	core api.Core
+}
+
+var _ api.ChaincodePackageLifecycle = (*packageLifecycle)(nil)
+
+func (p packageLifecycle) QueryInstalled(ctx context.Context) (*lb.QueryInstalledChaincodesResult, error) {
+	var args = make([][]byte, 1)
+
+	//todo Query() должен уметь работать без канала, канал с пустым именем. discoveryProvider тоже
+	res, err := p.core.Query(ctx, ``, lifecycleName, args, nil, nil)
+	if err != nil {
+		return nil, fmt.Errorf("query lifecycle: %w", err)
+	}
+
+	ccData := new(lb.QueryInstalledChaincodesResult)
+	if err = proto.Unmarshal(res.Payload, ccData); err != nil {
+		return nil, fmt.Errorf(`unmarshal response: %w`, err)
+	}
+
+	return ccData, nil
+}
+
+func (p packageLifecycle) Install(ctx context.Context, args *lb.InstallChaincodeArgs) (*lb.InstallChaincodeResult, error) {
+	// invoke on empty channel with default orderer.
+	// todo Invoke должен уметь работать без канала, канал с пустым именем.
+	//res, err := p.core.Invoke(ctx, ``, lifecycleName, ....)
+
+	panic("implement me")
+}
+
 // NewLifecycle returns an implementation of api.Lifecycle interface
 func NewLifecycle(peerPool api.PeerPool, identity msp.SigningIdentity) api.Lifecycle {
 	return &lifecycleCC{peerPool: peerPool, identity: identity}

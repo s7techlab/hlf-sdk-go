@@ -29,6 +29,12 @@ type Core struct {
 	log          *zap.Logger
 }
 
+func (c *Core) ChaincodeLifecycle() api.ChaincodeDefinitionLifecycle {
+	panic("implement me")
+}
+
+var _ api.Channel = (*Core)(nil)
+
 // Chaincode - returns interface with actions over chaincode
 // ctx is necessary for service discovery
 func (c *Core) Chaincode(serviceDiscCtx context.Context, ccName string) (api.Chaincode, error) {

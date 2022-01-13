@@ -10,9 +10,10 @@ import (
 type Channel interface {
 	// Chaincode returns chaincode instance by chaincode name
 	Chaincode(ctx context.Context, name string) (Chaincode, error)
-	// Joins channel
+	// Join channel
 	Join(ctx context.Context) error
-	// CSCC implements Configuration System Chaincode (CSCC)
+
+	ChaincodeLifecycle() ChaincodeDefinitionLifecycle
 }
 
 type Core interface {
@@ -64,6 +65,8 @@ type Core interface {
 		identity msp.SigningIdentity,
 		transient map[string][]byte,
 	) (*peer.Response, error)
+
+	//ChaincodeLifecycle() ChaincodePackageLifecycle
 }
 
 // types which identify tx "wait'er" policy
