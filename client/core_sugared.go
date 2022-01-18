@@ -90,7 +90,7 @@ func (c *core) Events(
 	ccName string,
 	identity msp.SigningIdentity,
 	blockRange ...int64,
-) (chan *fabPeer.ChaincodeEvent, error) {
+) (chan api.ChaincodeEvent, error) {
 
 	if identity == nil {
 		identity = c.CurrentIdentity()
@@ -119,5 +119,5 @@ func (c *core) Events(
 		return nil, err
 	}
 
-	return subscription.Events(), nil
+	return subscription.EventsWithBlock(), nil
 }

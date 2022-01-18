@@ -15,21 +15,12 @@ type Channel interface {
 	// CSCC implements Configuration System Chaincode (CSCC)
 }
 
-type Core interface {
-	// Channel returns channel instance by channel name
-	Channel(name string) Channel
-	// CurrentIdentity identity returns current signing identity used by core
-	CurrentIdentity() msp.SigningIdentity
-	// CryptoSuite returns current crypto suite implementation
-	CryptoSuite() CryptoSuite
-	// System allows access to system chaincodes
-	System() SystemCC
-	// Current peer pool
-	PeerPool() PeerPool
-	// Chaincode installation
-	Chaincode(name string) ChaincodePackage
-	// FabricV2 returns if core works in fabric v2 mode
-	FabricV2() bool
+type ChaincodeEvent interface {
+	Event() *peer.ChaincodeEvent
+	Block() uint64
+}
+
+type Public interface {
 	// Events - shortcut for PeerPool().DeliverClient(...).SubscribeCC(...).Events()
 	// subscribe on chaincode events using name of channel, chaincode and block offset
 	// if provided 'identity' is 'nil' default one will be set
@@ -39,7 +30,7 @@ type Core interface {
 		ccName string,
 		identity msp.SigningIdentity,
 		blockRange ...int64,
-	) (chan *peer.ChaincodeEvent, error)
+	) (chan ChaincodeEvent, error)
 	// Invoke - shortcut for invoking chanincodes
 	// if provided 'identity' is 'nil' default one will be set
 	// txWaiterType - param which identify transaction waiting policy.
@@ -64,6 +55,25 @@ type Core interface {
 		identity msp.SigningIdentity,
 		transient map[string][]byte,
 	) (*peer.Response, error)
+}
+
+type Core interface {
+	// Channel returns channel instance by channel name
+	Channel(name string) Channel
+	// CurrentIdentity identity returns current signing identity used by core
+	CurrentIdentity() msp.SigningIdentity
+	// CryptoSuite returns current crypto suite implementation
+	CryptoSuite() CryptoSuite
+	// System allows access to system chaincodes
+	System() SystemCC
+	// Current peer pool
+	PeerPool() PeerPool
+	// Chaincode installation
+	Chaincode(name string) ChaincodePackage
+	// FabricV2 returns if core works in fabric v2 mode
+	FabricV2() bool
+
+	Public
 }
 
 // types which identify tx "wait'er" policy
