@@ -14,7 +14,10 @@ func NewEventSubscription(cid string, fromTx api.ChaincodeTx) *EventSubscription
 	return &EventSubscription{
 		chaincodeID: cid,
 		fromTx:      string(fromTx),
-		events:      make(chan api.ChaincodeEvent),
+		events: make(chan interface {
+			Event() *peer.ChaincodeEvent
+			Block() uint64
+		}),
 	}
 }
 
@@ -34,7 +37,10 @@ func (eb *ChaincodeEventWithBlock) Block() uint64 {
 type EventSubscription struct {
 	chaincodeID string
 	fromTx      string
-	events      chan api.ChaincodeEvent
+	events      chan interface {
+		Event() *peer.ChaincodeEvent
+		Block() uint64
+	}
 
 	ErrorCloser
 }
@@ -55,7 +61,10 @@ func (e *EventSubscription) Events() chan *peer.ChaincodeEvent {
 	return eventsRaw
 }
 
-func (e *EventSubscription) EventsWithBlock() chan api.ChaincodeEvent {
+func (e *EventSubscription) EventsWithBlock() chan interface {
+	Event() *peer.ChaincodeEvent
+	Block() uint64
+} {
 	return e.events
 }
 

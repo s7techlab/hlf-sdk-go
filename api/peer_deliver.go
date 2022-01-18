@@ -75,7 +75,10 @@ type EventCCSubscription interface {
 	// Events initiates internal GRPC stream and returns channel on chaincode events
 	Events() chan *peer.ChaincodeEvent
 
-	EventsWithBlock() chan ChaincodeEvent
+	EventsWithBlock() chan interface {
+		Event() *peer.ChaincodeEvent
+		Block() uint64
+	}
 	// Errors returns errors associated with this subscription
 	Errors() chan error
 	// Close cancels current subscription

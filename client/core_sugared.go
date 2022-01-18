@@ -90,7 +90,10 @@ func (c *core) Events(
 	ccName string,
 	identity msp.SigningIdentity,
 	blockRange ...int64,
-) (chan api.ChaincodeEvent, error) {
+) (chan interface {
+	Event() *fabPeer.ChaincodeEvent
+	Block() uint64
+}, error) {
 
 	if identity == nil {
 		identity = c.CurrentIdentity()
