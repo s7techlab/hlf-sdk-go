@@ -23,10 +23,6 @@ const (
 	hashingAlgorithmKey          = "HashingAlgorithm"
 	ordererAddressesKey          = "OrdererAddresses"
 	blockDataHashingStructureKey = "BlockDataHashingStructure"
-
-	caCertType           = "ca"
-	intermediateCertType = "intermediate"
-	adminCertType        = "admin"
 )
 
 type ChannelConfig struct {
@@ -39,7 +35,6 @@ type ChannelConfig struct {
 
 	Consortium                string                           `json:"consortium"`
 	HashingAlgorithm          string                           `json:"hashing_algorithm"`
-	OrdererAddresses          []string                         `json:"orderer_addresses"`
 	BlockDataHashingStructure common.BlockDataHashingStructure `json:"block_data_hashing_structure"`
 }
 
@@ -59,14 +54,6 @@ type OrdererConfig struct {
 	Endpoints []string `json:"endpoints"`
 }
 
-type Certificate struct {
-	Fingerprint []byte
-	Data        []byte
-	MSPID       string
-	Type        string
-	MSPName     string
-}
-
 func ParseChannelConfig(cc common.Config) (*ChannelConfig, error) {
 	chanCfg := &ChannelConfig{}
 
@@ -74,7 +61,6 @@ func ParseChannelConfig(cc common.Config) (*ChannelConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parse application config: %w", err)
 	}
-
 	chanCfg.Applications = appCfg
 
 	orderers, err := ParseOrderer(cc)
@@ -82,6 +68,42 @@ func ParseChannelConfig(cc common.Config) (*ChannelConfig, error) {
 		return nil, fmt.Errorf("parse orderers config: %w", err)
 	}
 	chanCfg.Orderers = orderers
+
+	batchSize, err := ParseOrdererBatchSize(cc)
+	if err != nil {
+		return nil, fmt.Errorf("parse batch size: %w", err)
+	}
+	chanCfg.OrdererBatchSize = *batchSize
+
+	batchTimeout, err := ParseOrdererBatchTimeout(cc)
+	if err != nil {
+		return nil, fmt.Errorf("parse batch timeout: %w", err)
+	}
+	chanCfg.OrdererBatchTimeout = batchTimeout
+
+	consensusType, err := ParseOrdererConsesusType(cc)
+	if err != nil {
+		return nil, fmt.Errorf("parse consensus type: %w", err)
+	}
+	chanCfg.OrdererConsesusType = *consensusType
+
+	consortium, err := ParseConsortium(cc)
+	if err != nil {
+		return nil, fmt.Errorf("parse consortium: %w", err)
+	}
+	chanCfg.Consortium = consortium
+
+	hashingAlgorithm, err := ParseHashingAlgorithm(cc)
+	if err != nil {
+		return nil, fmt.Errorf("parse hashing algorithm: %w", err)
+	}
+	chanCfg.HashingAlgorithm = hashingAlgorithm
+
+	blockDataHashing, err := ParseBlockDataHashingStructure(cc)
+	if err != nil {
+		return nil, fmt.Errorf("parse hashing algorithm: %w", err)
+	}
+	chanCfg.BlockDataHashingStructure = *blockDataHashing
 
 	return chanCfg, nil
 }
@@ -122,7 +144,6 @@ func ParseMSP(b []byte) (*MSP, error) {
 	}
 
 	fmspCfg := &msp.FabricMSPConfig{}
-
 	if err := proto.Unmarshal(mspCfg.Config, fmspCfg); err != nil {
 		return nil, fmt.Errorf("unmarshal FabricMSPConfig: %w", err)
 	}
@@ -132,7 +153,6 @@ func ParseMSP(b []byte) (*MSP, error) {
 
 func ParseAnchorPeers(b []byte) ([]*peer.AnchorPeer, error) {
 	anchorPeers := &peer.AnchorPeers{}
-
 	if err := proto.Unmarshal(b, anchorPeers); err != nil {
 		return nil, fmt.Errorf("unmarshal anchor peers: %w", err)
 	}
@@ -143,17 +163,27 @@ func ParseAnchorPeers(b []byte) ([]*peer.AnchorPeer, error) {
 func ParseOrderer(cfg common.Config) (map[string]OrdererConfig, error) {
 	ordererGroup, exists := cfg.ChannelGroup.Groups[ordererKey]
 	if !exists {
-		return nil, fmt.Errorf("orderer group doesn't exists")
+		return nil, fmt.Errorf("%v type group doesn't exists", ordererKey)
 	}
 	orderersCfg := map[string]OrdererConfig{}
 
 	for groupName := range ordererGroup.Groups {
-		mspCfg, err := ParseMSP(ordererGroup.Groups[groupName].Values[mspKey].Value)
+		mspCV, ok := ordererGroup.Groups[groupName].Values[mspKey]
+		if !ok {
+			return nil, fmt.Errorf("%v type group doesn't exists", mspKey)
+		}
+
+		mspCfg, err := ParseMSP(mspCV.Value)
 		if err != nil {
 			return nil, fmt.Errorf("parse msp: %w", err)
 		}
 
-		endpoints, err := ParseEndpoints(ordererGroup.Groups[groupName].Values[endpointsKey].Value)
+		endpointsCV, ok := ordererGroup.Groups[groupName].Values[endpointsKey]
+		if !ok {
+			return nil, fmt.Errorf("%v type group doesn't exists", endpointsKey)
+		}
+
+		endpoints, err := ParseOrdererEndpoints(endpointsCV.Value)
 		if err != nil {
 			return nil, fmt.Errorf("parse endpoints: %w", err)
 		}
@@ -168,154 +198,140 @@ func ParseOrderer(cfg common.Config) (map[string]OrdererConfig, error) {
 	return orderersCfg, nil
 }
 
-func ParseEndpoints(b []byte) ([]string, error) {
+func ParseOrdererEndpoints(b []byte) ([]string, error) {
 	oa := &common.OrdererAddresses{}
 	if err := proto.Unmarshal(b, oa); err != nil {
 		return nil, fmt.Errorf("unmarshal OrdererAddresses: %w", err)
 	}
+
 	return oa.Addresses, nil
 }
 
-// func ParseChannelConfig(cfg *common.Config) (cc ChannelConfig, cs []Certificate, err error) {
+//
+func ParseOrdererBatchSize(cfg common.Config) (*orderer.BatchSize, error) {
+	ordererGroup, exists := cfg.ChannelGroup.Groups[ordererKey]
+	if !exists {
+		return nil, fmt.Errorf("%v type group doesn't exists", ordererKey)
+	}
 
-// 	os := map[string]OrdererConfig{}
+	batchSize, exists := ordererGroup.Values[batchSizeKey]
+	if !exists {
+		return nil, fmt.Errorf("%v type group doesn't exists", batchSizeKey)
+	}
 
-// 	for gName, g := range ordererGroup.Groups {
-// 		var (
-// 			o     OrdererConfig
-// 			mspCs []Certificate
-// 		)
+	return ParseBatchSizeFromBytes(batchSize.Value)
+}
 
-// 		o.Name = gName
+func ParseBatchSizeFromBytes(b []byte) (*orderer.BatchSize, error) {
+	bs := &orderer.BatchSize{}
+	if err := proto.Unmarshal(b, bs); err != nil {
+		return nil, fmt.Errorf("unmarshal BatchSize: %w", err)
+	}
 
-// 		var msp *common.ConfigValue
+	return bs, nil
+}
 
-// 		msp, exists = g.Values[mspKey]
-// 		if exists {
-// 			o.MSP, mspCs, err = parseMSP(msp.Value)
-// 			if err != nil {
-// 				return cc, cs, fmt.Errorf("parse MSP: %w", err)
-// 			}
+//
+func ParseOrdererBatchTimeout(cfg common.Config) (string, error) {
+	ordererGroup, exists := cfg.ChannelGroup.Groups[ordererKey]
+	if !exists {
+		return "", fmt.Errorf("%v type group doesn't exists", ordererKey)
+	}
 
-// 			for i := range mspCs {
-// 				mspCs[i].MSPName = gName
-// 			}
+	batchTimeout, exists := ordererGroup.Values[batchTimeoutKey]
+	if !exists {
+		return "", fmt.Errorf("%v type group doesn't exists", batchTimeoutKey)
+	}
 
-// 			cs = append(cs, mspCs...)
-// 		}
+	return ParseOrdererBatchTimeoutFromBytes(batchTimeout.Value)
+}
 
-// 		var endpoints *common.ConfigValue
+func ParseOrdererBatchTimeoutFromBytes(b []byte) (string, error) {
+	bt := &orderer.BatchTimeout{}
+	if err := proto.Unmarshal(b, bt); err != nil {
+		return "", fmt.Errorf("unmarshal BatchTimeout: %w", err)
+	}
+	return bt.Timeout, nil
+}
 
-// 		endpoints, exists = g.Values[endpointsKey]
-// 		if exists {
-// 			var as common.OrdererAddresses
-// 			if err := proto.Unmarshal(endpoints.Value, &as); err != nil {
-// 				// TODO: log error
-// 				//logrus.WithError(err).Error(
-// 				//	"failed to proto unmarshal OrdererEndpointConfig")
-// 			} else {
-// 				o.Endpoints = as.Addresses
-// 			}
-// 		}
+//
+func ParseOrdererConsesusType(cfg common.Config) (*orderer.ConsensusType, error) {
+	ordererGroup, exists := cfg.ChannelGroup.Groups[ordererKey]
+	if !exists {
+		return nil, fmt.Errorf("%v type group doesn't exists", ordererKey)
+	}
 
-// 		os[gName] = o
-// 	}
+	consensusType, exists := ordererGroup.Values[consensusTypeKey]
+	if !exists {
+		return nil, fmt.Errorf("%v type group doesn't exists", consensusTypeKey)
+	}
 
-// 	batchSize, exists := ordererGroup.Values[batchSizeKey]
-// 	if exists {
-// 		var bs orderer.BatchSize
-// 		err := jsonpb.Unmarshal(bytes.NewReader(batchSize.Value), &bs)
-// 		if err != nil {
-// 			// TODO: log error
-// 			//logrus.WithError(err).Error(
-// 			//	"failed to JSON unmarshal BatchSize")
-// 		} else {
-// 			cc.OrdererBatchSize = bs
-// 		}
-// 	}
+	return ParseOrdererConsesusTypeFromBytes(consensusType.Value)
+}
 
-// 	batchTimeout, exists := ordererGroup.Values[batchTimeoutKey]
-// 	if exists {
-// 		var bt orderer.BatchTimeout
-// 		err := jsonpb.Unmarshal(bytes.NewReader(batchTimeout.Value), &bt)
-// 		if err != nil {
-// 			// TODO: log error
-// 			//logrus.WithError(err).Error(
-// 			//	"failed to JSON unmarshal BatchTimeout")
-// 		} else {
-// 			cc.OrdererBatchTimeout = bt.Timeout
-// 		}
-// 	}
+func ParseOrdererConsesusTypeFromBytes(b []byte) (*orderer.ConsensusType, error) {
+	ct := &orderer.ConsensusType{}
+	if err := proto.Unmarshal(b, ct); err != nil {
+		return nil, fmt.Errorf("unmarshal ConsensusType: %w", err)
+	}
+	return ct, nil
+}
 
-// 	consensusType, exists := ordererGroup.Values[consensusTypeKey]
-// 	if exists {
-// 		var ct orderer.ConsensusType
-// 		err := jsonpb.Unmarshal(bytes.NewReader(consensusType.Value), &ct)
-// 		if err != nil {
-// 			// TODO: log error
-// 			//logrus.WithError(err).Error(
-// 			//	"failed to JSON unmarshal ConsensusType")
-// 		} else {
-// 			cc.OrdererConsesusType = ct
-// 		}
-// 	}
+//
+func ParseConsortium(cfg common.Config) (string, error) {
+	ordererGroup, exists := cfg.ChannelGroup.Groups[ordererKey]
+	if !exists {
+		return "", fmt.Errorf("%v type group doesn't exists", ordererKey)
+	}
 
-// 	consortium, exists := cfg.ChannelGroup.Values[consortiumKey]
-// 	if exists {
-// 		var c common.Consortium
-// 		err := proto.Unmarshal(consortium.Value, &c)
-// 		if err != nil {
-// 			// TODO: log error
-// 			//logrus.WithError(err).Error(
-// 			//	"failed to proto unmarshal Consortium")
-// 		} else {
-// 			cc.Consortium = c.Name
-// 		}
-// 	}
+	consensusType, exists := ordererGroup.Values[consensusTypeKey]
+	if !exists {
+		return "", fmt.Errorf("%v type group doesn't exists", consensusTypeKey)
+	}
 
-// 	hashingAlgorithm, exists := cfg.ChannelGroup.Values[hashingAlgorithmKey]
-// 	if exists {
-// 		var ha common.HashingAlgorithm
-// 		err := proto.Unmarshal(hashingAlgorithm.Value, &ha)
-// 		if err != nil {
-// 			// TODO: log error
-// 			//logrus.WithError(err).Error(
-// 			//	"failed to proto unmarshal HashingAlgorithm")
-// 		} else {
-// 			cc.HashingAlgorithm = ha.Name
-// 		}
-// 	}
+	return ParseConsortiumFromBytes(consensusType.Value)
+}
 
-// 	ordererAddresses, exists := cfg.ChannelGroup.Values[ordererAddressesKey]
-// 	if exists {
-// 		var oas common.OrdererAddresses
-// 		err := proto.Unmarshal(ordererAddresses.Value, &oas)
-// 		if err != nil {
-// 			// TODO: log error
-// 			//logrus.WithError(err).Error(
-// 			//	"failed to proto unmarshal OrdererAddresses")
-// 		} else {
-// 			cc.OrdererAddresses = oas.Addresses
-// 		}
-// 	}
+func ParseConsortiumFromBytes(b []byte) (string, error) {
+	c := &common.Consortium{}
+	if err := proto.Unmarshal(b, c); err != nil {
+		return "", fmt.Errorf("unmarshal Consortium: %w", err)
+	}
+	return c.Name, nil
+}
 
-// 	blockDataHashingStructure, exists := cfg.ChannelGroup.
-// 		Values[blockDataHashingStructureKey]
-// 	if exists {
-// 		var s common.BlockDataHashingStructure
-// 		err := proto.Unmarshal(blockDataHashingStructure.Value, &s)
-// 		if err != nil {
-// 			// TODO: log error
-// 			//logrus.WithError(err).Error(
-// 			//	"failed to proto unmarshal BlockDataHashingStructure")
-// 		} else {
-// 			cc.BlockDataHashingStructure = s
-// 		}
-// 	}
+//
+func ParseHashingAlgorithm(cfg common.Config) (string, error) {
+	hashingAlgorithm, exists := cfg.ChannelGroup.Values[hashingAlgorithmKey]
+	if !exists {
+		return "", fmt.Errorf("%v type group doesn't exists", hashingAlgorithmKey)
+	}
 
-// 	if len(os) > 0 {
-// 		cc.Orderers = os
-// 	}
+	return ParseHashingAlgorithmFromBytes(hashingAlgorithm.Value)
+}
 
-// 	return cc, cs, nil
-// }
+func ParseHashingAlgorithmFromBytes(b []byte) (string, error) {
+	ha := &common.HashingAlgorithm{}
+	if err := proto.Unmarshal(b, ha); err != nil {
+		return "", fmt.Errorf("unmarshal HashingAlgorithm: %w", err)
+	}
+	return ha.Name, nil
+}
+
+//
+func ParseBlockDataHashingStructure(cfg common.Config) (*common.BlockDataHashingStructure, error) {
+	bdh, exists := cfg.ChannelGroup.Values[blockDataHashingStructureKey]
+	if !exists {
+		return nil, fmt.Errorf("%v type group doesn't exists", blockDataHashingStructureKey)
+	}
+
+	return ParseParseBlockDataHashingStructureFromBytes(bdh.Value)
+}
+
+func ParseParseBlockDataHashingStructureFromBytes(b []byte) (*common.BlockDataHashingStructure, error) {
+	bdh := &common.BlockDataHashingStructure{}
+	if err := proto.Unmarshal(b, bdh); err != nil {
+		return nil, fmt.Errorf("unmarshal BatchTimeout: %w", err)
+	}
+	return bdh, nil
+}
