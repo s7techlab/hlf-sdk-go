@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/codes"
 
 	"github.com/hyperledger/fabric-protos-go/common"
@@ -74,6 +75,12 @@ func SeekRange(start, end uint64) EventCCSeekOption {
 type EventCCSubscription interface {
 	// Events initiates internal GRPC stream and returns channel on chaincode events
 	Events() chan *peer.ChaincodeEvent
+
+	EventsExtended() chan interface {
+		Event() *peer.ChaincodeEvent
+		Block() uint64
+		TxTimestamp() *timestamp.Timestamp
+	}
 	// Errors returns errors associated with this subscription
 	Errors() chan error
 	// Close cancels current subscription
