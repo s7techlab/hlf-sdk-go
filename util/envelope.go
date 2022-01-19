@@ -87,6 +87,8 @@ func IsErrUnsupportedTxType(err error) bool {
 	}
 }
 
+// GetEventFromEnvelope
+// Deprecated: use proto.ParseBlock
 func GetEventFromEnvelope(envelopeData []byte) (*peer.ChaincodeEvent, error) {
 	if envelopeData == nil {
 		return nil, errors.New(`no envelope data`)

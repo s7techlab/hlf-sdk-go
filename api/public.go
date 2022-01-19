@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
 )
@@ -21,6 +22,7 @@ type Public interface {
 	) (chan interface {
 		Event() *peer.ChaincodeEvent
 		Block() uint64
+		TxTimestamp() *timestamp.Timestamp
 	}, error)
 
 	// Invoke - shortcut for invoking chanincodes

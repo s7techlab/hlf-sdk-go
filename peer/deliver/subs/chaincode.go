@@ -1,29 +1,18 @@
 package subs
 
 import (
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
 
-	"github.com/s7techlab/hlf-sdk-go/v2/util/txflags"
-
 	"github.com/s7techlab/hlf-sdk-go/v2/api"
-	utilSDK "github.com/s7techlab/hlf-sdk-go/v2/util"
+	"github.com/s7techlab/hlf-sdk-go/v2/proto"
 )
 
-func NewEventSubscription(cid string, fromTx api.ChaincodeTx) *EventSubscription {
-	return &EventSubscription{
-		chaincodeID: cid,
-		fromTx:      string(fromTx),
-		events: make(chan interface {
-			Event() *peer.ChaincodeEvent
-			Block() uint64
-		}),
-	}
-}
-
 type ChaincodeEventWithBlock struct {
-	event *peer.ChaincodeEvent
-	block uint64
+	event       *peer.ChaincodeEvent
+	block       uint64
+	txTimestamp *timestamp.Timestamp
 }
 
 func (eb *ChaincodeEventWithBlock) Event() *peer.ChaincodeEvent {
@@ -34,12 +23,29 @@ func (eb *ChaincodeEventWithBlock) Block() uint64 {
 	return eb.block
 }
 
+func (eb *ChaincodeEventWithBlock) TxTimestamp() *timestamp.Timestamp {
+	return eb.txTimestamp
+}
+
+func NewEventSubscription(cid string, fromTx api.ChaincodeTx) *EventSubscription {
+	return &EventSubscription{
+		chaincodeID: cid,
+		fromTx:      string(fromTx),
+		events: make(chan interface {
+			Event() *peer.ChaincodeEvent
+			Block() uint64
+			TxTimestamp() *timestamp.Timestamp
+		}),
+	}
+}
+
 type EventSubscription struct {
 	chaincodeID string
 	fromTx      string
 	events      chan interface {
 		Event() *peer.ChaincodeEvent
 		Block() uint64
+		TxTimestamp() *timestamp.Timestamp
 	}
 
 	ErrorCloser
@@ -61,9 +67,10 @@ func (e *EventSubscription) Events() chan *peer.ChaincodeEvent {
 	return eventsRaw
 }
 
-func (e *EventSubscription) EventsWithBlock() chan interface {
+func (e *EventSubscription) EventsExtended() chan interface {
 	Event() *peer.ChaincodeEvent
 	Block() uint64
+	TxTimestamp() *timestamp.Timestamp
 } {
 	return e.events
 }
@@ -74,40 +81,42 @@ func (e *EventSubscription) Handler(block *common.Block) bool {
 		return false
 	}
 
-	txFilter := txflags.ValidationFlags(block.Metadata.Metadata[common.BlockMetadataIndex_TRANSACTIONS_FILTER])
-	for i, r := range block.GetData().GetData() {
-		if !txFilter.IsValid(i) {
-			continue
-		}
-		ev, err := utilSDK.GetEventFromEnvelope(r)
-		if err != nil {
-			if utilSDK.IsErrUnsupportedTxType(err) {
-				continue
-			}
-			return true
-		}
+	parsedBlock, err := proto.ParseBlock(block)
+	if err != nil {
+		return true
+	}
 
-		if ev.GetChaincodeId() != e.chaincodeID {
+	for _, envelope := range parsedBlock.ValidEnvelopes() {
+
+		if envelope.Transaction == nil {
 			continue
 		}
 
-		if len(e.fromTx) > 0 {
-			if ev.TxId != e.fromTx {
-				continue
-			} else {
-				//reset filter and go to next tx from block
-				e.fromTx = ``
+		for _, ev := range envelope.Transaction.Events() {
+
+			if ev.GetChaincodeId() != e.chaincodeID {
 				continue
 			}
-		}
 
-		select {
-		case e.events <- &ChaincodeEventWithBlock{
-			event: ev,
-			block: block.Header.Number,
-		}:
-		case <-e.ErrorCloser.Done():
-			return true
+			if len(e.fromTx) > 0 {
+				if ev.TxId != e.fromTx {
+					continue
+				} else {
+					//reset filter and go to next tx from block
+					e.fromTx = ``
+					continue
+				}
+			}
+
+			select {
+			case e.events <- &ChaincodeEventWithBlock{
+				event:       ev,
+				block:       block.Header.Number,
+				txTimestamp: envelope.ChannelHeader.Timestamp,
+			}:
+			case <-e.ErrorCloser.Done():
+				return true
+			}
 		}
 	}
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
 	fabPeer "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
 	"go.uber.org/zap"
@@ -93,6 +94,7 @@ func (c *core) Events(
 ) (chan interface {
 	Event() *fabPeer.ChaincodeEvent
 	Block() uint64
+	TxTimestamp() *timestamp.Timestamp
 }, error) {
 
 	if identity == nil {
@@ -122,5 +124,5 @@ func (c *core) Events(
 		return nil, err
 	}
 
-	return subscription.EventsWithBlock(), nil
+	return subscription.EventsExtended(), nil
 }

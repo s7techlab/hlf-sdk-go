@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/codes"
 
 	"github.com/hyperledger/fabric-protos-go/common"
@@ -75,9 +76,10 @@ type EventCCSubscription interface {
 	// Events initiates internal GRPC stream and returns channel on chaincode events
 	Events() chan *peer.ChaincodeEvent
 
-	EventsWithBlock() chan interface {
+	EventsExtended() chan interface {
 		Event() *peer.ChaincodeEvent
 		Block() uint64
+		TxTimestamp() *timestamp.Timestamp
 	}
 	// Errors returns errors associated with this subscription
 	Errors() chan error

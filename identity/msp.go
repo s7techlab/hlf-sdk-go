@@ -161,14 +161,14 @@ func NewMSPIdentityFromPath(mspId string, mspPath string) (api.Identity, error) 
 
 /* */
 
-// MSPIndentities - contains all parsed identities from msp folder
+// MSPIdentities - contains all parsed identities from msp folder
 // Should be used instead of single `api.Identity` which contains ONLY msp identity
-type MSPIndentities struct {
+type MSPIdentities struct {
 	// identity from 'signcerts'
 	MSP api.Identity
 	// identities from 'admincerts'
 	Admins []api.Identity
-	// indentities from 'users'
+	// identities from 'users'
 	Users []api.Identity
 }
 
@@ -176,14 +176,14 @@ type MSPIndentities struct {
 
 // NewMSPIndentitiesFromPath - parse all certificates(msp,admins,users) from MSP folder.
 // Came to replace legacy `util.LoadKeyPairFromMSP` method
-func NewMSPIndentitiesFromPath(mspID string, mspPath string) (*MSPIndentities, error) {
+func NewMSPIndentitiesFromPath(mspID string, mspPath string) (*MSPIdentities, error) {
 	const (
 		admincertsPath = "admincerts"
 		signcertsPath  = "signcerts"
 		userscertsPath = "user"
 	)
 
-	mspIndentities := &MSPIndentities{
+	mspIdentities := &MSPIdentities{
 		Admins: make([]api.Identity, 0),
 		MSP:    nil,
 		Users:  make([]api.Identity, 0),
@@ -205,7 +205,7 @@ func NewMSPIndentitiesFromPath(mspID string, mspPath string) (*MSPIndentities, e
 			}
 
 			idnt, _ := NewMSPIdentityRaw(mspID, cert, key)
-			mspIndentities.Admins = append(mspIndentities.Admins, idnt)
+			mspIdentities.Admins = append(mspIdentities.Admins, idnt)
 		}
 	}
 
@@ -225,7 +225,7 @@ func NewMSPIndentitiesFromPath(mspID string, mspPath string) (*MSPIndentities, e
 			}
 
 			idnt, _ := NewMSPIdentityRaw(mspID, cert, key)
-			mspIndentities.Users = append(mspIndentities.Users, idnt)
+			mspIdentities.Users = append(mspIdentities.Users, idnt)
 		}
 	}
 
@@ -245,7 +245,7 @@ func NewMSPIndentitiesFromPath(mspID string, mspPath string) (*MSPIndentities, e
 	}
 
 	idnt, _ := NewMSPIdentityRaw(mspID, cert, key)
-	mspIndentities.MSP = idnt
+	mspIdentities.MSP = idnt
 
-	return mspIndentities, nil
+	return mspIdentities, nil
 }
