@@ -12,6 +12,7 @@ import (
 )
 
 const (
+	// todo can be taken from lib
 	applicationKey               = "Application"
 	ordererKey                   = "Orderer"
 	mspKey                       = "MSP"
@@ -36,6 +37,7 @@ type ChannelConfig struct {
 	Consortium                string                           `json:"consortium"`
 	HashingAlgorithm          string                           `json:"hashing_algorithm"`
 	BlockDataHashingStructure common.BlockDataHashingStructure `json:"block_data_hashing_structure"`
+	Capabilities              common.Capabilities              `json:"capabilities"`
 }
 
 type ApplicationConfig struct {
@@ -46,6 +48,7 @@ type ApplicationConfig struct {
 
 type MSP struct {
 	Config msp.FabricMSPConfig
+	// todo Policies
 }
 
 type OrdererConfig struct {
@@ -101,9 +104,15 @@ func ParseChannelConfig(cc common.Config) (*ChannelConfig, error) {
 
 	blockDataHashing, err := ParseBlockDataHashingStructure(cc)
 	if err != nil {
-		return nil, fmt.Errorf("parse hashing algorithm: %w", err)
+		return nil, fmt.Errorf("parse block data hashing structure: %w", err)
 	}
 	chanCfg.BlockDataHashingStructure = *blockDataHashing
+
+	capabilities, err := ParseCapabilities(cc)
+	if err != nil {
+		return nil, fmt.Errorf("parse capabilities: %w", err)
+	}
+	chanCfg.Capabilities = *capabilities
 
 	return chanCfg, nil
 }
@@ -334,4 +343,22 @@ func ParseParseBlockDataHashingStructureFromBytes(b []byte) (*common.BlockDataHa
 		return nil, fmt.Errorf("unmarshal BatchTimeout: %w", err)
 	}
 	return bdh, nil
+}
+
+//
+func ParseCapabilities(cfg common.Config) (*common.Capabilities, error) {
+	bdh, exists := cfg.ChannelGroup.Values[channelconfig.CapabilitiesKey]
+	if !exists {
+		return nil, fmt.Errorf("%v type group doesn't exists", channelconfig.CapabilitiesKey)
+	}
+
+	return ParseParseCapabilitiesFromBytes(bdh.Value)
+}
+
+func ParseParseCapabilitiesFromBytes(b []byte) (*common.Capabilities, error) {
+	c := &common.Capabilities{}
+	if err := proto.Unmarshal(b, c); err != nil {
+		return nil, fmt.Errorf("unmarshal BatchTimeout: %w", err)
+	}
+	return c, nil
 }
