@@ -19,11 +19,11 @@ type Public interface {
 		ccName string,
 		identity msp.SigningIdentity,
 		blockRange ...int64,
-	) (chan interface {
+	) (events chan interface {
 		Event() *peer.ChaincodeEvent
 		Block() uint64
 		TxTimestamp() *timestamp.Timestamp
-	}, error)
+	}, closer func() error, err error)
 
 	// Invoke - shortcut for invoking chanincodes
 	// if provided 'identity' is 'nil' default one will be set
