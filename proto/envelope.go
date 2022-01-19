@@ -3,6 +3,7 @@ package proto
 import (
 	"fmt"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/protoutil"
@@ -16,6 +17,7 @@ type (
 		ChannelHeader  *common.ChannelHeader
 		ValidationCode peer.TxValidationCode
 		Transaction    *Transaction
+		ChannelConfig  *ChannelConfig
 	}
 
 	Envelopes []*Envelope
@@ -62,6 +64,16 @@ func ParseEnvelope(envelopeData []byte, validationCode peer.TxValidationCode) (*
 		parsedEnvelope.Transaction, err = ParseEndorserTx(payload.Data)
 		if err != nil {
 			return nil, fmt.Errorf(`endorser transaction from envelope: %w`, err)
+		}
+	case common.HeaderType_CONFIG:
+		ce := &common.ConfigEnvelope{}
+		if err := proto.Unmarshal(payload.Data, ce); err != nil {
+			return nil, err
+		}
+
+		parsedEnvelope.ChannelConfig, err = ParseChannelConfig(*ce.Config)
+		if err != nil {
+			return nil, fmt.Errorf(`parse channel config: %w`, err)
 		}
 	}
 
