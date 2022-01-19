@@ -29,10 +29,6 @@ type Core struct {
 	log          *zap.Logger
 }
 
-func (c *Core) ChaincodeLifecycle() api.ChaincodeDefinitionLifecycle {
-	panic("implement me")
-}
-
 var _ api.Channel = (*Core)(nil)
 
 // Chaincode - returns interface with actions over chaincode
@@ -46,16 +42,25 @@ func (c *Core) Chaincode(serviceDiscCtx context.Context, ccName string) (api.Cha
 		return cc, nil
 	}
 
+	if c.chanName == `` {
+		cc = chaincode.NewCore(c.mspId, ccName, c.chanName, []string{c.mspId}, c.peerPool, c.orderer, c.identity)
+		c.chaincodes[ccName] = cc
+
+		return cc, nil
+	}
+
 	cd, err := c.dp.Chaincode(serviceDiscCtx, c.chanName, ccName)
 	if err != nil {
 		return nil, fmt.Errorf("chaincode discovery err: %w", err)
 	}
 
+	var endorserMSPs []string
 	endorsers := cd.Endorsers()
-
 	errGr, _ := errgroup.WithContext(serviceDiscCtx)
 
 	for i := range endorsers {
+		endorserMSPs = append(endorserMSPs, endorsers[i].MspID)
+
 		for j := range endorsers[i].HostAddresses {
 			hostAddr := endorsers[i].HostAddresses[j]
 			// we can get empty address in local discovery and peers must be already in pool
@@ -82,11 +87,11 @@ func (c *Core) Chaincode(serviceDiscCtx context.Context, ccName string) (api.Cha
 		}
 	}
 
-	if err := errGr.Wait(); err != nil {
+	if err = errGr.Wait(); err != nil {
 		return nil, err
 	}
 
-	cc = chaincode.NewCore(c.mspId, ccName, c.chanName, c.peerPool, c.orderer, c.dp, c.identity)
+	cc = chaincode.NewCore(c.mspId, ccName, c.chanName, endorserMSPs, c.peerPool, c.orderer, c.identity)
 	c.chaincodes[ccName] = cc
 
 	return cc, nil

@@ -52,6 +52,10 @@ type core struct {
 	fabricV2          bool
 }
 
+func (c *core) ChaincodeLifecycle() api.Lifecycle {
+	return system.NewLifecycle(c)
+}
+
 func (c *core) Chaincode(name string) api.ChaincodePackage {
 	c.chaincodeMx.Lock()
 	defer c.chaincodeMx.Unlock()
@@ -67,7 +71,7 @@ func (c *core) Chaincode(name string) api.ChaincodePackage {
 }
 
 func (c *core) System() api.SystemCC {
-	return system.NewSCC(c.peerPool, c.identity, c.fabricV2)
+	return system.NewSCC(c)
 }
 
 func (c *core) CurrentIdentity() msp.SigningIdentity {
@@ -132,11 +136,9 @@ func (c *core) Channel(name string) api.Channel {
 		ord = c.orderer
 	}
 
-	ch = channel.NewCore(c.mspId, name, c.peerPool, ord,
-		c.discoveryProvider, c.identity, c.fabricV2, c.logger)
+	ch = channel.NewCore(c.mspId, name, c.peerPool, ord, c.discoveryProvider, c.identity, c.fabricV2, c.logger)
 	c.channels[name] = ch
 	return ch
-
 }
 
 func (c *core) FabricV2() bool {

@@ -18,7 +18,7 @@ type Chaincode interface {
 	Invoke(fn string) ChaincodeInvokeBuilder
 	// Query returns query builder for presented function and arguments
 	Query(fn string, args ...string) ChaincodeQueryBuilder
-	// Install fetches chaincode from repository and installs it on local peer
+	// Deprecated: Install fetches chaincode from repository and installs it on local peer
 	Install(version string)
 	// Subscribe returns subscription on chaincode events
 	Subscribe(ctx context.Context) (EventCCSubscription, error)
@@ -58,6 +58,14 @@ type DoOption func(opt *DoOptions) error
 func WithEndorsingMpsIDs(mspIDs []string) DoOption {
 	return func(opt *DoOptions) error {
 		opt.EndorsingMspIDs = mspIDs
+
+		return nil
+	}
+}
+
+func WithIdentity(identity msp.SigningIdentity) DoOption {
+	return func(opt *DoOptions) error {
+		opt.Identity = identity
 
 		return nil
 	}

@@ -21,13 +21,121 @@ import (
 type invokeBuilder struct {
 	ccCore        *Core
 	fn            string
-	processor     api.PeerProcessor
-	peerPool      api.PeerPool
-	identity      msp.SigningIdentity
-	txWaiter      api.TxWaiter
 	args          [][]byte
 	transientArgs api.TransArgs
+	processor     api.PeerProcessor
+	doOptions     []api.DoOption
 	err           *errArgMap
+}
+
+var _ api.ChaincodeInvokeBuilder = (*invokeBuilder)(nil)
+
+func NewInvokeBuilder(ccCore *Core, fn string) api.ChaincodeInvokeBuilder {
+	return &invokeBuilder{
+		ccCore:    ccCore,
+		fn:        fn,
+		processor: peer.NewProcessor(ccCore.channelName),
+
+		err: newErrArgMap(),
+	}
+}
+
+// WithIdentity instructs invoke builder to use given identity for signing transaction proposals
+func (b *invokeBuilder) WithIdentity(identity msp.SigningIdentity) api.ChaincodeInvokeBuilder {
+	b.doOptions = append(b.doOptions, api.WithIdentity(identity))
+
+	return b
+}
+
+func (b *invokeBuilder) ArgBytes(args [][]byte) api.ChaincodeInvokeBuilder {
+	b.args = args
+
+	return b
+}
+
+func (b *invokeBuilder) Transient(args api.TransArgs) api.ChaincodeInvokeBuilder {
+	b.transientArgs = args
+
+	return b
+}
+
+func (b *invokeBuilder) ArgJSON(in ...interface{}) api.ChaincodeInvokeBuilder {
+	argBytes := make([][]byte, 0)
+	for _, arg := range in {
+		if data, err := json.Marshal(arg); err != nil {
+			b.err.Add(arg, err)
+		} else {
+			argBytes = append(argBytes, data)
+		}
+	}
+	return b.ArgBytes(argBytes)
+}
+
+func (b *invokeBuilder) ArgString(args ...string) api.ChaincodeInvokeBuilder {
+	return b.ArgBytes(argsToBytes(args...))
+}
+
+func (b *invokeBuilder) Do(ctx context.Context, options ...api.DoOption) (*fabricPeer.Response, api.ChaincodeTx, error) {
+	err := b.err.Err()
+	if err != nil {
+		return nil, ``, err
+	}
+
+	// set default options
+	doOpts := &api.DoOptions{
+		Identity:        b.ccCore.identity,
+		Pool:            b.ccCore.peerPool,
+		EndorsingMspIDs: b.ccCore.endorsingMSPs,
+	}
+	doOpts.TxWaiter, err = txwaiter.Self(doOpts)
+	if err != nil {
+		return nil, "", nil
+	}
+
+	// apply options
+	for _, applyOpt := range append(b.doOptions, options...) {
+		if err = applyOpt(doOpts); err != nil {
+			return nil, ``, fmt.Errorf("apply options: %s", err)
+		}
+	}
+
+	proposal, tx, err := b.processor.CreateProposal(b.ccCore.name, doOpts.Identity, b.fn, b.args, b.transientArgs)
+	if err != nil {
+		return nil, ``, fmt.Errorf("create proposal: %w", err)
+	}
+
+	peerResponses, err := b.processor.Send(ctx, proposal, doOpts.EndorsingMspIDs, doOpts.Pool)
+	if err != nil {
+		return nil, tx, fmt.Errorf("send proposal: %w", err)
+	}
+
+	envelope, err := getTransaction(proposal, peerResponses, doOpts.Identity)
+	if err != nil {
+		return nil, tx, fmt.Errorf("create signed transaction: %w", err)
+	}
+
+	_, err = b.ccCore.orderer.Broadcast(ctx, envelope)
+	if err != nil {
+		return nil, tx, fmt.Errorf("broadcast transaction: %w", err)
+	}
+
+	if err = doOpts.TxWaiter.Wait(ctx, b.ccCore.channelName, tx); err != nil {
+		return nil, tx, err
+	}
+
+	return peerResponses[0].Response, tx, nil
+}
+
+func getTransaction(
+	proposal *fabricPeer.SignedProposal, peerResponses []*fabricPeer.ProposalResponse, identity msp.SigningIdentity) (
+	*common.Envelope, error) {
+
+	prop := new(fabricPeer.Proposal)
+	if err := proto.Unmarshal(proposal.ProposalBytes, prop); err != nil {
+		return nil, fmt.Errorf("unmarshal proposal: %w", err)
+	}
+
+	return protoutil.CreateSignedTx(prop, identity, peerResponses...)
 }
 
 // A string that might be shortened to a specified length.
@@ -92,125 +200,4 @@ func (e *errArgMap) Err() error {
 		buff.WriteString(errors.Wrap(err, key.String()).Error() + "\n")
 	}
 	return errors.New(buff.String())
-}
-
-func (b *invokeBuilder) WithIdentity(identity msp.SigningIdentity) api.ChaincodeInvokeBuilder {
-	b.identity = identity
-	return b
-}
-
-func (b *invokeBuilder) ArgBytes(args [][]byte) api.ChaincodeInvokeBuilder {
-	b.args = args
-	return b
-}
-
-func (b *invokeBuilder) Transient(args api.TransArgs) api.ChaincodeInvokeBuilder {
-	b.transientArgs = args
-	return b
-}
-
-func (b *invokeBuilder) getTransaction(proposal *fabricPeer.SignedProposal, peerResponses []*fabricPeer.ProposalResponse) (*common.Envelope, error) {
-
-	prop := new(fabricPeer.Proposal)
-
-	if err := proto.Unmarshal(proposal.ProposalBytes, prop); err != nil {
-		return nil, errors.Wrap(err, `failed to unmarshal `)
-	}
-
-	return protoutil.CreateSignedTx(prop, b.identity, peerResponses...)
-}
-
-func (b *invokeBuilder) ArgJSON(in ...interface{}) api.ChaincodeInvokeBuilder {
-	argBytes := make([][]byte, 0)
-	for _, arg := range in {
-		if data, err := json.Marshal(arg); err != nil {
-			b.err.Add(arg, err)
-		} else {
-			argBytes = append(argBytes, data)
-		}
-	}
-	return b.ArgBytes(argBytes)
-}
-
-func (b *invokeBuilder) ArgString(args ...string) api.ChaincodeInvokeBuilder {
-	return b.ArgBytes(argsToBytes(args...))
-}
-
-func (b *invokeBuilder) Do(ctx context.Context, options ...api.DoOption) (*fabricPeer.Response, api.ChaincodeTx, error) {
-	err := b.err.Err()
-	if err != nil {
-		return nil, ``, err
-	}
-
-	ccd, err := b.ccCore.dp.Chaincode(ctx, b.ccCore.channelName, b.ccCore.name)
-	if err != nil {
-		return nil, ``, errors.Wrap(err, `failed to get chaincode definition`)
-	}
-
-	// set default options
-	doOpts := &api.DoOptions{
-		Identity:        b.identity,
-		Pool:            b.peerPool,
-		EndorsingMspIDs: getEndorsingMSPs(ccd),
-	}
-	if len(options) == 0 {
-		options = append(options, WithTxWaiter(txwaiter.Self))
-	}
-
-	// apply options
-	for _, applyOpt := range options {
-		if err := applyOpt(doOpts); err != nil {
-			return nil, ``, err
-		}
-	}
-	b.txWaiter = doOpts.TxWaiter
-
-	endorsingMspIDs := doOpts.EndorsingMspIDs
-
-	proposal, tx, err := b.processor.CreateProposal(ccd.ChaincodeName(), b.identity, b.fn, b.args, b.transientArgs)
-	if err != nil {
-		return nil, ``, errors.Wrap(err, `failed to get signed proposal`)
-	}
-
-	peerResponses, err := b.processor.Send(ctx, proposal, endorsingMspIDs, b.peerPool)
-	if err != nil {
-		return nil, tx, errors.Wrap(err, `failed to collect peer responses`)
-	}
-
-	envelope, err := b.getTransaction(proposal, peerResponses)
-	if err != nil {
-		return nil, tx, errors.Wrap(err, `failed to get envelope`)
-	}
-
-	_, err = b.ccCore.orderer.Broadcast(ctx, envelope)
-	if err != nil {
-		return nil, tx, errors.Wrap(err, `failed to get orderer response`)
-	}
-
-	if err = b.txWaiter.Wait(ctx, b.ccCore.channelName, tx); err != nil {
-		return nil, tx, err
-	}
-
-	return peerResponses[0].Response, tx, nil
-}
-
-func getEndorsingMSPs(d api.ChaincodeDiscoverer) (endorsingMspIDs []string) {
-	endorsers := d.Endorsers()
-	for i := range endorsers {
-		endorsingMspIDs = append(endorsingMspIDs, endorsers[i].MspID)
-	}
-	return endorsingMspIDs
-}
-
-func NewInvokeBuilder(ccCore *Core, fn string) api.ChaincodeInvokeBuilder {
-	processor := peer.NewProcessor(ccCore.channelName)
-	return &invokeBuilder{
-		ccCore:    ccCore,
-		peerPool:  ccCore.peerPool,
-		fn:        fn,
-		processor: processor,
-		identity:  ccCore.identity,
-
-		err: newErrArgMap(),
-	}
 }

@@ -12,8 +12,6 @@ type Channel interface {
 	Chaincode(ctx context.Context, name string) (Chaincode, error)
 	// Join channel
 	Join(ctx context.Context) error
-
-	ChaincodeLifecycle() ChaincodeDefinitionLifecycle
 }
 
 type Core interface {
@@ -65,8 +63,6 @@ type Core interface {
 		identity msp.SigningIdentity,
 		transient map[string][]byte,
 	) (*peer.Response, error)
-
-	//ChaincodeLifecycle() ChaincodePackageLifecycle
 }
 
 // types which identify tx "wait'er" policy
