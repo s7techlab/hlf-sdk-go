@@ -91,11 +91,11 @@ func (c *core) Events(
 	ccName string,
 	identity msp.SigningIdentity,
 	blockRange ...int64,
-) (chan interface {
+) (events chan interface {
 	Event() *fabPeer.ChaincodeEvent
 	Block() uint64
 	TxTimestamp() *timestamp.Timestamp
-}, error) {
+}, closer func() error, err error) {
 
 	if identity == nil {
 		identity = c.CurrentIdentity()
@@ -106,23 +106,23 @@ func (c *core) Events(
 
 	dc, err := c.PeerPool().DeliverClient(mspID, identity)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var seekOpts []api.EventCCSeekOption
 	seekOpt, err := NewSeekOptConverter(c).ByBlockRange(ctx, chanName, blockRange...)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if seekOpt != nil {
 		seekOpts = append(seekOpts, seekOpt)
 	}
 
-	subscription, err := dc.SubscribeCC(ctx, chanName, ccName, seekOpts...)
+	sub, err := dc.SubscribeCC(ctx, chanName, ccName, seekOpts...)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return subscription.EventsExtended(), nil
+	return sub.EventsExtended(), sub.Close, nil
 }
