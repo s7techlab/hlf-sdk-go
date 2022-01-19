@@ -67,6 +67,25 @@ type Certificate struct {
 	MSPName     string
 }
 
+func ParseChannelConfig(cc common.Config) (*ChannelConfig, error) {
+	chanCfg := &ChannelConfig{}
+
+	appCfg, err := ParseApplicationConfig(cc)
+	if err != nil {
+		return nil, fmt.Errorf("parse application config: %w", err)
+	}
+
+	chanCfg.Applications = appCfg
+
+	orderers, err := ParseOrderer(cc)
+	if err != nil {
+		return nil, fmt.Errorf("parse orderers config: %w", err)
+	}
+	chanCfg.Orderers = orderers
+
+	return chanCfg, nil
+}
+
 func ParseApplicationConfig(cfg common.Config) (map[string]ApplicationConfig, error) {
 	applicationGroup, exists := cfg.ChannelGroup.Groups[applicationKey]
 	if !exists {
@@ -76,11 +95,6 @@ func ParseApplicationConfig(cfg common.Config) (map[string]ApplicationConfig, er
 	appCfg := map[string]ApplicationConfig{}
 
 	for groupName := range applicationGroup.Groups {
-		var (
-			a ApplicationConfig
-		)
-
-		a.Name = groupName
 		mspCfg, err := ParseMSP(applicationGroup.Groups[groupName].Values[mspKey].Value)
 		if err != nil {
 			return nil, fmt.Errorf("parse msp: %w", err)
@@ -97,42 +111,211 @@ func ParseApplicationConfig(cfg common.Config) (map[string]ApplicationConfig, er
 			AnchorPeers: ancPeers,
 		}
 	}
+
 	return appCfg, nil
+}
+
+func ParseMSP(b []byte) (*MSP, error) {
+	mspCfg := &msp.MSPConfig{}
+	if err := proto.Unmarshal(b, mspCfg); err != nil {
+		return nil, fmt.Errorf("unmarshal MSPConfig: %w", err)
+	}
+
+	fmspCfg := &msp.FabricMSPConfig{}
+
+	if err := proto.Unmarshal(mspCfg.Config, fmspCfg); err != nil {
+		return nil, fmt.Errorf("unmarshal FabricMSPConfig: %w", err)
+	}
+
+	return &MSP{Config: *fmspCfg}, nil
 }
 
 func ParseAnchorPeers(b []byte) ([]*peer.AnchorPeer, error) {
 	anchorPeers := &peer.AnchorPeers{}
 
 	if err := proto.Unmarshal(b, anchorPeers); err != nil {
-		return nil, fmt.Errorf("unmarshal anchor peers from config: %w", err)
+		return nil, fmt.Errorf("unmarshal anchor peers: %w", err)
 	}
 
 	return anchorPeers.AnchorPeers, nil
 }
 
-func ParseMSP(b []byte) (*MSP, error) {
-	mspCfg := &msp.MSPConfig{}
-	if err := proto.Unmarshal(b, mspCfg); err != nil {
-		return nil, fmt.Errorf("JSON unmarshal application MSP config: %w", err)
+func ParseOrderer(cfg common.Config) (map[string]OrdererConfig, error) {
+	ordererGroup, exists := cfg.ChannelGroup.Groups[ordererKey]
+	if !exists {
+		return nil, fmt.Errorf("orderer group doesn't exists")
+	}
+	orderersCfg := map[string]OrdererConfig{}
+
+	for groupName := range ordererGroup.Groups {
+		mspCfg, err := ParseMSP(ordererGroup.Groups[groupName].Values[mspKey].Value)
+		if err != nil {
+			return nil, fmt.Errorf("parse msp: %w", err)
+		}
+
+		endpoints, err := ParseEndpoints(ordererGroup.Groups[groupName].Values[endpointsKey].Value)
+		if err != nil {
+			return nil, fmt.Errorf("parse endpoints: %w", err)
+		}
+
+		orderersCfg[groupName] = OrdererConfig{
+			Name:      groupName,
+			MSP:       *mspCfg,
+			Endpoints: endpoints,
+		}
 	}
 
-	fmspCfg := &msp.FabricMSPConfig{}
-
-	if err := proto.Unmarshal(mspCfg.Config, fmspCfg); err != nil {
-		return nil, fmt.Errorf("protobuf unmarshal MSP: %w", err)
-	}
-
-	return &MSP{Config: *fmspCfg}, nil
+	return orderersCfg, nil
 }
-func ParseChannelConfig(cc common.Config) (*ChannelConfig, error) {
-	chanCfg := &ChannelConfig{}
 
-	appCfg, err := ParseApplicationConfig(cc)
-	if err != nil {
-		return nil, fmt.Errorf("parse application config: %w", err)
+func ParseEndpoints(b []byte) ([]string, error) {
+	oa := &common.OrdererAddresses{}
+	if err := proto.Unmarshal(b, oa); err != nil {
+		return nil, fmt.Errorf("unmarshal OrdererAddresses: %w", err)
 	}
-
-	chanCfg.Applications = appCfg
-
-	return chanCfg, nil
+	return oa.Addresses, nil
 }
+
+// func ParseChannelConfig(cfg *common.Config) (cc ChannelConfig, cs []Certificate, err error) {
+
+// 	os := map[string]OrdererConfig{}
+
+// 	for gName, g := range ordererGroup.Groups {
+// 		var (
+// 			o     OrdererConfig
+// 			mspCs []Certificate
+// 		)
+
+// 		o.Name = gName
+
+// 		var msp *common.ConfigValue
+
+// 		msp, exists = g.Values[mspKey]
+// 		if exists {
+// 			o.MSP, mspCs, err = parseMSP(msp.Value)
+// 			if err != nil {
+// 				return cc, cs, fmt.Errorf("parse MSP: %w", err)
+// 			}
+
+// 			for i := range mspCs {
+// 				mspCs[i].MSPName = gName
+// 			}
+
+// 			cs = append(cs, mspCs...)
+// 		}
+
+// 		var endpoints *common.ConfigValue
+
+// 		endpoints, exists = g.Values[endpointsKey]
+// 		if exists {
+// 			var as common.OrdererAddresses
+// 			if err := proto.Unmarshal(endpoints.Value, &as); err != nil {
+// 				// TODO: log error
+// 				//logrus.WithError(err).Error(
+// 				//	"failed to proto unmarshal OrdererEndpointConfig")
+// 			} else {
+// 				o.Endpoints = as.Addresses
+// 			}
+// 		}
+
+// 		os[gName] = o
+// 	}
+
+// 	batchSize, exists := ordererGroup.Values[batchSizeKey]
+// 	if exists {
+// 		var bs orderer.BatchSize
+// 		err := jsonpb.Unmarshal(bytes.NewReader(batchSize.Value), &bs)
+// 		if err != nil {
+// 			// TODO: log error
+// 			//logrus.WithError(err).Error(
+// 			//	"failed to JSON unmarshal BatchSize")
+// 		} else {
+// 			cc.OrdererBatchSize = bs
+// 		}
+// 	}
+
+// 	batchTimeout, exists := ordererGroup.Values[batchTimeoutKey]
+// 	if exists {
+// 		var bt orderer.BatchTimeout
+// 		err := jsonpb.Unmarshal(bytes.NewReader(batchTimeout.Value), &bt)
+// 		if err != nil {
+// 			// TODO: log error
+// 			//logrus.WithError(err).Error(
+// 			//	"failed to JSON unmarshal BatchTimeout")
+// 		} else {
+// 			cc.OrdererBatchTimeout = bt.Timeout
+// 		}
+// 	}
+
+// 	consensusType, exists := ordererGroup.Values[consensusTypeKey]
+// 	if exists {
+// 		var ct orderer.ConsensusType
+// 		err := jsonpb.Unmarshal(bytes.NewReader(consensusType.Value), &ct)
+// 		if err != nil {
+// 			// TODO: log error
+// 			//logrus.WithError(err).Error(
+// 			//	"failed to JSON unmarshal ConsensusType")
+// 		} else {
+// 			cc.OrdererConsesusType = ct
+// 		}
+// 	}
+
+// 	consortium, exists := cfg.ChannelGroup.Values[consortiumKey]
+// 	if exists {
+// 		var c common.Consortium
+// 		err := proto.Unmarshal(consortium.Value, &c)
+// 		if err != nil {
+// 			// TODO: log error
+// 			//logrus.WithError(err).Error(
+// 			//	"failed to proto unmarshal Consortium")
+// 		} else {
+// 			cc.Consortium = c.Name
+// 		}
+// 	}
+
+// 	hashingAlgorithm, exists := cfg.ChannelGroup.Values[hashingAlgorithmKey]
+// 	if exists {
+// 		var ha common.HashingAlgorithm
+// 		err := proto.Unmarshal(hashingAlgorithm.Value, &ha)
+// 		if err != nil {
+// 			// TODO: log error
+// 			//logrus.WithError(err).Error(
+// 			//	"failed to proto unmarshal HashingAlgorithm")
+// 		} else {
+// 			cc.HashingAlgorithm = ha.Name
+// 		}
+// 	}
+
+// 	ordererAddresses, exists := cfg.ChannelGroup.Values[ordererAddressesKey]
+// 	if exists {
+// 		var oas common.OrdererAddresses
+// 		err := proto.Unmarshal(ordererAddresses.Value, &oas)
+// 		if err != nil {
+// 			// TODO: log error
+// 			//logrus.WithError(err).Error(
+// 			//	"failed to proto unmarshal OrdererAddresses")
+// 		} else {
+// 			cc.OrdererAddresses = oas.Addresses
+// 		}
+// 	}
+
+// 	blockDataHashingStructure, exists := cfg.ChannelGroup.
+// 		Values[blockDataHashingStructureKey]
+// 	if exists {
+// 		var s common.BlockDataHashingStructure
+// 		err := proto.Unmarshal(blockDataHashingStructure.Value, &s)
+// 		if err != nil {
+// 			// TODO: log error
+// 			//logrus.WithError(err).Error(
+// 			//	"failed to proto unmarshal BlockDataHashingStructure")
+// 		} else {
+// 			cc.BlockDataHashingStructure = s
+// 		}
+// 	}
+
+// 	if len(os) > 0 {
+// 		cc.Orderers = os
+// 	}
+
+// 	return cc, cs, nil
+// }
