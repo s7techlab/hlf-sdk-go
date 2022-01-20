@@ -1,6 +1,8 @@
 package proto
 
 import (
+	"crypto/sha256"
+	"encoding/pem"
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
@@ -9,21 +11,6 @@ import (
 	"github.com/hyperledger/fabric-protos-go/orderer"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/common/channelconfig"
-)
-
-const (
-	// todo can be taken from lib
-	applicationKey               = "Application"
-	ordererKey                   = "Orderer"
-	mspKey                       = "MSP"
-	endpointsKey                 = "Endpoints"
-	batchSizeKey                 = "BatchSize"
-	batchTimeoutKey              = "BatchTimeout"
-	consensusTypeKey             = "ConsensusType"
-	consortiumKey                = "Consortium"
-	hashingAlgorithmKey          = "HashingAlgorithm"
-	ordererAddressesKey          = "OrdererAddresses"
-	blockDataHashingStructureKey = "BlockDataHashingStructure"
 )
 
 type ChannelConfig struct {
@@ -56,6 +43,23 @@ type OrdererConfig struct {
 	MSP       MSP      `json:"msp"`
 	Endpoints []string `json:"endpoints"`
 }
+
+// Certificate - describes certificate(can be ca, intermediate, admin) from msp
+type Certificate struct {
+	FingerprintSHA256 []byte
+	Data              []byte
+	MSPID             string
+	Type              CertType
+	MSPName           string
+}
+
+type CertType string
+
+const (
+	RootCACertType       CertType = "ca"
+	IntermediateCertType CertType = "intermediate"
+	AdminCertType        CertType = "admin"
+)
 
 func ParseChannelConfig(cc common.Config) (*ChannelConfig, error) {
 	chanCfg := &ChannelConfig{}
@@ -118,7 +122,7 @@ func ParseChannelConfig(cc common.Config) (*ChannelConfig, error) {
 }
 
 func ParseApplicationConfig(cfg common.Config) (map[string]ApplicationConfig, error) {
-	applicationGroup, exists := cfg.ChannelGroup.Groups[applicationKey]
+	applicationGroup, exists := cfg.ChannelGroup.Groups[channelconfig.ApplicationGroupKey]
 	if !exists {
 		return nil, fmt.Errorf("application group doesn't exists")
 	}
@@ -126,7 +130,7 @@ func ParseApplicationConfig(cfg common.Config) (map[string]ApplicationConfig, er
 	appCfg := map[string]ApplicationConfig{}
 
 	for groupName := range applicationGroup.Groups {
-		mspCfg, err := ParseMSP(applicationGroup.Groups[groupName].Values[mspKey].Value)
+		mspCfg, err := ParseMSP(applicationGroup.Groups[groupName].Values[channelconfig.MSPKey].Value)
 		if err != nil {
 			return nil, fmt.Errorf("parse msp: %w", err)
 		}
@@ -170,16 +174,16 @@ func ParseAnchorPeers(b []byte) ([]*peer.AnchorPeer, error) {
 }
 
 func ParseOrderer(cfg common.Config) (map[string]OrdererConfig, error) {
-	ordererGroup, exists := cfg.ChannelGroup.Groups[ordererKey]
+	ordererGroup, exists := cfg.ChannelGroup.Groups[channelconfig.OrdererGroupKey]
 	if !exists {
-		return nil, fmt.Errorf("%v type group doesn't exists", ordererKey)
+		return nil, fmt.Errorf("%v type group doesn't exists", channelconfig.OrdererGroupKey)
 	}
 	orderersCfg := map[string]OrdererConfig{}
 
 	for groupName := range ordererGroup.Groups {
-		mspCV, ok := ordererGroup.Groups[groupName].Values[mspKey]
+		mspCV, ok := ordererGroup.Groups[groupName].Values[channelconfig.MSPKey]
 		if !ok {
-			return nil, fmt.Errorf("%v type group doesn't exists", mspKey)
+			return nil, fmt.Errorf("%v type group doesn't exists", channelconfig.MSPKey)
 		}
 
 		mspCfg, err := ParseMSP(mspCV.Value)
@@ -187,9 +191,9 @@ func ParseOrderer(cfg common.Config) (map[string]OrdererConfig, error) {
 			return nil, fmt.Errorf("parse msp: %w", err)
 		}
 
-		endpointsCV, ok := ordererGroup.Groups[groupName].Values[endpointsKey]
+		endpointsCV, ok := ordererGroup.Groups[groupName].Values[channelconfig.EndpointsKey]
 		if !ok {
-			return nil, fmt.Errorf("%v type group doesn't exists", endpointsKey)
+			return nil, fmt.Errorf("%v type group doesn't exists", channelconfig.EndpointsKey)
 		}
 
 		endpoints, err := ParseOrdererEndpoints(endpointsCV.Value)
@@ -218,14 +222,14 @@ func ParseOrdererEndpoints(b []byte) ([]string, error) {
 
 //
 func ParseOrdererBatchSize(cfg common.Config) (*orderer.BatchSize, error) {
-	ordererGroup, exists := cfg.ChannelGroup.Groups[ordererKey]
+	ordererGroup, exists := cfg.ChannelGroup.Groups[channelconfig.OrdererGroupKey]
 	if !exists {
-		return nil, fmt.Errorf("%v type group doesn't exists", ordererKey)
+		return nil, fmt.Errorf("%v type group doesn't exists", channelconfig.OrdererGroupKey)
 	}
 
-	batchSize, exists := ordererGroup.Values[batchSizeKey]
+	batchSize, exists := ordererGroup.Values[channelconfig.BatchSizeKey]
 	if !exists {
-		return nil, fmt.Errorf("%v type group doesn't exists", batchSizeKey)
+		return nil, fmt.Errorf("%v type group doesn't exists", channelconfig.BatchSizeKey)
 	}
 
 	return ParseBatchSizeFromBytes(batchSize.Value)
@@ -242,14 +246,14 @@ func ParseBatchSizeFromBytes(b []byte) (*orderer.BatchSize, error) {
 
 //
 func ParseOrdererBatchTimeout(cfg common.Config) (string, error) {
-	ordererGroup, exists := cfg.ChannelGroup.Groups[ordererKey]
+	ordererGroup, exists := cfg.ChannelGroup.Groups[channelconfig.OrdererGroupKey]
 	if !exists {
-		return "", fmt.Errorf("%v type group doesn't exists", ordererKey)
+		return "", fmt.Errorf("%v type group doesn't exists", channelconfig.OrdererGroupKey)
 	}
 
-	batchTimeout, exists := ordererGroup.Values[batchTimeoutKey]
+	batchTimeout, exists := ordererGroup.Values[channelconfig.BatchTimeoutKey]
 	if !exists {
-		return "", fmt.Errorf("%v type group doesn't exists", batchTimeoutKey)
+		return "", fmt.Errorf("%v type group doesn't exists", channelconfig.BatchTimeoutKey)
 	}
 
 	return ParseOrdererBatchTimeoutFromBytes(batchTimeout.Value)
@@ -265,14 +269,14 @@ func ParseOrdererBatchTimeoutFromBytes(b []byte) (string, error) {
 
 //
 func ParseOrdererConsesusType(cfg common.Config) (*orderer.ConsensusType, error) {
-	ordererGroup, exists := cfg.ChannelGroup.Groups[ordererKey]
+	ordererGroup, exists := cfg.ChannelGroup.Groups[channelconfig.OrdererGroupKey]
 	if !exists {
-		return nil, fmt.Errorf("%v type group doesn't exists", ordererKey)
+		return nil, fmt.Errorf("%v type group doesn't exists", channelconfig.OrdererGroupKey)
 	}
 
-	consensusType, exists := ordererGroup.Values[consensusTypeKey]
+	consensusType, exists := ordererGroup.Values[channelconfig.ConsensusTypeKey]
 	if !exists {
-		return nil, fmt.Errorf("%v type group doesn't exists", consensusTypeKey)
+		return nil, fmt.Errorf("%v type group doesn't exists", channelconfig.ConsensusTypeKey)
 	}
 
 	return ParseOrdererConsesusTypeFromBytes(consensusType.Value)
@@ -288,14 +292,14 @@ func ParseOrdererConsesusTypeFromBytes(b []byte) (*orderer.ConsensusType, error)
 
 //
 func ParseConsortium(cfg common.Config) (string, error) {
-	ordererGroup, exists := cfg.ChannelGroup.Groups[ordererKey]
+	ordererGroup, exists := cfg.ChannelGroup.Groups[channelconfig.OrdererGroupKey]
 	if !exists {
-		return "", fmt.Errorf("%v type group doesn't exists", ordererKey)
+		return "", fmt.Errorf("%v type group doesn't exists", channelconfig.OrdererGroupKey)
 	}
 
-	consensusType, exists := ordererGroup.Values[consensusTypeKey]
+	consensusType, exists := ordererGroup.Values[channelconfig.ConsensusTypeKey]
 	if !exists {
-		return "", fmt.Errorf("%v type group doesn't exists", consensusTypeKey)
+		return "", fmt.Errorf("%v type group doesn't exists", channelconfig.ConsensusTypeKey)
 	}
 
 	return ParseConsortiumFromBytes(consensusType.Value)
@@ -311,9 +315,9 @@ func ParseConsortiumFromBytes(b []byte) (string, error) {
 
 //
 func ParseHashingAlgorithm(cfg common.Config) (string, error) {
-	hashingAlgorithm, exists := cfg.ChannelGroup.Values[hashingAlgorithmKey]
+	hashingAlgorithm, exists := cfg.ChannelGroup.Values[channelconfig.HashingAlgorithmKey]
 	if !exists {
-		return "", fmt.Errorf("%v type group doesn't exists", hashingAlgorithmKey)
+		return "", fmt.Errorf("%v type group doesn't exists", channelconfig.HashingAlgorithmKey)
 	}
 
 	return ParseHashingAlgorithmFromBytes(hashingAlgorithm.Value)
@@ -329,9 +333,9 @@ func ParseHashingAlgorithmFromBytes(b []byte) (string, error) {
 
 //
 func ParseBlockDataHashingStructure(cfg common.Config) (*common.BlockDataHashingStructure, error) {
-	bdh, exists := cfg.ChannelGroup.Values[blockDataHashingStructureKey]
+	bdh, exists := cfg.ChannelGroup.Values[channelconfig.BlockDataHashingStructureKey]
 	if !exists {
-		return nil, fmt.Errorf("%v type group doesn't exists", blockDataHashingStructureKey)
+		return nil, fmt.Errorf("%v type group doesn't exists", channelconfig.BlockDataHashingStructureKey)
 	}
 
 	return ParseParseBlockDataHashingStructureFromBytes(bdh.Value)
@@ -361,4 +365,80 @@ func ParseParseCapabilitiesFromBytes(b []byte) (*common.Capabilities, error) {
 		return nil, fmt.Errorf("unmarshal BatchTimeout: %w", err)
 	}
 	return c, nil
+}
+
+/* structs methods */
+// GetAllCertificates - returns all(root, intermediate, admins) certificates from all MSP's
+func (c ChannelConfig) GetAllCertificates() ([]Certificate, error) {
+	var certs []Certificate
+
+	for mspID := range c.Applications {
+		cs, err := c.Applications[mspID].MSP.GetAllCertificates()
+		if err != nil {
+			return nil, fmt.Errorf("get all msps certificates: %w", err)
+		}
+		certs = append(certs, cs...)
+	}
+
+	for mspID := range c.Orderers {
+		cs, err := c.Applications[mspID].MSP.GetAllCertificates()
+		if err != nil {
+			return nil, fmt.Errorf("get all orderers certificates: %w", err)
+		}
+		certs = append(certs, cs...)
+	}
+
+	return certs, nil
+}
+
+// GetAllCertificates - returns all certificates from MSP
+func (c MSP) GetAllCertificates() ([]Certificate, error) {
+	var certs []Certificate
+
+	for i := range c.Config.RootCerts {
+		cert, err := NewCertificate(c.Config.Admins[i], RootCACertType, c.Config.Name)
+		if err != nil {
+			return nil, err
+		}
+		certs = append(certs, cert)
+	}
+
+	for i := range c.Config.IntermediateCerts {
+		cert, err := NewCertificate(c.Config.Admins[i], IntermediateCertType, c.Config.Name)
+		if err != nil {
+			return nil, err
+		}
+		certs = append(certs, cert)
+	}
+
+	for i := range c.Config.Admins {
+		cert, err := NewCertificate(c.Config.Admins[i], AdminCertType, c.Config.Name)
+		if err != nil {
+			return nil, err
+		}
+		certs = append(certs, cert)
+	}
+
+	return certs, nil
+}
+
+func NewCertificate(cert []byte, t CertType, mspID string) (Certificate, error) {
+	b, _ := pem.Decode(cert)
+	if b == nil {
+		return Certificate{}, fmt.Errorf("decode %s cert of %s", t, mspID)
+	}
+
+	c := Certificate{
+		Data:  cert,
+		MSPID: mspID,
+		Type:  t,
+	}
+	c.setCertificateSHA256(b)
+
+	return c, nil
+}
+
+func (c *Certificate) setCertificateSHA256(b *pem.Block) {
+	f := sha256.Sum256(b.Bytes)
+	c.FingerprintSHA256 = f[:]
 }
