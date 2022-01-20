@@ -25,6 +25,8 @@ type ChannelConfig struct {
 	HashingAlgorithm          string                           `json:"hashing_algorithm"`
 	BlockDataHashingStructure common.BlockDataHashingStructure `json:"block_data_hashing_structure"`
 	Capabilities              common.Capabilities              `json:"capabilities"`
+
+	Policy map[PolicyKey]Policy `json:"policy"`
 }
 
 type ApplicationConfig struct {
@@ -34,14 +36,33 @@ type ApplicationConfig struct {
 }
 
 type MSP struct {
-	Config msp.FabricMSPConfig
-	// todo Policies
+	Config msp.FabricMSPConfig  `json:"config"`
+	Policy map[PolicyKey]Policy `json:"policy"`
 }
 
 type OrdererConfig struct {
 	Name      string   `json:"name"`
 	MSP       MSP      `json:"msp"`
 	Endpoints []string `json:"endpoints"`
+}
+
+type PolicyKey string
+
+const (
+	ReadersPolicyKey PolicyKey = "Readers"
+	WritersPolicyKey PolicyKey = "Writers"
+	AdminsPolicyKey  PolicyKey = "Admins"
+
+	LifecycleEndporsementPolicyKey PolicyKey = "LifecycleEndporsement"
+	EndporsementPolicyKey          PolicyKey = "Endporsement"
+)
+
+// Policy - can contain different policies: implicit, signature
+// check type and for 'nil' before usage
+type Policy struct {
+	Type               common.Policy_PolicyType        `json:"-"`
+	ImplicitMetaPolicy *common.ImplicitMetaPolicy      `json:"implicit,omitempty"`
+	SignaturePolicy    *common.SignaturePolicyEnvelope `json:"signature,omitempty"`
 }
 
 // Certificate - describes certificate(can be ca, intermediate, admin) from msp
@@ -118,6 +139,13 @@ func ParseChannelConfig(cc common.Config) (*ChannelConfig, error) {
 	}
 	chanCfg.Capabilities = *capabilities
 
+	policies, err := ParsePolicy(cc.ChannelGroup.Policies)
+	if err != nil {
+		return nil, fmt.Errorf("parse policies: %w", err)
+	}
+
+	chanCfg.Policy = policies
+
 	return chanCfg, nil
 }
 
@@ -130,7 +158,7 @@ func ParseApplicationConfig(cfg common.Config) (map[string]ApplicationConfig, er
 	appCfg := map[string]ApplicationConfig{}
 
 	for groupName := range applicationGroup.Groups {
-		mspCfg, err := ParseMSP(applicationGroup.Groups[groupName].Values[channelconfig.MSPKey].Value)
+		mspCfg, err := ParseMSP(applicationGroup.Groups[groupName])
 		if err != nil {
 			return nil, fmt.Errorf("parse msp: %w", err)
 		}
@@ -150,9 +178,14 @@ func ParseApplicationConfig(cfg common.Config) (map[string]ApplicationConfig, er
 	return appCfg, nil
 }
 
-func ParseMSP(b []byte) (*MSP, error) {
+func ParseMSP(mspConfigGroup *common.ConfigGroup) (*MSP, error) {
+	mspCV, ok := mspConfigGroup.Values[channelconfig.MSPKey]
+	if !ok {
+		return nil, fmt.Errorf("%v type group doesn't exists", channelconfig.MSPKey)
+	}
+
 	mspCfg := &msp.MSPConfig{}
-	if err := proto.Unmarshal(b, mspCfg); err != nil {
+	if err := proto.Unmarshal(mspCV.Value, mspCfg); err != nil {
 		return nil, fmt.Errorf("unmarshal MSPConfig: %w", err)
 	}
 
@@ -161,7 +194,12 @@ func ParseMSP(b []byte) (*MSP, error) {
 		return nil, fmt.Errorf("unmarshal FabricMSPConfig: %w", err)
 	}
 
-	return &MSP{Config: *fmspCfg}, nil
+	policy, err := ParsePolicy(mspConfigGroup.Policies)
+	if err != nil {
+		return nil, fmt.Errorf("parse policy: %w", err)
+	}
+
+	return &MSP{Config: *fmspCfg, Policy: policy}, nil
 }
 
 func ParseAnchorPeers(b []byte) ([]*peer.AnchorPeer, error) {
@@ -181,12 +219,7 @@ func ParseOrderer(cfg common.Config) (map[string]OrdererConfig, error) {
 	orderersCfg := map[string]OrdererConfig{}
 
 	for groupName := range ordererGroup.Groups {
-		mspCV, ok := ordererGroup.Groups[groupName].Values[channelconfig.MSPKey]
-		if !ok {
-			return nil, fmt.Errorf("%v type group doesn't exists", channelconfig.MSPKey)
-		}
-
-		mspCfg, err := ParseMSP(mspCV.Value)
+		mspCfg, err := ParseMSP(ordererGroup.Groups[groupName])
 		if err != nil {
 			return nil, fmt.Errorf("parse msp: %w", err)
 		}
@@ -365,6 +398,47 @@ func ParseParseCapabilitiesFromBytes(b []byte) (*common.Capabilities, error) {
 		return nil, fmt.Errorf("unmarshal BatchTimeout: %w", err)
 	}
 	return c, nil
+}
+
+//
+func ParsePolicy(policiesCfg map[string]*common.ConfigPolicy) (map[PolicyKey]Policy, error) {
+	policies := make(map[PolicyKey]Policy)
+
+	for policyKey, policyCfg := range policiesCfg {
+		switch policyCfg.Policy.Type {
+		case int32(common.Policy_UNKNOWN):
+			return policies, nil
+
+		case int32(common.Policy_MSP):
+			// never have seen this type
+			// todo if you'll find it
+			return policies, nil
+
+		case int32(common.Policy_IMPLICIT_META):
+			implicitMetaPolicy := &common.ImplicitMetaPolicy{}
+			if err := proto.Unmarshal(policyCfg.Policy.Value, implicitMetaPolicy); err != nil {
+				return nil, fmt.Errorf("unmarshal implicit meta policy from config: %w", err)
+			}
+
+			policies[PolicyKey(policyKey)] = Policy{
+				Type:               common.Policy_PolicyType(policyCfg.Policy.Type),
+				ImplicitMetaPolicy: implicitMetaPolicy,
+			}
+
+		case int32(common.Policy_SIGNATURE):
+			signaturePolicyEnv := &common.SignaturePolicyEnvelope{}
+			if err := proto.Unmarshal(policyCfg.Policy.Value, signaturePolicyEnv); err != nil {
+				return nil, fmt.Errorf("unmarshal implicit meta policy from config: %w", err)
+			}
+
+			policies[PolicyKey(policyKey)] = Policy{
+				Type:            common.Policy_PolicyType(policyCfg.Policy.Type),
+				SignaturePolicy: signaturePolicyEnv,
+			}
+		}
+	}
+
+	return policies, nil
 }
 
 /* structs methods */
