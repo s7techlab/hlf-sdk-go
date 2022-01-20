@@ -22,9 +22,36 @@ type lifecycleImpl struct {
 	core api.Core
 }
 
+func (p lifecycleImpl) QueryInstalledChaincode(ctx context.Context, args *lb.QueryInstalledChaincodeArgs) (
+	*lb.QueryInstalledChaincodeResult, error) {
+	cc, err := p.core.Channel(``).Chaincode(ctx, lifecycleName)
+	if err != nil {
+		return nil, err
+	}
+	queryArgs, err := proto.Marshal(args)
+	if err != nil {
+		return nil, fmt.Errorf("marshal args: %w", err)
+	}
+	resp, err := cc.Query(lifecycle.QueryInstalledChaincodeFuncName).
+		WithArguments([][]byte{queryArgs}).
+		Do(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("query %v chaincode: %w", lifecycleName, err)
+	}
+
+	ccResult := &lb.QueryInstalledChaincodeResult{
+		References: make(map[string]*lb.QueryInstalledChaincodeResult_References, 0),
+	}
+	if err = proto.Unmarshal(resp.Payload, ccResult); err != nil {
+		return nil, fmt.Errorf(`failed to unmarshal protobuf: %w`, err)
+	}
+
+	return ccResult, nil
+}
+
 var _ api.Lifecycle = (*lifecycleImpl)(nil)
 
-func (p lifecycleImpl) QueryInstalled(ctx context.Context) (*lb.QueryInstalledChaincodesResult, error) {
+func (p lifecycleImpl) QueryInstalledChaincodes(ctx context.Context) (*lb.QueryInstalledChaincodesResult, error) {
 	var args = make([][]byte, 1)
 
 	cc, err := p.core.Channel(``).Chaincode(ctx, lifecycleName)
@@ -48,7 +75,7 @@ func (p lifecycleImpl) QueryInstalled(ctx context.Context) (*lb.QueryInstalledCh
 	return ccData, nil
 }
 
-func (p lifecycleImpl) Install(ctx context.Context, args *lb.InstallChaincodeArgs) (*lb.InstallChaincodeResult, error) {
+func (p lifecycleImpl) InstallChaincode(ctx context.Context, args *lb.InstallChaincodeArgs) (*lb.InstallChaincodeResult, error) {
 	cc, err := p.core.Channel(``).Chaincode(ctx, lifecycleName)
 	if err != nil {
 		return nil, err
@@ -72,7 +99,7 @@ func (p lifecycleImpl) Install(ctx context.Context, args *lb.InstallChaincodeArg
 	return ccResult, nil
 }
 
-func (p lifecycleImpl) Approve(ctx context.Context, channel string, args *lb.ApproveChaincodeDefinitionForMyOrgArgs) error {
+func (p lifecycleImpl) ApproveChaincodeDefinitionForMyOrg(ctx context.Context, channel string, args *lb.ApproveChaincodeDefinitionForMyOrgArgs) error {
 	cc, err := p.core.Channel(channel).Chaincode(ctx, lifecycleName)
 	if err != nil {
 		return err
@@ -93,7 +120,7 @@ func (p lifecycleImpl) Approve(ctx context.Context, channel string, args *lb.App
 	return nil
 }
 
-func (p lifecycleImpl) QueryApproved(ctx context.Context, channel string, args *lb.QueryApprovedChaincodeDefinitionArgs) (
+func (p lifecycleImpl) QueryApprovedChaincodeDefinition(ctx context.Context, channel string, args *lb.QueryApprovedChaincodeDefinitionArgs) (
 	*lb.QueryApprovedChaincodeDefinitionResult, error) {
 	cc, err := p.core.Channel(channel).Chaincode(ctx, lifecycleName)
 	if err != nil {
@@ -118,7 +145,7 @@ func (p lifecycleImpl) QueryApproved(ctx context.Context, channel string, args *
 	return result, nil
 }
 
-func (p lifecycleImpl) CheckReadiness(ctx context.Context, channel string, args *lb.CheckCommitReadinessArgs) (*lb.CheckCommitReadinessResult, error) {
+func (p lifecycleImpl) CheckCommitReadiness(ctx context.Context, channel string, args *lb.CheckCommitReadinessArgs) (*lb.CheckCommitReadinessResult, error) {
 	cc, err := p.core.Channel(channel).Chaincode(ctx, lifecycleName)
 	if err != nil {
 		return nil, err
@@ -143,7 +170,7 @@ func (p lifecycleImpl) CheckReadiness(ctx context.Context, channel string, args 
 	return result, nil
 }
 
-func (p lifecycleImpl) Commit(ctx context.Context, channel string, args *lb.CommitChaincodeDefinitionArgs) (
+func (p lifecycleImpl) CommitChaincodeDefinition(ctx context.Context, channel string, args *lb.CommitChaincodeDefinitionArgs) (
 	*lb.CommitChaincodeDefinitionResult, error) {
 	cc, err := p.core.Channel(channel).Chaincode(ctx, lifecycleName)
 	if err != nil {
@@ -331,8 +358,8 @@ func (p lifecycleImpl) QueryChaincodeDefinitions(
 //	return result, nil
 //}
 //
-//// Commit the chaincode definition on the channel
-//func (c *lifecycleCC) Commit(ctx context.Context, channel api.Channel, commitArgs *lb.CommitChaincodeDefinitionArgs) (
+//// CommitChaincodeDefinition the chaincode definition on the channel
+//func (c *lifecycleCC) CommitChaincodeDefinition(ctx context.Context, channel api.Channel, commitArgs *lb.CommitChaincodeDefinitionArgs) (
 //	*lb.CommitChaincodeDefinitionResult, error) {
 //	var (
 //		args []byte

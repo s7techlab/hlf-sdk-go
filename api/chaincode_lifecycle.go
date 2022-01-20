@@ -8,27 +8,36 @@ import (
 
 // Lifecycle contains methods for interacting with system _lifecycle chaincode
 type Lifecycle interface {
-	// QueryInstalled returns chaincode packages list installed on peer
-	QueryInstalled(ctx context.Context) (*lb.QueryInstalledChaincodesResult, error)
+	// QueryInstalledChaincode returns chaincode package installed on peer
+	QueryInstalledChaincode(ctx context.Context, args *lb.QueryInstalledChaincodeArgs) (
+		*lb.QueryInstalledChaincodeResult, error)
 
-	// Install sets up chaincode package on peer
-	Install(ctx context.Context, args *lb.InstallChaincodeArgs) (*lb.InstallChaincodeResult, error)
+	// QueryInstalledChaincodes returns chaincode packages list installed on peer
+	QueryInstalledChaincodes(ctx context.Context) (*lb.QueryInstalledChaincodesResult, error)
 
-	// Approve marks chaincode definition on a channel
-	Approve(ctx context.Context, channel string, args *lb.ApproveChaincodeDefinitionForMyOrgArgs) error
+	// InstallChaincode sets up chaincode package on peer
+	InstallChaincode(ctx context.Context, args *lb.InstallChaincodeArgs) (*lb.InstallChaincodeResult, error)
 
-	// QueryApproved returns approved chaincode definition
-	QueryApproved(ctx context.Context, channel string, args *lb.QueryApprovedChaincodeDefinitionArgs) (*lb.QueryApprovedChaincodeDefinitionResult, error)
+	// ApproveChaincodeDefinitionForMyOrg marks chaincode definition on a channel
+	ApproveChaincodeDefinitionForMyOrg(ctx context.Context, channel string, args *lb.ApproveChaincodeDefinitionForMyOrgArgs) error
 
-	// CheckReadiness returns commitments statuses of participants on chaincode definition
-	CheckReadiness(ctx context.Context, channel string, args *lb.CheckCommitReadinessArgs) (*lb.CheckCommitReadinessResult, error)
+	// QueryApprovedChaincodeDefinition returns approved chaincode definition
+	QueryApprovedChaincodeDefinition(ctx context.Context, channel string, args *lb.QueryApprovedChaincodeDefinitionArgs) (
+		*lb.QueryApprovedChaincodeDefinitionResult, error)
 
-	// Commit the chaincode definition on the channel
-	Commit(ctx context.Context, channel string, args *lb.CommitChaincodeDefinitionArgs) (*lb.CommitChaincodeDefinitionResult, error)
+	// CheckCommitReadiness returns commitments statuses of participants on chaincode definition
+	CheckCommitReadiness(ctx context.Context, channel string, args *lb.CheckCommitReadinessArgs) (
+		*lb.CheckCommitReadinessResult, error)
+
+	// CommitChaincodeDefinition the chaincode definition on the channel
+	CommitChaincodeDefinition(ctx context.Context, channel string, args *lb.CommitChaincodeDefinitionArgs) (
+		*lb.CommitChaincodeDefinitionResult, error)
 
 	// QueryChaincodeDefinition returns chaincode definition committed on the channel
-	QueryChaincodeDefinition(ctx context.Context, channel string, args *lb.QueryChaincodeDefinitionArgs) (*lb.QueryChaincodeDefinitionResult, error)
+	QueryChaincodeDefinition(ctx context.Context, channel string, args *lb.QueryChaincodeDefinitionArgs) (
+		*lb.QueryChaincodeDefinitionResult, error)
 
 	// QueryChaincodeDefinitions returns chaincode definitions committed on the channel
-	QueryChaincodeDefinitions(ctx context.Context, channel string, args *lb.QueryChaincodeDefinitionsArgs) (*lb.QueryChaincodeDefinitionsResult, error)
+	QueryChaincodeDefinitions(ctx context.Context, channel string, args *lb.QueryChaincodeDefinitionsArgs) (
+		*lb.QueryChaincodeDefinitionsResult, error)
 }
