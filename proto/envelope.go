@@ -28,7 +28,7 @@ func ParseEnvelopes(blockData [][]byte, txFilter txflags.ValidationFlags) ([]*En
 	for i, envelope := range blockData {
 		parsedEnvelope, err := ParseEnvelope(envelope, txFilter.Flag(i))
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("parse envelope: %w", err)
 		}
 
 		envelopes = append(envelopes, parsedEnvelope)
