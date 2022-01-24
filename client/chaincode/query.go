@@ -7,14 +7,15 @@ import (
 	fabricPeer "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
+
 	"github.com/s7techlab/hlf-sdk-go/v2/api"
 	"github.com/s7techlab/hlf-sdk-go/v2/peer"
 )
 
 type QueryBuilder struct {
-	ccCore        *Core
+	cc            string
 	fn            string
-	args          []string
+	argBytes      [][]byte
 	identity      msp.SigningIdentity
 	processor     api.PeerProcessor
 	peerPool      api.PeerPool
@@ -23,6 +24,13 @@ type QueryBuilder struct {
 
 func (q *QueryBuilder) WithIdentity(identity msp.SigningIdentity) api.ChaincodeQueryBuilder {
 	q.identity = identity
+
+	return q
+}
+
+func (q *QueryBuilder) WithArguments(argBytes [][]byte) api.ChaincodeQueryBuilder {
+	q.argBytes = argBytes
+
 	return q
 }
 
@@ -47,12 +55,7 @@ func (q *QueryBuilder) AsJSON(ctx context.Context, out interface{}) error {
 }
 
 func (q *QueryBuilder) AsProposalResponse(ctx context.Context) (*fabricPeer.ProposalResponse, error) {
-	ccd, err := q.ccCore.dp.Chaincode(ctx, q.ccCore.channelName, q.ccCore.name)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to get chaincode definition from discovery provider`)
-	}
-
-	proposal, _, err := q.processor.CreateProposal(ccd.ChaincodeName(), q.identity, q.fn, argsToBytes(q.args...), q.transientArgs)
+	proposal, _, err := q.processor.CreateProposal(q.cc, q.identity, q.fn, q.argBytes, q.transientArgs)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to create peer proposal`)
 	}
@@ -72,10 +75,19 @@ func (q *QueryBuilder) Do(ctx context.Context) (*fabricPeer.Response, error) {
 
 func (q *QueryBuilder) Transient(args api.TransArgs) api.ChaincodeQueryBuilder {
 	q.transientArgs = args
+
 	return q
 }
 
 func NewQueryBuilder(ccCore *Core, identity msp.SigningIdentity, fn string, args ...string) api.ChaincodeQueryBuilder {
-	peerProcessor := peer.NewProcessor(ccCore.channelName)
-	return &QueryBuilder{ccCore: ccCore, fn: fn, args: args, identity: identity, processor: peerProcessor, peerPool: ccCore.peerPool}
+	q := &QueryBuilder{
+		cc:        ccCore.name,
+		fn:        fn,
+		argBytes:  argsToBytes(args...),
+		identity:  identity,
+		processor: peer.NewProcessor(ccCore.channelName),
+		peerPool:  ccCore.peerPool,
+	}
+
+	return q
 }

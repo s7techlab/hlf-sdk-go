@@ -5,17 +5,19 @@ import (
 
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
+
 	"github.com/s7techlab/hlf-sdk-go/v2/api"
 )
 
 type Core struct {
-	mspId       string
-	name        string
-	channelName string
-	peerPool    api.PeerPool
-	orderer     api.Orderer
-	dp          api.DiscoveryProvider
-	identity    msp.SigningIdentity
+	mspId         string
+	name          string
+	channelName   string
+	endorsingMSPs []string
+	peerPool      api.PeerPool
+	orderer       api.Orderer
+
+	identity msp.SigningIdentity
 }
 
 func (c *Core) Invoke(fn string) api.ChaincodeInvokeBuilder {
@@ -38,14 +40,22 @@ func (c *Core) Subscribe(ctx context.Context) (api.EventCCSubscription, error) {
 	return peerDeliver.SubscribeCC(ctx, c.channelName, c.name)
 }
 
-func NewCore(mspId, ccName, channelName string, peerPool api.PeerPool, orderer api.Orderer, dp api.DiscoveryProvider, identity msp.SigningIdentity) *Core {
+func NewCore(
+	mspId,
+	ccName,
+	channelName string,
+	endorsingMSPs []string,
+	peerPool api.PeerPool,
+	orderer api.Orderer,
+	identity msp.SigningIdentity,
+) *Core {
 	return &Core{
-		mspId:       mspId,
-		name:        ccName,
-		channelName: channelName,
-		peerPool:    peerPool,
-		orderer:     orderer,
-		dp:          dp,
-		identity:    identity,
+		mspId:         mspId,
+		name:          ccName,
+		channelName:   channelName,
+		endorsingMSPs: endorsingMSPs,
+		peerPool:      peerPool,
+		orderer:       orderer,
+		identity:      identity,
 	}
 }

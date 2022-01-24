@@ -9,9 +9,8 @@ import (
 type Channel interface {
 	// Chaincode returns chaincode instance by chaincode name
 	Chaincode(ctx context.Context, name string) (Chaincode, error)
-	// Joins channel
+	// Join channel
 	Join(ctx context.Context) error
-	// CSCC implements Configuration System Chaincode (CSCC)
 }
 
 type Core interface {
