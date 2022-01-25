@@ -161,9 +161,9 @@ func NewMSPIdentityFromPath(mspId string, mspPath string) (api.Identity, error) 
 
 /* */
 
-// MSPIndentities - contains all parsed identities from msp folder
+// MSPIdentities - contains all parsed identities from msp folder
 // Should be used instead of single `api.Identity` which contains ONLY msp identity
-type MSPIndentities struct {
+type MSPIdentities struct {
 	// identity from 'signcerts'
 	MSP api.Identity
 	// identities from 'admincerts'
@@ -174,16 +174,16 @@ type MSPIndentities struct {
 
 // TODO some handy methods?
 
-// NewMSPIndentitiesFromPath - parse all certificates(msp,admins,users) from MSP folder.
+// NewMSPIdentitiesFromPath - parse all certificates(msp,admins,users) from MSP folder.
 // Came to replace legacy `util.LoadKeyPairFromMSP` method
-func NewMSPIndentitiesFromPath(mspID string, mspPath string) (*MSPIndentities, error) {
+func NewMSPIdentitiesFromPath(mspID string, mspPath string) (*MSPIdentities, error) {
 	const (
 		admincertsPath = "admincerts"
 		signcertsPath  = "signcerts"
 		userscertsPath = "user"
 	)
 
-	mspIndentities := &MSPIndentities{
+	mspIndentities := &MSPIdentities{
 		Admins: make([]api.Identity, 0),
 		MSP:    nil,
 		Users:  make([]api.Identity, 0),
