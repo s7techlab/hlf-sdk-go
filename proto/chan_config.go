@@ -95,7 +95,7 @@ func ParseChannelConfig(cc common.Config) (*ChannelConfig, error) {
 	}
 	chanCfg.Applications = appCfg
 
-	orderers, err := ParseOrderer(cc)
+	orderers, err := ParseOrdererConfig(cc)
 	if err != nil {
 		return nil, fmt.Errorf("parse orderers config: %w", err)
 	}
@@ -212,7 +212,7 @@ func ParseMSP(mspConfigGroup *common.ConfigGroup) (*MSP, error) {
 	return &MSP{Config: *fmspCfg, Policy: policy}, nil
 }
 
-func ParseOrderer(cfg common.Config) (map[string]OrdererConfig, error) {
+func ParseOrdererConfig(cfg common.Config) (map[string]OrdererConfig, error) {
 	ordererGroup, exists := cfg.ChannelGroup.Groups[channelconfig.OrdererGroupKey]
 	if !exists {
 		return nil, fmt.Errorf("%v type group doesn't exists", channelconfig.OrdererGroupKey)
@@ -530,6 +530,11 @@ func NewCertificate(cert []byte, t CertType, mspID string) (Certificate, error) 
 }
 
 func (c *Certificate) setCertificateSHA256(b *pem.Block) {
-	f := sha256.Sum256(b.Bytes)
+	f := CalcCertificateSHA256(b)
 	c.FingerprintSHA256 = f[:]
+}
+
+func CalcCertificateSHA256(b *pem.Block) []byte {
+	f := sha256.Sum256(b.Bytes)
+	return f[:]
 }
