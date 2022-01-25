@@ -13,11 +13,11 @@ import (
 
 type (
 	Envelope struct {
-		Signature      []byte
-		ChannelHeader  *common.ChannelHeader
-		ValidationCode peer.TxValidationCode
-		Transaction    *Transaction
-		ChannelConfig  *ChannelConfig
+		Signature      []byte                `json:"signature"`
+		ChannelHeader  *common.ChannelHeader `json:"channel_header"`
+		ValidationCode peer.TxValidationCode `json:"validation_code"`
+		Transaction    *Transaction          `json:"transaction,omitempty"`
+		ChannelConfig  *ChannelConfig        `json:"channel_config,omitempty"`
 	}
 
 	Envelopes []*Envelope

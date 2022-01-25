@@ -13,9 +13,9 @@ import (
 )
 
 type Block struct {
-	Header          *common.BlockHeader
-	Envelopes       []*Envelope
-	OrdererIdentity *msp.SerializedIdentity
+	Header          *common.BlockHeader     `json:"header"`
+	Envelopes       []*Envelope             `json:"envelopes"`
+	OrdererIdentity *msp.SerializedIdentity `json:"orderer_identity"`
 }
 
 func ParseBlock(block *common.Block) (*Block, error) {

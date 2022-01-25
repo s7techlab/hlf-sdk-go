@@ -13,9 +13,9 @@ import (
 
 type (
 	Transaction struct {
-		Actions         TransactionsActions
-		CreatorIdentity msp.SerializedIdentity
-		Signature       []byte
+		Actions         TransactionsActions    `json:"transaction_actions"`
+		CreatorIdentity msp.SerializedIdentity `json:"creator_identity"`
+		Signature       []byte                 `json:"signature"`
 	}
 
 	Transactions []*Transaction

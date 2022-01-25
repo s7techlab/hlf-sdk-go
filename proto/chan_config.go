@@ -60,9 +60,13 @@ const (
 // Policy - can contain different policies: implicit, signature
 // check type and for 'nil' before usage
 type Policy struct {
-	Type               common.Policy_PolicyType        `json:"-"`
-	ImplicitMetaPolicy *common.ImplicitMetaPolicy      `json:"implicit,omitempty"`
-	SignaturePolicy    *common.SignaturePolicyEnvelope `json:"signature,omitempty"`
+	Type               common.Policy_PolicyType   `json:"-"`
+	ImplicitMetaPolicy *common.ImplicitMetaPolicy `json:"implicit,omitempty"`
+	// todo fix policy marshalling(or came with with new schema)
+	// internally we have
+	//	Type                 isSignaturePolicy_Type `protobuf_oneof:"Type"`
+	// where  isSignaturePolicy_Type - interface and json unmarshalling be like "wtf?!"
+	SignaturePolicy *common.SignaturePolicyEnvelope `json:"-,omitempty"`
 }
 
 // Certificate - describes certificate(can be ca, intermediate, admin) from msp
@@ -158,14 +162,22 @@ func ParseApplicationConfig(cfg common.Config) (map[string]ApplicationConfig, er
 	appCfg := map[string]ApplicationConfig{}
 
 	for groupName := range applicationGroup.Groups {
-		mspCfg, err := ParseMSP(applicationGroup.Groups[groupName])
+		var (
+			mspCfg   *MSP
+			ancPeers = make([]*peer.AnchorPeer, 0)
+			err      error
+		)
+
+		mspCfg, err = ParseMSP(applicationGroup.Groups[groupName])
 		if err != nil {
 			return nil, fmt.Errorf("parse msp: %w", err)
 		}
 
-		ancPeers, err := ParseAnchorPeers(applicationGroup.Groups[groupName].Values[channelconfig.AnchorPeersKey].Value)
-		if err != nil {
-			return nil, fmt.Errorf("parse anchor peers: %w", err)
+		if _, ok := applicationGroup.Groups[groupName].Values[channelconfig.AnchorPeersKey]; ok {
+			ancPeers, err = ParseAnchorPeers(applicationGroup.Groups[groupName].Values[channelconfig.AnchorPeersKey].Value)
+			if err != nil {
+				return nil, fmt.Errorf("parse anchor peers: %w", err)
+			}
 		}
 
 		appCfg[groupName] = ApplicationConfig{
@@ -470,7 +482,7 @@ func (c MSP) GetAllCertificates() ([]Certificate, error) {
 	var certs []Certificate
 
 	for i := range c.Config.RootCerts {
-		cert, err := NewCertificate(c.Config.Admins[i], RootCACertType, c.Config.Name)
+		cert, err := NewCertificate(c.Config.RootCerts[i], RootCACertType, c.Config.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -478,7 +490,7 @@ func (c MSP) GetAllCertificates() ([]Certificate, error) {
 	}
 
 	for i := range c.Config.IntermediateCerts {
-		cert, err := NewCertificate(c.Config.Admins[i], IntermediateCertType, c.Config.Name)
+		cert, err := NewCertificate(c.Config.IntermediateCerts[i], IntermediateCertType, c.Config.Name)
 		if err != nil {
 			return nil, err
 		}

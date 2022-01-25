@@ -13,10 +13,10 @@ import (
 
 type (
 	TransactionAction struct {
-		Event                   *peer.ChaincodeEvent
-		Endorsers               []*msp.SerializedIdentity
-		ReadWriteSets           []*kvrwset.KVRWSet
-		ChaincodeInvocationSpec *peer.ChaincodeInvocationSpec
+		Event                   *peer.ChaincodeEvent          `json:"event"`
+		Endorsers               []*msp.SerializedIdentity     `json:"endorsers"`
+		ReadWriteSets           []*kvrwset.KVRWSet            `json:"rw_sets"`
+		ChaincodeInvocationSpec *peer.ChaincodeInvocationSpec `json:"cc_invocation_spec"`
 	}
 
 	TransactionsActions []*TransactionAction
