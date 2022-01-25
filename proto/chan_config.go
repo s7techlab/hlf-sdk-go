@@ -212,18 +212,6 @@ func ParseMSP(mspConfigGroup *common.ConfigGroup) (*MSP, error) {
 	return &MSP{Config: *fmspCfg, Policy: policy}, nil
 }
 
-func ParseAnchorPeers(mspConfigGroup *common.ConfigGroup) ([]*peer.AnchorPeer, error) {
-	if cv, ok := mspConfigGroup.Values[channelconfig.AnchorPeersKey]; ok {
-		anchorPeers := &peer.AnchorPeers{}
-		if err := proto.Unmarshal(cv.Value, anchorPeers); err != nil {
-			return nil, fmt.Errorf("unmarshal anchor peers: %w", err)
-		}
-		return anchorPeers.AnchorPeers, nil
-	}
-
-	return []*peer.AnchorPeer{}, nil
-}
-
 func ParseOrderer(cfg common.Config) (map[string]OrdererConfig, error) {
 	ordererGroup, exists := cfg.ChannelGroup.Groups[channelconfig.OrdererGroupKey]
 	if !exists {
@@ -264,6 +252,22 @@ func ParseOrdererEndpoints(b []byte) ([]string, error) {
 	}
 
 	return oa.Addresses, nil
+}
+
+//
+func ParseAnchorPeers(mspConfigGroup *common.ConfigGroup) ([]*peer.AnchorPeer, error) {
+	if cv, ok := mspConfigGroup.Values[channelconfig.AnchorPeersKey]; ok {
+		return ParseAnchorPeersFromBytes(cv.Value)
+	}
+	return []*peer.AnchorPeer{}, nil
+}
+
+func ParseAnchorPeersFromBytes(b []byte) ([]*peer.AnchorPeer, error) {
+	anchorPeers := &peer.AnchorPeers{}
+	if err := proto.Unmarshal(b, anchorPeers); err != nil {
+		return nil, fmt.Errorf("unmarshal anchor peers: %w", err)
+	}
+	return anchorPeers.AnchorPeers, nil
 }
 
 //
