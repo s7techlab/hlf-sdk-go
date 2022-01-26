@@ -3,12 +3,9 @@ package client
 import (
 	"context"
 	"fmt"
-	"math"
 	"sync"
 	"time"
 
-	ordererproto "github.com/hyperledger/fabric-protos-go/orderer"
-	fabPeer "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/core/chaincode/platforms/golang"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
@@ -18,7 +15,6 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/v2/api/config"
 	"github.com/s7techlab/hlf-sdk-go/v2/client/chaincode"
 	"github.com/s7techlab/hlf-sdk-go/v2/client/chaincode/system"
-	"github.com/s7techlab/hlf-sdk-go/v2/client/chaincode/txwaiter"
 	"github.com/s7techlab/hlf-sdk-go/v2/client/channel"
 	"github.com/s7techlab/hlf-sdk-go/v2/client/fetcher"
 	"github.com/s7techlab/hlf-sdk-go/v2/crypto"
@@ -143,179 +139,6 @@ func (c *core) Channel(name string) api.Channel {
 
 func (c *core) FabricV2() bool {
 	return c.fabricV2
-}
-
-func (c *core) SeekOptByBlockRange(ctx context.Context, channel string, blockRangeFrom, blockRangeTo int64) (api.EventCCSeekOption, error) {
-	var seekFrom, seekTo uint64
-
-	c.logger.Debug(`seek by block range`,
-		zap.Int64(`from`, blockRangeFrom), zap.Int64(`to`, blockRangeTo))
-
-	// Same as seek Newest
-	if blockRangeFrom == 0 && blockRangeTo == 0 {
-		// no seek opt, no error
-		return nil, nil
-	}
-
-	switch {
-	case blockRangeFrom == 0:
-		fallthrough
-	case blockRangeFrom > 0:
-		seekFrom = uint64(blockRangeFrom)
-	case blockRangeFrom < 0:
-
-		// from  -{x} means we need to look x blocks back for events
-		// thus we need to  know current channel height
-		channelInfo, err := c.System().QSCC().GetChainInfo(ctx, channel)
-		if err != nil {
-			return nil, fmt.Errorf(`get channel height: %w`, err)
-		}
-		c.logger.Debug(`get channel info for calculate negative block from`,
-			zap.Uint64(`channel_height`, channelInfo.Height))
-		seekFrom = uint64(int64(channelInfo.Height) + blockRangeFrom)
-	}
-
-	switch {
-	case blockRangeTo == 0:
-		seekTo = math.MaxUint64
-	case blockRangeTo > 0:
-		seekTo = uint64(blockRangeTo)
-	case blockRangeTo < 0:
-		seekTo = math.MaxUint64 - uint64(-blockRangeTo)
-	}
-
-	c.logger.Debug(`seek opts`,
-		zap.Uint64(`seek from`, seekFrom),
-		zap.Uint64(`seek to`, seekTo))
-
-	return func() (*ordererproto.SeekPosition, *ordererproto.SeekPosition) {
-		return &ordererproto.SeekPosition{
-				Type: &ordererproto.SeekPosition_Specified{Specified: &ordererproto.SeekSpecified{Number: seekFrom}}},
-			&ordererproto.SeekPosition{
-				Type: &ordererproto.SeekPosition_Specified{Specified: &ordererproto.SeekSpecified{Number: seekTo}}}
-
-	}, nil
-
-}
-
-func (c *core) Events(
-	ctx context.Context,
-	chanName string,
-	ccName string,
-	identity msp.SigningIdentity,
-	blockRange ...int64,
-) (chan *fabPeer.ChaincodeEvent, error) {
-	if identity == nil {
-		identity = c.CurrentIdentity()
-	}
-
-	c.logger.Debug(`block range`, zap.Reflect(`slice`, blockRange))
-	mspID := identity.GetMSPIdentifier()
-
-	dc, err := c.PeerPool().DeliverClient(mspID, identity)
-	if err != nil {
-		return nil, err
-	}
-
-	var (
-		blockRangeFrom, blockRangeTo int64
-		seekOpts                     []api.EventCCSeekOption
-	)
-
-	if len(blockRange) > 0 {
-		blockRangeFrom = blockRange[0]
-	}
-
-	if len(blockRange) > 1 {
-		blockRangeTo = blockRange[1]
-	}
-
-	seekOpt, err := c.SeekOptByBlockRange(ctx, chanName, blockRangeFrom, blockRangeTo)
-	if err != nil {
-		return nil, err
-	}
-
-	if seekOpt != nil {
-		seekOpts = append(seekOpts, seekOpt)
-	}
-
-	subcription, err := dc.SubscribeCC(ctx, chanName, ccName, seekOpts...)
-	if err != nil {
-		return nil, err
-	}
-
-	return subcription.Events(), nil
-}
-
-func (c *core) Invoke(
-	ctx context.Context,
-	chanName string,
-	ccName string,
-	args [][]byte,
-	identity msp.SigningIdentity,
-	transient map[string][]byte,
-	txWaiterType string,
-) (*fabPeer.Response, string, error) {
-	doOpts := []api.DoOption{}
-
-	switch txWaiterType {
-	case "":
-		doOpts = append(doOpts, chaincode.WithTxWaiter(txwaiter.Self))
-	case api.TxWaiterSelfType:
-		doOpts = append(doOpts, chaincode.WithTxWaiter(txwaiter.Self))
-	case api.TxWaiterAllType:
-		doOpts = append(doOpts, chaincode.WithTxWaiter(txwaiter.All))
-	default:
-		return nil, "", fmt.Errorf("invalid tx waiter type. got %v, available: '%v', '%v'", txWaiterType, api.TxWaiterSelfType, api.TxWaiterAllType)
-	}
-
-	if identity == nil {
-		identity = c.CurrentIdentity()
-	}
-
-	ccAPI, err := c.Channel(chanName).Chaincode(ctx, ccName)
-	if err != nil {
-		return nil, "", err
-	}
-
-	res, tx, err := ccAPI.Invoke(string(args[0])).
-		ArgBytes(args[1:]).
-		WithIdentity(identity).
-		Transient(transient).
-		Do(ctx, doOpts...)
-	if err != nil {
-		return nil, "", err
-	}
-
-	return res, string(tx), nil
-}
-
-func (c *core) Query(
-	ctx context.Context,
-	chanName string,
-	ccName string,
-	args [][]byte,
-	identity msp.SigningIdentity,
-	transient map[string][]byte,
-) (*fabPeer.Response, error) {
-	if identity == nil {
-		identity = c.CurrentIdentity()
-	}
-
-	ccAPI, err := c.Channel(chanName).Chaincode(ctx, ccName)
-	if err != nil {
-		return nil, err
-	}
-
-	argsStrings := make([]string, 0)
-	for _, arg := range args {
-		argsStrings = append(argsStrings, string(arg))
-	}
-
-	return ccAPI.Query(argsStrings[0], argsStrings[1:]...).
-		WithIdentity(identity).
-		Transient(transient).
-		Do(ctx)
 }
 
 func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, error) {

@@ -228,6 +228,7 @@ func (s *subscriptionImpl) handle() {
 
 		if err != nil {
 			s.err <- err
+			s.blockHandler(nil) // if arg is nil, events channel will be closed
 			return
 		}
 

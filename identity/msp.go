@@ -168,7 +168,7 @@ type MSPIdentities struct {
 	MSP api.Identity
 	// identities from 'admincerts'
 	Admins []api.Identity
-	// indentities from 'users'
+	// identities from 'users'
 	Users []api.Identity
 }
 
@@ -183,7 +183,7 @@ func NewMSPIdentitiesFromPath(mspID string, mspPath string) (*MSPIdentities, err
 		userscertsPath = "user"
 	)
 
-	mspIndentities := &MSPIdentities{
+	mspIdentities := &MSPIdentities{
 		Admins: make([]api.Identity, 0),
 		MSP:    nil,
 		Users:  make([]api.Identity, 0),
@@ -205,7 +205,7 @@ func NewMSPIdentitiesFromPath(mspID string, mspPath string) (*MSPIdentities, err
 			}
 
 			idnt, _ := NewMSPIdentityRaw(mspID, cert, key)
-			mspIndentities.Admins = append(mspIndentities.Admins, idnt)
+			mspIdentities.Admins = append(mspIdentities.Admins, idnt)
 		}
 	}
 
@@ -225,7 +225,7 @@ func NewMSPIdentitiesFromPath(mspID string, mspPath string) (*MSPIdentities, err
 			}
 
 			idnt, _ := NewMSPIdentityRaw(mspID, cert, key)
-			mspIndentities.Users = append(mspIndentities.Users, idnt)
+			mspIdentities.Users = append(mspIdentities.Users, idnt)
 		}
 	}
 
@@ -245,7 +245,7 @@ func NewMSPIdentitiesFromPath(mspID string, mspPath string) (*MSPIdentities, err
 	}
 
 	idnt, _ := NewMSPIdentityRaw(mspID, cert, key)
-	mspIndentities.MSP = idnt
+	mspIdentities.MSP = idnt
 
-	return mspIndentities, nil
+	return mspIdentities, nil
 }
