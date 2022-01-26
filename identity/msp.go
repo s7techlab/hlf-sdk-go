@@ -174,9 +174,9 @@ type MSPIdentities struct {
 
 // TODO some handy methods?
 
-// NewMSPIndentitiesFromPath - parse all certificates(msp,admins,users) from MSP folder.
+// NewMSPIdentitiesFromPath - parse all certificates(msp,admins,users) from MSP folder.
 // Came to replace legacy `util.LoadKeyPairFromMSP` method
-func NewMSPIndentitiesFromPath(mspID string, mspPath string) (*MSPIdentities, error) {
+func NewMSPIdentitiesFromPath(mspID string, mspPath string) (*MSPIdentities, error) {
 	const (
 		admincertsPath = "admincerts"
 		signcertsPath  = "signcerts"

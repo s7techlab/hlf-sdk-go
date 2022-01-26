@@ -1,8 +1,6 @@
 package system
 
 import (
-	"github.com/hyperledger/fabric/msp"
-
 	"github.com/s7techlab/hlf-sdk-go/v2/api"
 )
 
@@ -14,19 +12,18 @@ const (
 )
 
 type scc struct {
-	core     api.Core
-	peerPool api.PeerPool
-	identity msp.SigningIdentity
-	fabricV2 bool
+	core api.Core
 }
+
+var _ api.SystemCC = (*scc)(nil)
 
 func (c *scc) QSCC() api.QSCC {
 	return NewQSCC(c.core.PeerPool(), c.core.CurrentIdentity())
 }
 
 func (c *scc) CSCC() api.CSCC {
-	if c.fabricV2 {
-		return NewCSCCV2(c.peerPool, c.identity)
+	if c.core.FabricV2() {
+		return NewCSCCV2(c.core.PeerPool(), c.core.CurrentIdentity())
 	}
 	return NewCSCCV1(c.core.PeerPool(), c.core.CurrentIdentity())
 }
