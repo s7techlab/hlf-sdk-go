@@ -66,7 +66,7 @@ type Policy struct {
 	// internally we have
 	//	Type                 isSignaturePolicy_Type `protobuf_oneof:"Type"`
 	// where  isSignaturePolicy_Type - interface and json unmarshalling be like "wtf?!"
-	SignaturePolicy *common.SignaturePolicyEnvelope `json:"-,omitempty"`
+	SignaturePolicy *common.SignaturePolicyEnvelope `json:"-"`
 }
 
 // Certificate - describes certificate(can be ca, intermediate, admin) from msp
@@ -95,7 +95,7 @@ func ParseChannelConfig(cc common.Config) (*ChannelConfig, error) {
 	}
 	chanCfg.Applications = appCfg
 
-	orderers, err := ParseOrdererConfig(cc)
+	orderers, err := ParseOrderer(cc)
 	if err != nil {
 		return nil, fmt.Errorf("parse orderers config: %w", err)
 	}
@@ -212,7 +212,7 @@ func ParseMSP(mspConfigGroup *common.ConfigGroup) (*MSP, error) {
 	return &MSP{Config: *fmspCfg, Policy: policy}, nil
 }
 
-func ParseOrdererConfig(cfg common.Config) (map[string]OrdererConfig, error) {
+func ParseOrderer(cfg common.Config) (map[string]OrdererConfig, error) {
 	ordererGroup, exists := cfg.ChannelGroup.Groups[channelconfig.OrdererGroupKey]
 	if !exists {
 		return nil, fmt.Errorf("%v type group doesn't exists", channelconfig.OrdererGroupKey)

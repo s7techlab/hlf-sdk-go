@@ -5,102 +5,245 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/hyperledger/fabric-protos-go/peer"
 	lb "github.com/hyperledger/fabric-protos-go/peer/lifecycle"
 	"github.com/hyperledger/fabric/core/chaincode/lifecycle"
-
+	"github.com/hyperledger/fabric/msp"
 	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	peerSDK "github.com/s7techlab/hlf-sdk-go/v2/peer"
 )
 
-func NewLifecycle(core api.Core) *lifecycleImpl {
-	return &lifecycleImpl{
+var _ api.Lifecycle = (*lifecycleCoreFacade)(nil)
+
+// About separation of implementations
+// Thing is: new fabric v2 lifecycle uses discovery for some methods, and for some doesn't
+// we dont want to use discovery everytime because some services must work just with one home-peer and should't(and doenst want to) know about rest topogy/configuration
+func NewLifecycle(core api.Core) *lifecycleCoreFacade {
+	lfn := &lifecycleNoDiscovery{
+		peerPool:        core.PeerPool(),
+		signingIdentity: core.CurrentIdentity(),
+	}
+
+	lfw := &lifecycleWithDiscovery{
 		core: core,
+	}
+
+	return &lifecycleCoreFacade{
+		lfn: lfn,
+		lfw: lfw,
 	}
 }
 
-type lifecycleImpl struct {
+type lifecycleNoDiscovery struct {
+	peerPool        api.PeerPool
+	signingIdentity msp.SigningIdentity
+}
+
+type lifecycleWithDiscovery struct {
 	core api.Core
 }
 
-func (p lifecycleImpl) QueryInstalledChaincode(ctx context.Context, args *lb.QueryInstalledChaincodeArgs) (
-	*lb.QueryInstalledChaincodeResult, error) {
-	cc, err := p.core.Channel(``).Chaincode(ctx, lifecycleName)
-	if err != nil {
-		return nil, err
-	}
-	queryArgs, err := proto.Marshal(args)
+type lifecycleCoreFacade struct {
+	lfn *lifecycleNoDiscovery
+	lfw *lifecycleWithDiscovery
+}
+
+/* core facade */
+
+func (l lifecycleCoreFacade) QueryInstalledChaincode(ctx context.Context, args *lb.QueryInstalledChaincodeArgs) (*lb.QueryInstalledChaincodeResult, error) {
+	return l.lfn.QueryInstalledChaincode(ctx, args)
+}
+
+func (l lifecycleCoreFacade) QueryInstalledChaincodes(ctx context.Context) (*lb.QueryInstalledChaincodesResult, error) {
+	return l.lfn.QueryInstalledChaincodes(ctx)
+}
+
+func (l lifecycleCoreFacade) InstallChaincode(ctx context.Context, args *lb.InstallChaincodeArgs) (*lb.InstallChaincodeResult, error) {
+	return l.lfn.InstallChaincode(ctx, args)
+}
+
+func (l lifecycleCoreFacade) ApproveChaincodeDefinitionForMyOrg(ctx context.Context, channel string, args *lb.ApproveChaincodeDefinitionForMyOrgArgs) error {
+	return l.lfw.ApproveChaincodeDefinitionForMyOrg(ctx, channel, args)
+}
+
+func (l lifecycleCoreFacade) QueryApprovedChaincodeDefinition(ctx context.Context, channel string, args *lb.QueryApprovedChaincodeDefinitionArgs) (*lb.QueryApprovedChaincodeDefinitionResult, error) {
+	return l.lfn.QueryApprovedChaincodeDefinition(ctx, channel, args)
+}
+
+func (l lifecycleCoreFacade) CheckCommitReadiness(ctx context.Context, channel string, args *lb.CheckCommitReadinessArgs) (*lb.CheckCommitReadinessResult, error) {
+	return l.lfn.CheckCommitReadiness(ctx, channel, args)
+}
+
+func (l lifecycleCoreFacade) CommitChaincodeDefinition(ctx context.Context, channel string, args *lb.CommitChaincodeDefinitionArgs) (*lb.CommitChaincodeDefinitionResult, error) {
+	return l.lfw.CommitChaincodeDefinition(ctx, channel, args)
+}
+
+func (l lifecycleCoreFacade) QueryChaincodeDefinition(ctx context.Context, channel string, args *lb.QueryChaincodeDefinitionArgs) (*lb.QueryChaincodeDefinitionResult, error) {
+	return l.lfn.QueryChaincodeDefinition(ctx, channel, args)
+}
+
+func (l lifecycleCoreFacade) QueryChaincodeDefinitions(ctx context.Context, channel string, args *lb.QueryChaincodeDefinitionsArgs) (*lb.QueryChaincodeDefinitionsResult, error) {
+	return l.lfn.QueryChaincodeDefinitions(ctx, channel, args)
+}
+
+/* lifecycleNoDiscovery */
+
+func (l *lifecycleNoDiscovery) QueryInstalledChaincode(
+	ctx context.Context,
+	args *lb.QueryInstalledChaincodeArgs,
+) (
+	*lb.QueryInstalledChaincodeResult,
+	error,
+) {
+	argBytes, err := proto.Marshal(args)
 	if err != nil {
 		return nil, fmt.Errorf("marshal args: %w", err)
 	}
-	resp, err := cc.Query(lifecycle.QueryInstalledChaincodeFuncName).
-		WithArguments([][]byte{queryArgs}).
-		Do(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("query %v chaincode: %w", lifecycleName, err)
-	}
+	channel := ""
 
-	ccResult := &lb.QueryInstalledChaincodeResult{
-		References: make(map[string]*lb.QueryInstalledChaincodeResult_References, 0),
-	}
-	if err = proto.Unmarshal(resp.Payload, ccResult); err != nil {
-		return nil, fmt.Errorf(`failed to unmarshal protobuf: %w`, err)
-	}
-
-	return ccResult, nil
-}
-
-var _ api.Lifecycle = (*lifecycleImpl)(nil)
-
-func (p lifecycleImpl) QueryInstalledChaincodes(ctx context.Context) (*lb.QueryInstalledChaincodesResult, error) {
-	var args = make([][]byte, 1)
-
-	cc, err := p.core.Channel(``).Chaincode(ctx, lifecycleName)
+	resBytes, err := l.endorse(ctx, channel, lifecycle.QueryInstalledChaincodeFuncName, argBytes)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := cc.Query(lifecycle.QueryInstalledChaincodesFuncName).
-		WithArguments(args).
-		Do(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("query %v chaincode: %w", lifecycleName, err)
+
+	result := &lb.QueryInstalledChaincodeResult{
+		References: make(map[string]*lb.QueryInstalledChaincodeResult_References),
+	}
+	if err = proto.Unmarshal(resBytes, result); err != nil {
+		return nil, fmt.Errorf(`failed to unmarshal protobuf: %w`, err)
 	}
 
-	ccData := &lb.QueryInstalledChaincodesResult{
+	return result, nil
+}
+func (l *lifecycleNoDiscovery) QueryInstalledChaincodes(ctx context.Context) (*lb.QueryInstalledChaincodesResult, error) {
+	channel := ""
+	args := make([][]byte, 1)
+
+	resBytes, err := l.endorse(ctx, channel, lifecycle.QueryInstalledChaincodesFuncName, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &lb.QueryInstalledChaincodesResult{
 		InstalledChaincodes: make([]*lb.QueryInstalledChaincodesResult_InstalledChaincode, 0),
 	}
-	if err = proto.Unmarshal(resp.Payload, ccData); err != nil {
+	if err = proto.Unmarshal(resBytes, result); err != nil {
 		return nil, fmt.Errorf(`failed to unmarshal protobuf: %w`, err)
 	}
 
-	return ccData, nil
+	return result, nil
 }
-
-func (p lifecycleImpl) InstallChaincode(ctx context.Context, args *lb.InstallChaincodeArgs) (*lb.InstallChaincodeResult, error) {
-	cc, err := p.core.Channel(``).Chaincode(ctx, lifecycleName)
-	if err != nil {
-		return nil, err
-	}
-	installArgs, err := proto.Marshal(args)
+func (l *lifecycleNoDiscovery) InstallChaincode(ctx context.Context, args *lb.InstallChaincodeArgs) (*lb.InstallChaincodeResult, error) {
+	channel := ""
+	argBytes, err := proto.Marshal(args)
 	if err != nil {
 		return nil, fmt.Errorf("marshal args: %w", err)
 	}
-	resp, err := cc.Query(lifecycle.InstallChaincodeFuncName).
-		WithArguments([][]byte{installArgs}).
-		Do(ctx)
+
+	resBytes, err := l.endorse(ctx, channel, lifecycle.InstallChaincodeFuncName, argBytes)
 	if err != nil {
-		return nil, fmt.Errorf("invoke chaincode: %w", err)
+		return nil, err
 	}
 
-	ccResult := new(lb.InstallChaincodeResult)
-	if err = proto.Unmarshal(resp.Payload, ccResult); err != nil {
+	result := new(lb.InstallChaincodeResult)
+	if err = proto.Unmarshal(resBytes, result); err != nil {
 		return nil, fmt.Errorf("unmarshal protobuf: %w", err)
 	}
 
-	return ccResult, nil
+	return result, nil
+}
+func (l *lifecycleNoDiscovery) QueryApprovedChaincodeDefinition(ctx context.Context, channel string, args *lb.QueryApprovedChaincodeDefinitionArgs) (*lb.QueryApprovedChaincodeDefinitionResult, error) {
+	argBytes, err := proto.Marshal(args)
+	if err != nil {
+		return nil, fmt.Errorf("marshal args: %w", err)
+	}
+
+	resBytes, err := l.endorse(ctx, channel, lifecycle.QueryApprovedChaincodeDefinitionFuncName, argBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	result := new(lb.QueryApprovedChaincodeDefinitionResult)
+	if err = proto.Unmarshal(resBytes, result); err != nil {
+		return nil, fmt.Errorf("unmarshal proposal response: %w", err)
+	}
+
+	return result, nil
 }
 
-func (p lifecycleImpl) ApproveChaincodeDefinitionForMyOrg(ctx context.Context, channel string, args *lb.ApproveChaincodeDefinitionForMyOrgArgs) error {
-	cc, err := p.core.Channel(channel).Chaincode(ctx, lifecycleName)
+func (l *lifecycleNoDiscovery) CheckCommitReadiness(ctx context.Context, channel string, args *lb.CheckCommitReadinessArgs) (*lb.CheckCommitReadinessResult, error) {
+	argBytes, err := proto.Marshal(args)
+	if err != nil {
+		return nil, fmt.Errorf("marshal args: %w", err)
+	}
+
+	resBytes, err := l.endorse(ctx, channel, lifecycle.CheckCommitReadinessFuncName, argBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	result := new(lb.CheckCommitReadinessResult)
+	if err = proto.Unmarshal(resBytes, result); err != nil {
+		return nil, fmt.Errorf("unmarshal proposal response: %w", err)
+	}
+
+	return result, nil
+}
+
+func (l *lifecycleNoDiscovery) QueryChaincodeDefinition(ctx context.Context, channel string, args *lb.QueryChaincodeDefinitionArgs) (*lb.QueryChaincodeDefinitionResult, error) {
+	argBytes, err := proto.Marshal(args)
+	if err != nil {
+		return nil, fmt.Errorf("marshal args: %w", err)
+	}
+
+	resBytes, err := l.endorse(ctx, channel, lifecycle.QueryChaincodeDefinitionFuncName, argBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	result := new(lb.QueryChaincodeDefinitionResult)
+	if err = proto.Unmarshal(resBytes, result); err != nil {
+		return nil, fmt.Errorf("unmarshal response: %w", err)
+	}
+
+	return result, nil
+}
+func (l *lifecycleNoDiscovery) QueryChaincodeDefinitions(ctx context.Context, channel string, args *lb.QueryChaincodeDefinitionsArgs) (*lb.QueryChaincodeDefinitionsResult, error) {
+	argBytes, err := proto.Marshal(args)
+	if err != nil {
+		return nil, fmt.Errorf("marshal args: %w", err)
+	}
+
+	resBytes, err := l.endorse(ctx, channel, lifecycle.QueryChaincodeDefinitionsFuncName, argBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	result := new(lb.QueryChaincodeDefinitionsResult)
+	if err = proto.Unmarshal(resBytes, result); err != nil {
+		return nil, fmt.Errorf("unmarshal response: %w", err)
+	}
+
+	return result, nil
+}
+
+func (l *lifecycleNoDiscovery) endorse(ctx context.Context, channel string, fn string, args ...[]byte) ([]byte, error) {
+	processor := peerSDK.NewProcessor(channel)
+	prop, _, err := processor.CreateProposal(lifecycleName, l.signingIdentity, fn, args, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create proposal: %w", err)
+	}
+
+	resp, err := l.peerPool.Process(ctx, l.signingIdentity.GetMSPIdentifier(), prop)
+	if err != nil {
+		return nil, fmt.Errorf("failed to endorse proposal: %w", err)
+	}
+	return resp.Response.Payload, nil
+}
+
+/* lifecycleWithDiscovery */
+
+func (l *lifecycleWithDiscovery) ApproveChaincodeDefinitionForMyOrg(ctx context.Context, channel string, args *lb.ApproveChaincodeDefinitionForMyOrgArgs) error {
+	cc, err := l.core.Channel(channel).Chaincode(ctx, lifecycleName)
 	if err != nil {
 		return err
 	}
@@ -111,7 +254,7 @@ func (p lifecycleImpl) ApproveChaincodeDefinitionForMyOrg(ctx context.Context, c
 
 	_, _, err = cc.Invoke(lifecycle.ApproveChaincodeDefinitionForMyOrgFuncName).
 		ArgBytes([][]byte{argBytes}).
-		Do(ctx, api.WithEndorsingMpsIDs([]string{p.core.CurrentIdentity().GetMSPIdentifier()}))
+		Do(ctx, api.WithEndorsingMpsIDs([]string{l.core.CurrentIdentity().GetMSPIdentifier()}))
 
 	if err != nil {
 		return fmt.Errorf("invoke chaincode: %w", err)
@@ -119,34 +262,8 @@ func (p lifecycleImpl) ApproveChaincodeDefinitionForMyOrg(ctx context.Context, c
 
 	return nil
 }
-
-func (p lifecycleImpl) QueryApprovedChaincodeDefinition(ctx context.Context, channel string, args *lb.QueryApprovedChaincodeDefinitionArgs) (
-	*lb.QueryApprovedChaincodeDefinitionResult, error) {
-	cc, err := p.core.Channel(channel).Chaincode(ctx, lifecycleName)
-	if err != nil {
-		return nil, err
-	}
-	argBytes, err := proto.Marshal(args)
-	if err != nil {
-		return nil, fmt.Errorf("marshal args: %w", err)
-	}
-	resp, err := cc.Query(lifecycle.QueryApprovedChaincodeDefinitionFuncName).
-		WithArguments([][]byte{argBytes}).
-		Do(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("invoke chaincode: %w", err)
-	}
-
-	result := new(lb.QueryApprovedChaincodeDefinitionResult)
-	if err = proto.Unmarshal(resp.Payload, result); err != nil {
-		return nil, fmt.Errorf("unmarshal proposal response: %w", err)
-	}
-
-	return result, nil
-}
-
-func (p lifecycleImpl) CheckCommitReadiness(ctx context.Context, channel string, args *lb.CheckCommitReadinessArgs) (*lb.CheckCommitReadinessResult, error) {
-	cc, err := p.core.Channel(channel).Chaincode(ctx, lifecycleName)
+func (l *lifecycleWithDiscovery) CommitChaincodeDefinition(ctx context.Context, channel string, args *lb.CommitChaincodeDefinitionArgs) (*lb.CommitChaincodeDefinitionResult, error) {
+	cc, err := l.core.Channel(channel).Chaincode(ctx, lifecycleName)
 	if err != nil {
 		return nil, err
 	}
@@ -156,33 +273,7 @@ func (p lifecycleImpl) CheckCommitReadiness(ctx context.Context, channel string,
 		return nil, fmt.Errorf("marshal args: %w", err)
 	}
 
-	resp, err := cc.Query(lifecycle.CheckCommitReadinessFuncName).
-		WithArguments([][]byte{argsBytes}).
-		Do(ctx)
-	if err != nil {
-		return nil, fmt.Errorf(`query chaincode: %w`, err)
-	}
-	result := new(lb.CheckCommitReadinessResult)
-	if err = proto.Unmarshal(resp.Payload, result); err != nil {
-		return nil, fmt.Errorf("unmarshal proposal response: %w", err)
-	}
-
-	return result, nil
-}
-
-func (p lifecycleImpl) CommitChaincodeDefinition(ctx context.Context, channel string, args *lb.CommitChaincodeDefinitionArgs) (
-	*lb.CommitChaincodeDefinitionResult, error) {
-	cc, err := p.core.Channel(channel).Chaincode(ctx, lifecycleName)
-	if err != nil {
-		return nil, err
-	}
-	var argsBytes []byte
-	if argsBytes, err = proto.Marshal(args); err != nil {
-		return nil, fmt.Errorf("marshal args: %w", err)
-	}
-
-	var resp *peer.Response
-	resp, _, err = cc.Invoke(lifecycle.CommitChaincodeDefinitionFuncName).
+	resp, _, err := cc.Invoke(lifecycle.CommitChaincodeDefinitionFuncName).
 		ArgBytes([][]byte{argsBytes}).
 		Do(ctx)
 	if err != nil {
@@ -195,278 +286,3 @@ func (p lifecycleImpl) CommitChaincodeDefinition(ctx context.Context, channel st
 
 	return result, nil
 }
-
-func (p lifecycleImpl) QueryChaincodeDefinition(
-	ctx context.Context, channel string, args *lb.QueryChaincodeDefinitionArgs) (
-	*lb.QueryChaincodeDefinitionResult, error) {
-
-	cc, err := p.core.Channel(channel).Chaincode(ctx, lifecycleName)
-	if err != nil {
-		return nil, err
-	}
-	var (
-		argBytes []byte
-		resp     *peer.Response
-	)
-	if argBytes, err = proto.Marshal(args); err != nil {
-		return nil, fmt.Errorf("marshal args: %w", err)
-	}
-	resp, err = cc.Query(lifecycle.QueryChaincodeDefinitionFuncName).
-		WithArguments([][]byte{argBytes}).
-		Do(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("query chancode: %w", err)
-	}
-
-	result := new(lb.QueryChaincodeDefinitionResult)
-	if err = proto.Unmarshal(resp.Payload, result); err != nil {
-		return nil, fmt.Errorf("unmarshal response: %w", err)
-	}
-
-	return result, nil
-}
-
-func (p lifecycleImpl) QueryChaincodeDefinitions(
-	ctx context.Context, channel string, args *lb.QueryChaincodeDefinitionsArgs) (
-	*lb.QueryChaincodeDefinitionsResult, error) {
-
-	cc, err := p.core.Channel(channel).Chaincode(ctx, lifecycleName)
-	if err != nil {
-		return nil, err
-	}
-	var (
-		argBytes []byte
-		resp     *peer.Response
-	)
-
-	if argBytes, err = proto.Marshal(args); err != nil {
-		return nil, fmt.Errorf("marshal args: %w", err)
-	}
-	resp, err = cc.Query(lifecycle.QueryChaincodeDefinitionsFuncName).
-		WithArguments([][]byte{argBytes}).
-		Do(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("query chancode: %w", err)
-	}
-
-	result := new(lb.QueryChaincodeDefinitionsResult)
-	if err = proto.Unmarshal(resp.Payload, result); err != nil {
-		return nil, fmt.Errorf("unmarshal response: %w", err)
-	}
-
-	return result, nil
-}
-
-//// NewLifecycle returns an implementation of api.Lifecycle interface
-//func NewLifecycle(peerPool api.PeerPool, identity msp.SigningIdentity) api.Lifecycle {
-//	return &lifecycleCC{peerPool: peerPool, identity: identity}
-//}
-//
-//var _ api.Lifecycle = (*lifecycleCC)(nil)
-//
-//type lifecycleCC struct {
-//	peerPool api.PeerPool
-//	identity msp.SigningIdentity
-//}
-//
-//// QueryInstalledChaincodes returns installed chaincodes list
-//func (c *lifecycleCC) QueryInstalledChaincodes(ctx context.Context) (*lb.QueryInstalledChaincodesResult, error) {
-//	resp, err := c.endorse(ctx, ``, lifecycle.QueryInstalledChaincodesFuncName, []byte(``))
-//	if err != nil {
-//		return nil, err
-//	}
-//	ccData := new(lb.QueryInstalledChaincodesResult)
-//	if err = proto.Unmarshal(resp, ccData); err != nil {
-//		return nil, fmt.Errorf(`failed to unmarshal protobuf: %w`, err)
-//	}
-//	return ccData, nil
-//}
-//
-//// InstallChaincode install chaincode on a peer
-//func (c *lifecycleCC) InstallChaincode(ctx context.Context, installArgs *lb.InstallChaincodeArgs) (*lb.InstallChaincodeResult, error) {
-//	var (
-//		args []byte
-//		resp []byte
-//		err  error
-//	)
-//	if args, err = proto.Marshal(installArgs); err != nil {
-//		return nil, fmt.Errorf("marshal args: %w", err)
-//	}
-//	resp, err = c.endorse(ctx, ``, lifecycle.InstallChaincodeFuncName, args)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	ccResult := new(lb.InstallChaincodeResult)
-//	if err = proto.Unmarshal(resp, ccResult); err != nil {
-//		return nil, fmt.Errorf("unmarshal protobuf: %w", err)
-//	}
-//
-//	return ccResult, nil
-//}
-//
-//// ApproveFromMyOrg approves chaincode package on a channel
-//func (c *lifecycleCC) ApproveFromMyOrg(
-//	ctx context.Context,
-//	channel api.Channel,
-//	approveArgs *lb.ApproveChaincodeDefinitionForMyOrgArgs) error {
-//	var (
-//		args []byte
-//		cc   api.Chaincode
-//		err  error
-//	)
-//	if args, err = proto.Marshal(approveArgs); err != nil {
-//		return fmt.Errorf("marshal args: %w", err)
-//	}
-//	cc, err = channel.Chaincode(ctx, lifecycleName)
-//	if err != nil {
-//		return fmt.Errorf("initalize chaincode: %w", err)
-//	}
-//
-//	_, _, err = cc.Invoke(lifecycle.ApproveChaincodeDefinitionForMyOrgFuncName).
-//		WithIdentity(c.identity).
-//		ArgBytes([][]byte{args}).
-//		Do(ctx, api.WithEndorsingMpsIDs([]string{c.identity.GetMSPIdentifier()}))
-//
-//	if err != nil {
-//		return fmt.Errorf("invoke chaincode: %w", err)
-//	}
-//
-//	return nil
-//}
-//
-//// CheckCommitReadiness returns commitments statuses of participants on chaincode definition
-//func (c *lifecycleCC) CheckCommitReadiness(ctx context.Context, channelID string, args *lb.CheckCommitReadinessArgs) (
-//	*lb.CheckCommitReadinessResult, error) {
-//	var (
-//		argsBytes []byte
-//		resp      []byte
-//		err       error
-//	)
-//	if argsBytes, err = proto.Marshal(args); err != nil {
-//		return nil, fmt.Errorf("marshal args: %w", err)
-//	}
-//	resp, err = c.endorse(ctx, channelID, lifecycle.CheckCommitReadinessFuncName, argsBytes)
-//	if err != nil {
-//		return nil, fmt.Errorf(`failed to endorse proposal: %w`, err)
-//	}
-//	result := new(lb.CheckCommitReadinessResult)
-//	if err = proto.Unmarshal(resp, result); err != nil {
-//		return nil, fmt.Errorf("unmarshal proposal response: %w", err)
-//	}
-//
-//	return result, nil
-//}
-//
-//// CommitChaincodeDefinition the chaincode definition on the channel
-//func (c *lifecycleCC) CommitChaincodeDefinition(ctx context.Context, channel api.Channel, commitArgs *lb.CommitChaincodeDefinitionArgs) (
-//	*lb.CommitChaincodeDefinitionResult, error) {
-//	var (
-//		args []byte
-//		cc   api.Chaincode
-//		resp *peer.Response
-//		err  error
-//	)
-//	if args, err = proto.Marshal(commitArgs); err != nil {
-//		return nil, fmt.Errorf("marshal args: %w", err)
-//	}
-//	cc, err = channel.Chaincode(ctx, lifecycleName)
-//	if err != nil {
-//		return nil, fmt.Errorf("initalize chaincode: %w", err)
-//	}
-//
-//	resp, _, err = cc.Invoke(lifecycle.CommitChaincodeDefinitionFuncName).
-//		WithIdentity(c.identity).
-//		ArgBytes([][]byte{args}).
-//		Do(ctx)
-//
-//	if err != nil {
-//		return nil, fmt.Errorf("invoke chaincode: %w", err)
-//	}
-//	result := new(lb.CommitChaincodeDefinitionResult)
-//	if err = proto.Unmarshal(resp.Payload, result); err != nil {
-//		return nil, fmt.Errorf("unmarshal peer response: %w", err)
-//	}
-//
-//	return result, nil
-//}
-//
-//// QueryChaincodeDefinition returns chaincode definition committed on the channel
-//func (c *lifecycleCC) QueryChaincodeDefinition(
-//	ctx context.Context, channel api.Channel, args *lb.QueryChaincodeDefinitionArgs) (
-//	*lb.QueryChaincodeDefinitionResult, error) {
-//	var (
-//		cc       api.Chaincode
-//		argBytes []byte
-//		err      error
-//		resp     *peer.Response
-//	)
-//	cc, err = channel.Chaincode(ctx, lifecycleName)
-//	if err != nil {
-//		return nil, fmt.Errorf("initalize chaincode: %w", err)
-//	}
-//	if argBytes, err = proto.Marshal(args); err != nil {
-//		return nil, fmt.Errorf("marshal args: %w", err)
-//	}
-//	resp, err = cc.Query(lifecycle.QueryChaincodeDefinitionFuncName).
-//		WithArguments([][]byte{argBytes}).
-//		Do(ctx)
-//	if err != nil {
-//		return nil, fmt.Errorf("query chancode: %w", err)
-//	}
-//
-//	result := new(lb.QueryChaincodeDefinitionResult)
-//	if err = proto.Unmarshal(resp.Payload, result); err != nil {
-//		return nil, fmt.Errorf("unmarshal response: %w", err)
-//	}
-//
-//	return result, nil
-//}
-//
-//// QueryChaincodeDefinitions returns chaincode definitions committed on the channel
-//func (c *lifecycleCC) QueryChaincodeDefinitions(
-//	ctx context.Context,
-//	channel api.Channel,
-//	args *lb.QueryChaincodeDefinitionsArgs) (
-//	*lb.QueryChaincodeDefinitionsResult, error) {
-//	var (
-//		cc       api.Chaincode
-//		argBytes []byte
-//		err      error
-//		resp     *peer.Response
-//	)
-//	cc, err = channel.Chaincode(ctx, lifecycleName)
-//	if err != nil {
-//		return nil, fmt.Errorf("initalize chaincode: %w", err)
-//	}
-//	if argBytes, err = proto.Marshal(args); err != nil {
-//		return nil, fmt.Errorf("marshal args: %w", err)
-//	}
-//	resp, err = cc.Query(lifecycle.QueryChaincodeDefinitionsFuncName).
-//		WithArguments([][]byte{argBytes}).
-//		Do(ctx)
-//	if err != nil {
-//		return nil, fmt.Errorf("query chancode: %w", err)
-//	}
-//
-//	result := new(lb.QueryChaincodeDefinitionsResult)
-//	if err = proto.Unmarshal(resp.Payload, result); err != nil {
-//		return nil, fmt.Errorf("unmarshal response: %w", err)
-//	}
-//
-//	return result, nil
-//}
-//
-//func (c *lifecycleCC) endorse(ctx context.Context, channel string, fn string, args ...[]byte) ([]byte, error) {
-//	processor := peerSDK.NewProcessor(channel)
-//	prop, _, err := processor.CreateProposal(lifecycleName, c.identity, fn, args, nil)
-//	if err != nil {
-//		return nil, fmt.Errorf(`failed to create proposal: %w`, err)
-//	}
-//
-//	resp, err := c.peerPool.Process(ctx, c.identity.GetMSPIdentifier(), prop)
-//	if err != nil {
-//		return nil, fmt.Errorf(`failed to endorse proposal: %w`, err)
-//	}
-//	return resp.Response.Payload, nil
-//}
