@@ -18,7 +18,7 @@ type Chaincode interface {
 	Invoke(fn string) ChaincodeInvokeBuilder
 	// Query returns query builder for presented function and arguments
 	Query(fn string, args ...string) ChaincodeQueryBuilder
-	// Install fetches chaincode from repository and installs it on local peer
+	// Deprecated: Install fetches chaincode from repository and installs it on local peer
 	Install(version string)
 	// Subscribe returns subscription on chaincode events
 	Subscribe(ctx context.Context) (EventCCSubscription, error)
@@ -63,6 +63,14 @@ func WithEndorsingMpsIDs(mspIDs []string) DoOption {
 	}
 }
 
+func WithIdentity(identity msp.SigningIdentity) DoOption {
+	return func(opt *DoOptions) error {
+		opt.Identity = identity
+
+		return nil
+	}
+}
+
 // ChaincodeInvokeBuilder describes possibilities how to get invoke results
 type ChaincodeInvokeBuilder interface {
 	// WithIdentity allows to invoke chaincode from custom identity
@@ -83,6 +91,8 @@ type ChaincodeInvokeBuilder interface {
 type ChaincodeQueryBuilder interface {
 	// WithIdentity allows to invoke chaincode from custom identity
 	WithIdentity(identity msp.SigningIdentity) ChaincodeQueryBuilder
+	// WithArguments allows to query chaincode with arguments
+	WithArguments(argBytes [][]byte) ChaincodeQueryBuilder
 	// Transient allows to pass arguments to transient map
 	Transient(args TransArgs) ChaincodeQueryBuilder
 	// AsBytes allows to get result of querying chaincode as byte slice

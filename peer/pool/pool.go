@@ -7,11 +7,12 @@ import (
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
-	"github.com/s7techlab/hlf-sdk-go/v2/api/config"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	"github.com/s7techlab/hlf-sdk-go/v2/api/config"
 )
 
 type peerPool struct {
@@ -197,5 +198,12 @@ func (p *peerPool) Close() error {
 
 func New(ctx context.Context, log *zap.Logger, config config.PoolConfig) api.PeerPool {
 	ctx, cancel := context.WithCancel(ctx)
-	return &peerPool{store: make(map[string][]*peerPoolPeer), log: log.Named(`PeerPool`), ctx: ctx, cancel: cancel, config: config}
+
+	return &peerPool{
+		store:  make(map[string][]*peerPoolPeer),
+		log:    log.Named(`PeerPool`),
+		ctx:    ctx,
+		cancel: cancel,
+		config: config,
+	}
 }
