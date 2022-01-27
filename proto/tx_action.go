@@ -17,6 +17,7 @@ type (
 		Endorsers               []*msp.SerializedIdentity     `json:"endorsers"`
 		ReadWriteSets           []*kvrwset.KVRWSet            `json:"rw_sets"`
 		ChaincodeInvocationSpec *peer.ChaincodeInvocationSpec `json:"cc_invocation_spec"`
+		CreatorIdentity         msp.SerializedIdentity        `json:"creator_identity"`
 	}
 
 	TransactionsActions []*TransactionAction
@@ -37,6 +38,16 @@ func ParseTxActions(txActions []*peer.TransactionAction) ([]*TransactionAction, 
 }
 
 func ParseTxAction(txAction *peer.TransactionAction) (*TransactionAction, error) {
+	sigHeader, err := protoutil.UnmarshalSignatureHeader(txAction.Header)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get signature header: %w", err)
+	}
+
+	creator, err := ParseTransactionCreator(sigHeader)
+	if err != nil {
+		return nil, fmt.Errorf("parse transaction creator: %w", err)
+	}
+
 	ccAction, err := ParseChaincodeAction(txAction)
 	if err != nil {
 		return nil, fmt.Errorf("parse transaction chaincode action: %w", err)
@@ -67,6 +78,7 @@ func ParseTxAction(txAction *peer.TransactionAction) (*TransactionAction, error)
 		Endorsers:               endorsers,
 		ReadWriteSets:           rwSets,
 		ChaincodeInvocationSpec: chaincodeInvocationSpec,
+		CreatorIdentity:         creator,
 	}
 
 	return parsedTxAction, nil
