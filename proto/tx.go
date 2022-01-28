@@ -3,8 +3,6 @@ package proto
 import (
 	"fmt"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/msp"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/protoutil"
@@ -43,20 +41,23 @@ func ParseEndorserTx(envelopePayloadBytes []byte) (*Transaction, error) {
 		return nil, fmt.Errorf("failed to get signature header: %w", err)
 	}
 
-	parsedTx.CreatorIdentity, err = ParseTransactionCreator(sigHeader)
+	si, err := protoutil.UnmarshalSerializedIdentity(sigHeader.Creator)
 	if err != nil {
-		return nil, fmt.Errorf("parse transaction creator: %w", err)
+		// in some transactions we get some unknown proto message with chaincodes(!?), dont know how to deal with it now
+		// ---- example
+		// �
+		// �
+		// _lifecycle�
+		// "ApproveChaincodeDefinitionForMyOrg
+		// ^basic1.0JNL
+		// Jbasic_1.0:770d76a4369f9121d4945c6782dd42c4db7c130c3c7b77b73d9894414b5a3da9
+		// log.Println("[hlf.ptoto.tx-parser] got error, skipping it. transaction creator is not 'msp.SerializedIdentity': ", string(sigHeader.Creator))
+		err = nil
+		//return nil, fmt.Errorf("parse transaction creator: %w", err)
 	}
+	parsedTx.CreatorIdentity = *si
 
 	return parsedTx, err
-}
-
-func ParseTransactionCreator(sigHeader *common.SignatureHeader) (msp.SerializedIdentity, error) {
-	creatorIdentity := &msp.SerializedIdentity{}
-	if err := proto.Unmarshal(sigHeader.Creator, creatorIdentity); err != nil {
-		return msp.SerializedIdentity{}, fmt.Errorf("failed to get creator identity: %w", err)
-	}
-	return *creatorIdentity, nil
 }
 
 func (t *Transaction) Events() []*peer.ChaincodeEvent {

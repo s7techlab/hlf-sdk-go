@@ -43,7 +43,7 @@ func ParseTxAction(txAction *peer.TransactionAction) (*TransactionAction, error)
 		return nil, fmt.Errorf("failed to get signature header: %w", err)
 	}
 
-	creator, err := ParseTransactionCreator(sigHeader)
+	creator, err := protoutil.UnmarshalSerializedIdentity(sigHeader.Creator)
 	if err != nil {
 		return nil, fmt.Errorf("parse transaction creator: %w", err)
 	}
@@ -73,12 +73,15 @@ func ParseTxAction(txAction *peer.TransactionAction) (*TransactionAction, error)
 		return nil, fmt.Errorf("parse transaction chaincode invocation spec: %w", err)
 	}
 
+	// because there'is no cc version in peer.ChaincodeInvocationSpec
+	chaincodeInvocationSpec.ChaincodeSpec.ChaincodeId.Version = ccAction.ChaincodeId.Version
+
 	parsedTxAction := &TransactionAction{
 		Event:                   ccEvent,
 		Endorsers:               endorsers,
 		ReadWriteSets:           rwSets,
 		ChaincodeInvocationSpec: chaincodeInvocationSpec,
-		CreatorIdentity:         creator,
+		CreatorIdentity:         *creator,
 	}
 
 	return parsedTxAction, nil
@@ -160,10 +163,11 @@ func ParseTransactionActionChaincode(txAction *peer.TransactionAction) (*peer.Ch
 	if err != nil {
 		return nil, fmt.Errorf("failed to get chaincode proposal from action payload: %w", err)
 	}
-
-	chaincodeInvocationSpec := &peer.ChaincodeInvocationSpec{}
-	if err = proto.Unmarshal(chaincodeProposalPayload.Input, chaincodeInvocationSpec); err != nil {
+	// todo transient map could be fetched here
+	chaincodeInvocationSpec, err := protoutil.UnmarshalChaincodeInvocationSpec(chaincodeProposalPayload.Input)
+	if err != nil {
 		return nil, fmt.Errorf("failed to get chaincode invocation spec from action payload: %w", err)
 	}
+
 	return chaincodeInvocationSpec, nil
 }
