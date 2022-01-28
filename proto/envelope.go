@@ -3,6 +3,7 @@ package proto
 import (
 	"fmt"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/protoutil"
@@ -12,10 +13,11 @@ import (
 
 type (
 	Envelope struct {
-		Signature      []byte
-		ChannelHeader  *common.ChannelHeader
-		ValidationCode peer.TxValidationCode
-		Transaction    *Transaction
+		Signature      []byte                `json:"signature"`
+		ChannelHeader  *common.ChannelHeader `json:"channel_header"`
+		ValidationCode peer.TxValidationCode `json:"validation_code"`
+		Transaction    *Transaction          `json:"transaction,omitempty"`
+		ChannelConfig  *ChannelConfig        `json:"channel_config,omitempty"`
 	}
 
 	Envelopes []*Envelope
@@ -26,7 +28,7 @@ func ParseEnvelopes(blockData [][]byte, txFilter txflags.ValidationFlags) ([]*En
 	for i, envelope := range blockData {
 		parsedEnvelope, err := ParseEnvelope(envelope, txFilter.Flag(i))
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("parse envelope: %w", err)
 		}
 
 		envelopes = append(envelopes, parsedEnvelope)
@@ -62,6 +64,16 @@ func ParseEnvelope(envelopeData []byte, validationCode peer.TxValidationCode) (*
 		parsedEnvelope.Transaction, err = ParseEndorserTx(payload.Data)
 		if err != nil {
 			return nil, fmt.Errorf(`endorser transaction from envelope: %w`, err)
+		}
+	case common.HeaderType_CONFIG:
+		ce := &common.ConfigEnvelope{}
+		if err := proto.Unmarshal(payload.Data, ce); err != nil {
+			return nil, err
+		}
+
+		parsedEnvelope.ChannelConfig, err = ParseChannelConfig(*ce.Config)
+		if err != nil {
+			return nil, fmt.Errorf(`parse channel config: %w`, err)
 		}
 	}
 
