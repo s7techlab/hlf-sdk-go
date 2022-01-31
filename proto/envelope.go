@@ -53,6 +53,14 @@ func ParseEnvelope(envelopeData []byte, validationCode peer.TxValidationCode) (*
 		return nil, fmt.Errorf(`channel header from envelope payload: %w`, err)
 	}
 
+	if channelHeader.TxId == "" {
+		sigHeader, err := protoutil.UnmarshalSignatureHeader(payload.Header.SignatureHeader)
+		if err != nil {
+			return nil, fmt.Errorf("signature header: %w", err)
+		}
+		protoutil.SetTxID(channelHeader, sigHeader)
+	}
+
 	parsedEnvelope := &Envelope{
 		Signature:      envelope.Signature,
 		ChannelHeader:  channelHeader,
@@ -61,7 +69,7 @@ func ParseEnvelope(envelopeData []byte, validationCode peer.TxValidationCode) (*
 
 	switch common.HeaderType(channelHeader.Type) {
 	case common.HeaderType_ENDORSER_TRANSACTION:
-		parsedEnvelope.Transaction, err = ParseEndorserTx(payload.Data)
+		parsedEnvelope.Transaction, err = ParseTransaction(payload, common.HeaderType(channelHeader.Type))
 		if err != nil {
 			return nil, fmt.Errorf(`endorser transaction from envelope: %w`, err)
 		}
@@ -74,6 +82,11 @@ func ParseEnvelope(envelopeData []byte, validationCode peer.TxValidationCode) (*
 		parsedEnvelope.ChannelConfig, err = ParseChannelConfig(*ce.Config)
 		if err != nil {
 			return nil, fmt.Errorf(`parse channel config: %w`, err)
+		}
+
+		parsedEnvelope.Transaction, err = ParseTransaction(payload, common.HeaderType(channelHeader.Type))
+		if err != nil {
+			return nil, fmt.Errorf(`endorser transaction from envelope: %w`, err)
 		}
 	}
 

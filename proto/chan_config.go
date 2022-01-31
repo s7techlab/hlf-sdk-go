@@ -472,7 +472,7 @@ func (c ChannelConfig) GetAllCertificates() ([]Certificate, error) {
 	}
 
 	for mspID := range c.Orderers {
-		cs, err := c.Applications[mspID].MSP.GetAllCertificates()
+		cs, err := c.Orderers[mspID].MSP.GetAllCertificates()
 		if err != nil {
 			return nil, fmt.Errorf("get all orderers certificates: %w", err)
 		}
