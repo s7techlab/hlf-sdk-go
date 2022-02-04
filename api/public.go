@@ -18,7 +18,7 @@ type EventsDeliverer interface {
 		channelName string,
 		ccName string,
 		identity msp.SigningIdentity,
-		blockRange ...uint64,
+		blockRange ...int64,
 	) (events chan interface {
 		Event() *peer.ChaincodeEvent
 		Block() uint64
@@ -34,7 +34,7 @@ type BlocksDeliverer interface {
 		ctx context.Context,
 		channelName string,
 		identity msp.SigningIdentity,
-		blockRange ...uint64,
+		blockRange ...int64,
 	) (blockChan <-chan *common.Block, closer func() error, err error)
 }
 type Public interface {

@@ -8,6 +8,7 @@ import (
 	"github.com/hyperledger/fabric-protos-go/common"
 	fabPeer "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
+	"go.uber.org/zap"
 
 	"github.com/s7techlab/hlf-sdk-go/v2/api"
 	"github.com/s7techlab/hlf-sdk-go/v2/client/chaincode"
@@ -90,7 +91,7 @@ func (c *core) Events(
 	chanName string,
 	ccName string,
 	identity msp.SigningIdentity,
-	blockRange ...uint64,
+	blockRange ...int64,
 ) (events chan interface {
 	Event() *fabPeer.ChaincodeEvent
 	Block() uint64
@@ -100,6 +101,7 @@ func (c *core) Events(
 		identity = c.CurrentIdentity()
 	}
 
+	c.logger.Debug(`[Events] block range`, zap.String("chanName", chanName), zap.Reflect(`slice`, blockRange))
 	mspID := identity.GetMSPIdentifier()
 
 	dc, err := c.PeerPool().DeliverClient(mspID, identity)
@@ -129,12 +131,13 @@ func (c *core) Blocks(
 	ctx context.Context,
 	chanName string,
 	identity msp.SigningIdentity,
-	blockRange ...uint64,
+	blockRange ...int64,
 ) (blockChan <-chan *common.Block, closer func() error, err error) {
 	if identity == nil {
 		identity = c.CurrentIdentity()
 	}
 
+	c.logger.Debug(`[Blocks] block range`, zap.String("chanName", chanName), zap.Reflect(`slice`, blockRange))
 	mspID := identity.GetMSPIdentifier()
 
 	dc, err := c.PeerPool().DeliverClient(mspID, identity)
