@@ -40,15 +40,15 @@ func (so *SeekOptConverter) ChannelHeight(ctx context.Context, channel string) (
 	return so.currentHeight, err
 }
 
-func (so *SeekOptConverter) ByBlockRange(ctx context.Context, channel string, blockRange ...int64) (api.EventCCSeekOption, error) {
+func (so *SeekOptConverter) ByBlockRange(ctx context.Context, channel string, blockRange ...uint64) (api.EventCCSeekOption, error) {
 
 	var (
-		blockRangeFrom, blockRangeTo int64
+		blockRangeFrom, blockRangeTo uint64
 		seekFrom, seekTo             *ordererproto.SeekPosition
 	)
 
 	if blockRange == nil {
-		blockRange = []int64{}
+		blockRange = []uint64{}
 	}
 
 	so.Logger.Debug(`seek by block range`, zap.Reflect(`block range`, blockRange))
@@ -73,7 +73,7 @@ func (so *SeekOptConverter) ByBlockRange(ctx context.Context, channel string, bl
 			so.Logger.Debug(`get channel info for calculate negative block from`,
 				zap.Uint64(`channel_height`, height))
 
-			seekFrom = api.SeekSpecified(uint64(int64(height) + blockRangeFrom))
+			seekFrom = api.SeekSpecified(uint64(height + blockRangeFrom))
 		}
 
 	default:
@@ -104,7 +104,7 @@ func (so *SeekOptConverter) ByBlockRange(ctx context.Context, channel string, bl
 			so.Logger.Debug(`get channel info for calculate negative block to`,
 				zap.Uint64(`channel_height`, height))
 
-			seekTo = api.SeekSpecified(uint64(int64(height) + blockRangeTo))
+			seekTo = api.SeekSpecified(uint64(height + blockRangeTo))
 		}
 
 	default:

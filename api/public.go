@@ -4,26 +4,42 @@ import (
 	"context"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
 )
 
-type Public interface {
-
-	// Events - shortcut for PeerPool().DeliverClient(...).SubscribeCC(...).Events()
-	// subscribe on chaincode events using name of channel, chaincode and block offset
-	// if provided 'identity' is 'nil' default one will be set
+// Events - shortcut for PeerPool().DeliverClient(...).SubscribeCC(...).Events()
+// subscribe on chaincode events using name of channel, chaincode and block offset
+// if provided 'identity' is 'nil' default one will be set
+type EventsDeliverer interface {
 	Events(
 		ctx context.Context,
 		channelName string,
 		ccName string,
 		identity msp.SigningIdentity,
-		blockRange ...int64,
+		blockRange ...uint64,
 	) (events chan interface {
 		Event() *peer.ChaincodeEvent
 		Block() uint64
 		TxTimestamp() *timestamp.Timestamp
 	}, closer func() error, err error)
+}
+
+// Blocks - shortcut for core.PeerPool().DeliverClient(mspIdentity).SubscribeBlock(chanName,seekRange).Blocks()
+// subscribe to new blocks on specified channel
+// if provided 'identity' is 'nil' default one will be set
+type BlocksDeliverer interface {
+	Blocks(
+		ctx context.Context,
+		channelName string,
+		identity msp.SigningIdentity,
+		blockRange ...uint64,
+	) (blockChan <-chan *common.Block, closer func() error, err error)
+}
+type Public interface {
+	EventsDeliverer
+	BlocksDeliverer
 
 	// Invoke - shortcut for invoking chanincodes
 	// if provided 'identity' is 'nil' default one will be set
