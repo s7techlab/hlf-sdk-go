@@ -9,10 +9,10 @@ import (
 	"github.com/hyperledger/fabric/msp"
 )
 
-// Events - shortcut for PeerPool().DeliverClient(...).SubscribeCC(...).Events()
-// subscribe on chaincode events using name of channel, chaincode and block offset
-// if provided 'identity' is 'nil' default one will be set
 type EventsDeliverer interface {
+	// Events - shortcut for PeerPool().DeliverClient(...).SubscribeCC(...).Events()
+	// subscribe on chaincode events using name of channel, chaincode and block offset
+	// if provided 'identity' is 'nil' default one will be set
 	Events(
 		ctx context.Context,
 		channelName string,
@@ -26,10 +26,10 @@ type EventsDeliverer interface {
 	}, closer func() error, err error)
 }
 
-// Blocks - shortcut for core.PeerPool().DeliverClient(mspIdentity).SubscribeBlock(chanName,seekRange).Blocks()
-// subscribe to new blocks on specified channel
-// if provided 'identity' is 'nil' default one will be set
 type BlocksDeliverer interface {
+	// Blocks - shortcut for core.PeerPool().DeliverClient(mspIdentity).SubscribeBlock(chanName,seekRange).Blocks()
+	// subscribe to new blocks on specified channel
+	// if provided 'identity' is 'nil' default one will be set
 	Blocks(
 		ctx context.Context,
 		channelName string,
