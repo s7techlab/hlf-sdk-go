@@ -14,27 +14,24 @@ import (
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
 )
 
-type blocksReader struct {
+type BlocksDelivererMock struct {
 	//  <channel-name> => [<block1.pb>,...<blockN.pb>]
 	data             map[string][]*common.Block
 	closeWhenAllRead bool
-	closer           func() error
 }
 
 // NewBlocksDelivererMock - read all blocks in proto format from provided folder.
 // returns sdkapi.BlocksDeliverer - interface
 // closeWhenAllRead - close channel when all data have been written
 // closerFunc - close func that will be returned from Blocks()
-func NewBlocksDelivererMock(rootPath string, closeWhenAllRead bool, closerFunc func() error) (api.BlocksDeliverer, error) {
+func NewBlocksDelivererMock(rootPath string, closeWhenAllRead bool) (*BlocksDelivererMock, error) {
 	var err error
 
-	dc := &blocksReader{
+	dc := &BlocksDelivererMock{
 		data:             make(map[string][]*common.Block),
 		closeWhenAllRead: closeWhenAllRead,
-		closer:           closerFunc,
 	}
 
 	channels := make(map[string]map[int][]byte)
@@ -113,7 +110,7 @@ func NewBlocksDelivererMock(rootPath string, closeWhenAllRead bool, closerFunc f
 	return dc, nil
 }
 
-func (m *blocksReader) Blocks(
+func (m *BlocksDelivererMock) Blocks(
 	ctx context.Context,
 	channelName string,
 	identity msp.SigningIdentity,
@@ -122,11 +119,7 @@ func (m *blocksReader) Blocks(
 	if _, ok := m.data[channelName]; !ok {
 		return nil, nil, fmt.Errorf("have no mocked data for this channel")
 	}
-	if m.closer == nil {
-		closer = func() error { return nil }
-	} else {
-		closer = m.closer
-	}
+	closer = func() error { return nil }
 
 	var (
 		blockRangeFrom int64 = 0

@@ -190,7 +190,7 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 		if core.config == nil {
 			return nil, api.ErrEmptyConfig
 		}
-		core.peerPool = pool.New(core.ctx, core.logger, core.config.Pool)
+		core.peerPool = pool.New(core.ctx, core.logger)
 		for _, mspConfig := range core.config.MSP {
 			for _, peerConfig := range mspConfig.Endorsers {
 				p, err := peer.New(peerConfig, core.logger)

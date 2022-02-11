@@ -15,6 +15,10 @@ type CSCC interface {
 	GetConfigBlock(ctx context.Context, channelName string) (*common.Block, error)
 	// GetChannelConfig returns channel configuration
 	GetChannelConfig(ctx context.Context, channelName string) (*common.Config, error)
+	ChannelsFetcher
+}
+
+type ChannelsFetcher interface {
 	// GetChannels returns list of joined channels
 	GetChannels(ctx context.Context) (*peer.ChannelQueryResponse, error)
 }

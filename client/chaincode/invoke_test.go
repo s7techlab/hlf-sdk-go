@@ -15,7 +15,6 @@ import (
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
 	"github.com/s7techlab/hlf-sdk-go/v2/api"
-	"github.com/s7techlab/hlf-sdk-go/v2/api/config"
 	"github.com/s7techlab/hlf-sdk-go/v2/client"
 	"github.com/s7techlab/hlf-sdk-go/v2/client/chaincode"
 	"github.com/s7techlab/hlf-sdk-go/v2/client/chaincode/txwaiter"
@@ -262,7 +261,7 @@ func TestInvokeBuilder_Do(t *testing.T) {
 		}
 	)
 
-	peerPool := pool.New(context.Background(), logger.DefaultLogger, config.PoolConfig{})
+	peerPool := pool.New(context.Background(), logger.DefaultLogger)
 	peerPool.Add(`org1msp`, peerOrg1, defaultAlivePeer)
 	peerPool.Add(`org2msp`, peerOrg2, defaultAlivePeer)
 	peerPool.Add(`org3msp`, peerOrg3, defaultAlivePeer)
