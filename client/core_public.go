@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/hyperledger/fabric-protos-go/common"
 	fabPeer "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
 	"go.uber.org/zap"
@@ -96,12 +97,11 @@ func (c *core) Events(
 	Block() uint64
 	TxTimestamp() *timestamp.Timestamp
 }, closer func() error, err error) {
-
 	if identity == nil {
 		identity = c.CurrentIdentity()
 	}
 
-	c.logger.Debug(`block range`, zap.Reflect(`slice`, blockRange))
+	c.logger.Debug(`[Events] block range`, zap.String("chanName", chanName), zap.Reflect(`slice`, blockRange))
 	mspID := identity.GetMSPIdentifier()
 
 	dc, err := c.PeerPool().DeliverClient(mspID, identity)
@@ -125,4 +125,40 @@ func (c *core) Events(
 	}
 
 	return sub.EventsExtended(), sub.Close, nil
+}
+
+func (c *core) Blocks(
+	ctx context.Context,
+	chanName string,
+	identity msp.SigningIdentity,
+	blockRange ...int64,
+) (blockChan <-chan *common.Block, closer func() error, err error) {
+	if identity == nil {
+		identity = c.CurrentIdentity()
+	}
+
+	c.logger.Debug(`[Blocks] block range`, zap.String("chanName", chanName), zap.Reflect(`slice`, blockRange))
+	mspID := identity.GetMSPIdentifier()
+
+	dc, err := c.PeerPool().DeliverClient(mspID, identity)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var seekOpts []api.EventCCSeekOption
+	seekOpt, err := NewSeekOptConverter(c).ByBlockRange(ctx, chanName, blockRange...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if seekOpt != nil {
+		seekOpts = append(seekOpts, seekOpt)
+	}
+
+	bs, err := dc.SubscribeBlock(ctx, chanName, seekOpts...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return bs.Blocks(), bs.Close, nil
 }

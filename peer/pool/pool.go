@@ -12,12 +12,9 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/s7techlab/hlf-sdk-go/v2/api"
-	"github.com/s7techlab/hlf-sdk-go/v2/api/config"
 )
 
 type peerPool struct {
-	config config.PoolConfig
-
 	log    *zap.Logger
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -196,7 +193,7 @@ func (p *peerPool) Close() error {
 	return nil
 }
 
-func New(ctx context.Context, log *zap.Logger, config config.PoolConfig) api.PeerPool {
+func New(ctx context.Context, log *zap.Logger) api.PeerPool {
 	ctx, cancel := context.WithCancel(ctx)
 
 	return &peerPool{
@@ -204,6 +201,5 @@ func New(ctx context.Context, log *zap.Logger, config config.PoolConfig) api.Pee
 		log:    log.Named(`PeerPool`),
 		ctx:    ctx,
 		cancel: cancel,
-		config: config,
 	}
 }
