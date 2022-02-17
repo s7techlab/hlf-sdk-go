@@ -30,6 +30,8 @@ type invokeBuilder struct {
 
 var _ api.ChaincodeInvokeBuilder = (*invokeBuilder)(nil)
 
+var ErrOrdererNotDefined = errors.New(`orderer not defined`)
+
 func NewInvokeBuilder(ccCore *Core, fn string) api.ChaincodeInvokeBuilder {
 	return &invokeBuilder{
 		ccCore:    ccCore,
@@ -79,6 +81,10 @@ func (b *invokeBuilder) Do(ctx context.Context, options ...api.DoOption) (*fabri
 	err := b.err.Err()
 	if err != nil {
 		return nil, ``, err
+	}
+
+	if b.ccCore.orderer == nil {
+		return nil, ``, ErrOrdererNotDefined
 	}
 
 	// set default options
