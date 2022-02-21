@@ -243,7 +243,8 @@ func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, er
 			// discovery initialized, add local peers to the pool
 			lDiscoverer, err := core.discoveryProvider.LocalPeers(core.ctx)
 			if err != nil {
-				return nil, errors.Wrap(err, `failed to fetch local peers`)
+				return nil, fmt.Errorf(`fetch local peers from discovery provider connection=%s: %w`,
+					core.config.Discovery.Connection.Host, err)
 			}
 
 			peers := lDiscoverer.Peers()
