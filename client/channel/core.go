@@ -43,7 +43,12 @@ func (c *Core) Chaincode(serviceDiscCtx context.Context, ccName string) (api.Cha
 	}
 
 	if c.chanName == `` {
-		cc = chaincode.NewCore(c.mspId, ccName, c.chanName, []string{c.mspId}, c.peerPool, c.orderer, c.identity)
+		localPeers, err := c.dp.LocalPeers(serviceDiscCtx)
+		if err != nil {
+			return nil, err
+		}
+
+		cc = chaincode.NewCore(c.mspId, ccName, c.chanName, []string{c.mspId}, localPeers.Peers(), c.peerPool, c.orderer, c.identity)
 		c.chaincodes[ccName] = cc
 
 		return cc, nil
@@ -51,7 +56,7 @@ func (c *Core) Chaincode(serviceDiscCtx context.Context, ccName string) (api.Cha
 
 	cd, err := c.dp.Chaincode(serviceDiscCtx, c.chanName, ccName)
 	if err != nil {
-		return nil, fmt.Errorf("chaincode discovery err: %w", err)
+		return nil, fmt.Errorf("chaincode discovery: %w", err)
 	}
 
 	var endorserMSPs []string
@@ -75,12 +80,13 @@ func (c *Core) Chaincode(serviceDiscCtx context.Context, ccName string) (api.Cha
 			l := c.log
 
 			errGr.Go(func() error {
-				p, err := peer.New(grpcCfg, l)
+				var p api.Peer
+				p, err = peer.New(grpcCfg, l)
 				if err != nil {
-					return fmt.Errorf("failed to initialize endorsers for MSP: %s: %w", mspID, err)
+					return fmt.Errorf("initialize endorsers for MSP: %s: %w", mspID, err)
 				}
-				if err := c.peerPool.Add(mspID, p, api.StrategyGRPC(5*time.Second)); err != nil {
-					return fmt.Errorf("failed to add endorser peer to pool: %s:%w", mspID, err)
+				if err = c.peerPool.Add(mspID, p, api.StrategyGRPC(5*time.Second)); err != nil {
+					return fmt.Errorf("add endorser peer to pool: %s:%w", mspID, err)
 				}
 				return nil
 			})
@@ -91,7 +97,7 @@ func (c *Core) Chaincode(serviceDiscCtx context.Context, ccName string) (api.Cha
 		return nil, err
 	}
 
-	cc = chaincode.NewCore(c.mspId, ccName, c.chanName, endorserMSPs, c.peerPool, c.orderer, c.identity)
+	cc = chaincode.NewCore(c.mspId, ccName, c.chanName, endorserMSPs, endorsers, c.peerPool, c.orderer, c.identity)
 	c.chaincodes[ccName] = cc
 
 	return cc, nil

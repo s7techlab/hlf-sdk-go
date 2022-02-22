@@ -22,7 +22,7 @@ type Core interface {
 	CryptoSuite() CryptoSuite
 	// System allows access to system chaincodes
 	System() SystemCC
-	// Current peer pool
+	// PeerPool current peer pool
 	PeerPool() PeerPool
 	// Chaincode installation
 	Chaincode(name string) ChaincodePackage
@@ -33,7 +33,7 @@ type Core interface {
 }
 
 // types which identify tx "wait'er" policy
-// we dont make it as alias for preventing binding to our lib
+// we don't make it as alias for preventing binding to our lib
 const (
 	TxWaiterSelfType string = "self"
 	TxWaiterAllType  string = "all"

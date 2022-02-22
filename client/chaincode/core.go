@@ -2,9 +2,9 @@ package chaincode
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hyperledger/fabric/msp"
-	"github.com/pkg/errors"
 
 	"github.com/s7techlab/hlf-sdk-go/v2/api"
 )
@@ -14,10 +14,15 @@ type Core struct {
 	name          string
 	channelName   string
 	endorsingMSPs []string
+	endorsers []*api.HostEndpoint
 	peerPool      api.PeerPool
 	orderer       api.Orderer
 
 	identity msp.SigningIdentity
+}
+
+func (c *Core) Endorsers() []*api.HostEndpoint {
+	return c.endorsers
 }
 
 func (c *Core) Invoke(fn string) api.ChaincodeInvokeBuilder {
@@ -35,7 +40,7 @@ func (c *Core) Install(version string) {
 func (c *Core) Subscribe(ctx context.Context) (api.EventCCSubscription, error) {
 	peerDeliver, err := c.peerPool.DeliverClient(c.mspId, c.identity)
 	if err != nil {
-		return nil, errors.Wrap(err, `failed to initiate DeliverClient`)
+		return nil, fmt.Errorf(`initiate DeliverClient: %w`, err)
 	}
 	return peerDeliver.SubscribeCC(ctx, c.channelName, c.name)
 }
@@ -45,6 +50,7 @@ func NewCore(
 	ccName,
 	channelName string,
 	endorsingMSPs []string,
+	endorsers []*api.HostEndpoint,
 	peerPool api.PeerPool,
 	orderer api.Orderer,
 	identity msp.SigningIdentity,
@@ -54,6 +60,7 @@ func NewCore(
 		name:          ccName,
 		channelName:   channelName,
 		endorsingMSPs: endorsingMSPs,
+		endorsers: endorsers,
 		peerPool:      peerPool,
 		orderer:       orderer,
 		identity:      identity,
