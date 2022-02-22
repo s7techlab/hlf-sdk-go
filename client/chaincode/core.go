@@ -20,6 +20,19 @@ type Core struct {
 	identity msp.SigningIdentity
 }
 
+func (c *Core) GetPeers() []api.Peer {
+	peers := make([]api.Peer, 0)
+
+	peersMap := c.peerPool.GetPeers()
+	for _, endorsingMSP := range c.endorsingMSPs {
+		if ps, ok := peersMap[endorsingMSP]; ok {
+			peers = append(peers, ps...)
+		}
+	}
+
+	return peers
+}
+
 func (c *Core) Invoke(fn string) api.ChaincodeInvokeBuilder {
 	return NewInvokeBuilder(c, fn)
 }

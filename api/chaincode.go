@@ -14,6 +14,8 @@ type TransArgs map[string][]byte
 
 // Chaincode describes common operations with chaincode
 type Chaincode interface {
+	// GetPeers returns chaincodes peers
+	GetPeers() []Peer
 	// Invoke returns invoke builder for presented chaincode function
 	Invoke(fn string) ChaincodeInvokeBuilder
 	// Query returns query builder for presented function and arguments
