@@ -14,7 +14,7 @@ type Core struct {
 	name          string
 	channelName   string
 	endorsingMSPs []string
-	endorsers []*api.HostEndpoint
+	endorsers     []*api.HostEndpoint
 	peerPool      api.PeerPool
 	orderer       api.Orderer
 
@@ -60,7 +60,7 @@ func NewCore(
 		name:          ccName,
 		channelName:   channelName,
 		endorsingMSPs: endorsingMSPs,
-		endorsers: endorsers,
+		endorsers:     endorsers,
 		peerPool:      peerPool,
 		orderer:       orderer,
 		identity:      identity,
