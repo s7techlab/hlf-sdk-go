@@ -14,8 +14,6 @@ type TransArgs map[string][]byte
 
 // Chaincode describes common operations with chaincode
 type Chaincode interface {
-	// Endorsers return chaincode's endorsers
-	Endorsers() []*HostEndpoint
 	// Invoke returns invoke builder for presented chaincode function
 	Invoke(fn string) ChaincodeInvokeBuilder
 	// Query returns query builder for presented function and arguments
@@ -75,9 +73,9 @@ func WithIdentity(identity msp.SigningIdentity) DoOption {
 
 // ChaincodeInvokeBuilder describes possibilities how to get invoke results
 type ChaincodeInvokeBuilder interface {
-	// WithIdentity allows it to invoke chaincode from custom identity
+	// WithIdentity allows invoking chaincode from custom identity
 	WithIdentity(identity msp.SigningIdentity) ChaincodeInvokeBuilder
-	// Transient allows it to pass arguments to transient map
+	// Transient allows passing arguments to transient map
 	Transient(args TransArgs) ChaincodeInvokeBuilder
 	// ArgBytes set slice of bytes as argument
 	ArgBytes([][]byte) ChaincodeInvokeBuilder
@@ -91,15 +89,15 @@ type ChaincodeInvokeBuilder interface {
 
 // ChaincodeQueryBuilder describe possibilities how to get query results
 type ChaincodeQueryBuilder interface {
-	// WithIdentity allows it to invoke chaincode from custom identity
+	// WithIdentity allows invoking chaincode from custom identity
 	WithIdentity(identity msp.SigningIdentity) ChaincodeQueryBuilder
-	// WithArguments allows it to query chaincode with arguments
+	// WithArguments allows querying chaincode with arguments
 	WithArguments(argBytes [][]byte) ChaincodeQueryBuilder
-	// Transient allows it to pass arguments to transient map
+	// Transient allows passing arguments to transient map
 	Transient(args TransArgs) ChaincodeQueryBuilder
-	// AsBytes allows it to get result of querying chaincode as byte slice
+	// AsBytes allows getting result of querying chaincode as byte slice
 	AsBytes(ctx context.Context) ([]byte, error)
-	// AsJSON allows it to get result of querying chaincode to presented structures using JSON-unmarshalling
+	// AsJSON allows getting result of querying chaincode to presented structures using JSON-unmarshalling
 	AsJSON(ctx context.Context, out interface{}) error
 	// AsProposalResponse allows it to get raw peer response
 	AsProposalResponse(ctx context.Context) (*peer.ProposalResponse, error)
@@ -109,15 +107,15 @@ type ChaincodeQueryBuilder interface {
 
 // QSCC describes Query System Chaincode (QSCC)
 type QSCC interface {
-	// GetChainInfo allows it to get common info about channel blockchain
+	// GetChainInfo allows getting common info about channel blockchain
 	GetChainInfo(ctx context.Context, channelName string) (*common.BlockchainInfo, error)
-	// GetBlockByNumber allows it to get block by number
+	// GetBlockByNumber allows getting block by number
 	GetBlockByNumber(ctx context.Context, channelName string, blockNumber int64) (*common.Block, error)
-	// GetBlockByHash allows it to get block by hash
+	// GetBlockByHash allows getting block by hash
 	GetBlockByHash(ctx context.Context, channelName string, blockHash []byte) (*common.Block, error)
-	// GetTransactionByID allows it to get transaction by id
+	// GetTransactionByID allows getting transaction by id
 	GetTransactionByID(ctx context.Context, channelName string, tx ChaincodeTx) (*peer.ProcessedTransaction, error)
-	// GetBlockByTxID allows it to get block by transaction
+	// GetBlockByTxID allows getting block by transaction
 	GetBlockByTxID(ctx context.Context, channelName string, tx ChaincodeTx) (*common.Block, error)
 }
 

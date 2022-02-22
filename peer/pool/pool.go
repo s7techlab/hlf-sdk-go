@@ -28,6 +28,18 @@ type peerPoolPeer struct {
 	ready bool
 }
 
+func (p *peerPool) GetPeers() map[string][]api.Peer {
+	m := make(map[string][]api.Peer, 0)
+
+	for mspId, peerArr := range p.store {
+		for _, peerFromArr := range peerArr {
+			m[mspId] = append(m[mspId], peerFromArr.peer)
+		}
+	}
+
+	return m
+}
+
 func (p *peerPool) Add(mspId string, peer api.Peer, peerChecker api.PeerPoolCheckStrategy) error {
 	log := p.log.Named(`Add`).With(zap.String(`mspId`, mspId))
 	log.Debug(`add peer`, zap.String(`peerUri`, peer.Uri()))

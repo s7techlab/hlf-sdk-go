@@ -43,12 +43,7 @@ func (c *Core) Chaincode(serviceDiscCtx context.Context, ccName string) (api.Cha
 	}
 
 	if c.chanName == `` {
-		localPeers, err := c.dp.LocalPeers(serviceDiscCtx)
-		if err != nil {
-			return nil, err
-		}
-
-		cc = chaincode.NewCore(c.mspId, ccName, c.chanName, []string{c.mspId}, localPeers.Peers(), c.peerPool, c.orderer, c.identity)
+		cc = chaincode.NewCore(c.mspId, ccName, c.chanName, []string{c.mspId}, c.peerPool, c.orderer, c.identity)
 		c.chaincodes[ccName] = cc
 
 		return cc, nil
@@ -97,7 +92,7 @@ func (c *Core) Chaincode(serviceDiscCtx context.Context, ccName string) (api.Cha
 		return nil, err
 	}
 
-	cc = chaincode.NewCore(c.mspId, ccName, c.chanName, endorserMSPs, endorsers, c.peerPool, c.orderer, c.identity)
+	cc = chaincode.NewCore(c.mspId, ccName, c.chanName, endorserMSPs, c.peerPool, c.orderer, c.identity)
 	c.chaincodes[ccName] = cc
 
 	return cc, nil

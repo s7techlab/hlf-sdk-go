@@ -14,15 +14,10 @@ type Core struct {
 	name          string
 	channelName   string
 	endorsingMSPs []string
-	endorsers     []*api.HostEndpoint
 	peerPool      api.PeerPool
 	orderer       api.Orderer
 
 	identity msp.SigningIdentity
-}
-
-func (c *Core) Endorsers() []*api.HostEndpoint {
-	return c.endorsers
 }
 
 func (c *Core) Invoke(fn string) api.ChaincodeInvokeBuilder {
@@ -50,7 +45,6 @@ func NewCore(
 	ccName,
 	channelName string,
 	endorsingMSPs []string,
-	endorsers []*api.HostEndpoint,
 	peerPool api.PeerPool,
 	orderer api.Orderer,
 	identity msp.SigningIdentity,
@@ -60,7 +54,6 @@ func NewCore(
 		name:          ccName,
 		channelName:   channelName,
 		endorsingMSPs: endorsingMSPs,
-		endorsers:     endorsers,
 		peerPool:      peerPool,
 		orderer:       orderer,
 		identity:      identity,
