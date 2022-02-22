@@ -99,7 +99,7 @@ type ChaincodeQueryBuilder interface {
 	AsBytes(ctx context.Context) ([]byte, error)
 	// AsJSON allows getting result of querying chaincode to presented structures using JSON-unmarshalling
 	AsJSON(ctx context.Context, out interface{}) error
-	// AsProposalResponse allows it to get raw peer response
+	// AsProposalResponse allows getting raw peer response
 	AsProposalResponse(ctx context.Context) (*peer.ProposalResponse, error)
 	// Do makes query with built arguments
 	Do(ctx context.Context) (*peer.Response, error)
