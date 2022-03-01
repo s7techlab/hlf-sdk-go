@@ -18,6 +18,8 @@ type Core interface {
 	Channel(name string) Channel
 	// CurrentIdentity identity returns current signing identity used by core
 	CurrentIdentity() msp.SigningIdentity
+	// CurrentMspPeers returns current msp peers
+	CurrentMspPeers() []Peer
 	// CryptoSuite returns current crypto suite implementation
 	CryptoSuite() CryptoSuite
 	// System allows access to system chaincodes

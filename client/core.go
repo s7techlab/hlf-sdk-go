@@ -27,14 +27,13 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/v2/util"
 )
 
-// implementation of api.Сore interface
+// implementation of api.Core interface
 var _ api.Core = (*core)(nil)
 
 type core struct {
 	ctx               context.Context
 	logger            *zap.Logger
 	config            *config.Config
-	mspId             string
 	identity          msp.SigningIdentity
 	peerPool          api.PeerPool
 	orderer           api.Orderer
@@ -82,6 +81,16 @@ func (c *core) PeerPool() api.PeerPool {
 	return c.peerPool
 }
 
+func (c *core) CurrentMspPeers() []api.Peer {
+	allPeers := c.peerPool.GetPeers()
+
+	if peers, ok := allPeers[c.identity.GetMSPIdentifier()]; !ok {
+		return []api.Peer{}
+	} else {
+		return peers
+	}
+}
+
 func (c *core) Channel(name string) api.Channel {
 	log := c.logger.Named(`Channel`).With(zap.String(`channel`, name))
 	c.channelMx.Lock()
@@ -102,7 +111,7 @@ func (c *core) Channel(name string) api.Channel {
 		// if custom orderers are enabled
 		if len(discChannel.Orderers()) > 0 {
 			// convert api.HostEndpoint-> grpc config.ConnectionConfig
-			grpcConnCfgs := []config.ConnectionConfig{}
+			var grpcConnCfgs []config.ConnectionConfig
 			orderers := discChannel.Orderers()
 
 			for _, orderer := range orderers {
@@ -132,7 +141,7 @@ func (c *core) Channel(name string) api.Channel {
 		ord = c.orderer
 	}
 
-	ch = channel.NewCore(c.mspId, name, c.peerPool, ord, c.discoveryProvider, c.identity, c.fabricV2, c.logger)
+	ch = channel.NewCore(c.identity.GetMSPIdentifier(), name, c.peerPool, ord, c.discoveryProvider, c.identity, c.fabricV2, c.logger)
 	c.channels[name] = ch
 	return ch
 }
@@ -141,10 +150,9 @@ func (c *core) FabricV2() bool {
 	return c.fabricV2
 }
 
-func NewCore(mspId string, identity api.Identity, opts ...CoreOpt) (api.Core, error) {
+func NewCore(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 	var err error
 	core := &core{
-		mspId:      mspId,
 		channels:   make(map[string]api.Channel),
 		chaincodes: make(map[string]api.ChaincodePackage),
 	}
