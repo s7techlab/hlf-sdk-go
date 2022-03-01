@@ -20,7 +20,7 @@ func main() {
 		log.Fatalf("connection.invoke: %v", err)
 	}
 
-	core, err := client.NewCore(mspId, id, client.WithConfigYaml("./cfg.yaml"))
+	core, err := client.NewCore(id, client.WithConfigYaml("./cfg.yaml"))
 	if err != nil {
 		log.Fatalf("create client core: %v", err)
 	}
