@@ -9,10 +9,11 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/s7techlab/hlf-sdk-go/v2/client"
 	_ "github.com/s7techlab/hlf-sdk-go/v2/crypto/ecdsa"
 	"github.com/s7techlab/hlf-sdk-go/v2/identity"
-	"go.uber.org/zap"
 )
 
 func main() {
@@ -49,7 +50,7 @@ func main() {
 
 	l, _ := zap.NewProduction()
 
-	core, err := client.NewCore(mspId, id, client.WithConfigYaml(configPath), client.WithLogger(l))
+	core, err := client.NewCore(id, client.WithConfigYaml(configPath), client.WithLogger(l))
 	if err != nil {
 		log.Fatalln(`unable to initialize core:`, err)
 	}

@@ -14,6 +14,8 @@ import (
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
+	"google.golang.org/grpc"
+
 	"github.com/s7techlab/hlf-sdk-go/v2/api"
 	"github.com/s7techlab/hlf-sdk-go/v2/client"
 	"github.com/s7techlab/hlf-sdk-go/v2/client/chaincode"
@@ -24,7 +26,6 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/v2/identity"
 	"github.com/s7techlab/hlf-sdk-go/v2/logger"
 	"github.com/s7techlab/hlf-sdk-go/v2/peer/pool"
-	"google.golang.org/grpc"
 )
 
 var (
@@ -122,12 +123,12 @@ func (p *mockPeer) Endorse(ctx context.Context, proposal *peer.SignedProposal, o
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to unmarshal Header`)
 	}
-	chheader, err := protoutil.UnmarshalChannelHeader(header.ChannelHeader)
+	chHeader, err := protoutil.UnmarshalChannelHeader(header.ChannelHeader)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to unmarshal`)
 	}
 
-	p.checkEndorse[chheader.ChannelId+`/`+chheader.TxId]++
+	p.checkEndorse[chHeader.ChannelId+`/`+chHeader.TxId]++
 
 	peerResp := &peer.Response{
 		Status:  200,
@@ -136,7 +137,7 @@ func (p *mockPeer) Endorse(ctx context.Context, proposal *peer.SignedProposal, o
 
 	result := []byte(``)
 	event := []byte(nil)
-	ccid := &peer.ChaincodeID{
+	ccId := &peer.ChaincodeID{
 		Name:    `my-chaincode`,
 		Version: `0.1`,
 	}
@@ -147,7 +148,7 @@ func (p *mockPeer) Endorse(ctx context.Context, proposal *peer.SignedProposal, o
 		peerResp,
 		result,
 		event,
-		ccid,
+		ccId,
 		p.endorser,
 	)
 }
@@ -262,12 +263,11 @@ func TestInvokeBuilder_Do(t *testing.T) {
 	)
 
 	peerPool := pool.New(context.Background(), logger.DefaultLogger)
-	peerPool.Add(`org1msp`, peerOrg1, defaultAlivePeer)
-	peerPool.Add(`org2msp`, peerOrg2, defaultAlivePeer)
-	peerPool.Add(`org3msp`, peerOrg3, defaultAlivePeer)
+	_ = peerPool.Add(`org1msp`, peerOrg1, defaultAlivePeer)
+	_ = peerPool.Add(`org2msp`, peerOrg2, defaultAlivePeer)
+	_ = peerPool.Add(`org3msp`, peerOrg3, defaultAlivePeer)
 
 	core, err := client.NewCore(
-		`org1msp`,
 		org1mspID,
 		client.WithOrderer(&mockOrderer{}),
 		client.WithPeerPool(peerPool),
@@ -276,9 +276,9 @@ func TestInvokeBuilder_Do(t *testing.T) {
 
 	invoker := sdkinvoker.New(core)
 
-	var checkEndorsingCount = func(channelName, txid string, orgs ...string) error {
+	var checkEndorsingCount = func(channelName, txId string, orgs ...string) error {
 		var strErrs []string
-		key := channelName + `/` + txid
+		key := channelName + `/` + txId
 		for _, org := range orgs {
 			if v := peerResolver[org].checkEndorse[key]; v != 1 {
 				strErrs = append(strErrs, fmt.Sprintf(
@@ -297,9 +297,9 @@ func TestInvokeBuilder_Do(t *testing.T) {
 		return nil
 	}
 
-	var checkTxWaiterCount = func(channelName, txid string, orgs ...string) error {
+	var checkTxWaiterCount = func(channelName, txId string, orgs ...string) error {
 		var strErrs []string
-		key := channelName + `/` + txid
+		key := channelName + `/` + txId
 		for _, org := range orgs {
 			if v := peerResolver[org].deliver.txResultCount[key]; v != 1 {
 				strErrs = append(strErrs, fmt.Sprintf(
@@ -398,7 +398,7 @@ func TestInvokeBuilder_Do(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(tt *testing.T) {
-			_, txid, err := invoker.Invoke(
+			_, txId, err := invoker.Invoke(
 				context.Background(),
 				org1mspID.GetSigningIdentity(cryptoSuite),
 				tc.channel,
@@ -408,17 +408,17 @@ func TestInvokeBuilder_Do(t *testing.T) {
 				nil,
 				tc.opts...,
 			)
-			//_, txid, err := NewInvokeBuilder(mockCore, `call`).Do(ctx, tc.opts...)
+			//_, txId, err := NewInvokeBuilder(mockCore, `call`).Do(ctx, tc.opts...)
 			if fmt.Sprint(tc.expErr) != fmt.Sprint(err) {
 				tt.Errorf("Unexpected error:\n %s \n!=\n %s", tc.expErr, err)
 			}
 			if len(tc.checkEndorseCalled) != 0 {
-				if err = checkEndorsingCount(tc.channel, string(txid), tc.checkEndorseCalled...); err != nil {
+				if err = checkEndorsingCount(tc.channel, string(txId), tc.checkEndorseCalled...); err != nil {
 					t.Errorf("checkEndorseCalled: Unexpected error: %s", err)
 				}
 			}
 			if len(tc.checkDeliverByTxCalled) != 0 {
-				if err = checkTxWaiterCount(tc.channel, string(txid), tc.checkDeliverByTxCalled...); err != nil {
+				if err = checkTxWaiterCount(tc.channel, string(txId), tc.checkDeliverByTxCalled...); err != nil {
 					t.Errorf("checkDeliverByTxCalled: Unexpected error: %s", err)
 				}
 			}

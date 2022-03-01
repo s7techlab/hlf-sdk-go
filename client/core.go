@@ -159,7 +159,7 @@ func NewCore(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 
 	for _, option := range opts {
 		if err = option(core); err != nil {
-			return nil, errors.Wrap(err, `failed to apply option`)
+			return nil, fmt.Errorf(`apply option: %w`, err)
 		}
 	}
 
@@ -181,7 +181,7 @@ func NewCore(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 			core.config.Crypto = ecdsa.DefaultConfig
 		}
 		if core.cs, err = crypto.GetSuite(core.config.Crypto.Type, core.config.Crypto.Options); err != nil {
-			return nil, errors.Wrap(err, `failed to initialize crypto suite`)
+			return nil, fmt.Errorf(`initialize crypto suite: %w`, err)
 		}
 	}
 
@@ -201,12 +201,13 @@ func NewCore(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 		core.peerPool = pool.New(core.ctx, core.logger)
 		for _, mspConfig := range core.config.MSP {
 			for _, peerConfig := range mspConfig.Endorsers {
-				p, err := peer.New(peerConfig, core.logger)
+				var p api.Peer
+				p, err = peer.New(peerConfig, core.logger)
 				if err != nil {
-					return nil, errors.Errorf("failed to initialize endorsers for MSP: %s:%s", mspConfig.Name, err.Error())
+					return nil, fmt.Errorf("initialize endorsers for MSP: %s: %w", mspConfig.Name, err)
 				}
 				if err = core.peerPool.Add(mspConfig.Name, p, api.StrategyGRPC(5*time.Second)); err != nil {
-					return nil, errors.Wrap(err, `failed to add peer to pool`)
+					return nil, fmt.Errorf(`add peer to pool: %w`, err)
 				}
 			}
 		}
@@ -221,18 +222,18 @@ func NewCore(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 		case string(discovery.LocalConfigServiceDiscoveryType):
 			core.discoveryProvider, err = discovery.NewLocalConfigProvider(core.config.Discovery.Options, tlsMapper)
 			if err != nil {
-				return nil, errors.Wrap(err, `failed to initialize discovery provider`)
+				return nil, fmt.Errorf(`initialize discovery provider: %w`, err)
 			}
 		case string(discovery.GossipServiceDiscoveryType):
 			if core.config.Discovery.Connection == nil {
-				return nil, errors.Wrap(err, `discovery connection config wasn't provided. configure 'discovery.connection'`)
+				return nil, fmt.Errorf(`discovery connection config wasn't provided. configure 'discovery.connection': %w`, err)
 			}
 			identitySigner := func(msg []byte) ([]byte, error) {
 				return core.CurrentIdentity().Sign(msg)
 			}
 			clientIdentity, err := core.CurrentIdentity().Serialize()
 			if err != nil {
-				return nil, errors.Wrap(err, `failed serialize current identity`)
+				return nil, fmt.Errorf(`serialize current identity: %w`, err)
 			}
 			// add tls settings from mapper if they were provided
 			core.config.Discovery.Connection.Tls = *tlsMapper.TlsConfigForAddress(core.config.Discovery.Connection.Host)
@@ -246,7 +247,7 @@ func NewCore(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 				tlsMapper,
 			)
 			if err != nil {
-				return nil, errors.Wrap(err, `failed to initialize discovery provider`)
+				return nil, fmt.Errorf(`initialize discovery provider: %w`, err)
 			}
 			// discovery initialized, add local peers to the pool
 			lDiscoverer, err := core.discoveryProvider.LocalPeers(core.ctx)
@@ -267,10 +268,10 @@ func NewCore(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 					}
 					p, err := peer.New(peerCfg, core.logger)
 					if err != nil {
-						return nil, errors.Errorf("failed to initialize endorsers for MSP: %s:%s", mspID, err.Error())
+						return nil, fmt.Errorf(`initialize endorsers for MSP: %s: %w`, mspID, err)
 					}
 					if err = core.peerPool.Add(mspID, p, api.StrategyGRPC(5*time.Second)); err != nil {
-						return nil, errors.Wrap(err, `failed to add peer to pool`)
+						return nil, fmt.Errorf(`add peer to pool: %w`, err)
 					}
 				}
 			}
@@ -288,11 +289,11 @@ func NewCore(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 		if len(core.config.Orderers) > 0 {
 			ordConn, err := util.NewGRPCConnectionFromConfigs(core.ctx, core.logger, core.config.Orderers...)
 			if err != nil {
-				return nil, errors.Wrap(err, `failed to initialize orderer connection`)
+				return nil, fmt.Errorf(`initialize orderer connection: %w`, err)
 			}
 			core.orderer, err = orderer.NewFromGRPC(core.ctx, ordConn)
 			if err != nil {
-				return nil, errors.Wrap(err, `failed to initialize orderer`)
+				return nil, fmt.Errorf(`initialize orderer: %w`, err)
 			}
 		}
 	}
