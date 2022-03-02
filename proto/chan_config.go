@@ -36,6 +36,7 @@ type ApplicationConfig struct {
 }
 
 type MSP struct {
+	Name   string
 	Config msp.FabricMSPConfig  `json:"config"`
 	Policy map[PolicyKey]Policy `json:"policy"`
 }
@@ -168,7 +169,7 @@ func ParseApplicationConfig(cfg common.Config) (map[string]ApplicationConfig, er
 			err      error
 		)
 
-		mspCfg, err = ParseMSP(applicationGroup.Groups[groupName])
+		mspCfg, err = ParseMSP(applicationGroup.Groups[groupName], groupName)
 		if err != nil {
 			return nil, fmt.Errorf("parse msp: %w", err)
 		}
@@ -188,7 +189,7 @@ func ParseApplicationConfig(cfg common.Config) (map[string]ApplicationConfig, er
 	return appCfg, nil
 }
 
-func ParseMSP(mspConfigGroup *common.ConfigGroup) (*MSP, error) {
+func ParseMSP(mspConfigGroup *common.ConfigGroup, groupName string) (*MSP, error) {
 	mspCV, ok := mspConfigGroup.Values[channelconfig.MSPKey]
 	if !ok {
 		return nil, fmt.Errorf("%v type group doesn't exists", channelconfig.MSPKey)
@@ -209,7 +210,7 @@ func ParseMSP(mspConfigGroup *common.ConfigGroup) (*MSP, error) {
 		return nil, fmt.Errorf("parse policy: %w", err)
 	}
 
-	return &MSP{Config: *fmspCfg, Policy: policy}, nil
+	return &MSP{Config: *fmspCfg, Policy: policy, Name: groupName}, nil
 }
 
 func ParseOrderer(cfg common.Config) (map[string]OrdererConfig, error) {
@@ -220,7 +221,7 @@ func ParseOrderer(cfg common.Config) (map[string]OrdererConfig, error) {
 	orderersCfg := map[string]OrdererConfig{}
 
 	for groupName := range ordererGroup.Groups {
-		mspCfg, err := ParseMSP(ordererGroup.Groups[groupName])
+		mspCfg, err := ParseMSP(ordererGroup.Groups[groupName], groupName)
 		if err != nil {
 			return nil, fmt.Errorf("parse msp: %w", err)
 		}
@@ -487,7 +488,7 @@ func (c MSP) GetAllCertificates() ([]Certificate, error) {
 	var certs []Certificate
 
 	for i := range c.Config.RootCerts {
-		cert, err := NewCertificate(c.Config.RootCerts[i], RootCACertType, c.Config.Name)
+		cert, err := NewCertificate(c.Config.RootCerts[i], RootCACertType, c.Config.Name, c.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -495,7 +496,7 @@ func (c MSP) GetAllCertificates() ([]Certificate, error) {
 	}
 
 	for i := range c.Config.IntermediateCerts {
-		cert, err := NewCertificate(c.Config.IntermediateCerts[i], IntermediateCertType, c.Config.Name)
+		cert, err := NewCertificate(c.Config.IntermediateCerts[i], IntermediateCertType, c.Config.Name, c.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -503,7 +504,7 @@ func (c MSP) GetAllCertificates() ([]Certificate, error) {
 	}
 
 	for i := range c.Config.Admins {
-		cert, err := NewCertificate(c.Config.Admins[i], AdminCertType, c.Config.Name)
+		cert, err := NewCertificate(c.Config.Admins[i], AdminCertType, c.Config.Name, c.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -513,16 +514,17 @@ func (c MSP) GetAllCertificates() ([]Certificate, error) {
 	return certs, nil
 }
 
-func NewCertificate(cert []byte, t CertType, mspID string) (Certificate, error) {
+func NewCertificate(cert []byte, t CertType, mspID, mspName string) (Certificate, error) {
 	b, _ := pem.Decode(cert)
 	if b == nil {
 		return Certificate{}, fmt.Errorf("decode %s cert of %s", t, mspID)
 	}
 
 	c := Certificate{
-		Data:  cert,
-		MSPID: mspID,
-		Type:  t,
+		Data:    cert,
+		MSPID:   mspID,
+		Type:    t,
+		MSPName: mspName,
 	}
 	c.setCertificateSHA256(b)
 
