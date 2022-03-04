@@ -10,10 +10,8 @@ import (
 	"sync"
 	"time"
 
-	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
+	grpcretry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/v2/api/config"
-	"github.com/s7techlab/hlf-sdk-go/v2/opencensus/hlf"
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
@@ -23,6 +21,9 @@ import (
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/resolver"
 	"google.golang.org/grpc/resolver/manual"
+
+	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/opencensus/hlf"
 )
 
 var (
@@ -74,7 +75,7 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 			}
 			tlsCfg.RootCAs = certPool
 		} else {
-			// otherwise we use system certificates
+			// otherwise, we use system certificates
 			if tlsCfg.RootCAs, err = x509.SystemCertPool(); err != nil {
 				return nil, errors.Wrap(err, `failed to get system cert pool`)
 			}
@@ -120,9 +121,9 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 
 	grpcOptions = append(grpcOptions,
 		grpc.WithUnaryInterceptor(
-			grpc_retry.UnaryClientInterceptor(
-				grpc_retry.WithMax(retryConfig.Max),
-				grpc_retry.WithBackoff(grpc_retry.BackoffLinear(retryConfig.Timeout.Duration)),
+			grpcretry.UnaryClientInterceptor(
+				grpcretry.WithMax(retryConfig.Max),
+				grpcretry.WithBackoff(grpcretry.BackoffLinear(retryConfig.Timeout.Duration)),
 			),
 		),
 	)
@@ -149,7 +150,7 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 	return grpcOptions, nil
 }
 
-// NewGRPCConnectionFromConfigs - initilizes grpc connection with pool of adderesses with round-robin client balancer
+// NewGRPCConnectionFromConfigs - initializes grpc connection with pool of addresses with round-robin client balancer
 func NewGRPCConnectionFromConfigs(ctx context.Context, log *zap.Logger, conf ...config.ConnectionConfig) (*grpc.ClientConn, error) {
 	if len(conf) == 0 {
 		return nil, errors.New(`no GRPC options provided`)

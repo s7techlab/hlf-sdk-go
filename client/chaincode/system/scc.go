@@ -1,7 +1,7 @@
 package system
 
 import (
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
 const (

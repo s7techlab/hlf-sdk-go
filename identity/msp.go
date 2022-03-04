@@ -14,8 +14,8 @@ import (
 	_ "github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
 
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
-	"github.com/s7techlab/hlf-sdk-go/v2/util"
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
 type mspIdentity struct {
@@ -236,7 +236,7 @@ func NewMSPIdentitiesFromPath(mspID string, mspPath string) (*MSPIdentities, err
 		return nil, err
 	}
 	if len(signCerts) == 0 {
-		return nil, errors.Wrap(err, `'signcerts' folder is emprty`)
+		return nil, errors.Wrap(err, `'signcerts' folder is empty`)
 	}
 
 	cert, key, err := util.LoadKeypairByCert(mspPath, signCerts[0])

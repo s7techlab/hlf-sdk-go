@@ -18,7 +18,7 @@ type (
 		// Attrs are attributes associated with this identity
 		Attrs []RegisterAttribute `json:"attrs"`
 		// CAName is the name of the CA that should be used. FabricCa support more than one CA server on same endpoint and
-		// this names are used to distinguish between them. If empty default CA instance will be used.
+		// these names are used to distinguish between them. If empty default CA instance will be used.
 		CAName string `json:"caname,omitempty"`
 	}
 
@@ -50,7 +50,7 @@ type (
 		// Label is used for hardware secure modules.
 		Label string `json:"label,omitempty"`
 		// CAName is the name of the CA that should be used. FabricCa support more than one CA server on same endpoint and
-		// this names are used to distinguish between them. If empty default CA instance will be used.
+		// these names are used to distinguish between them. If empty default CA instance will be used.
 		CAName string `json:"caname,omitempty"`
 		// Host is the list of valid host names for this certificate. If empty default hosts will be used
 		Hosts []string `json:"hosts"`
@@ -69,7 +69,7 @@ type (
 		// Label is used for hardware secure modules.
 		Label string `json:"label,omitempty"`
 		// CAName is the name of the CA that should be used. FabricCa support more than one CA server on same endpoint and
-		// this names are used to distinguish between them. If empty default CA instance will be used.
+		// these names are used to distinguish between them. If empty default CA instance will be used.
 		CAName string `json:"caname,omitempty"`
 		// Host is the list of valid host names for this certificate. If empty default hosts will be used
 		Hosts []string `json:"hosts"`

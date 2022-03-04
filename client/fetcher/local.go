@@ -5,7 +5,8 @@ import (
 
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/core/chaincode/platforms"
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
+
+	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
 type localFetcher struct {

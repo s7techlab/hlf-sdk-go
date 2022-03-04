@@ -41,18 +41,18 @@ func CreateCompositeKey(objectType string, attributes []string) (string, error) 
 }
 
 func SplitCompositeKey(compositeKey string) (string, []string) {
-	//println("compositeKey", compositeKey)
 	componentIndex := 1
-	components := []string{}
+	var components []string
 	for i := 1; i < len(compositeKey); i++ {
 		if compositeKey[i] == minUnicodeRuneValue {
 			components = append(components, compositeKey[componentIndex:i])
 			componentIndex = i + 1
 		}
 	}
+
 	if componentIndex == 1 {
 		return compositeKey, []string{}
 	}
-	//println(fmt.Sprintf("%v", components))
+
 	return components[0], components[1:]
 }

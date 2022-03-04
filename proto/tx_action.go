@@ -73,7 +73,7 @@ func ParseTxAction(txAction *peer.TransactionAction) (*TransactionAction, error)
 		return nil, fmt.Errorf("parse transaction chaincode invocation spec: %w", err)
 	}
 
-	// because there'is no cc version in peer.ChaincodeInvocationSpec
+	// because there is no cc version in peer.ChaincodeInvocationSpec
 	chaincodeInvocationSpec.ChaincodeSpec.ChaincodeId.Version = ccAction.ChaincodeId.Version
 
 	parsedTxAction := &TransactionAction{

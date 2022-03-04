@@ -3,8 +3,8 @@ package discovery
 import (
 	"sync"
 
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
-	"github.com/s7techlab/hlf-sdk-go/v2/api/config"
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/api/config"
 )
 
 // implementation of tlsConfigMapper interface
@@ -26,8 +26,8 @@ func NewTLSCertsMapper(certsCfg []config.TLSCertsMapperConfig) *TLSCertsMapper {
 	return &TLSCertsMapper{addrCfgMap: addrCfgMap, lock: sync.RWMutex{}}
 }
 
-// tlsConfigForAddress - get tls config for provided address
-// if config wasnt provided on startup time return disabled tls
+// TlsConfigForAddress - get tls config for provided address
+// if config wasn't provided on startup time return disabled tls
 func (m *TLSCertsMapper) TlsConfigForAddress(address string) *config.TlsConfig {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
@@ -44,7 +44,7 @@ func (m *TLSCertsMapper) TlsConfigForAddress(address string) *config.TlsConfig {
 
 /*
 	decorators over api.ChaincodeDiscoverer/ChannelDiscoverer
-	adds TLS settings(if they was provided in cfg) for discovered peers
+	adds TLS settings(if they were provided in cfg) for discovered peers
 */
 
 type chaincodeDiscovererTLSDecorator struct {

@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
 type peerPool struct {
@@ -157,7 +157,7 @@ func (p *peerPool) Process(ctx context.Context, mspId string, proposal *peer.Sig
 	}
 
 	if lastError == nil {
-		// all peers was not ready
+		// all peers were not ready
 		return nil, api.ErrNoReadyPeers{MspId: mspId}
 	}
 

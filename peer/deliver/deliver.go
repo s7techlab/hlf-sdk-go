@@ -12,15 +12,14 @@ import (
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
 
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
-	"github.com/s7techlab/hlf-sdk-go/v2/peer/deliver/subs"
-	"github.com/s7techlab/hlf-sdk-go/v2/util"
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/peer/deliver/subs"
+	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
-// New
-func New(delivercli peer.DeliverClient, identity msp.SigningIdentity) *deliverImpl {
+func New(deliverCli peer.DeliverClient, identity msp.SigningIdentity) *deliverImpl {
 	return &deliverImpl{
-		cli:      delivercli,
+		cli:      deliverCli,
 		identity: identity,
 	}
 }
@@ -67,7 +66,7 @@ func FromTxID(qscc GetBlockerInfo, txid api.ChaincodeTx) func(*subscribeEventOpt
 	}
 }
 
-// WithDefaultSeek need if fromTxID if empty
+// WithDefaultSeek need if fromTxID is empty
 func WithDefaultSeek(seekOpts ...api.EventCCSeekOption) func(*subscribeEventOption) error {
 	return func(opt *subscribeEventOption) error {
 		if len(seekOpts) > 0 {
@@ -85,7 +84,7 @@ func WithGetBlockByTx(seekOpts ...api.EventCCSeekOption) func(*subscribeEventOpt
 	}
 }
 
-// SubscribeEventFromTx it is just once helper for save to api version today
+// SubscribeEvents it is just once helper for save to api version today
 func (d *deliverImpl) SubscribeEvents(ctx context.Context, channelName string, ccName string, setOpts ...func(*subscribeEventOption) error) (api.EventCCSubscription, error) {
 
 	options := newEventDefaultOptions()
@@ -212,7 +211,7 @@ type subscriptionImpl struct {
 }
 
 func (s *subscriptionImpl) handle() {
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 	defer close(s.done)
 	close(s.up)
 	// wait of set to handler
