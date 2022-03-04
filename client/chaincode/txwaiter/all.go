@@ -6,10 +6,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
-// All - need use on invoke flow for check transaction codes for each organizations from endorsement policy
+// All - need use on invoke flow for check transaction codes for each organization from endorsement policy
 // txwaiter.All  will be made to subscribe tx for each of the peer organizations from the endorsement policy
 func All(cfg *api.DoOptions) (api.TxWaiter, error) {
 	waiter := &allMspWaiter{
@@ -45,7 +45,7 @@ func (w *allMspWaiter) setErr() {
 }
 
 // Wait - implementation of api.TxWaiter interface
-func (w *allMspWaiter) Wait(ctx context.Context, channel string, txid api.ChaincodeTx) error {
+func (w *allMspWaiter) Wait(ctx context.Context, channel string, txId api.ChaincodeTx) error {
 	var (
 		wg   = new(sync.WaitGroup)
 		errS = make(chan error, len(w.delivers))
@@ -54,7 +54,7 @@ func (w *allMspWaiter) Wait(ctx context.Context, channel string, txid api.Chainc
 	for i := range w.delivers {
 		wg.Add(1)
 		go func(j int) {
-			err := waitPerOne(ctx, w.delivers[j], channel, txid)
+			err := waitPerOne(ctx, w.delivers[j], channel, txId)
 			if err != nil {
 				w.setErr()
 				errS <- err
@@ -78,12 +78,12 @@ func (w *allMspWaiter) Wait(ctx context.Context, channel string, txid api.Chainc
 	return nil
 }
 
-func waitPerOne(ctx context.Context, deliver api.DeliverClient, channelName string, txid api.ChaincodeTx) error {
-	sub, err := deliver.SubscribeTx(ctx, channelName, txid)
+func waitPerOne(ctx context.Context, deliver api.DeliverClient, channelName string, txId api.ChaincodeTx) error {
+	sub, err := deliver.SubscribeTx(ctx, channelName, txId)
 	if err != nil {
 		return errors.Wrap(err, "failed to subscribe on tx event")
 	}
-	defer sub.Close()
+	defer func() { _ = sub.Close() }()
 
 	_, err = sub.Result()
 	return err

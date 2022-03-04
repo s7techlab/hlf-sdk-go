@@ -8,15 +8,16 @@ import (
 	lb "github.com/hyperledger/fabric-protos-go/peer/lifecycle"
 	"github.com/hyperledger/fabric/core/chaincode/lifecycle"
 	"github.com/hyperledger/fabric/msp"
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
-	peerSDK "github.com/s7techlab/hlf-sdk-go/v2/peer"
+
+	"github.com/s7techlab/hlf-sdk-go/api"
+	peerSDK "github.com/s7techlab/hlf-sdk-go/peer"
 )
 
 var _ api.Lifecycle = (*lifecycleCoreFacade)(nil)
 
-// About separation of implementations
+// NewLifecycle About separation of implementations
 // Thing is: new fabric v2 lifecycle uses discovery for some methods, and for some doesn't
-// we dont want to use discovery everytime because some services must work just with one home-peer and should't(and doenst want to) know about rest topogy/configuration
+// we don't want to use discovery everytime because some services must work just with one home-peer and shouldn't(and doesn't want to) know about rest topogy/configuration
 func NewLifecycle(core api.Core) *lifecycleCoreFacade {
 	lfn := &lifecycleNoDiscovery{
 		peerPool:        core.PeerPool(),

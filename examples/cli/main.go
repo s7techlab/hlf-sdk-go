@@ -9,10 +9,10 @@ import (
 	"github.com/hyperledger/fabric/common/util"
 	"go.uber.org/zap"
 
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
-	"github.com/s7techlab/hlf-sdk-go/v2/client"
-	_ "github.com/s7techlab/hlf-sdk-go/v2/crypto/ecdsa"
-	"github.com/s7techlab/hlf-sdk-go/v2/identity"
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/client"
+	_ "github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
+	"github.com/s7techlab/hlf-sdk-go/identity"
 )
 
 var ctx = context.Background()

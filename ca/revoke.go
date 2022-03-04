@@ -10,7 +10,8 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/v2/api/ca"
+
+	"github.com/s7techlab/hlf-sdk-go/api/ca"
 )
 
 const (

@@ -10,16 +10,16 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
-	"github.com/s7techlab/hlf-sdk-go/v2/api/config"
-	"github.com/s7techlab/hlf-sdk-go/v2/crypto"
-	"github.com/s7techlab/hlf-sdk-go/v2/peer"
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/crypto"
+	"github.com/s7techlab/hlf-sdk-go/peer"
 )
 
 // CoreOpt describes opt which will be applied to coreOptions
 type CoreOpt func(c *core) error
 
-// WithContext allows to pass custom context. Otherwise, context.Background is used
+// WithContext allows passing custom context. Otherwise, context.Background is used
 func WithContext(ctx context.Context) CoreOpt {
 	return func(c *core) error {
 		c.ctx = ctx
@@ -27,7 +27,7 @@ func WithContext(ctx context.Context) CoreOpt {
 	}
 }
 
-// WithOrderer allows to use custom instance of orderer in core
+// WithOrderer allows using custom instance of orderer in core
 func WithOrderer(orderer api.Orderer) CoreOpt {
 	return func(c *core) error {
 		c.orderer = orderer
@@ -35,7 +35,7 @@ func WithOrderer(orderer api.Orderer) CoreOpt {
 	}
 }
 
-// WithConfigYaml allows to pass path to YAML configuration file
+// WithConfigYaml allows passing path to YAML configuration file
 func WithConfigYaml(configPath string) CoreOpt {
 	return func(c *core) error {
 		configBytes, err := ioutil.ReadFile(configPath)
@@ -52,7 +52,7 @@ func WithConfigYaml(configPath string) CoreOpt {
 	}
 }
 
-// WithConfigRaw allows to pass to core created config instance
+// WithConfigRaw allows passing to core created config instance
 func WithConfigRaw(config config.Config) CoreOpt {
 	return func(c *core) error {
 		c.config = &config
@@ -68,7 +68,7 @@ func WithLogger(log *zap.Logger) CoreOpt {
 	}
 }
 
-// WithPeerPool allows to add custom peer pool
+// WithPeerPool allows adding custom peer pool
 func WithPeerPool(pool api.PeerPool) CoreOpt {
 	return func(c *core) error {
 		c.peerPool = pool

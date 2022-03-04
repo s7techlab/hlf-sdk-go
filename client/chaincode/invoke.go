@@ -13,9 +13,9 @@ import (
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
 
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
-	"github.com/s7techlab/hlf-sdk-go/v2/client/chaincode/txwaiter"
-	"github.com/s7techlab/hlf-sdk-go/v2/peer"
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/client/chaincode/txwaiter"
+	"github.com/s7techlab/hlf-sdk-go/peer"
 )
 
 type invokeBuilder struct {
@@ -144,7 +144,7 @@ func getTransaction(
 	return protoutil.CreateSignedTx(prop, identity, peerResponses...)
 }
 
-// A string that might be shortened to a specified length.
+// TruncatableString a string that might be shortened to a specified length.
 type TruncatableString struct {
 	// The shortened string. For example, if the original string was 500 bytes long and
 	// the limit of the string was 128 bytes, then this value contains the first 128

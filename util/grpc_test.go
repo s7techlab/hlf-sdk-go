@@ -13,12 +13,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/s7techlab/hlf-sdk-go/v2/api/config"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	testpb "google.golang.org/grpc/test/grpc_testing"
+
+	"github.com/s7techlab/hlf-sdk-go/api/config"
 )
 
 var (
@@ -121,7 +122,7 @@ func init() {
 	nonTlsGrpcSrv := grpc.NewServer()
 	testpb.RegisterTestServiceServer(nonTlsGrpcSrv, &testServer{})
 	go func() {
-		nonTlsGrpcSrv.Serve(nonTlsListener)
+		_ = nonTlsGrpcSrv.Serve(nonTlsListener)
 	}()
 
 	tlsListener, err = net.Listen(`tcp4`, `:`)
@@ -137,7 +138,7 @@ func init() {
 	tlsGrpcSrv := grpc.NewServer(grpc.Creds(creds))
 	testpb.RegisterTestServiceServer(tlsGrpcSrv, &testServer{})
 	go func() {
-		tlsGrpcSrv.Serve(tlsListener)
+		_ = tlsGrpcSrv.Serve(tlsListener)
 	}()
 
 	tlsMutualListener, err = net.Listen(`tcp4`, `:`)
@@ -166,7 +167,7 @@ func init() {
 	tlsMutualGrpcSrv := grpc.NewServer(grpc.Creds(creds))
 	testpb.RegisterTestServiceServer(tlsMutualGrpcSrv, &testServer{})
 	go func() {
-		tlsMutualGrpcSrv.Serve(tlsMutualListener)
+		_ = tlsMutualGrpcSrv.Serve(tlsMutualListener)
 	}()
 
 }

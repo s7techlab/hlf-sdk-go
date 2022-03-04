@@ -16,7 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
 const (
@@ -62,7 +62,7 @@ func LoadKeyPairFromMSP(mspPath string) ([]byte, []byte, error) {
 
 	// match public/private keys
 	if _, err := tls.X509KeyPair(certBytes, keyBytes); err != nil {
-		return certBytes, nil, errors.Wrap(err, `certificate/key missmatch`)
+		return certBytes, nil, errors.Wrap(err, `certificate/key mismatch`)
 	}
 
 	return certBytes, keyBytes, nil

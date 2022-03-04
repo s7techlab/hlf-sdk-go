@@ -1,14 +1,13 @@
 package subs
 
 import (
-	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/v2/util/txflags"
-
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/protoutil"
+	"github.com/pkg/errors"
 
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/util/txflags"
 )
 
 func NewTxSubscription(txId api.ChaincodeTx) *TxSubscription {
@@ -44,7 +43,7 @@ func (ts *TxSubscription) Result() (peer.TxValidationCode, error) {
 		return r.code, r.err
 	case err, ok := <-ts.Err():
 		if !ok {
-			// NOTE: sometime error can be closed early thet result
+			// NOTE: sometime error can be closed early then result
 			select {
 			case r, ok := <-ts.result:
 				if !ok {

@@ -11,9 +11,9 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
-	"github.com/s7techlab/hlf-sdk-go/v2/api/config"
-	"github.com/s7techlab/hlf-sdk-go/v2/util"
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
 type ErrUnexpectedStatus struct {
@@ -154,7 +154,7 @@ func New(c config.ConnectionConfig, log *zap.Logger) (api.Orderer, error) {
 	return NewFromGRPC(ctx, conn, opts...)
 }
 
-// NewFromGRPC allows to initialize orderer from existing GRPC connection
+// NewFromGRPC allows initializing orderer from existing GRPC connection
 func NewFromGRPC(ctx context.Context, conn *grpc.ClientConn, grpcOptions ...grpc.DialOption) (api.Orderer, error) {
 	obj := &orderer{
 		uri:         conn.Target(),
