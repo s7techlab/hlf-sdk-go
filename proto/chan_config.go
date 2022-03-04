@@ -11,81 +11,26 @@ import (
 	"github.com/hyperledger/fabric-protos-go/orderer"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/common/channelconfig"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
-type ChannelConfig struct {
-	Applications map[string]ApplicationConfig `json:"applications"`
-	Orderers     map[string]OrdererConfig     `json:"orderers"`
+func (c *ChannelConfig) ToJSON() ([]byte, error) {
+	opt := protojson.MarshalOptions{
+		UseProtoNames: true,
+	}
 
-	OrdererBatchSize    orderer.BatchSize     `json:"orderer_batch_size"`
-	OrdererBatchTimeout string                `json:"orderer_batch_timeout"`
-	OrdererConsesusType orderer.ConsensusType `json:"orderer_consensus_type"`
-
-	Consortium                string                           `json:"consortium"`
-	HashingAlgorithm          string                           `json:"hashing_algorithm"`
-	BlockDataHashingStructure common.BlockDataHashingStructure `json:"block_data_hashing_structure"`
-	Capabilities              common.Capabilities              `json:"capabilities"`
-
-	Policy map[PolicyKey]Policy `json:"policy"`
+	return opt.Marshal(c)
 }
 
-type ApplicationConfig struct {
-	Name        string             `json:"name"`
-	MSP         MSP                `json:"msp"`
-	AnchorPeers []*peer.AnchorPeer `json:"anchor_peers"`
+func UnmarshalChannelConfig(b []byte) (*ChannelConfig, error) {
+	cc := &ChannelConfig{}
+
+	if err := protojson.Unmarshal(b, cc); err != nil {
+		return nil, err
+	}
+
+	return cc, nil
 }
-
-type MSP struct {
-	Name   string
-	Config msp.FabricMSPConfig  `json:"config"`
-	Policy map[PolicyKey]Policy `json:"policy"`
-}
-
-type OrdererConfig struct {
-	Name      string   `json:"name"`
-	MSP       MSP      `json:"msp"`
-	Endpoints []string `json:"endpoints"`
-}
-
-type PolicyKey string
-
-const (
-	ReadersPolicyKey PolicyKey = "Readers"
-	WritersPolicyKey PolicyKey = "Writers"
-	AdminsPolicyKey  PolicyKey = "Admins"
-
-	LifecycleEndporsementPolicyKey PolicyKey = "LifecycleEndporsement"
-	EndporsementPolicyKey          PolicyKey = "Endporsement"
-)
-
-// Policy - can contain different policies: implicit, signature
-// check type and for 'nil' before usage
-type Policy struct {
-	Type               common.Policy_PolicyType   `json:"-"`
-	ImplicitMetaPolicy *common.ImplicitMetaPolicy `json:"implicit,omitempty"`
-	// todo fix policy marshalling(or came with with new schema)
-	// internally we have
-	//	Type                 isSignaturePolicy_Type `protobuf_oneof:"Type"`
-	// where  isSignaturePolicy_Type - interface and json unmarshalling be like "wtf?!"
-	SignaturePolicy *common.SignaturePolicyEnvelope `json:"-"`
-}
-
-// Certificate - describes certificate(can be ca, intermediate, admin) from msp
-type Certificate struct {
-	FingerprintSHA256 []byte
-	Data              []byte
-	MSPID             string
-	Type              CertType
-	MSPName           string
-}
-
-type CertType string
-
-const (
-	RootCACertType       CertType = "ca"
-	IntermediateCertType CertType = "intermediate"
-	AdminCertType        CertType = "admin"
-)
 
 func ParseChannelConfig(cc common.Config) (*ChannelConfig, error) {
 	chanCfg := &ChannelConfig{}
@@ -106,7 +51,7 @@ func ParseChannelConfig(cc common.Config) (*ChannelConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parse batch size: %w", err)
 	}
-	chanCfg.OrdererBatchSize = *batchSize
+	chanCfg.OrdererBatchSize = batchSize
 
 	batchTimeout, err := ParseOrdererBatchTimeout(cc)
 	if err != nil {
@@ -118,7 +63,7 @@ func ParseChannelConfig(cc common.Config) (*ChannelConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parse consensus type: %w", err)
 	}
-	chanCfg.OrdererConsesusType = *consensusType
+	chanCfg.OrdererConsensusType = consensusType
 
 	consortium, err := ParseConsortium(cc)
 	if err != nil {
@@ -136,13 +81,13 @@ func ParseChannelConfig(cc common.Config) (*ChannelConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parse block data hashing structure: %w", err)
 	}
-	chanCfg.BlockDataHashingStructure = *blockDataHashing
+	chanCfg.BlockDataHashingStructure = blockDataHashing
 
 	capabilities, err := ParseCapabilities(cc)
 	if err != nil {
 		return nil, fmt.Errorf("parse capabilities: %w", err)
 	}
-	chanCfg.Capabilities = *capabilities
+	chanCfg.Capabilities = capabilities
 
 	policies, err := ParsePolicy(cc.ChannelGroup.Policies)
 	if err != nil {
@@ -154,13 +99,13 @@ func ParseChannelConfig(cc common.Config) (*ChannelConfig, error) {
 	return chanCfg, nil
 }
 
-func ParseApplicationConfig(cfg common.Config) (map[string]ApplicationConfig, error) {
+func ParseApplicationConfig(cfg common.Config) (map[string]*ApplicationConfig, error) {
 	applicationGroup, exists := cfg.ChannelGroup.Groups[channelconfig.ApplicationGroupKey]
 	if !exists {
 		return nil, fmt.Errorf("application group doesn't exists")
 	}
 
-	appCfg := map[string]ApplicationConfig{}
+	appCfg := map[string]*ApplicationConfig{}
 
 	for groupName := range applicationGroup.Groups {
 		var (
@@ -179,9 +124,9 @@ func ParseApplicationConfig(cfg common.Config) (map[string]ApplicationConfig, er
 			return nil, fmt.Errorf("parse anchor peers: %w", err)
 		}
 
-		appCfg[groupName] = ApplicationConfig{
+		appCfg[groupName] = &ApplicationConfig{
 			Name:        groupName,
-			MSP:         *mspCfg,
+			Msp:         mspCfg,
 			AnchorPeers: ancPeers,
 		}
 	}
@@ -210,15 +155,15 @@ func ParseMSP(mspConfigGroup *common.ConfigGroup, groupName string) (*MSP, error
 		return nil, fmt.Errorf("parse policy: %w", err)
 	}
 
-	return &MSP{Config: *fmspCfg, Policy: policy, Name: groupName}, nil
+	return &MSP{Config: fmspCfg, Policy: policy, Name: groupName}, nil
 }
 
-func ParseOrderer(cfg common.Config) (map[string]OrdererConfig, error) {
+func ParseOrderer(cfg common.Config) (map[string]*OrdererConfig, error) {
 	ordererGroup, exists := cfg.ChannelGroup.Groups[channelconfig.OrdererGroupKey]
 	if !exists {
 		return nil, fmt.Errorf("%v type group doesn't exists", channelconfig.OrdererGroupKey)
 	}
-	orderersCfg := map[string]OrdererConfig{}
+	orderersCfg := map[string]*OrdererConfig{}
 
 	for groupName := range ordererGroup.Groups {
 		mspCfg, err := ParseMSP(ordererGroup.Groups[groupName], groupName)
@@ -236,9 +181,9 @@ func ParseOrderer(cfg common.Config) (map[string]OrdererConfig, error) {
 			return nil, fmt.Errorf("parse endpoints: %w", err)
 		}
 
-		orderersCfg[groupName] = OrdererConfig{
+		orderersCfg[groupName] = &OrdererConfig{
 			Name:      groupName,
-			MSP:       *mspCfg,
+			Msp:       mspCfg,
 			Endpoints: endpoints,
 		}
 	}
@@ -419,8 +364,8 @@ func ParseParseCapabilitiesFromBytes(b []byte) (*common.Capabilities, error) {
 }
 
 //
-func ParsePolicy(policiesCfg map[string]*common.ConfigPolicy) (map[PolicyKey]Policy, error) {
-	policies := make(map[PolicyKey]Policy)
+func ParsePolicy(policiesCfg map[string]*common.ConfigPolicy) (map[string]*Policy, error) {
+	policies := make(map[string]*Policy)
 
 	for policyKey, policyCfg := range policiesCfg {
 		switch policyCfg.Policy.Type {
@@ -438,9 +383,10 @@ func ParsePolicy(policiesCfg map[string]*common.ConfigPolicy) (map[PolicyKey]Pol
 				return nil, fmt.Errorf("unmarshal implicit meta policy from config: %w", err)
 			}
 
-			policies[PolicyKey(policyKey)] = Policy{
-				Type:               common.Policy_PolicyType(policyCfg.Policy.Type),
-				ImplicitMetaPolicy: implicitMetaPolicy,
+			policies[policyKey] = &Policy{
+				Policy: &Policy_Implicit{
+					Implicit: implicitMetaPolicy,
+				},
 			}
 
 		case int32(common.Policy_SIGNATURE):
@@ -449,9 +395,10 @@ func ParsePolicy(policiesCfg map[string]*common.ConfigPolicy) (map[PolicyKey]Pol
 				return nil, fmt.Errorf("unmarshal implicit meta policy from config: %w", err)
 			}
 
-			policies[PolicyKey(policyKey)] = Policy{
-				Type:            common.Policy_PolicyType(policyCfg.Policy.Type),
-				SignaturePolicy: signaturePolicyEnv,
+			policies[policyKey] = &Policy{
+				Policy: &Policy_SignaturePolicy{
+					SignaturePolicy: signaturePolicyEnv,
+				},
 			}
 		}
 	}
@@ -461,11 +408,11 @@ func ParsePolicy(policiesCfg map[string]*common.ConfigPolicy) (map[PolicyKey]Pol
 
 /* structs methods */
 // GetAllCertificates - returns all(root, intermediate, admins) certificates from all MSP's
-func (c ChannelConfig) GetAllCertificates() ([]Certificate, error) {
-	var certs []Certificate
+func (c *ChannelConfig) GetAllCertificates() ([]*Certificate, error) {
+	var certs []*Certificate
 
 	for mspID := range c.Applications {
-		cs, err := c.Applications[mspID].MSP.GetAllCertificates()
+		cs, err := c.Applications[mspID].Msp.GetAllCertificates()
 		if err != nil {
 			return nil, fmt.Errorf("get all msps certificates: %w", err)
 		}
@@ -473,7 +420,7 @@ func (c ChannelConfig) GetAllCertificates() ([]Certificate, error) {
 	}
 
 	for mspID := range c.Orderers {
-		cs, err := c.Orderers[mspID].MSP.GetAllCertificates()
+		cs, err := c.Orderers[mspID].Msp.GetAllCertificates()
 		if err != nil {
 			return nil, fmt.Errorf("get all orderers certificates: %w", err)
 		}
@@ -484,11 +431,11 @@ func (c ChannelConfig) GetAllCertificates() ([]Certificate, error) {
 }
 
 // GetAllCertificates - returns all certificates from MSP
-func (c MSP) GetAllCertificates() ([]Certificate, error) {
-	var certs []Certificate
+func (c *MSP) GetAllCertificates() ([]*Certificate, error) {
+	var certs []*Certificate
 
 	for i := range c.Config.RootCerts {
-		cert, err := NewCertificate(c.Config.RootCerts[i], RootCACertType, c.Config.Name, c.Name)
+		cert, err := NewCertificate(c.Config.RootCerts[i], CertType_ca, c.Config.Name, c.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -496,7 +443,7 @@ func (c MSP) GetAllCertificates() ([]Certificate, error) {
 	}
 
 	for i := range c.Config.IntermediateCerts {
-		cert, err := NewCertificate(c.Config.IntermediateCerts[i], IntermediateCertType, c.Config.Name, c.Name)
+		cert, err := NewCertificate(c.Config.IntermediateCerts[i], CertType_intermediate, c.Config.Name, c.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -504,7 +451,7 @@ func (c MSP) GetAllCertificates() ([]Certificate, error) {
 	}
 
 	for i := range c.Config.Admins {
-		cert, err := NewCertificate(c.Config.Admins[i], AdminCertType, c.Config.Name, c.Name)
+		cert, err := NewCertificate(c.Config.Admins[i], CertType_admin, c.Config.Name, c.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -514,17 +461,17 @@ func (c MSP) GetAllCertificates() ([]Certificate, error) {
 	return certs, nil
 }
 
-func NewCertificate(cert []byte, t CertType, mspID, mspName string) (Certificate, error) {
+func NewCertificate(cert []byte, t CertType, mspID, mspName string) (*Certificate, error) {
 	b, _ := pem.Decode(cert)
 	if b == nil {
-		return Certificate{}, fmt.Errorf("decode %s cert of %s", t, mspID)
+		return &Certificate{}, fmt.Errorf("decode %s cert of %s", t, mspID)
 	}
 
-	c := Certificate{
+	c := &Certificate{
 		Data:    cert,
-		MSPID:   mspID,
+		MspId:   mspID,
 		Type:    t,
-		MSPName: mspName,
+		MspName: mspName,
 	}
 	c.setCertificateSHA256(b)
 
@@ -533,7 +480,7 @@ func NewCertificate(cert []byte, t CertType, mspID, mspName string) (Certificate
 
 func (c *Certificate) setCertificateSHA256(b *pem.Block) {
 	f := CalcCertificateSHA256(b)
-	c.FingerprintSHA256 = f[:]
+	c.Fingerprint = f[:]
 }
 
 func CalcCertificateSHA256(b *pem.Block) []byte {
