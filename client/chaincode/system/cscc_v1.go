@@ -9,8 +9,9 @@ import (
 	"github.com/hyperledger/fabric/common/util"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
-	peerSDK "github.com/s7techlab/hlf-sdk-go/v2/peer"
+
+	"github.com/s7techlab/hlf-sdk-go/api"
+	peerSDK "github.com/s7techlab/hlf-sdk-go/peer"
 )
 
 // These are function names from Invoke first parameter

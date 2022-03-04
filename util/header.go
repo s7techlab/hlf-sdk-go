@@ -46,7 +46,7 @@ func NewChannelHeader(headerType common.HeaderType, txId string, channelId strin
 	return proto.Marshal(payloadChannelHeader)
 }
 
-// NewChannelHeader returns marshalled signature header for presented identity
+// NewSignatureHeader returns marshalled signature header for presented identity
 func NewSignatureHeader(id msp.SigningIdentity, nonce []byte) ([]byte, error) {
 	sh := new(common.SignatureHeader)
 	if creator, err := id.Serialize(); err != nil {

@@ -8,8 +8,8 @@ import (
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
 
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
-	"github.com/s7techlab/hlf-sdk-go/v2/peer"
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/peer"
 )
 
 type QueryBuilder struct {
@@ -34,7 +34,7 @@ func (q *QueryBuilder) WithArguments(argBytes [][]byte) api.ChaincodeQueryBuilde
 	return q
 }
 
-// TODO: think about interface in one style with Invoke
+// AsBytes TODO: think about interface in one style with Invoke
 func (q *QueryBuilder) AsBytes(ctx context.Context) ([]byte, error) {
 	if response, err := q.AsProposalResponse(ctx); err != nil {
 		return nil, errors.Wrap(err, `failed to get proposal response`)

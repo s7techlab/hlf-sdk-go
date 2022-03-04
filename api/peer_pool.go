@@ -12,9 +12,8 @@ import (
 
 const (
 	ErrNoPeersForMSP = Error(`no peers for presented MSP`)
-	//ErrNoReadyPeersForMSP = Error(`no ready peers for presented MSP`)
-	ErrMSPNotFound  = Error(`MSP not found`)
-	ErrPeerNotReady = Error(`peer not ready`)
+	ErrMSPNotFound   = Error(`MSP not found`)
+	ErrPeerNotReady  = Error(`peer not ready`)
 )
 
 type ErrNoReadyPeers struct {

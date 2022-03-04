@@ -55,9 +55,9 @@ type LSCC interface {
 	GetChaincodes(ctx context.Context, channelName string) (*peer.ChaincodeQueryResponse, error)
 	// GetDeploymentSpec returns spec for installed chaincode
 	GetDeploymentSpec(ctx context.Context, channelName string, ccName string) (*peer.ChaincodeDeploymentSpec, error)
-	// Install allows to install chaincode using deployment specification
+	// Install allows installing chaincode using deployment specification
 	Install(ctx context.Context, spec *peer.ChaincodeDeploymentSpec) error
-	// Deploys allows to instantiate or upgrade chaincode if instantiated
-	// Currently, deploy method is not canonical as lscc implementation, but currently we need to get full proposal and it's response to broadcast to orderer
+	// Deploy allows instantiating or upgrade chaincode if instantiated
+	// Currently, deploy method is not canonical as lscc implementation, but currently we need to get full proposal, and it's response to broadcast to orderer
 	Deploy(ctx context.Context, channelName string, spec *peer.ChaincodeDeploymentSpec, policy *common.SignaturePolicyEnvelope, opts ...LSCCDeployOption) (*peer.SignedProposal, *peer.ProposalResponse, error)
 }

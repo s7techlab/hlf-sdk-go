@@ -8,8 +8,9 @@ import (
 	fabricPeer "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
-	"github.com/s7techlab/hlf-sdk-go/v2/util"
+
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
 type processor struct {
@@ -46,7 +47,7 @@ func (p *processor) CreateProposal(chaincodeName string, identity msp.SigningIde
 
 	sigHeader, err := util.NewSignatureHeader(identity, nonce)
 	if err != nil {
-		return nil, ``, errors.Wrap(err, `failed to get signatire header`)
+		return nil, ``, errors.Wrap(err, `failed to get signature header`)
 	}
 
 	header, err := proto.Marshal(&common.Header{

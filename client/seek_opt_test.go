@@ -8,8 +8,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
-	"github.com/s7techlab/hlf-sdk-go/v2/client"
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/client"
 )
 
 func TestSeek(t *testing.T) {
@@ -25,14 +25,14 @@ func TestSeek(t *testing.T) {
 		//default - start from new block
 		{blockRange: nil, want: api.SeekNewest()},
 
-		// from oldest block to maxBlock
+		// from the oldest block to maxBlock
 		{blockRange: []int64{0}, want: api.SeekOldest()},
 		// from specified block
 		{blockRange: []int64{4}, want: api.SeekRange(4, math.MaxUint64)},
 		// -3 blocks back from channel height
 		{blockRange: []int64{-3}, want: api.SeekRange(channelHeight-3, math.MaxUint64)},
 
-		// from oldest block to current channel height
+		// from the oldest block to current channel height
 		{blockRange: []int64{0, 0}, want: api.SeekRange(0, channelHeight)},
 		// -3 blocks back from channel height to current channel height
 		{blockRange: []int64{-3, 0}, want: api.SeekRange(channelHeight-3, channelHeight)},

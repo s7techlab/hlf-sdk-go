@@ -7,9 +7,10 @@ import (
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/orderer"
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
-	"github.com/s7techlab/hlf-sdk-go/v2/client/chaincode/system"
-	"github.com/s7techlab/hlf-sdk-go/v2/util"
+
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
+	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
 func (c *Core) Join(ctx context.Context) error {

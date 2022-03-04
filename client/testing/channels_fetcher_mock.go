@@ -17,7 +17,7 @@ func NewChannelsFetcherMock(channels []string) *ChannelsFetcherMock {
 }
 
 func (c ChannelsFetcherMock) GetChannels(ctx context.Context) (*peer.ChannelQueryResponse, error) {
-	channels := []*peer.ChannelInfo{}
+	var channels []*peer.ChannelInfo
 	for i := range c.channels {
 		channels = append(channels, &peer.ChannelInfo{ChannelId: c.channels[i]})
 	}
