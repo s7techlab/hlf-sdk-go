@@ -9,12 +9,13 @@ import (
 	fabricPeer "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
-	"github.com/s7techlab/hlf-sdk-go/v2/api/config"
-	"github.com/s7techlab/hlf-sdk-go/v2/peer/deliver"
-	"github.com/s7techlab/hlf-sdk-go/v2/util"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/peer/deliver"
+	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
 type peer struct {
@@ -101,7 +102,7 @@ func New(c config.ConnectionConfig, log *zap.Logger) (api.Peer, error) {
 	return NewFromGRPC(conn, log, timeout)
 }
 
-// NewFromGRPC allows to initialize peer from existing GRPC connection
+// NewFromGRPC allows initializing peer from existing GRPC connection
 func NewFromGRPC(conn *grpc.ClientConn, log *zap.Logger, timeout time.Duration) (api.Peer, error) {
 	l := log.Named(`NewFromGRPC`)
 	p := &peer{conn: conn, log: log.Named(`peer`), timeout: timeout}

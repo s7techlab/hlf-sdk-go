@@ -46,8 +46,8 @@ func NewDeliverClient(rootPath string, closeWhenAllRead bool) (peer.DeliverClien
 			return nil
 		}
 
-		pathWithoutRool := strings.TrimPrefix(path, rootPath+`/`)
-		paths := strings.Split(pathWithoutRool, `/`)
+		pathWithoutRoot := strings.TrimPrefix(path, rootPath+`/`)
+		paths := strings.Split(pathWithoutRoot, `/`)
 
 		if info.IsDir() {
 			// is channel name

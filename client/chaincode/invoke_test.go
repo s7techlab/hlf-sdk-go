@@ -6,26 +6,25 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hyperledger/fabric/protoutil"
-
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/orderer"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
+	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
-	"github.com/s7techlab/hlf-sdk-go/v2/client"
-	"github.com/s7techlab/hlf-sdk-go/v2/client/chaincode"
-	"github.com/s7techlab/hlf-sdk-go/v2/client/chaincode/txwaiter"
-	sdkinvoker "github.com/s7techlab/hlf-sdk-go/v2/client/invoker"
-	"github.com/s7techlab/hlf-sdk-go/v2/crypto"
-	"github.com/s7techlab/hlf-sdk-go/v2/crypto/ecdsa"
-	"github.com/s7techlab/hlf-sdk-go/v2/identity"
-	"github.com/s7techlab/hlf-sdk-go/v2/logger"
-	"github.com/s7techlab/hlf-sdk-go/v2/peer/pool"
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/client"
+	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
+	"github.com/s7techlab/hlf-sdk-go/client/chaincode/txwaiter"
+	sdkinvoker "github.com/s7techlab/hlf-sdk-go/client/invoker"
+	"github.com/s7techlab/hlf-sdk-go/crypto"
+	"github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
+	"github.com/s7techlab/hlf-sdk-go/identity"
+	"github.com/s7techlab/hlf-sdk-go/logger"
+	"github.com/s7techlab/hlf-sdk-go/peer/pool"
 )
 
 var (

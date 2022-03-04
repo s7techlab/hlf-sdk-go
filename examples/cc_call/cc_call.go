@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 
-	"github.com/s7techlab/hlf-sdk-go/v2/client"
-	"github.com/s7techlab/hlf-sdk-go/v2/identity"
+	"github.com/s7techlab/hlf-sdk-go/client"
+	"github.com/s7techlab/hlf-sdk-go/identity"
 )
 
 func main() {

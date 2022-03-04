@@ -2,6 +2,7 @@ package pool
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/hyperledger/fabric-protos-go/peer"
@@ -11,7 +12,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
+	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
 type peerPool struct {
@@ -103,11 +104,12 @@ func (p *peerPool) poolChecker(ctx context.Context, aliveChan chan bool, peer *p
 func (p *peerPool) Process(ctx context.Context, mspId string, proposal *peer.SignedProposal) (*peer.ProposalResponse, error) {
 	log := p.log.Named(`Process`)
 	p.storeMx.RLock()
+
 	//check MspId exists
-	peers, ok := p.store[mspId]
+	peers, exists := p.store[mspId]
 	p.storeMx.RUnlock()
 
-	if !ok {
+	if !exists {
 		log.Error(api.ErrMSPNotFound.Error(), zap.String(`mspId`, mspId))
 		return nil, api.ErrMSPNotFound
 	}
@@ -142,8 +144,9 @@ func (p *peerPool) Process(ctx context.Context, mspId string, proposal *peer.Sig
 						zap.String(`code_str`, s.Code().String()), zap.Error(s.Err()))
 					// not mark as not ready
 				}
+
 				// next mspId peer
-				lastError = err
+				lastError = fmt.Errorf("peer %s: %w", poolPeer.peer.Uri(), err)
 				continue
 			}
 
@@ -157,7 +160,7 @@ func (p *peerPool) Process(ctx context.Context, mspId string, proposal *peer.Sig
 	}
 
 	if lastError == nil {
-		// all peers was not ready
+		// all peers were not ready
 		return nil, api.ErrNoReadyPeers{MspId: mspId}
 	}
 

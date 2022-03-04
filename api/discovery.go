@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 
-	"github.com/s7techlab/hlf-sdk-go/v2/api/config"
+	"github.com/s7techlab/hlf-sdk-go/api/config"
 )
 
 type DiscoveryProvider interface {
@@ -27,7 +27,7 @@ type ChannelDiscoverer interface {
 	ChannelName() string
 }
 
-// discover local peers without providing info about channel, chaincode
+// LocalPeersDiscoverer discover local peers without providing info about channel, chaincode
 type LocalPeersDiscoverer interface {
 	Peers() []*HostEndpoint
 }

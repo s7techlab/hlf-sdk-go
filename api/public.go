@@ -44,7 +44,7 @@ type Public interface {
 	// Invoke - shortcut for invoking chanincodes
 	// if provided 'identity' is 'nil' default one will be set
 	// txWaiterType - param which identify transaction waiting policy.
-	// available: 'self'(wait for one peer of endorser org), 'all'(wait for each organizations from endorsement policy)
+	// available: 'self'(wait for one peer of endorser org), 'all'(wait for each organization from endorsement policy)
 	// default is 'self'(even if you pass empty string)
 	Invoke(
 		ctx context.Context,

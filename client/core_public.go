@@ -10,9 +10,9 @@ import (
 	"github.com/hyperledger/fabric/msp"
 	"go.uber.org/zap"
 
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
-	"github.com/s7techlab/hlf-sdk-go/v2/client/chaincode"
-	"github.com/s7techlab/hlf-sdk-go/v2/client/chaincode/txwaiter"
+	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
+	"github.com/s7techlab/hlf-sdk-go/client/chaincode/txwaiter"
 )
 
 func (c *core) Invoke(
@@ -24,7 +24,7 @@ func (c *core) Invoke(
 	transient map[string][]byte,
 	txWaiterType string,
 ) (*fabPeer.Response, string, error) {
-	doOpts := []api.DoOption{}
+	var doOpts []api.DoOption
 
 	switch txWaiterType {
 	case "":

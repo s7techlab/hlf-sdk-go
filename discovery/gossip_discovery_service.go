@@ -66,9 +66,9 @@ func (s *gossipServiceDiscovery) DiscoverChaincode(ctx context.Context, ccName, 
 	// get chaincode version
 	var ccVersion string
 	if len(chanEndorsers) != 0 {
-		ccodes := chanEndorsers[0].StateInfoMessage.GossipMessage.GetStateInfo().Properties.Chaincodes
-		if len(ccodes) != 0 {
-			ccVersion = ccodes[0].Version
+		ccCodes := chanEndorsers[0].StateInfoMessage.GossipMessage.GetStateInfo().Properties.Chaincodes
+		if len(ccCodes) != 0 {
+			ccVersion = ccCodes[0].Version
 		}
 	}
 

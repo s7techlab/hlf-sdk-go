@@ -6,11 +6,10 @@ import (
 	"math"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
-	"google.golang.org/grpc/codes"
-
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/orderer"
 	"github.com/hyperledger/fabric-protos-go/peer"
+	"google.golang.org/grpc/codes"
 )
 
 var (
@@ -22,11 +21,11 @@ var (
 )
 
 type DeliverClient interface {
-	// SubscribeCC allows to subscribe on chaincode events using name of channel, chaincode and block offset
+	// SubscribeCC allows subscribing on chaincode events using name of channel, chaincode and block offset
 	SubscribeCC(ctx context.Context, channelName string, ccName string, seekOpt ...EventCCSeekOption) (EventCCSubscription, error)
-	// SubscribeTx allows to subscribe on transaction events by id
+	// SubscribeTx allows subscribing on transaction events by id
 	SubscribeTx(ctx context.Context, channelName string, tx ChaincodeTx, seekOpt ...EventCCSeekOption) (TxSubscription, error)
-	// SubscribeBlock allows to subscribe on block events. Always returns new instance of block subscription
+	// SubscribeBlock allows subscribing on block events. Always returns new instance of block subscription
 	SubscribeBlock(ctx context.Context, channelName string, seekOpt ...EventCCSeekOption) (BlockSubscription, error)
 }
 
@@ -87,9 +86,9 @@ type EventCCSubscription interface {
 	Close() error
 }
 
-// EventCCSubscription describes tx subscription
+// TxSubscription describes tx subscription
 type TxSubscription interface {
-	// returns result of current tx: success flag, original peer validation code and error if occurred
+	// Result returns result of current tx: success flag, original peer validation code and error if occurred
 	Result() (peer.TxValidationCode, error)
 	Close() error
 }

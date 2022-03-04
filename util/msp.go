@@ -14,8 +14,9 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/v2/api"
 	"go.uber.org/zap"
+
+	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
 const (
@@ -61,7 +62,7 @@ func LoadKeyPairFromMSP(mspPath string) ([]byte, []byte, error) {
 
 	// match public/private keys
 	if _, err := tls.X509KeyPair(certBytes, keyBytes); err != nil {
-		return certBytes, nil, errors.Wrap(err, `certificate/key missmatch`)
+		return certBytes, nil, errors.Wrap(err, `certificate/key mismatch`)
 	}
 
 	return certBytes, keyBytes, nil
@@ -79,19 +80,33 @@ func LoadKeypairByCert(mspPath string, certRawBytes []byte) (*x509.Certificate, 
 	if err != nil {
 		return nil, nil, errors.Wrap(err, `failed to parse certificate`)
 	}
-	pKeyFileName, err := getPrivateKeyFilename(cert)
+
+	files, err := ioutil.ReadDir(path.Join(mspPath, keystorePath))
 	if err != nil {
-		return nil, nil, errors.Wrap(err, `couldn't fetch private key name`)
+		return nil, nil, fmt.Errorf(`failed to read path: %w`, err)
+	}
+	var (
+		keyFound    bool
+		keyRawBytes []byte
+	)
+	for _, f := range files {
+		if f.IsDir() {
+			continue
+		}
+		keyRawBytes, err = ioutil.ReadFile(path.Join(mspPath, keystorePath, f.Name()))
+		if err != nil {
+			return nil, nil, fmt.Errorf(`failed to read private key file: %w`, err)
+		}
+		// match public/private keys
+		if _, err = tls.X509KeyPair(certRawBytes, keyRawBytes); err != nil {
+			continue
+		}
+		keyFound = true
+		break
 	}
 
-	keyRawBytes, err := ioutil.ReadFile(path.Join(mspPath, keystorePath, pKeyFileName))
-	if err != nil {
-		return nil, nil, errors.Wrap(err, `failed to read private key file`)
-	}
-
-	// match public/private keys
-	if _, err := tls.X509KeyPair(certRawBytes, keyRawBytes); err != nil {
-		return nil, nil, errors.Wrapf(err, `certificate/key missmatch. Cert №: %v`, cert.SerialNumber.String())
+	if !keyFound {
+		return nil, nil, fmt.Errorf(`couldn't find key for cert №: %v`, cert.SerialNumber.String())
 	}
 
 	keyPEMBytes, _ := pem.Decode(keyRawBytes)
