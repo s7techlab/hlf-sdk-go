@@ -6,11 +6,10 @@ import (
 	"math"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
-	"google.golang.org/grpc/codes"
-
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/orderer"
 	"github.com/hyperledger/fabric-protos-go/peer"
+	"google.golang.org/grpc/codes"
 )
 
 var (

@@ -3,14 +3,12 @@ package chaincode
 import (
 	"context"
 
-	"github.com/hyperledger/fabric/common/policydsl"
-	"github.com/hyperledger/fabric/protoutil"
-
 	"github.com/golang/protobuf/proto"
-	"github.com/hyperledger/fabric/msp"
-	"github.com/pkg/errors"
-
 	"github.com/hyperledger/fabric-protos-go/peer"
+	"github.com/hyperledger/fabric/common/policydsl"
+	"github.com/hyperledger/fabric/msp"
+	"github.com/hyperledger/fabric/protoutil"
+	"github.com/pkg/errors"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 )
