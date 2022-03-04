@@ -4,16 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
-
 	"log"
 
 	"github.com/hyperledger/fabric/common/util"
+	"go.uber.org/zap"
+
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/client"
 	_ "github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
-	_ "github.com/s7techlab/hlf-sdk-go/discovery/local"
 	"github.com/s7techlab/hlf-sdk-go/identity"
-	"go.uber.org/zap"
 )
 
 var ctx = context.Background()
@@ -41,7 +40,7 @@ func main() {
 
 	l, _ := zap.NewDevelopment()
 
-	core, err := client.NewCore(*mspId, id, client.WithConfigYaml(*configPath), client.WithLogger(l))
+	core, err := client.NewCore(id, client.WithConfigYaml(*configPath), client.WithLogger(l))
 	if err != nil {
 		log.Fatalln(`unable to initialize core:`, err)
 	}

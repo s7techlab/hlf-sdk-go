@@ -8,6 +8,7 @@ import (
 	fabricPeer "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
+
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/util"
 )
@@ -21,13 +22,13 @@ type endorseChannelResponse struct {
 	Error    error
 }
 
-func (p *processor) CreateProposal(cc *api.DiscoveryChaincode, identity msp.SigningIdentity, fn string, args [][]byte, transArgs api.TransArgs) (*fabricPeer.SignedProposal, api.ChaincodeTx, error) {
-	invSpec, err := p.invocationSpec(cc, fn, args)
+func (p *processor) CreateProposal(chaincodeName string, identity msp.SigningIdentity, fn string, args [][]byte, transArgs api.TransArgs) (*fabricPeer.SignedProposal, api.ChaincodeTx, error) {
+	invSpec, err := p.invocationSpec(chaincodeName, fn, args)
 	if err != nil {
 		return nil, ``, errors.Wrap(err, `failed to get invocation spec`)
 	}
 
-	extension := &fabricPeer.ChaincodeHeaderExtension{ChaincodeId: &fabricPeer.ChaincodeID{Name: cc.Name}}
+	extension := &fabricPeer.ChaincodeHeaderExtension{ChaincodeId: &fabricPeer.ChaincodeID{Name: chaincodeName}}
 
 	txId, nonce, err := util.NewTxWithNonce(identity)
 	if err != nil {
@@ -46,7 +47,7 @@ func (p *processor) CreateProposal(cc *api.DiscoveryChaincode, identity msp.Sign
 
 	sigHeader, err := util.NewSignatureHeader(identity, nonce)
 	if err != nil {
-		return nil, ``, errors.Wrap(err, `failed to get signatire header`)
+		return nil, ``, errors.Wrap(err, `failed to get signature header`)
 	}
 
 	header, err := proto.Marshal(&common.Header{
@@ -73,22 +74,16 @@ func (p *processor) CreateProposal(cc *api.DiscoveryChaincode, identity msp.Sign
 	return &fabricPeer.SignedProposal{ProposalBytes: proposal, Signature: signedBytes}, api.ChaincodeTx(txId), nil
 }
 
-func (*processor) Send(ctx context.Context, proposal *fabricPeer.SignedProposal, cc *api.DiscoveryChaincode, pool api.PeerPool) ([]*fabricPeer.ProposalResponse, error) {
-
+func (*processor) Send(ctx context.Context, proposal *fabricPeer.SignedProposal, endorsingMspIDs []string, pool api.PeerPool) ([]*fabricPeer.ProposalResponse, error) {
 	respList := make([]*fabricPeer.ProposalResponse, 0)
 	respChan := make(chan endorseChannelResponse)
 
-	mspIds, err := util.GetMSPFromPolicy(cc.Policy)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to get set of MSP`)
-	}
-
 	// send all proposals concurrently
-	for i := 0; i < len(mspIds); i++ {
+	for i := 0; i < len(endorsingMspIDs); i++ {
 		go func(mspId string) {
 			resp, err := pool.Process(ctx, mspId, proposal)
 			respChan <- endorseChannelResponse{Response: resp, Error: err}
-		}(mspIds[i])
+		}(endorsingMspIDs[i])
 	}
 
 	var errOccurred bool
@@ -96,7 +91,7 @@ func (*processor) Send(ctx context.Context, proposal *fabricPeer.SignedProposal,
 	mErr := new(api.MultiError)
 
 	// collecting peer responses
-	for i := 0; i < len(mspIds); i++ {
+	for i := 0; i < len(endorsingMspIDs); i++ {
 		resp := <-respChan
 		if resp.Error != nil {
 			errOccurred = true
@@ -112,11 +107,10 @@ func (*processor) Send(ctx context.Context, proposal *fabricPeer.SignedProposal,
 	return respList, nil
 }
 
-func (p *processor) invocationSpec(ccDef *api.DiscoveryChaincode, fn string, args [][]byte) ([]byte, error) {
+func (p *processor) invocationSpec(chaincodeName string, fn string, args [][]byte) ([]byte, error) {
 	spec := &fabricPeer.ChaincodeInvocationSpec{
 		ChaincodeSpec: &fabricPeer.ChaincodeSpec{
-			Type:        ccDef.GetFabricType(),
-			ChaincodeId: &fabricPeer.ChaincodeID{Name: ccDef.Name},
+			ChaincodeId: &fabricPeer.ChaincodeID{Name: chaincodeName},
 			Input:       &fabricPeer.ChaincodeInput{Args: p.prepareArgs(fn, args)},
 		},
 	}

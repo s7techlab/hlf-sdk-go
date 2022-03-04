@@ -7,23 +7,17 @@ import (
 )
 
 type Config struct {
-	Crypto CryptoConfig `yaml:"crypto"`
-	// Deprecated: use Orderers.
-	Orderer   *ConnectionConfig  `yaml:"orderer"`
+	Crypto    CryptoConfig       `yaml:"crypto"`
 	Orderers  []ConnectionConfig `yaml:"orderers"`
 	Discovery DiscoveryConfig    `yaml:"discovery"`
-	MSP       []MSPConfig        `yaml:"msp"`
-	Pool      PoolConfig         `yaml:"pool"`
+	// peer pool for local configuration without gossip discovery
+	MSP  []MSPConfig `yaml:"msp"`
+	Pool PoolConfig  `yaml:"pool"`
+	// if tls is enabled maps TLS certs to discovered peers
+	TLSCertsMap []TLSCertsMapperConfig `yaml:"tls_certs_map"`
 }
 
 type ConnectionConfig struct {
-	Host    string     `yaml:"host"`
-	Tls     TlsConfig  `yaml:"tls"`
-	GRPC    GRPCConfig `yaml:"grpc"`
-	Timeout Duration   `yaml:"timeout"`
-}
-
-type OrdererConfig struct {
 	Host    string     `yaml:"host"`
 	Tls     TlsConfig  `yaml:"tls"`
 	GRPC    GRPCConfig `yaml:"grpc"`
@@ -74,11 +68,28 @@ type TlsConfig struct {
 }
 
 type DiscoveryConfig struct {
-	Type    string              `yaml:"type"`
+	Type string `yaml:"type"`
+	// connection to local MSP which will be used for gossip discovery
+	Connection *ConnectionConfig `yaml:"connection"`
+	// configuration of channels/chaincodes in local(from config) discovery type
 	Options DiscoveryConfigOpts `yaml:"options"`
 }
 
+// DiscoveryConfigOpts - channel configuration for local config
+// contains []DiscoveryChannel
 type DiscoveryConfigOpts map[string]interface{}
+
+type DiscoveryChannel struct {
+	Name       string               `json:"channel_name" yaml:"name"`
+	Chaincodes []DiscoveryChaincode `json:"chaincodes" yaml:"chaincodes"`
+	Orderers   []ConnectionConfig   `json:"orderers" yaml:"orderers"`
+}
+
+type DiscoveryChaincode struct {
+	Name    string `json:"chaincode_name" yaml:"name"`
+	Version string `json:"version"`
+	Policy  string `json:"policy"`
+}
 
 type CryptoConfig struct {
 	Type    string          `yaml:"type"`
@@ -89,6 +100,11 @@ type CryptoSuiteOpts map[string]interface{}
 
 type Duration struct {
 	time.Duration
+}
+
+type TLSCertsMapperConfig struct {
+	Address   string    `yaml:"address"`
+	TlsConfig TlsConfig `yaml:"tls"`
 }
 
 func (d *Duration) UnmarshalYAML(unmarshal func(interface{}) error) error {

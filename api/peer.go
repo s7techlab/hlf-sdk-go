@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
 	"google.golang.org/grpc"
@@ -10,9 +11,9 @@ import (
 
 // Peer is common interface for endorsing peer
 type Peer interface {
-	// Endorse sends proposal to endorsing peer and returns it's result
+	// Endorse sends proposal to endorsing peer and returns its result
 	Endorse(ctx context.Context, proposal *peer.SignedProposal, opts ...PeerEndorseOpt) (*peer.ProposalResponse, error)
-	// Deliver
+	// DeliverClient returns DeliverClient
 	DeliverClient(identity msp.SigningIdentity) (DeliverClient, error)
 	// Uri returns url used for grpc connection
 	Uri() string
@@ -25,9 +26,9 @@ type Peer interface {
 // PeerProcessor is interface for processing transaction
 type PeerProcessor interface {
 	// CreateProposal creates signed proposal for presented cc, function and args using signing identity
-	CreateProposal(cc *DiscoveryChaincode, identity msp.SigningIdentity, fn string, args [][]byte, transArgs TransArgs) (*peer.SignedProposal, ChaincodeTx, error)
+	CreateProposal(chaincodeName string, identity msp.SigningIdentity, fn string, args [][]byte, transArgs TransArgs) (*peer.SignedProposal, ChaincodeTx, error)
 	// Send sends signed proposal to endorsing peers and collects their responses
-	Send(ctx context.Context, proposal *peer.SignedProposal, cc *DiscoveryChaincode, pool PeerPool) ([]*peer.ProposalResponse, error)
+	Send(ctx context.Context, proposal *peer.SignedProposal, endorsingMspIDs []string, pool PeerPool) ([]*peer.ProposalResponse, error)
 }
 
 // PeerEndorseError describes peer endorse error

@@ -2,9 +2,11 @@ package invoker
 
 import (
 	"context"
+
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
+
 	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
@@ -22,9 +24,14 @@ func (i *invoker) Invoke(
 	transArgs api.TransArgs,
 	doOpts ...api.DoOption,
 ) (*peer.Response, api.ChaincodeTx, error) {
-	return i.core.Channel(channel).
-		Chaincode(chaincode).
-		Invoke(fn).
+	ccConnection, err := i.core.
+		Channel(channel).
+		Chaincode(ctx, chaincode)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return ccConnection.Invoke(fn).
 		WithIdentity(from).
 		ArgBytes(args).
 		Transient(transArgs).
@@ -37,7 +44,14 @@ func (i *invoker) Query(ctx context.Context, from msp.SigningIdentity, channel s
 		argSs = append(argSs, string(arg))
 	}
 
-	if resp, err := i.core.Channel(channel).Chaincode(chaincode).Query(fn, argSs...).WithIdentity(from).Transient(transArgs).AsProposalResponse(ctx); err != nil {
+	ccConnection, err := i.core.
+		Channel(channel).
+		Chaincode(ctx, chaincode)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp, err := ccConnection.Query(fn, argSs...).WithIdentity(from).Transient(transArgs).AsProposalResponse(ctx); err != nil {
 		return nil, errors.Wrap(err, `failed to query chaincode`)
 	} else {
 		return resp.Response, nil
@@ -45,7 +59,14 @@ func (i *invoker) Query(ctx context.Context, from msp.SigningIdentity, channel s
 }
 
 func (i *invoker) Subscribe(ctx context.Context, from msp.SigningIdentity, channel, chaincode string) (api.EventCCSubscription, error) {
-	return i.core.Channel(channel).Chaincode(chaincode).Subscribe(ctx)
+	ccConnection, err := i.core.
+		Channel(channel).
+		Chaincode(ctx, chaincode)
+	if err != nil {
+		return nil, err
+	}
+
+	return ccConnection.Subscribe(ctx)
 }
 
 func New(core api.Core) api.Invoker {

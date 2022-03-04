@@ -1,8 +1,8 @@
 # Orderer config
-orderer:
-  host: localhost:7050
-  useTLS: false
-  timeout: 5s
+orderers:
+ - host: localhost:7050
+   useTLS: false
+   timeout: 5s
 
 discovery:
   type: local

@@ -5,25 +5,27 @@ import (
 	"fmt"
 	"math"
 
-	"google.golang.org/grpc/codes"
-
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/orderer"
 	"github.com/hyperledger/fabric-protos-go/peer"
+	"google.golang.org/grpc/codes"
 )
 
 var (
-	oldest  = &orderer.SeekPosition{Type: &orderer.SeekPosition_Oldest{Oldest: &orderer.SeekOldest{}}}
-	newest  = &orderer.SeekPosition{Type: &orderer.SeekPosition_Newest{Newest: &orderer.SeekNewest{}}}
-	maxStop = &orderer.SeekPosition{Type: &orderer.SeekPosition_Specified{Specified: &orderer.SeekSpecified{Number: math.MaxUint64}}}
+	SeekFromOldest = &orderer.SeekPosition{
+		Type: &orderer.SeekPosition_Oldest{Oldest: &orderer.SeekOldest{}}}
+	SeekFromNewest = &orderer.SeekPosition{
+		Type: &orderer.SeekPosition_Newest{Newest: &orderer.SeekNewest{}}}
+	SeekToMax = SeekSpecified(math.MaxUint64)
 )
 
 type DeliverClient interface {
-	// SubscribeCC allows to subscribe on chaincode events using name of channel, chaincode and block offset
+	// SubscribeCC allows subscribing on chaincode events using name of channel, chaincode and block offset
 	SubscribeCC(ctx context.Context, channelName string, ccName string, seekOpt ...EventCCSeekOption) (EventCCSubscription, error)
-	// SubscribeTx allows to subscribe on transaction events by id
+	// SubscribeTx allows subscribing on transaction events by id
 	SubscribeTx(ctx context.Context, channelName string, tx ChaincodeTx, seekOpt ...EventCCSeekOption) (TxSubscription, error)
-	// SubscribeBlock allows to subscribe on block events. Always returns new instance of block subscription
+	// SubscribeBlock allows subscribing on block events. Always returns new instance of block subscription
 	SubscribeBlock(ctx context.Context, channelName string, seekOpt ...EventCCSeekOption) (BlockSubscription, error)
 }
 
@@ -32,14 +34,14 @@ type EventCCSeekOption func() (*orderer.SeekPosition, *orderer.SeekPosition)
 // SeekNewest sets offset to new channel blocks
 func SeekNewest() EventCCSeekOption {
 	return func() (*orderer.SeekPosition, *orderer.SeekPosition) {
-		return newest, maxStop
+		return SeekFromNewest, SeekToMax
 	}
 }
 
 // SeekOldest sets offset to channel blocks from beginning
 func SeekOldest() EventCCSeekOption {
 	return func() (*orderer.SeekPosition, *orderer.SeekPosition) {
-		return oldest, maxStop
+		return SeekFromOldest, SeekToMax
 	}
 }
 
@@ -51,26 +53,42 @@ func SeekSingle(num uint64) EventCCSeekOption {
 	}
 }
 
+// SeekSpecified returns orderer.SeekPosition_Specified position
+func SeekSpecified(number uint64) *orderer.SeekPosition {
+	return &orderer.SeekPosition{Type: &orderer.SeekPosition_Specified{Specified: &orderer.SeekSpecified{Number: number}}}
+}
+
 // SeekRange sets offset from one block to another by their numbers
 func SeekRange(start, end uint64) EventCCSeekOption {
+	var seekFrom *orderer.SeekPosition
+	if start == 0 {
+		seekFrom = SeekFromOldest
+	} else {
+		seekFrom = SeekSpecified(start)
+	}
 	return func() (*orderer.SeekPosition, *orderer.SeekPosition) {
-		return &orderer.SeekPosition{Type: &orderer.SeekPosition_Specified{Specified: &orderer.SeekSpecified{Number: start}}},
-			&orderer.SeekPosition{Type: &orderer.SeekPosition_Specified{Specified: &orderer.SeekSpecified{Number: end}}}
+		return seekFrom, SeekSpecified(end)
 	}
 }
 
 type EventCCSubscription interface {
 	// Events initiates internal GRPC stream and returns channel on chaincode events
 	Events() chan *peer.ChaincodeEvent
+
+	EventsExtended() chan interface {
+		Event() *peer.ChaincodeEvent
+		Block() uint64
+		TxTimestamp() *timestamp.Timestamp
+	}
 	// Errors returns errors associated with this subscription
 	Errors() chan error
 	// Close cancels current subscription
 	Close() error
 }
 
-// EventCCSubscription describes tx subscription
+// TxSubscription describes tx subscription
 type TxSubscription interface {
-	// returns result of current tx: success flag, original peer validation code and error if occurred
+	// Result returns result of current tx: success flag, original peer validation code and error if occurred
 	Result() (peer.TxValidationCode, error)
 	Close() error
 }

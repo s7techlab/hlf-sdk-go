@@ -1,0 +1,32 @@
+discovery:
+  type: gossip
+  discovery_msp_connection:
+      host: peer0.org1.example.com:7051
+      timeout: 5s 
+      tls:
+        enabled: true
+        ca_cert_path: /Users/bogatyr285/work/go/src/github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/tlscacerts/tls-localhost-7054-ca-org1.pem
+        cert_path: /Users/bogatyr285/work/go/src/github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/signcerts/cert.pem
+        key_path: /Users/bogatyr285/work/go/src/github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/keystore/76d679929878afc06711d3c611af1c84dcac5be7cd6563d8338a7500b79109d9_sk
+
+
+tls_certs_map:
+  - address: orderer.example.com:7050
+    tls_config:
+      enabled: true
+      ca_cert_path: /Users/bogatyr285/work/go/src/github.com/fabric-samples/test-network/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
+      cert_path: /Users/bogatyr285/work/go/src/github.com/fabric-samples/test-network/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/tls/signcerts/cert.pem
+      key_path: /Users/bogatyr285/work/go/src/github.com/fabric-samples/test-network/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/tls/keystore/ef18cb3e70e5fdf825e4a83f40243d64a8a3a824b9b0fd99cf363856f5c6c174_sk
+  - address: peer0.org2.example.com:9051
+    tls_config:
+      enabled: true
+      ca_cert_path: /Users/bogatyr285/work/go/src/github.com/fabric-samples/test-network/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/tlscacerts/tls-localhost-8054-ca-org2.pem
+      cert_path: /Users/bogatyr285/work/go/src/github.com/fabric-samples/test-network/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/signcerts/cert.pem
+      key_path: /Users/bogatyr285/work/go/src/github.com/fabric-samples/test-network/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/keystore/15ba9010b75e3869ae1ad69191d59a9951a692fbde4b9a07b8bf08fb0173b3df_sk
+  - address: peer0.org1.example.com:7051
+    tls_config:
+      enabled: true
+      ca_cert_path: /Users/bogatyr285/work/go/src/github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/tlscacerts/tls-localhost-7054-ca-org1.pem
+      cert_path: /Users/bogatyr285/work/go/src/github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/signcerts/cert.pem
+      key_path: /Users/bogatyr285/work/go/src/github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/keystore/76d679929878afc06711d3c611af1c84dcac5be7cd6563d8338a7500b79109d9_sk
+      

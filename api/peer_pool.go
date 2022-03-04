@@ -11,11 +11,9 @@ import (
 )
 
 const (
-	ErrPeerAlreadySet = Error(`peer already set`)
-	ErrNoPeersForMSP  = Error(`no peers for presented MSP`)
-	//ErrNoReadyPeersForMSP = Error(`no ready peers for presented MSP`)
-	ErrMSPNotFound  = Error(`MSP not found`)
-	ErrPeerNotReady = Error(`peer not ready`)
+	ErrNoPeersForMSP = Error(`no peers for presented MSP`)
+	ErrMSPNotFound   = Error(`MSP not found`)
+	ErrPeerNotReady  = Error(`peer not ready`)
 )
 
 type ErrNoReadyPeers struct {
@@ -27,6 +25,7 @@ func (e ErrNoReadyPeers) Error() string {
 }
 
 type PeerPool interface {
+	GetPeers() map[string][]Peer
 	Add(mspId string, peer Peer, strategy PeerPoolCheckStrategy) error
 	Process(ctx context.Context, mspId string, proposal *peer.SignedProposal) (*peer.ProposalResponse, error)
 	DeliverClient(mspId string, identity msp.SigningIdentity) (DeliverClient, error)

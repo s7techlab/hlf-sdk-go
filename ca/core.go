@@ -11,6 +11,7 @@ import (
 	mspPb "github.com/hyperledger/fabric-protos-go/msp"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
+
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/ca"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
@@ -58,7 +59,7 @@ func (c *core) setAuthToken(req *http.Request, body []byte) error {
 }
 
 func (c *core) processResponse(resp *http.Response, out interface{}, expectedHTTPStatuses ...int) error {
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return errors.Wrap(err, `failed to read response body`)

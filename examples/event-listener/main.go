@@ -9,11 +9,11 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/s7techlab/hlf-sdk-go/client"
 	_ "github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
-	_ "github.com/s7techlab/hlf-sdk-go/discovery/local"
 	"github.com/s7techlab/hlf-sdk-go/identity"
-	"go.uber.org/zap"
 )
 
 func main() {
@@ -50,12 +50,15 @@ func main() {
 
 	l, _ := zap.NewProduction()
 
-	core, err := client.NewCore(mspId, id, client.WithConfigYaml(configPath), client.WithLogger(l))
+	core, err := client.NewCore(id, client.WithConfigYaml(configPath), client.WithLogger(l))
 	if err != nil {
 		log.Fatalln(`unable to initialize core:`, err)
 	}
 
-	cc := core.Channel(channel).Chaincode(chaincode)
+	cc, err := core.Channel(channel).Chaincode(context.Background(), chaincode)
+	if err != nil {
+		log.Fatalln(`unable to initialize channel:`, err)
+	}
 
 	var wg sync.WaitGroup
 
@@ -69,7 +72,7 @@ func main() {
 				log.Printf("Failed to process rouitine %d: %s", idx, err)
 				return
 			}
-			defer sub.Close()
+			defer func() { _ = sub.Close() }()
 
 			for {
 				select {

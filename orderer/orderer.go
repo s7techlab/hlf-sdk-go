@@ -17,11 +17,12 @@ import (
 )
 
 type ErrUnexpectedStatus struct {
-	status common.Status
+	status  common.Status
+	message string
 }
 
 func (e *ErrUnexpectedStatus) Error() string {
-	return fmt.Sprintf("unexpected status: %s", e.status.String())
+	return fmt.Sprintf("unexpected status: %s. message: %v", e.status.String(), e.message)
 }
 
 type orderer struct {
@@ -62,7 +63,10 @@ func (o *orderer) Broadcast(ctx context.Context, envelope *common.Envelope) (res
 		return
 	} else {
 		if resp.Status != common.Status_SUCCESS {
-			err = &ErrUnexpectedStatus{status: resp.Status}
+			err = &ErrUnexpectedStatus{
+				status:  resp.Status,
+				message: resp.Info,
+			}
 			return
 		}
 	}
@@ -150,7 +154,7 @@ func New(c config.ConnectionConfig, log *zap.Logger) (api.Orderer, error) {
 	return NewFromGRPC(ctx, conn, opts...)
 }
 
-// NewFromGRPC allows to initialize orderer from existing GRPC connection
+// NewFromGRPC allows initializing orderer from existing GRPC connection
 func NewFromGRPC(ctx context.Context, conn *grpc.ClientConn, grpcOptions ...grpc.DialOption) (api.Orderer, error) {
 	obj := &orderer{
 		uri:         conn.Target(),

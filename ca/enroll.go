@@ -12,6 +12,7 @@ import (
 
 	"github.com/cloudflare/cfssl/signer"
 	"github.com/pkg/errors"
+
 	"github.com/s7techlab/hlf-sdk-go/api/ca"
 )
 

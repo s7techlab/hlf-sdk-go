@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc/stats"
 )
 
-// Easy way for plug-up grpc.StatsHandler and mixing needed annotations to span
+// Wrap easy way for plug-up grpc.StatsHandler and mixing needed annotations to span
 func Wrap(statsHandler *ocgrpc.ClientHandler) stats.Handler {
 	return &wrapper{
 		oc: statsHandler,
@@ -94,8 +94,8 @@ func (w *wrapper) HandleRPC(ctx context.Context, rs stats.RPCStats) {
 			),
 		)
 	}
-	// sometimes we get cancelled context if futher execution(asking peers etc.) isn't necessary
-	// but request is fully valid and we dont want to see confusing errors in jaeger
+	// sometimes we get cancelled context if further execution(asking peers etc.) isn't necessary
+	// but request is fully valid, and we don't want to see confusing errors in jaeger
 	if errors.Is(ctx.Err(), context.Canceled) {
 		return
 	}

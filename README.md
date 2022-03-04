@@ -4,6 +4,7 @@
 
 Alpha version, **use at your own risk!**
 
+Code example with gossip service discovery available at: `examples/cc_call`
 #### Project structure:
 
 - api - definitions of various cores such as member and operator
@@ -11,7 +12,7 @@ Alpha version, **use at your own risk!**
 - discovery - discovery service implementation (local only)
 - examples - examples of using current SDK (invoke cli and events client)
     - [event-listener](examples/event-listener) - example of using peer.DeliverService, which shows new blocks
-    - [blockchain_info](examples/blockchain_info) - example of viewing info about channels and channel's ledger
+    - [blockchain_info](examples/cc_call/blockchanin_info.go) - example of viewing info about channels and channel's ledger
 - identity - member identity implementation
 - member - member core implementation
 

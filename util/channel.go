@@ -32,38 +32,44 @@ func GetOrdererHostFromChannelConfig(conf *common.Config) (string, error) {
 	return ordererAddresses.Addresses[0], nil
 }
 
-func ProceedChannelUpdate(ctx context.Context, channelName string, update *common.ConfigUpdate, orderer api.Orderer, id msp.SigningIdentity) error {
+// ProceedChannelUpdate - sends channel update config with signatures of all provided identities
+func ProceedChannelUpdate(
+	ctx context.Context,
+	channelName string,
+	update *common.ConfigUpdate,
+	orderer api.Orderer,
+	ids []msp.SigningIdentity,
+) error {
+	if len(ids) == 0 {
+		return errors.New("no signing identities provided")
+	}
+
 	confUpdBytes, err := proto.Marshal(update)
 	if err != nil {
 		return errors.Wrap(err, `failed to marshal common.ConfigUpdate`)
 	}
 
-	txId, nonce, err := NewTxWithNonce(id)
+	txId, nonce, err := NewTxWithNonce(ids[0])
 	if err != nil {
 		return errors.Wrap(err, `failed to get nonce`)
 	}
 
-	signatureHeader, err := NewSignatureHeader(id, nonce)
+	signatureHeader, err := NewSignatureHeader(ids[0], nonce)
 	if err != nil {
 		return errors.Wrap(err, `failed to get signature header`)
 	}
 
-	buf := bytes.NewBuffer(signatureHeader)
-	buf.Write(confUpdBytes)
-
-	signature, err := id.Sign(buf.Bytes())
-	if err != nil {
-		return errors.Wrap(err, `failed to sign bytes`)
-	}
-
-	sig := &common.ConfigSignature{
-		SignatureHeader: signatureHeader,
-		Signature:       signature,
+	signatures := make([]*common.ConfigSignature, len(ids))
+	for i := range ids {
+		signatures[i], err = signConfig(ids[i], confUpdBytes, nonce)
+		if err != nil {
+			return errors.Wrap(err, `failed to sign config update`)
+		}
 	}
 
 	confUpdEnvelope := &common.ConfigUpdateEnvelope{
 		ConfigUpdate: confUpdBytes,
-		Signatures:   []*common.ConfigSignature{sig},
+		Signatures:   signatures,
 	}
 
 	confUpdEnvBytes, err := proto.Marshal(confUpdEnvelope)
@@ -85,7 +91,7 @@ func ProceedChannelUpdate(ctx context.Context, channelName string, update *commo
 		Payload: payload,
 	}
 
-	envelope.Signature, err = id.Sign(envelope.Payload)
+	envelope.Signature, err = ids[0].Sign(envelope.Payload)
 	if err != nil {
 		return errors.WithMessage(err, "signing payload failed")
 	}
@@ -95,4 +101,25 @@ func ProceedChannelUpdate(ctx context.Context, channelName string, update *commo
 	}
 
 	return nil
+}
+
+func signConfig(id msp.SigningIdentity, configUpdateBytes, nonce []byte) (*common.ConfigSignature, error) {
+	signatureHeader, err := NewSignatureHeader(id, nonce)
+	if err != nil {
+		return nil, errors.Wrap(err, `failed to get signature header`)
+	}
+
+	buf := bytes.NewBuffer(signatureHeader)
+	buf.Write(configUpdateBytes)
+
+	signature, err := id.Sign(buf.Bytes())
+	if err != nil {
+		return nil, errors.Wrap(err, `failed to sign bytes`)
+	}
+
+	sig := &common.ConfigSignature{
+		SignatureHeader: signatureHeader,
+		Signature:       signature,
+	}
+	return sig, nil
 }

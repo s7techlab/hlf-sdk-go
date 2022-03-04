@@ -5,13 +5,14 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"gopkg.in/yaml.v2"
+
+	"github.com/s7techlab/hlf-sdk-go/api/config"
 )
 
 type opt func(c *core) error
 
-// WithYamlConfig allows to use YAML config from file
+// WithYamlConfig allows using YAML config from file
 func WithYamlConfig(configPath string) opt {
 	return func(c *core) error {
 		if configBytes, err := ioutil.ReadFile(configPath); err != nil {

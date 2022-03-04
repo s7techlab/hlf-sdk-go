@@ -9,6 +9,7 @@ import (
 	"net/url"
 
 	"github.com/pkg/errors"
+
 	"github.com/s7techlab/hlf-sdk-go/api/ca"
 )
 

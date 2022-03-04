@@ -6,12 +6,12 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
+	"net"
+	"sync"
 	"time"
 
-	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
+	grpcretry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/pkg/errors"
-	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/opencensus/hlf"
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
@@ -21,6 +21,9 @@ import (
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/resolver"
 	"google.golang.org/grpc/resolver/manual"
+
+	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/opencensus/hlf"
 )
 
 var (
@@ -33,6 +36,9 @@ var (
 		Time:    60,
 		Timeout: 5,
 	}
+	// NewGRPCOptionsFromConfig (called by peer.New) can be called concurrently
+	// because of reading vars above we need mutex
+	mu = sync.Mutex{}
 )
 
 const (
@@ -40,6 +46,7 @@ const (
 	maxSendMsgSize = 100 * 1024 * 1024
 )
 
+// NewGRPCOptionsFromConfig - adds tracing, TLS certs and connection limits
 func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grpc.DialOption, error) {
 
 	// TODO: move to config or variable options
@@ -68,7 +75,7 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 			}
 			tlsCfg.RootCAs = certPool
 		} else {
-			// otherwise we use system certificates
+			// otherwise, we use system certificates
 			if tlsCfg.RootCAs, err = x509.SystemCertPool(); err != nil {
 				return nil, errors.Wrap(err, `failed to get system cert pool`)
 			}
@@ -87,10 +94,11 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 		cred := credentials.NewTLS(&tlsCfg)
 		grpcOptions = append(grpcOptions, grpc.WithTransportCredentials(cred))
 	} else {
-
 		grpcOptions = append(grpcOptions, grpc.WithInsecure())
 	}
 
+	mu.Lock()
+	defer mu.Unlock()
 	// Set default keep alive
 	if c.GRPC.KeepAlive == nil {
 		c.GRPC.KeepAlive = DefaultGRPCKeepAliveConfig
@@ -113,9 +121,9 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 
 	grpcOptions = append(grpcOptions,
 		grpc.WithUnaryInterceptor(
-			grpc_retry.UnaryClientInterceptor(
-				grpc_retry.WithMax(retryConfig.Max),
-				grpc_retry.WithBackoff(grpc_retry.BackoffLinear(retryConfig.Timeout.Duration)),
+			grpcretry.UnaryClientInterceptor(
+				grpcretry.WithMax(retryConfig.Max),
+				grpcretry.WithBackoff(grpcretry.BackoffLinear(retryConfig.Timeout.Duration)),
 			),
 		),
 	)
@@ -124,6 +132,8 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 		grpc.MaxCallRecvMsgSize(maxRecvMsgSize),
 		grpc.MaxCallSendMsgSize(maxSendMsgSize),
 	))
+
+	grpcOptions = append(grpcOptions, grpc.WithBlock())
 
 	fields := []zap.Field{
 		zap.String(`host`, c.Host),
@@ -136,16 +146,24 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 	}
 
 	log.Debug(`grpc options for host`, fields...)
-	grpcOptions = append(grpcOptions, grpc.WithBlock())
 
 	return grpcOptions, nil
 }
 
+// NewGRPCConnectionFromConfigs - initializes grpc connection with pool of addresses with round-robin client balancer
 func NewGRPCConnectionFromConfigs(ctx context.Context, log *zap.Logger, conf ...config.ConnectionConfig) (*grpc.ClientConn, error) {
+	if len(conf) == 0 {
+		return nil, errors.New(`no GRPC options provided`)
+	}
 	// use options from first config
 	opts, err := NewGRPCOptionsFromConfig(conf[0], log)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to get GRPC options`)
+	}
+	// name is necessary for grpc balancer and address verification in tls certs
+	dnsResolverName, _, err := net.SplitHostPort(conf[0].Host)
+	if err != nil {
+		return nil, fmt.Errorf("cant fetch domain name from %v", conf[0].Host)
 	}
 
 	addr := make([]resolver.Address, len(conf))
@@ -163,7 +181,10 @@ func NewGRPCConnectionFromConfigs(ctx context.Context, log *zap.Logger, conf ...
 
 	log.Debug(`grpc dial to orderer`, zap.Strings(`hosts`, hosts))
 
-	conn, err := grpc.DialContext(ctx, fmt.Sprintf("%s:///%s", r.Scheme(), `orderers`), opts...)
+	ctxConn, cancel := context.WithTimeout(ctx, time.Second*2)
+	defer cancel()
+
+	conn, err := grpc.DialContext(ctxConn, fmt.Sprintf("%s:///%s", r.Scheme(), dnsResolverName), opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to initialize GRPC connection`)
 	}

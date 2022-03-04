@@ -2,20 +2,35 @@ package chaincode
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hyperledger/fabric/msp"
-	"github.com/pkg/errors"
+
 	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
 type Core struct {
-	mspId       string
-	name        string
-	channelName string
-	peerPool    api.PeerPool
-	orderer     api.Orderer
-	dp          api.DiscoveryProvider
-	identity    msp.SigningIdentity
+	mspId         string
+	name          string
+	channelName   string
+	endorsingMSPs []string
+	peerPool      api.PeerPool
+	orderer       api.Orderer
+
+	identity msp.SigningIdentity
+}
+
+func (c *Core) GetPeers() []api.Peer {
+	peers := make([]api.Peer, 0)
+
+	peersMap := c.peerPool.GetPeers()
+	for _, endorsingMSP := range c.endorsingMSPs {
+		if ps, ok := peersMap[endorsingMSP]; ok {
+			peers = append(peers, ps...)
+		}
+	}
+
+	return peers
 }
 
 func (c *Core) Invoke(fn string) api.ChaincodeInvokeBuilder {
@@ -33,19 +48,27 @@ func (c *Core) Install(version string) {
 func (c *Core) Subscribe(ctx context.Context) (api.EventCCSubscription, error) {
 	peerDeliver, err := c.peerPool.DeliverClient(c.mspId, c.identity)
 	if err != nil {
-		return nil, errors.Wrap(err, `failed to initiate DeliverClient`)
+		return nil, fmt.Errorf(`initiate DeliverClient: %w`, err)
 	}
 	return peerDeliver.SubscribeCC(ctx, c.channelName, c.name)
 }
 
-func NewCore(mspId, ccName, channelName string, peerPool api.PeerPool, orderer api.Orderer, dp api.DiscoveryProvider, identity msp.SigningIdentity) *Core {
+func NewCore(
+	mspId,
+	ccName,
+	channelName string,
+	endorsingMSPs []string,
+	peerPool api.PeerPool,
+	orderer api.Orderer,
+	identity msp.SigningIdentity,
+) *Core {
 	return &Core{
-		mspId:       mspId,
-		name:        ccName,
-		channelName: channelName,
-		peerPool:    peerPool,
-		orderer:     orderer,
-		dp:          dp,
-		identity:    identity,
+		mspId:         mspId,
+		name:          ccName,
+		channelName:   channelName,
+		endorsingMSPs: endorsingMSPs,
+		peerPool:      peerPool,
+		orderer:       orderer,
+		identity:      identity,
 	}
 }

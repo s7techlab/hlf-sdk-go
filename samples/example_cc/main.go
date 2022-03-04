@@ -8,15 +8,15 @@ import (
 )
 
 func main() {
-	if err := shim.Start(&example_cc{}); err != nil {
+	if err := shim.Start(&exampleCc{}); err != nil {
 		log.Fatal(err)
 	}
 }
 
-type example_cc struct {
+type exampleCc struct {
 }
 
-func (*example_cc) Init(stub shim.ChaincodeStubInterface) peer.Response {
+func (*exampleCc) Init(stub shim.ChaincodeStubInterface) peer.Response {
 	t, err := stub.GetTransient()
 	if err != nil {
 		return shim.Error(err.Error())
@@ -31,7 +31,7 @@ func (*example_cc) Init(stub shim.ChaincodeStubInterface) peer.Response {
 	return shim.Success(nil)
 }
 
-func (*example_cc) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
+func (*exampleCc) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
 	t, err := stub.GetTransient()
 	if err != nil {
 		return shim.Error(err.Error())

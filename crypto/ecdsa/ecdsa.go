@@ -6,18 +6,18 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/sha512"
+	"crypto/x509"
 	"encoding/asn1"
 	"hash"
 	"math/big"
 
-	"crypto/x509"
-
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
+	"golang.org/x/crypto/sha3"
+
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/crypto"
-	"golang.org/x/crypto/sha3"
 )
 
 const (

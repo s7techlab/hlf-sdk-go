@@ -1,44 +1,44 @@
 package api
 
 import (
-	"github.com/hyperledger/fabric-protos-go/peer"
+	"context"
 
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 )
 
-const (
-	CCTypeGoLang = `golang`
-)
-
-type DiscoveryProviderOpts map[string]interface{}
-
 type DiscoveryProvider interface {
-	Initialize(opts config.DiscoveryConfigOpts, pool PeerPool) (DiscoveryProvider, error)
-	Channels() ([]DiscoveryChannel, error)
-	Channel(channelName string) (*DiscoveryChannel, error)
-	Chaincode(channelName string, ccName string) (*DiscoveryChaincode, error)
-	Chaincodes(channelName string) ([]DiscoveryChaincode, error)
+	Chaincode(ctx context.Context, channelName string, ccName string) (ChaincodeDiscoverer, error)
+	Channel(ctx context.Context, channelName string) (ChannelDiscoverer, error)
+	LocalPeers(ctx context.Context) (LocalPeersDiscoverer, error)
 }
 
-type DiscoveryChannel struct {
-	Name        string                    `json:"channel_name" yaml:"name"`
-	Description string                    `json:"channel_description" yaml:"description"`
-	Chaincodes  []DiscoveryChaincode      `json:"chaincodes" yaml:"description"`
-	Orderers    []config.ConnectionConfig `json:"orderers" yaml:"orderers"`
+// ChaincodeDiscoverer - looking for info about network, channel, chaincode in local configs or gossip
+type ChaincodeDiscoverer interface {
+	Endorsers() []*HostEndpoint
+	ChaincodeName() string
+	ChaincodeVersion() string
+
+	ChannelDiscoverer
 }
 
-type DiscoveryChaincode struct {
-	Name        string `json:"chaincode_name" yaml:"name"`
-	Type        string `json:"type"`
-	Version     string `json:"version"`
-	Description string `json:"description"`
-	Policy      string `json:"policy"`
+// ChannelDiscoverer - info about orderers in channel
+type ChannelDiscoverer interface {
+	Orderers() []*HostEndpoint
+	ChannelName() string
 }
 
-func (c DiscoveryChaincode) GetFabricType() peer.ChaincodeSpec_Type {
-	switch c.Type {
-	case CCTypeGoLang:
-		return peer.ChaincodeSpec_GOLANG
-	}
-	return peer.ChaincodeSpec_UNDEFINED
+// LocalPeersDiscoverer discover local peers without providing info about channel, chaincode
+type LocalPeersDiscoverer interface {
+	Peers() []*HostEndpoint
+}
+
+type HostEndpoint struct {
+	MspID string
+	// each host could have own tls settings
+	HostAddresses []*HostAddress
+}
+
+type HostAddress struct {
+	Address     string
+	TLSSettings config.TlsConfig
 }
