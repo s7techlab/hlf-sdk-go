@@ -200,7 +200,6 @@ func ParseOrdererEndpoints(b []byte) ([]string, error) {
 	return oa.Addresses, nil
 }
 
-//
 func ParseAnchorPeers(mspConfigGroup *common.ConfigGroup) ([]*peer.AnchorPeer, error) {
 	if cv, ok := mspConfigGroup.Values[channelconfig.AnchorPeersKey]; ok {
 		return ParseAnchorPeersFromBytes(cv.Value)
@@ -216,7 +215,6 @@ func ParseAnchorPeersFromBytes(b []byte) ([]*peer.AnchorPeer, error) {
 	return anchorPeers.AnchorPeers, nil
 }
 
-//
 func ParseOrdererBatchSize(cfg common.Config) (*orderer.BatchSize, error) {
 	ordererGroup, exists := cfg.ChannelGroup.Groups[channelconfig.OrdererGroupKey]
 	if !exists {
@@ -240,7 +238,6 @@ func ParseBatchSizeFromBytes(b []byte) (*orderer.BatchSize, error) {
 	return bs, nil
 }
 
-//
 func ParseOrdererBatchTimeout(cfg common.Config) (string, error) {
 	ordererGroup, exists := cfg.ChannelGroup.Groups[channelconfig.OrdererGroupKey]
 	if !exists {
@@ -263,7 +260,6 @@ func ParseOrdererBatchTimeoutFromBytes(b []byte) (string, error) {
 	return bt.Timeout, nil
 }
 
-//
 func ParseOrdererConsesusType(cfg common.Config) (*orderer.ConsensusType, error) {
 	ordererGroup, exists := cfg.ChannelGroup.Groups[channelconfig.OrdererGroupKey]
 	if !exists {
@@ -286,7 +282,6 @@ func ParseOrdererConsesusTypeFromBytes(b []byte) (*orderer.ConsensusType, error)
 	return ct, nil
 }
 
-//
 func ParseConsortium(cfg common.Config) (string, error) {
 	ordererGroup, exists := cfg.ChannelGroup.Groups[channelconfig.OrdererGroupKey]
 	if !exists {
@@ -309,7 +304,6 @@ func ParseConsortiumFromBytes(b []byte) (string, error) {
 	return c.Name, nil
 }
 
-//
 func ParseHashingAlgorithm(cfg common.Config) (string, error) {
 	hashingAlgorithm, exists := cfg.ChannelGroup.Values[channelconfig.HashingAlgorithmKey]
 	if !exists {
@@ -327,7 +321,6 @@ func ParseHashingAlgorithmFromBytes(b []byte) (string, error) {
 	return ha.Name, nil
 }
 
-//
 func ParseBlockDataHashingStructure(cfg common.Config) (*common.BlockDataHashingStructure, error) {
 	bdh, exists := cfg.ChannelGroup.Values[channelconfig.BlockDataHashingStructureKey]
 	if !exists {
@@ -345,7 +338,6 @@ func ParseParseBlockDataHashingStructureFromBytes(b []byte) (*common.BlockDataHa
 	return bdh, nil
 }
 
-//
 func ParseCapabilities(cfg common.Config) (*common.Capabilities, error) {
 	bdh, exists := cfg.ChannelGroup.Values[channelconfig.CapabilitiesKey]
 	if !exists {
@@ -363,7 +355,6 @@ func ParseParseCapabilitiesFromBytes(b []byte) (*common.Capabilities, error) {
 	return c, nil
 }
 
-//
 func ParsePolicy(policiesCfg map[string]*common.ConfigPolicy) (map[string]*Policy, error) {
 	policies := make(map[string]*Policy)
 
