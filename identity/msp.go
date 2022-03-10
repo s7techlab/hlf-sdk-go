@@ -150,13 +150,12 @@ func NewEnrollIdentity(privateKey interface{}) (api.Identity, error) {
 }
 
 func NewMSPIdentityFromPath(mspId string, mspPath string) (api.Identity, error) {
-
-	certBytes, keyBytes, err := util.LoadKeyPairFromMSP(mspPath)
+	cert, key, err := util.LoadKeyPairFromMSP(mspPath)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewMSPIdentityBytes(mspId, certBytes, keyBytes)
+	return NewMSPIdentityRaw(mspId, cert, key)
 }
 
 /* */

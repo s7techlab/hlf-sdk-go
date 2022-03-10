@@ -1,9 +1,6 @@
 package util
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
@@ -15,8 +12,6 @@ import (
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-
-	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
 const (
@@ -27,45 +22,35 @@ const (
 )
 
 // LoadKeyPairFromMSP - legacy method. loads ONLY cert from signcerts dir
-func LoadKeyPairFromMSP(mspPath string) ([]byte, []byte, error) {
+func LoadKeyPairFromMSP(mspPath string) (*x509.Certificate, interface{}, error) {
 	_, err := ioutil.ReadDir(mspPath)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, `failed to read path`)
+		return nil, nil, fmt.Errorf(`read msp dir: %w`, err)
 	}
 
-	// check signcerts/cert.pem
-	certBytes, err := ioutil.ReadFile(path.Join(mspPath, signcertsPath, `cert.pem`))
-	if err != nil {
-		return nil, nil, errors.Wrap(err, `failed to read certificate`)
+	var (
+		certBytes []byte
+	)
+	// check certificate in a first file of signcerts folder
+	files, err := ioutil.ReadDir(path.Join(mspPath, signcertsPath))
+	for _, f := range files {
+		if f.IsDir() {
+			continue
+		}
+
+		certBytes, err = ioutil.ReadFile(path.Join(mspPath, signcertsPath, f.Name()))
+		if err != nil {
+			return nil, nil, fmt.Errorf(`read certificate: %w`, err)
+		}
+		cert, key, err := LoadKeypairByCert(mspPath, certBytes)
+		if err != nil {
+			return nil, nil, fmt.Errorf(`read keypair: %w`, err)
+		}
+
+		return cert, key, nil
 	}
 
-	certBlock, _ := pem.Decode(certBytes)
-	if certBlock == nil {
-		return nil, nil, api.ErrInvalidPEMStructure
-	}
-
-	cert, err := x509.ParseCertificate(certBlock.Bytes)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, `failed to parse certificate`)
-	}
-
-	pKeyFileName, err := getPrivateKeyFilename(cert)
-	if err != nil {
-		return certBytes, nil, errors.Wrap(err, `couldn't fetch private key name`)
-	}
-
-	// open private key file
-	keyBytes, err := ioutil.ReadFile(path.Join(mspPath, keystorePath, pKeyFileName))
-	if err != nil {
-		return certBytes, nil, errors.Wrap(err, `failed to ready private key file`)
-	}
-
-	// match public/private keys
-	if _, err := tls.X509KeyPair(certBytes, keyBytes); err != nil {
-		return certBytes, nil, errors.Wrap(err, `certificate/key mismatch`)
-	}
-
-	return certBytes, keyBytes, nil
+	return nil, nil, fmt.Errorf("coudn't find certificate in %s", path.Join(mspPath, signcertsPath))
 }
 
 // LoadKeypairByCert - takes certificate raw bytes and tries to find suitable(by hash) private key
@@ -120,18 +105,6 @@ func LoadKeypairByCert(mspPath string, certRawBytes []byte) (*x509.Certificate, 
 	}
 
 	return cert, key, nil
-}
-
-func getPrivateKeyFilename(cert *x509.Certificate) (string, error) {
-	switch pubKey := cert.PublicKey.(type) {
-	case *ecdsa.PublicKey:
-		h := sha256.New()
-		h.Write(elliptic.Marshal(pubKey.Curve, pubKey.X, pubKey.Y))
-		pKeyFileName := fmt.Sprintf("%x_sk", h.Sum(nil))
-		return pKeyFileName, nil
-	default:
-		return "", errors.Errorf("unknown key format %s, ECDSA expected", cert.PublicKeyAlgorithm)
-	}
 }
 
 // ReadAllFilesFromDir - read all files from dir
