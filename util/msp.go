@@ -25,7 +25,7 @@ const (
 func LoadKeyPairFromMSP(mspPath string) (*x509.Certificate, interface{}, error) {
 	_, err := ioutil.ReadDir(mspPath)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, `failed to read path`)
+		return nil, nil, fmt.Errorf(`read msp dir: %w`, err)
 	}
 
 	var (
@@ -40,11 +40,11 @@ func LoadKeyPairFromMSP(mspPath string) (*x509.Certificate, interface{}, error) 
 
 		certBytes, err = ioutil.ReadFile(path.Join(mspPath, signcertsPath, f.Name()))
 		if err != nil {
-			return nil, nil, fmt.Errorf(`failed to read certificate: %w`, err)
+			return nil, nil, fmt.Errorf(`read certificate: %w`, err)
 		}
 		cert, key, err := LoadKeypairByCert(mspPath, certBytes)
 		if err != nil {
-			return nil, nil, fmt.Errorf(`failed to read keypair: %w`, err)
+			return nil, nil, fmt.Errorf(`read keypair: %w`, err)
 		}
 
 		return cert, key, nil
