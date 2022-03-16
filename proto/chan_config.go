@@ -14,6 +14,13 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
+type FabricVersion string
+
+const (
+	FabricV1 FabricVersion = "1"
+	FabricV2 FabricVersion = "2"
+)
+
 func (c *ChannelConfig) ToJSON() ([]byte, error) {
 	opt := protojson.MarshalOptions{
 		UseProtoNames: true,
@@ -419,6 +426,14 @@ func (c *ChannelConfig) GetAllCertificates() ([]*Certificate, error) {
 	}
 
 	return certs, nil
+}
+
+func (c *ChannelConfig) FabricVersion() FabricVersion {
+	_, isFabricV2 := c.Capabilities.Capabilities["V2_0"]
+	if isFabricV2 {
+		return FabricV2
+	}
+	return FabricV1
 }
 
 // GetAllCertificates - returns all certificates from MSP
