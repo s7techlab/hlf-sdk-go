@@ -214,12 +214,12 @@ func NewCore(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 	}
 
 	if core.discoveryProvider == nil && core.config != nil {
-		core.logger.Info("initializing discovery provider")
 
 		tlsMapper := discovery.NewTLSCertsMapper(core.config.TLSCertsMap)
 
 		switch core.config.Discovery.Type {
 		case string(discovery.LocalConfigServiceDiscoveryType):
+			core.logger.Info("local discovery provider", zap.Reflect(`options`, core.config.Discovery.Options))
 			core.discoveryProvider, err = discovery.NewLocalConfigProvider(core.config.Discovery.Options, tlsMapper)
 			if err != nil {
 				return nil, fmt.Errorf(`initialize discovery provider: %w`, err)
@@ -228,6 +228,8 @@ func NewCore(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 			if core.config.Discovery.Connection == nil {
 				return nil, fmt.Errorf(`discovery connection config wasn't provided. configure 'discovery.connection': %w`, err)
 			}
+			core.logger.Info("gossip discovery provider", zap.Reflect(`connection`, core.config.Discovery.Connection))
+
 			identitySigner := func(msg []byte) ([]byte, error) {
 				return core.CurrentIdentity().Sign(msg)
 			}
