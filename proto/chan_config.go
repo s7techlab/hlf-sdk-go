@@ -17,8 +17,9 @@ import (
 type FabricVersion string
 
 const (
-	FabricV1 FabricVersion = "1"
-	FabricV2 FabricVersion = "2"
+	FabricVersionUndefined FabricVersion = "undefined"
+	FabricV1               FabricVersion = "1"
+	FabricV2               FabricVersion = "2"
 )
 
 func (c *ChannelConfig) ToJSON() ([]byte, error) {
@@ -429,11 +430,14 @@ func (c *ChannelConfig) GetAllCertificates() ([]*Certificate, error) {
 }
 
 func (c *ChannelConfig) FabricVersion() FabricVersion {
-	_, isFabricV2 := c.Capabilities.Capabilities["V2_0"]
-	if isFabricV2 {
-		return FabricV2
+	if c.Capabilities != nil {
+		_, isFabricV2 := c.Capabilities.Capabilities["V2_0"]
+		if isFabricV2 {
+			return FabricV2
+		}
+		return FabricV1
 	}
-	return FabricV1
+	return FabricVersionUndefined
 }
 
 // GetAllCertificates - returns all certificates from MSP
