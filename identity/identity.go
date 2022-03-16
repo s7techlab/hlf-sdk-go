@@ -106,7 +106,7 @@ func (s *signingIdentity) GetPublicVersion() msp.Identity {
 	return nil
 }
 
-func FromPath(mspId string, certPath string, keyPath string) (api.Identity, error) {
+func FromCertKeyPath(mspId string, certPath string, keyPath string) (api.Identity, error) {
 	certPEMBytes, err := ioutil.ReadFile(certPath)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to open certificate`)

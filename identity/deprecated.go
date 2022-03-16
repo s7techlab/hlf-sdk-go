@@ -6,9 +6,9 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
-// Deprecated: use FromPath
+// Deprecated: use FromCertKeyPath
 func NewMSPIdentity(mspId string, certPath string, keyPath string) (api.Identity, error) {
-	return FromPath(mspId, certPath, keyPath)
+	return FromCertKeyPath(mspId, certPath, keyPath)
 }
 
 // Deprecated: use FromBytes
@@ -24,6 +24,11 @@ func NewMSPIdentityFromPath(mspId string, mspPath string) (api.Identity, error) 
 // Deprecated: use New
 func NewMSPIdentityRaw(mspId string, cert *x509.Certificate, privateKey interface{}) (api.Identity, error) {
 	return New(mspId, cert, privateKey)
+}
+
+// Deprecated: use CollectionFromMSPPath
+func NewMSPIdentitiesFromPath(mspID string, mspPath string) (*MSP, error) {
+	return CollectionFromMSPPath(mspID, mspPath)
 }
 
 // Deprecated: use New
