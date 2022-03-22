@@ -42,7 +42,7 @@ func main() {
 		log.Fatalln(`CHAINCODE env must be defined`)
 	}
 
-	id, err := identity.NewMSPIdentityFromPath(mspId, mspPath)
+	id, err := identity.SignerFromMSPPath(mspId, mspPath)
 
 	if err != nil {
 		log.Fatalln(`Failed to load identity:`, err)

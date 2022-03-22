@@ -6,140 +6,137 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path"
-	"path/filepath"
 
 	"github.com/pkg/errors"
+
+	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
-const (
-	MSPAdmincertsPath = "admincerts"
-	MSPSigncertsPath  = "signcerts"
-	MSPUserscertsPath = "user"
-	MSPKeystorePath   = "keystore"
+var (
+	ErrNoPEMContent = errors.New("no pem content")
+	ErrKeyNotFound  = errors.New("key not found")
 )
 
-// LoadKeyPairFromMSP - legacy method. loads ONLY cert from signcerts dir
-func LoadKeyPairFromMSP(mspPath string) (*x509.Certificate, interface{}, error) {
-	_, err := ioutil.ReadDir(mspPath)
+func FirstFromPath(mspID string, certDir, keyDir string) (*identity, error) {
+	certFile, err := readFirstFile(certDir)
 	if err != nil {
-		return nil, nil, fmt.Errorf(`read msp dir: %w`, err)
+		return nil, err
 	}
 
-	var (
-		certBytes []byte
-	)
-	// check certificate in a first file of signcerts folder
-	files, err := ioutil.ReadDir(path.Join(mspPath, MSPSigncertsPath))
-	for _, f := range files {
-		if f.IsDir() {
-			continue
-		}
-
-		certBytes, err = ioutil.ReadFile(path.Join(mspPath, MSPSigncertsPath, f.Name()))
-		if err != nil {
-			return nil, nil, fmt.Errorf(`read certificate: %w`, err)
-		}
-		cert, key, err := LoadKeypairByCert(mspPath, certBytes)
-		if err != nil {
-			return nil, nil, fmt.Errorf(`read keypair: %w`, err)
-		}
-
-		return cert, key, nil
+	cert, key, err := KeyPairForCert(certFile, keyDir)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, nil, fmt.Errorf("coudn't find certificate in %s", path.Join(mspPath, MSPSigncertsPath))
+	return New(mspID, cert, key), nil
 }
 
-// LoadKeypairByCert - takes certificate raw bytes and tries to find suitable(by hash) private key
-// in 'keystore' dir
-func LoadKeypairByCert(mspPath string, certRawBytes []byte) (*x509.Certificate, interface{}, error) {
-	certPEMBytes, _ := pem.Decode(certRawBytes)
-	if certPEMBytes == nil {
-		return nil, nil, errors.Errorf("no pem content for file")
+func ListFromPath(mspID string, certDir, keyDir string) ([]api.Identity, error) {
+	var identities []api.Identity
+
+	certFiles, err := readFiles(certDir)
+	if err != nil {
+		return nil, err
 	}
 
-	cert, err := x509.ParseCertificate(certPEMBytes.Bytes)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, `failed to parse certificate`)
-	}
-
-	files, err := ioutil.ReadDir(path.Join(mspPath, MSPKeystorePath))
-	if err != nil {
-		return nil, nil, fmt.Errorf(`failed to read path: %w`, err)
-	}
-	var (
-		keyFound    bool
-		keyRawBytes []byte
-	)
-	for _, f := range files {
-		if f.IsDir() {
-			continue
-		}
-		keyRawBytes, err = ioutil.ReadFile(path.Join(mspPath, MSPKeystorePath, f.Name()))
+	for _, certRaw := range certFiles {
+		cert, key, err := KeyPairForCert(certRaw, keyDir)
 		if err != nil {
-			return nil, nil, fmt.Errorf(`failed to read private key file: %w`, err)
+			return nil, err
 		}
-		// match public/private keys
-		if _, err = tls.X509KeyPair(certRawBytes, keyRawBytes); err != nil {
-			continue
-		}
-		keyFound = true
-		break
+
+		identities = append(identities, New(mspID, cert, key))
 	}
 
-	if !keyFound {
-		return nil, nil, fmt.Errorf(`couldn't find key for cert №: %v`, cert.SerialNumber.String())
-	}
+	return identities, nil
+}
 
-	keyPEMBytes, _ := pem.Decode(keyRawBytes)
-	if keyPEMBytes == nil {
-		return nil, nil, errors.Errorf("no pem content for file")
-	}
+func CertificatesFromPath(certDir string) ([]*x509.Certificate, error) {
+	var certs []*x509.Certificate
 
-	key, err := x509.ParsePKCS8PrivateKey(keyPEMBytes.Bytes)
+	certFiles, err := readFiles(certDir)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, `failed to parse private key`)
+		return nil, err
+	}
+
+	for _, certRaw := range certFiles {
+		cert, err := Certificate(certRaw)
+		if err != nil {
+			return nil, err
+		}
+
+		certs = append(certs, cert)
+	}
+
+	return certs, nil
+}
+
+func Certificate(certRaw []byte) (*x509.Certificate, error) {
+	certPEM, _ := pem.Decode(certRaw)
+	if certPEM == nil {
+		return nil, ErrNoPEMContent
+	}
+
+	cert, err := x509.ParseCertificate(certPEM.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf(`parse certificate: %w`, err)
+	}
+
+	return cert, nil
+}
+
+// Key parses raw key btes
+func Key(keyRaw []byte) (interface{}, error) {
+	keyPEM, _ := pem.Decode(keyRaw)
+	if keyPEM == nil {
+		return nil, ErrNoPEMContent
+	}
+
+	key, err := x509.ParsePKCS8PrivateKey(keyPEM.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf(`parse key: %w`, err)
+	}
+
+	return key, nil
+}
+
+func KeyPairForCert(certRaw []byte, keyDir string) (*x509.Certificate, interface{}, error) {
+	key, err := KeyForCert(certRaw, keyDir)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	cert, err := Certificate(certRaw)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	return cert, key, nil
 }
 
-// ReadAllFilesFromDir - read all files from dir
-func ReadAllFilesFromDir(dir string) ([][]byte, error) {
-	_, err := os.Stat(dir)
-	if os.IsNotExist(err) {
-		return nil, err
-	}
-
-	content := make([][]byte, 0)
-	files, err := ioutil.ReadDir(dir)
+// KeyForCert returns private key for certificate from keyDir
+func KeyForCert(certRaw []byte, keyDir string) (interface{}, error) {
+	files, err := ioutil.ReadDir(keyDir)
 	if err != nil {
-		return nil, errors.Wrapf(err, "could not read directory %s", dir)
+		return nil, fmt.Errorf(`read key dir: %w`, err)
 	}
 
 	for _, f := range files {
-		fullName := filepath.Join(dir, f.Name())
-
-		f, err := os.Stat(fullName)
-		if err != nil {
-			continue
-		}
 		if f.IsDir() {
 			continue
 		}
-
-		item, err := ioutil.ReadFile(fullName)
+		keyRaw, err := ioutil.ReadFile(path.Join(keyDir, f.Name()))
 		if err != nil {
-			return nil, errors.Wrapf(err, "reading from file %s failed", fullName)
+			return nil, fmt.Errorf(`read key file: %w`, err)
 		}
-		if err != nil {
+		// match public/private keys
+		if _, err = tls.X509KeyPair(certRaw, keyRaw); err != nil {
 			continue
 		}
 
-		content = append(content, item)
+		return Key(keyRaw)
 	}
 
-	return content, nil
+	return nil, ErrKeyNotFound
 }
