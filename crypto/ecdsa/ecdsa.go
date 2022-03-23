@@ -37,7 +37,6 @@ const (
 )
 
 var (
-	CryptoSuite = &ecdsaSuite{}
 	DefaultOpts = config.CryptoSuiteOpts{`curve`: `P256`, `signatureAlgorithm`: `SHA256`, `hash`: `SHA2-256`}
 
 	DefaultConfig = config.CryptoConfig{
@@ -47,7 +46,7 @@ var (
 )
 
 func init() {
-	crypto.Register(Module, CryptoSuite)
+	crypto.Register(Module, &ecdsaSuite{})
 }
 
 var (
