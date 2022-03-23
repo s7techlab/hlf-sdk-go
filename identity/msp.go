@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"go.uber.org/zap"
+
 	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
@@ -50,6 +52,8 @@ type (
 
 		loadCertChain     bool
 		validateCertChain bool
+
+		logger *zap.Logger
 	}
 
 	MspOpt func(opts *MspOpts)
@@ -100,41 +104,72 @@ func NewMSP(mspID string, opts ...MspOpt) (*MSPContent, error) {
 		opt(mspOpts)
 	}
 
+	logger := zap.NewNop()
+	if mspOpts.logger != nil {
+		logger = mspOpts.logger
+	}
+
 	applyDefaultMSPPaths(mspOpts)
+
+	logger.Debug(`load msp`, zap.Reflect(`config`, mspOpts))
 
 	mspContent := &MSPContent{}
 
 	if mspOpts.admincertsPath != `` {
 		mspContent.admins, err = ListFromPath(mspID, mspOpts.admincertsPath, mspOpts.keystorePath)
-		if !os.IsNotExist(err) {
-			return nil, fmt.Errorf(`read admin identity from=%s: %w`, mspOpts.admincertsPath, err)
+		if err != nil {
+			logger.Debug(`load admin identities`, zap.Error(err))
+			if !os.IsNotExist(err) {
+				return nil, fmt.Errorf(`read admin identity from=%s: %w`, mspOpts.admincertsPath, err)
+			}
 		}
+
+		logger.Debug(`admin identities loaded`, zap.Int(`num`, len(mspContent.admins)))
 	}
 
-	for _, userPath := range mspOpts.userPaths {
-		users, err := ListFromPath(mspID, userPath, mspOpts.keystorePath)
-		// usePaths set explicit, so if dir is not exists - error occurred
-		if err != nil {
-			return nil, fmt.Errorf(`read users identity from=%s: %w`, userPath, err)
+	if len(mspOpts.userPaths) > 0 {
+		for _, userPath := range mspOpts.userPaths {
+			users, err := ListFromPath(mspID, userPath, mspOpts.keystorePath)
+			// usePaths set explicit, so if dir is not exists - error occurred
+			if err != nil {
+				return nil, fmt.Errorf(`read users identity from=%s: %w`, userPath, err)
+			}
+
+			mspContent.users = append(mspContent.users, users...)
 		}
 
-		mspContent.users = append(mspContent.users, users...)
+		logger.Debug(`user identities loaded`, zap.Int(`num`, len(mspContent.users)))
 	}
 
 	if mspOpts.signcertsPath != `` {
 		mspContent.signer, err = FirstFromPath(mspID, mspOpts.signcertsPath, mspOpts.keystorePath)
+		if err != nil {
+			return nil, fmt.Errorf(`read signer identity from=%s: %w`, mspOpts.signcertsPath, err)
+		}
 	}
 
 	if mspOpts.loadCertChain {
 		mspContent.caCerts, err = CertificatesFromPath(mspOpts.cacertsPath)
 		if err != nil {
-			return nil, fmt.Errorf(`read cacerts from=%s: %w`, mspOpts.cacertsPath, err)
+			if os.IsNotExist(err) {
+				logger.Debug(`cacerts path not found`, zap.String(`path`, mspOpts.cacertsPath))
+			} else {
+				return nil, fmt.Errorf(`read cacerts from=%s: %w`, mspOpts.cacertsPath, err)
+			}
 		}
+
+		logger.Debug(`CA certs loaded`, zap.Int(`num`, len(mspContent.caCerts)))
 
 		mspContent.intermediateCerts, err = CertificatesFromPath(mspOpts.intermediatecertsPath)
 		if err != nil {
-			return nil, fmt.Errorf(`read intermediatecerts from=%s: %w`, mspOpts.cacertsPath, err)
+			if os.IsNotExist(err) {
+				logger.Debug(`intermediatecerts path not found`, zap.String(`path`, mspOpts.intermediatecertsPath))
+			} else {
+				return nil, fmt.Errorf(`read intermediatecerts from=%s: %w`, mspOpts.cacertsPath, err)
+			}
 		}
+
+		logger.Debug(`intermediate certs loaded`, zap.Int(`num`, len(mspContent.caCerts)))
 	}
 
 	if mspOpts.validateCertChain {
