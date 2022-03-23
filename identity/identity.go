@@ -81,11 +81,15 @@ func (i *identity) GetMSPIdentifier() string {
 	return i.mspId
 }
 
-func (i *identity) GetPEM() []byte {
+func PEMEncode(certRaw []byte) []byte {
 	return pem.EncodeToMemory(&pem.Block{
 		Type:  `CERTIFICATE`,
-		Bytes: i.certificate.Raw,
+		Bytes: certRaw,
 	})
+}
+
+func (i *identity) GetPEM() []byte {
+	return PEMEncode(i.certificate.Raw)
 }
 
 func (i *identity) GetCert() *x509.Certificate {
