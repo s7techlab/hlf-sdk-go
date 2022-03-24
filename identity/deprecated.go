@@ -18,20 +18,31 @@ func NewMSPIdentityBytes(mspId string, certBytes []byte, keyBytes []byte) (api.I
 
 // Deprecated: use FromMSPPath
 func NewMSPIdentityFromPath(mspId string, mspPath string) (api.Identity, error) {
-	return FromMSPPath(mspId, mspPath)
+	return SignerFromMSPPath(mspId, mspPath)
 }
 
 // Deprecated: use New
 func NewMSPIdentityRaw(mspId string, cert *x509.Certificate, privateKey interface{}) (api.Identity, error) {
-	return New(mspId, cert, privateKey)
+	return New(mspId, cert, privateKey), nil
 }
 
-// Deprecated: use CollectionFromMSPPath
-func NewMSPIdentitiesFromPath(mspID string, mspPath string) (*MSP, error) {
-	return CollectionFromMSPPath(mspID, mspPath)
+// Deprecated: use NewMSP to create MSP
+func NewMSPIdentitiesFromPath(mspID string, mspPath string) (*MSPContent, error) {
+	return NewMSP(mspID, WithMSPPath(mspPath))
 }
 
 // Deprecated: use New
 func NewEnrollIdentity(privateKey interface{}) (api.Identity, error) {
 	return &identity{privateKey: privateKey}, nil
+}
+
+// Deprecated: use SignerFromMSPPath to create identity
+// LoadKeyPairFromMSP - legacy method. loads ONLY cert from signcerts dir
+func LoadKeyPairFromMSP(mspPath string) (*x509.Certificate, interface{}, error) {
+	identity, err := SignerFromMSPPath(``, mspPath)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return identity.certificate, identity.privateKey, nil
 }

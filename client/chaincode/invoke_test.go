@@ -20,8 +20,6 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode/txwaiter"
 	sdkinvoker "github.com/s7techlab/hlf-sdk-go/client/invoker"
-	"github.com/s7techlab/hlf-sdk-go/crypto"
-	"github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
 	"github.com/s7techlab/hlf-sdk-go/identity"
 	"github.com/s7techlab/hlf-sdk-go/logger"
 	"github.com/s7techlab/hlf-sdk-go/peer/pool"
@@ -178,25 +176,22 @@ func defaultAlivePeer(_ context.Context, _ api.Peer, alive chan bool) {
 
 func TestInvokeBuilder_Do(t *testing.T) {
 	//get identity
-	org1mspID, err := identity.NewMSPIdentityFromPath(`org1msp`, `./testdata/msp`)
+	org1mspID, err := identity.SignerFromMSPPath(`org1msp`, `./testdata/msp`)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	org2mspID, err := identity.NewMSPIdentityFromPath(`org2msp`, `./testdata/msp`)
+	org2mspID, err := identity.SignerFromMSPPath(`org2msp`, `./testdata/msp`)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	org3mspID, err := identity.NewMSPIdentityFromPath(`org3msp`, `./testdata/msp`)
+	org3mspID, err := identity.SignerFromMSPPath(`org3msp`, `./testdata/msp`)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cryptoSuite, err := crypto.GetSuite(ecdsa.Module, ecdsa.DefaultOpts)
-	if err != nil {
-		t.Fatal(err)
-	}
+	cryptoSuite := client.DefaultCryptoSuite()
 
 	channelConfigPeer1And2 := map[string]deliverChannelRouter{
 		"success-network": {

@@ -119,8 +119,6 @@ func (p *peerPool) Process(ctx context.Context, mspId string, proposal *peer.Sig
 		log.Error(api.ErrNoPeersForMSP.Error(), zap.String(`mspId`, mspId))
 	}
 
-	log.Debug(`Peers pool`, zap.String(`mspId`, mspId), zap.Int(`peerNum`, len(peers)))
-
 	var lastError error
 
 	for pos, poolPeer := range peers {
@@ -129,7 +127,11 @@ func (p *peerPool) Process(ctx context.Context, mspId string, proposal *peer.Sig
 			continue
 		}
 
-		log.Debug(`Endorse sent on peer`, zap.Int(`peerPos`, pos), zap.String(`mspId`, mspId), zap.String(`uri`, poolPeer.peer.Uri()))
+		log.Debug(`Sending endorse to peer...`,
+			zap.String(`mspId`, mspId),
+			zap.String(`uri`, poolPeer.peer.Uri()),
+			zap.Int(`peerPos`, pos),
+			zap.Int(`peers in msp pool`, len(peers)))
 
 		propResp, err := poolPeer.peer.Endorse(ctx, proposal)
 		if err != nil {

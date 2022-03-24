@@ -172,12 +172,12 @@ func NewCore(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 	}
 
 	if core.cs == nil {
-		core.logger.Info("initializing crypto suite")
 
 		if core.config == nil {
 			return nil, api.ErrEmptyConfig
 		}
 		if core.config.Crypto.Type == `` {
+			core.logger.Debug("crypto suite: use default config")
 			core.config.Crypto = ecdsa.DefaultConfig
 		}
 		if core.cs, err = crypto.GetSuite(core.config.Crypto.Type, core.config.Crypto.Options); err != nil {

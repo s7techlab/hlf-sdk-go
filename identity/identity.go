@@ -3,6 +3,7 @@ package identity
 import (
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
 	"io/ioutil"
 	"time"
 
@@ -28,6 +29,47 @@ type (
 	}
 )
 
+func New(mspId string, cert *x509.Certificate, privateKey interface{}) *identity {
+	return &identity{
+		mspId:       mspId,
+		privateKey:  privateKey,
+		certificate: cert,
+		publicKey:   cert.PublicKey,
+	}
+}
+
+func FromBytes(mspId string, certRaw []byte, keyRaw []byte) (*identity, error) {
+	cert, err := Certificate(certRaw)
+	if err != nil {
+		return nil, err
+	}
+
+	key, err := Key(keyRaw)
+	if err != nil {
+		return nil, err
+	}
+
+	return New(mspId, cert, key), nil
+}
+
+func FromCertKeyPath(mspId string, certPath string, keyPath string) (api.Identity, error) {
+	certPEM, err := ioutil.ReadFile(certPath)
+	if err != nil {
+		return nil, fmt.Errorf(`read certificate from file=%s: %w`, certPath, err)
+	}
+
+	keyPEM, err := ioutil.ReadFile(keyPath)
+	if err != nil {
+		return nil, fmt.Errorf(`read key from file=%s: %w`, keyPath, err)
+	}
+
+	return FromBytes(mspId, certPEM, keyPEM)
+}
+
+func SignerFromMSPPath(mspId string, mspPath string) (*identity, error) {
+	return FirstFromPath(mspId, SigncertsPath(mspPath), KeystorePath(mspPath))
+}
+
 func (i *identity) GetSigningIdentity(cs api.CryptoSuite) msp.SigningIdentity {
 	return &signingIdentity{
 		identity:    i,
@@ -37,6 +79,21 @@ func (i *identity) GetSigningIdentity(cs api.CryptoSuite) msp.SigningIdentity {
 
 func (i *identity) GetMSPIdentifier() string {
 	return i.mspId
+}
+
+func PEMEncode(certRaw []byte) []byte {
+	return pem.EncodeToMemory(&pem.Block{
+		Type:  `CERTIFICATE`,
+		Bytes: certRaw,
+	})
+}
+
+func (i *identity) GetPEM() []byte {
+	return PEMEncode(i.certificate.Raw)
+}
+
+func (i *identity) GetCert() *x509.Certificate {
+	return i.certificate
 }
 
 func (i *identity) GetIdentifier() *msp.IdentityIdentifier {
@@ -104,58 +161,4 @@ func (s *signingIdentity) Sign(msg []byte) ([]byte, error) {
 
 func (s *signingIdentity) GetPublicVersion() msp.Identity {
 	return nil
-}
-
-func FromCertKeyPath(mspId string, certPath string, keyPath string) (api.Identity, error) {
-	certPEMBytes, err := ioutil.ReadFile(certPath)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to open certificate`)
-	}
-
-	keyPEMBytes, err := ioutil.ReadFile(keyPath)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to open private key`)
-	}
-
-	return FromBytes(mspId, certPEMBytes, keyPEMBytes)
-}
-
-func FromBytes(mspId string, certBytes []byte, keyBytes []byte) (api.Identity, error) {
-	certPEM, _ := pem.Decode(certBytes)
-	if certPEM == nil {
-		return nil, errors.Wrap(api.ErrInvalidPEMStructure, `failed to decode certificate`)
-	}
-
-	keyPEM, _ := pem.Decode(keyBytes)
-	if keyPEM == nil {
-		return nil, errors.Wrap(api.ErrInvalidPEMStructure, `failed to decode private key`)
-	}
-
-	cert, err := x509.ParseCertificate(certPEM.Bytes)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to parse x509 certificate`)
-	}
-
-	key, err := x509.ParsePKCS8PrivateKey(keyPEM.Bytes)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to parse private key`)
-	}
-
-	return New(mspId, cert, key)
-}
-
-func New(mspId string, cert *x509.Certificate, privateKey interface{}) (api.Identity, error) {
-	return &identity{
-		mspId:       mspId,
-		privateKey:  privateKey,
-		certificate: cert,
-		publicKey:   cert.PublicKey}, nil
-}
-func FromMSPPath(mspId string, mspPath string) (api.Identity, error) {
-	cert, key, err := LoadKeyPairFromMSP(mspPath)
-	if err != nil {
-		return nil, err
-	}
-
-	return New(mspId, cert, key)
 }

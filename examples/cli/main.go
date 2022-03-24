@@ -32,7 +32,7 @@ var (
 )
 
 func main() {
-	id, err := identity.NewMSPIdentityFromPath(*mspId, *mspPath)
+	id, err := identity.SignerFromMSPPath(*mspId, *mspPath)
 
 	if err != nil {
 		log.Fatalln(`Failed to load identity:`, err)

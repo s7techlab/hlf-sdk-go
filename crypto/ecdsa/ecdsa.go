@@ -36,10 +36,6 @@ const (
 	sigSHA512 = `SHA512`
 )
 
-func init() {
-	crypto.Register(Module, &ecdsaSuite{})
-}
-
 var (
 	DefaultOpts = config.CryptoSuiteOpts{`curve`: `P256`, `signatureAlgorithm`: `SHA256`, `hash`: `SHA2-256`}
 
@@ -48,6 +44,10 @@ var (
 		Options: DefaultOpts,
 	}
 )
+
+func init() {
+	crypto.Register(Module, &ecdsaSuite{})
+}
 
 var (
 	// precomputed curves half order values for efficiency
