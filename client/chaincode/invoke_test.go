@@ -20,8 +20,6 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode/txwaiter"
 	sdkinvoker "github.com/s7techlab/hlf-sdk-go/client/invoker"
-	"github.com/s7techlab/hlf-sdk-go/crypto"
-	"github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
 	"github.com/s7techlab/hlf-sdk-go/identity"
 	"github.com/s7techlab/hlf-sdk-go/logger"
 	"github.com/s7techlab/hlf-sdk-go/peer/pool"
@@ -193,10 +191,7 @@ func TestInvokeBuilder_Do(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cryptoSuite, err := crypto.GetSuite(ecdsa.Module, ecdsa.DefaultOpts)
-	if err != nil {
-		t.Fatal(err)
-	}
+	cryptoSuite := client.DefaultCryptoSuite()
 
 	channelConfigPeer1And2 := map[string]deliverChannelRouter{
 		"success-network": {
