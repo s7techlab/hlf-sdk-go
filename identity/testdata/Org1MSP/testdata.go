@@ -13,4 +13,7 @@ var (
 
 	//go:embed cacerts/localhost-7054-ca-org1.pem
 	CACert []byte
+
+	//go:embed config.yaml
+	ConfigYaml []byte
 )

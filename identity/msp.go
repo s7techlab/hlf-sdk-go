@@ -5,10 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	protomsp "github.com/hyperledger/fabric-protos-go/msp"
-	"github.com/hyperledger/fabric/msp"
 	"go.uber.org/zap"
-	"gopkg.in/yaml.v2"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 )
@@ -30,11 +27,6 @@ type (
 		intermediateCerts []*x509.Certificate
 
 		ouConfig *OUConfig
-	}
-
-	OUConfig struct {
-		NodeOUs         *protomsp.FabricNodeOUs
-		UnitIdentifiers []*protomsp.FabricOUIdentifier
 	}
 
 	MSP interface {
@@ -243,78 +235,4 @@ func (m *MSPConfig) AdminOrSigner() api.Identity {
 
 func (m *MSPConfig) OUConfig() *OUConfig {
 	return m.ouConfig
-}
-
-func ReadOUIDConfig(dir string, ouIDConfig *msp.OrganizationalUnitIdentifiersConfiguration) (*protomsp.FabricOUIdentifier, error) {
-	var err error
-
-	ouID := &protomsp.FabricOUIdentifier{
-		OrganizationalUnitIdentifier: ouIDConfig.OrganizationalUnitIdentifier,
-	}
-
-	if ouID.Certificate, err = readOuCertificate(dir, ouIDConfig); err != nil {
-		return nil, err
-	}
-
-	return ouID, err
-}
-
-// ReadNodeOUConfig Load configuration file
-// if the configuration file is there then load it
-// otherwise skip it
-func ReadNodeOUConfig(dir string) (*OUConfig, error) {
-	configRaw, err := readConfig(dir)
-	if os.IsNotExist(err) {
-		return nil, nil
-	}
-
-	var (
-		configuration msp.Configuration
-		ouConfig      OUConfig
-	)
-
-	err = yaml.Unmarshal(configRaw, &configuration)
-	if err != nil {
-		return nil, fmt.Errorf("unmarshalling config.yaml: %w", err)
-	}
-
-	// Prepare OrganizationalUnitIdentifiers
-	for _, ouIDConfig := range configuration.OrganizationalUnitIdentifiers {
-		ouID, ouErr := ReadOUIDConfig(dir, ouIDConfig)
-		if ouErr != nil {
-			return nil, ouErr
-		}
-		ouConfig.UnitIdentifiers = append(ouConfig.UnitIdentifiers, ouID)
-	}
-
-	// Prepare NodeOUs
-	if configuration.NodeOUs != nil && configuration.NodeOUs.Enable {
-		ouConfig.NodeOUs = &protomsp.FabricNodeOUs{
-			Enable: true,
-		}
-
-		if configuration.NodeOUs.ClientOUIdentifier != nil && len(configuration.NodeOUs.ClientOUIdentifier.OrganizationalUnitIdentifier) != 0 {
-			if ouConfig.NodeOUs.ClientOuIdentifier, err = ReadOUIDConfig(dir, configuration.NodeOUs.ClientOUIdentifier); err != nil {
-				return nil, err
-			}
-		}
-
-		if configuration.NodeOUs.PeerOUIdentifier != nil && len(configuration.NodeOUs.PeerOUIdentifier.OrganizationalUnitIdentifier) != 0 {
-			if ouConfig.NodeOUs.PeerOuIdentifier, err = ReadOUIDConfig(dir, configuration.NodeOUs.PeerOUIdentifier); err != nil {
-				return nil, err
-			}
-		}
-		if configuration.NodeOUs.AdminOUIdentifier != nil && len(configuration.NodeOUs.AdminOUIdentifier.OrganizationalUnitIdentifier) != 0 {
-			if ouConfig.NodeOUs.AdminOuIdentifier, err = ReadOUIDConfig(dir, configuration.NodeOUs.AdminOUIdentifier); err != nil {
-				return nil, err
-			}
-		}
-		if configuration.NodeOUs.OrdererOUIdentifier != nil && len(configuration.NodeOUs.OrdererOUIdentifier.OrganizationalUnitIdentifier) != 0 {
-			if ouConfig.NodeOUs.OrdererOuIdentifier, err = ReadOUIDConfig(dir, configuration.NodeOUs.OrdererOUIdentifier); err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	return &ouConfig, nil
 }

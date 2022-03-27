@@ -19,8 +19,13 @@ var _ = Describe(`Cert`, func() {
 
 	Context(`MSP`, func() {
 
-		It(`allow to load correct msp dir with all options`, func() {
-			msp, err := identity.NewMSP(`Org1MSP`,
+		var (
+			msp identity.MSP
+		)
+
+		It(`allow to load msp dir with all options`, func() {
+			var err error
+			msp, err = identity.NewMSP(`Org1MSP`,
 				identity.WithMSPPath(`testdata/Org1MSP`),
 				identity.WithOUConfig(),
 				identity.WithCertChain())
@@ -52,6 +57,13 @@ var _ = Describe(`Cert`, func() {
 			Expect(ouConfig.NodeOUs.AdminOuIdentifier.Certificate).To(Equal(Org1MSP.CACert))
 			Expect(ouConfig.NodeOUs.OrdererOuIdentifier.Certificate).To(Equal(Org1MSP.CACert))
 
+		})
+
+		It(`serialize msp config`, func() {
+			serialzed, err := msp.OUConfig().Serialize(`oucerts`)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(serialzed.Certs).To(HaveLen(4))
 		})
 	})
 })
