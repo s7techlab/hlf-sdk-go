@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
+
+	msp "github.com/hyperledger/fabric/msp"
 )
 
 var (
@@ -30,6 +33,7 @@ const (
 	MSPKeystorePath          = "keystore"
 	MSPSigncertsPath         = "signcerts"
 	MSPUserscertsPath        = "user"
+	MspConfigFile            = "config.yaml"
 )
 
 func AdmincertsPath(mspPath string) string {
@@ -54,6 +58,19 @@ func CacertsPath(mspPath string) string {
 
 func IntermediatecertsPath(mspPath string) string {
 	return filepath.Join(mspPath, MSPIntermediatecertsPath)
+}
+
+func readConfig(dir string) ([]byte, error) {
+	return ioutil.ReadFile(path.Join(dir, MspConfigFile))
+}
+func readOuCertificate(dir string, ouConfig *msp.OrganizationalUnitIdentifiersConfiguration) ([]byte, error) {
+	f := filepath.Join(dir, ouConfig.Certificate)
+	raw, err := ioutil.ReadFile(f)
+	if err != nil {
+		return nil, fmt.Errorf("read OrganizationalUnit=%s certificate fromm file=%s: %w", ouConfig.OrganizationalUnitIdentifier, f, err)
+	}
+
+	return raw, err
 }
 
 func readFirstFile(dir string) ([]byte, error) {
