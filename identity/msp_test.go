@@ -46,6 +46,7 @@ var _ = Describe(`Cert`, func() {
 			Expect(ouConfig.UnitIdentifiers).To(HaveLen(0))
 			Expect(ouConfig.NodeOUs).NotTo(BeNil())
 
+			Expect(ouConfig.NodeOUs.Enable).To(Equal(true))
 			Expect(ouConfig.NodeOUs.ClientOuIdentifier.Certificate).To(Equal(Org1MSP.CACert))
 			Expect(ouConfig.NodeOUs.PeerOuIdentifier.Certificate).To(Equal(Org1MSP.CACert))
 			Expect(ouConfig.NodeOUs.AdminOuIdentifier.Certificate).To(Equal(Org1MSP.CACert))

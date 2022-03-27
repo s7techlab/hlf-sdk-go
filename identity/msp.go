@@ -289,7 +289,9 @@ func ReadNodeOUConfig(dir string) (*OUConfig, error) {
 
 	// Prepare NodeOUs
 	if configuration.NodeOUs != nil && configuration.NodeOUs.Enable {
-		ouConfig.NodeOUs = &protomsp.FabricNodeOUs{}
+		ouConfig.NodeOUs = &protomsp.FabricNodeOUs{
+			Enable: true,
+		}
 
 		if configuration.NodeOUs.ClientOUIdentifier != nil && len(configuration.NodeOUs.ClientOUIdentifier.OrganizationalUnitIdentifier) != 0 {
 			if ouConfig.NodeOUs.ClientOuIdentifier, err = ReadOUIDConfig(dir, configuration.NodeOUs.ClientOUIdentifier); err != nil {
