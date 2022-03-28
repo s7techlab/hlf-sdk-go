@@ -61,15 +61,16 @@ var _ = Describe(`Cert`, func() {
 		})
 
 		It(`serialize msp config`, func() {
-			serialized, err := msp.Serialize()
+			files, err := msp.Serialize()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(serialized.OU).NotTo(BeNil())
-			Expect(serialized.OU.Files).To(HaveLen(5)) // 4 - for each role in config.yaml + config.yaml
+			//  2: admincert + cacert
+			//  4: for each role in config.yaml
+			//  + config.yaml = 7
+			Expect(files).To(HaveLen(7))
 
-			Expect(serialized.Files).To(HaveLen(2)) // admincert + cacert
-			Expect(serialized.Files[`admincerts/cert_0.pem`]).To(Equal(Org1MSP.AdminCert))
-			Expect(serialized.Files[`cacerts/cert_0.pem`]).To(Equal(Org1MSP.CACert))
+			Expect(files[`admincerts/cert_0.pem`]).To(Equal(Org1MSP.AdminCert))
+			Expect(files[`cacerts/cert_0.pem`]).To(Equal(Org1MSP.CACert))
 		})
 
 		It(`allow to create msp from FabricMSPConfig`, func() {

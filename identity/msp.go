@@ -32,12 +32,6 @@ type (
 		ouConfig *OUConfig
 	}
 
-	MSPConfigSerialized struct {
-		// Files (for example admincerts/cert.pem => cert content)
-		Files MSPFiles
-		OU    *OUConfigSerialized
-	}
-
 	MSPFiles map[string][]byte
 
 	MSP interface {
@@ -381,53 +375,57 @@ func (m *MSPConfig) FabricMSPConfig() *msp.FabricMSPConfig {
 	return fabricMSPConfig
 }
 
-func (m *MSPConfig) Serialize() (*MSPConfigSerialized, error) {
+func (m *MSPConfig) Serialize() (MSPFiles, error) {
 	return SerializeMSP(m)
 }
 
-func (mc MSPFiles) Add(path string, cert []byte) {
-	mc[path] = cert
+func (mc MSPFiles) Add(path string, file []byte) {
+	mc[path] = file
+}
+
+func (mc MSPFiles) Merge(files MSPFiles) {
+	for path, file := range files {
+		mc[path] = file
+	}
 }
 
 func SerializedCertName(path string, pos int) string {
 	return fmt.Sprintf(`%s/cert_%d.pem`, path, pos)
 }
 
-func SerializeMSP(mspConfig *MSPConfig) (*MSPConfigSerialized, error) {
-	var err error
-
-	serialized := &MSPConfigSerialized{
-		Files: make(MSPFiles),
-	}
+func SerializeMSP(mspConfig *MSPConfig) (MSPFiles, error) {
+	files := make(MSPFiles)
 
 	fabricMSPConfig := mspConfig.FabricMSPConfig()
 
 	for pos, cert := range fabricMSPConfig.Admins {
-		serialized.Files.Add(SerializedCertName(MSPAdminCertsPath, pos), cert)
+		files.Add(SerializedCertName(MSPAdminCertsPath, pos), cert)
 	}
 
 	for pos, cert := range fabricMSPConfig.RootCerts {
-		serialized.Files.Add(SerializedCertName(MSPCaCertsPath, pos), cert)
+		files.Add(SerializedCertName(MSPCaCertsPath, pos), cert)
 	}
 
 	for pos, cert := range fabricMSPConfig.IntermediateCerts {
-		serialized.Files.Add(SerializedCertName(MSPIntermediateCertsPath, pos), cert)
+		files.Add(SerializedCertName(MSPIntermediateCertsPath, pos), cert)
 	}
 
 	for pos, cert := range fabricMSPConfig.TlsRootCerts {
-		serialized.Files.Add(SerializedCertName(MSPTLSCaCertsPath, pos), cert)
+		files.Add(SerializedCertName(MSPTLSCaCertsPath, pos), cert)
 	}
 
 	for pos, cert := range fabricMSPConfig.TlsIntermediateCerts {
-		serialized.Files.Add(SerializedCertName(MSPTLSIntermediateCertsPath, pos), cert)
+		files.Add(SerializedCertName(MSPTLSIntermediateCertsPath, pos), cert)
 	}
 
 	if mspConfig.ouConfig != nil {
-		serialized.OU, err = mspConfig.ouConfig.Serialize(MSPOuCertsPath)
+		ouFiles, err := mspConfig.ouConfig.Serialize(MSPOuCertsPath)
 		if err != nil {
 			return nil, fmt.Errorf(`ou: %w`, err)
 		}
+
+		files.Merge(ouFiles)
 	}
 
-	return serialized, nil
+	return files, nil
 }
