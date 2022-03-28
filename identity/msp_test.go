@@ -20,18 +20,19 @@ var _ = Describe(`Cert`, func() {
 	Context(`MSP`, func() {
 
 		var (
-			msp identity.MSP
+			msp *identity.MSPConfig
+			err error
 		)
 
 		It(`allow to load msp dir with all options`, func() {
-			var err error
-			msp, err = identity.NewMSP(`Org1MSP`,
-				identity.WithMSPPath(`testdata/Org1MSP`),
+			msp, err = identity.MSPFromPath(Org1MSP.ID, `testdata/Org1MSP`,
 				identity.WithOUConfig(),
 				identity.WithCertChain())
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(msp).NotTo(BeNil())
+
+			Expect(msp.GetMSPIdentifier()).To(Equal(Org1MSP.ID))
 
 			Expect(msp.Admins()).To(HaveLen(1))
 			Expect(msp.Admins()[0].GetPEM()).To(Equal(Org1MSP.AdminCert))
@@ -60,10 +61,21 @@ var _ = Describe(`Cert`, func() {
 		})
 
 		It(`serialize msp config`, func() {
-			serialzed, err := msp.OUConfig().Serialize(`oucerts`)
+			serialized, err := msp.Serialize()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(serialzed.Certs).To(HaveLen(4))
+			Expect(serialized.OU).NotTo(BeNil())
+			Expect(serialized.OU.Certs).To(HaveLen(4)) // 4 - for each role in config.yaml
+
+			Expect(serialized.Certs).To(HaveLen(2)) // admincert + cacert
+			Expect(serialized.Certs[`admincerts/cert_0.pem`]).To(Equal(Org1MSP.AdminCert))
+			Expect(serialized.Certs[`cacerts/cert_0.pem`]).To(Equal(Org1MSP.CACert))
+		})
+
+		It(`allow to create msp from FabricMSPConfig`, func() {
+			msp, err = identity.MSPFromConfig(Org1MSP.FabricMSPConfig())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(msp).NotTo(BeNil())
 		})
 	})
 })

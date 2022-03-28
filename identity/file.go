@@ -27,37 +27,49 @@ var (
 // - (optional) a folder tlsintermediatecerts to include PEM files each corresponding to an intermediate TLS CA’s certificate
 
 const (
-	MSPAdmincertsPath        = "admincerts"
-	MSPCacertsPath           = "cacerts"
-	MSPIntermediatecertsPath = "intermediatecerts"
-	MSPKeystorePath          = "keystore"
-	MSPSigncertsPath         = "signcerts"
-	MSPUserscertsPath        = "user"
-	MspConfigFile            = "config.yaml"
+	MSPAdminCertsPath           = `admincerts`
+	MSPCaCertsPath              = `cacerts`
+	MSPIntermediateCertsPath    = `intermediatecerts`
+	MSPTLSCaCertsPath           = `tlscacerts`
+	MSPTLSIntermediateCertsPath = `tlsintermediatecerts`
+	MSPKeystorePath             = "keystore"
+	MSPSignCertsPath            = "signcerts"
+	MSPUsersCertsPath           = "user"
+
+	MSPOuCertsPath = "ou"
+	MspConfigFile  = "config.yaml"
 )
 
-func AdmincertsPath(mspPath string) string {
-	return filepath.Join(mspPath, MSPAdmincertsPath)
+func AdminCertsPath(mspPath string) string {
+	return filepath.Join(mspPath, MSPAdminCertsPath)
 }
 
 func KeystorePath(mspPath string) string {
 	return filepath.Join(mspPath, MSPKeystorePath)
 }
 
-func SigncertsPath(mspPath string) string {
-	return filepath.Join(mspPath, MSPSigncertsPath)
+func SignCertsPath(mspPath string) string {
+	return filepath.Join(mspPath, MSPSignCertsPath)
 }
 
 func UsercertsPath(mspPath string) string {
-	return filepath.Join(mspPath, MSPUserscertsPath)
+	return filepath.Join(mspPath, MSPUsersCertsPath)
 }
 
-func CacertsPath(mspPath string) string {
-	return filepath.Join(mspPath, MSPCacertsPath)
+func CACertsPath(mspPath string) string {
+	return filepath.Join(mspPath, MSPCaCertsPath)
 }
 
-func IntermediatecertsPath(mspPath string) string {
-	return filepath.Join(mspPath, MSPIntermediatecertsPath)
+func IntermediateCertsPath(mspPath string) string {
+	return filepath.Join(mspPath, MSPIntermediateCertsPath)
+}
+
+func TLSCACertsPath(mspPath string) string {
+	return filepath.Join(mspPath, MSPTLSCaCertsPath)
+}
+
+func TLSIntermediateCertsPath(mspPath string) string {
+	return filepath.Join(mspPath, MSPIntermediateCertsPath)
 }
 
 func readConfig(dir string) ([]byte, error) {
