@@ -65,11 +65,11 @@ var _ = Describe(`Cert`, func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(serialized.OU).NotTo(BeNil())
-			Expect(serialized.OU.Certs).To(HaveLen(4)) // 4 - for each role in config.yaml
+			Expect(serialized.OU.Files).To(HaveLen(5)) // 4 - for each role in config.yaml + config.yaml
 
-			Expect(serialized.Certs).To(HaveLen(2)) // admincert + cacert
-			Expect(serialized.Certs[`admincerts/cert_0.pem`]).To(Equal(Org1MSP.AdminCert))
-			Expect(serialized.Certs[`cacerts/cert_0.pem`]).To(Equal(Org1MSP.CACert))
+			Expect(serialized.Files).To(HaveLen(2)) // admincert + cacert
+			Expect(serialized.Files[`admincerts/cert_0.pem`]).To(Equal(Org1MSP.AdminCert))
+			Expect(serialized.Files[`cacerts/cert_0.pem`]).To(Equal(Org1MSP.CACert))
 		})
 
 		It(`allow to create msp from FabricMSPConfig`, func() {

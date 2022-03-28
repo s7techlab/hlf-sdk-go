@@ -33,12 +33,12 @@ type (
 	}
 
 	MSPConfigSerialized struct {
-		// Certs path to cert file (for example admincerts/cert.pem) => cert content
-		Certs MSPCerts
+		// Files (for example admincerts/cert.pem => cert content)
+		Files MSPFiles
 		OU    *OUConfigSerialized
 	}
 
-	MSPCerts map[string][]byte
+	MSPFiles map[string][]byte
 
 	MSP interface {
 		GetMSPIdentifier() string
@@ -385,7 +385,7 @@ func (m *MSPConfig) Serialize() (*MSPConfigSerialized, error) {
 	return SerializeMSP(m)
 }
 
-func (mc MSPCerts) Add(path string, cert []byte) {
+func (mc MSPFiles) Add(path string, cert []byte) {
 	mc[path] = cert
 }
 
@@ -397,29 +397,29 @@ func SerializeMSP(mspConfig *MSPConfig) (*MSPConfigSerialized, error) {
 	var err error
 
 	serialized := &MSPConfigSerialized{
-		Certs: make(MSPCerts),
+		Files: make(MSPFiles),
 	}
 
 	fabricMSPConfig := mspConfig.FabricMSPConfig()
 
 	for pos, cert := range fabricMSPConfig.Admins {
-		serialized.Certs.Add(SerializedCertName(MSPAdminCertsPath, pos), cert)
+		serialized.Files.Add(SerializedCertName(MSPAdminCertsPath, pos), cert)
 	}
 
 	for pos, cert := range fabricMSPConfig.RootCerts {
-		serialized.Certs.Add(SerializedCertName(MSPCaCertsPath, pos), cert)
+		serialized.Files.Add(SerializedCertName(MSPCaCertsPath, pos), cert)
 	}
 
 	for pos, cert := range fabricMSPConfig.IntermediateCerts {
-		serialized.Certs.Add(SerializedCertName(MSPIntermediateCertsPath, pos), cert)
+		serialized.Files.Add(SerializedCertName(MSPIntermediateCertsPath, pos), cert)
 	}
 
 	for pos, cert := range fabricMSPConfig.TlsRootCerts {
-		serialized.Certs.Add(SerializedCertName(MSPTLSCaCertsPath, pos), cert)
+		serialized.Files.Add(SerializedCertName(MSPTLSCaCertsPath, pos), cert)
 	}
 
 	for pos, cert := range fabricMSPConfig.TlsIntermediateCerts {
-		serialized.Certs.Add(SerializedCertName(MSPTLSIntermediateCertsPath, pos), cert)
+		serialized.Files.Add(SerializedCertName(MSPTLSIntermediateCertsPath, pos), cert)
 	}
 
 	if mspConfig.ouConfig != nil {

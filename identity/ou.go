@@ -16,8 +16,7 @@ type OUConfig struct {
 }
 
 type OUConfigSerialized struct {
-	Config []byte
-	Certs  MSPCerts
+	Files MSPFiles
 }
 
 func ReadOUIDConfig(dir string, ouIDConfig *msp.OrganizationalUnitIdentifiersConfiguration) (*protomsp.FabricOUIdentifier, error) {
@@ -96,10 +95,8 @@ func ReadNodeOUConfig(dir string) (*OUConfig, error) {
 
 func SerializeOU(certPath string, ouConfig *OUConfig) (*OUConfigSerialized, error) {
 
-	var err error
 	serialized := &OUConfigSerialized{
-		Config: nil,
-		Certs:  make(MSPCerts),
+		Files: make(MSPFiles),
 	}
 
 	const (
@@ -123,7 +120,7 @@ func SerializeOU(certPath string, ouConfig *OUConfig) (*OUConfigSerialized, erro
 			}
 
 			if len(nodeOUs.ClientOuIdentifier.Certificate) != 0 {
-				serialized.Certs.Add(clientOUFile, nodeOUs.ClientOuIdentifier.Certificate)
+				serialized.Files.Add(clientOUFile, nodeOUs.ClientOuIdentifier.Certificate)
 				mspConfig.NodeOUs.ClientOUIdentifier.Certificate = path.Join(certPath, clientOUFile)
 			}
 		}
@@ -134,7 +131,7 @@ func SerializeOU(certPath string, ouConfig *OUConfig) (*OUConfigSerialized, erro
 			}
 
 			if len(nodeOUs.PeerOuIdentifier.Certificate) != 0 {
-				serialized.Certs.Add(peerOUFile, nodeOUs.PeerOuIdentifier.Certificate)
+				serialized.Files.Add(peerOUFile, nodeOUs.PeerOuIdentifier.Certificate)
 				mspConfig.NodeOUs.PeerOUIdentifier.Certificate = path.Join(certPath, peerOUFile)
 			}
 		}
@@ -145,7 +142,7 @@ func SerializeOU(certPath string, ouConfig *OUConfig) (*OUConfigSerialized, erro
 			}
 
 			if len(nodeOUs.AdminOuIdentifier.Certificate) != 0 {
-				serialized.Certs.Add(adminOUFile, nodeOUs.AdminOuIdentifier.Certificate)
+				serialized.Files.Add(adminOUFile, nodeOUs.AdminOuIdentifier.Certificate)
 				mspConfig.NodeOUs.AdminOUIdentifier.Certificate = path.Join(certPath, adminOUFile)
 			}
 		}
@@ -156,15 +153,18 @@ func SerializeOU(certPath string, ouConfig *OUConfig) (*OUConfigSerialized, erro
 			}
 
 			if len(nodeOUs.OrdererOuIdentifier.Certificate) != 0 {
-				serialized.Certs.Add(ordererOUFile, nodeOUs.OrdererOuIdentifier.Certificate)
+				serialized.Files.Add(ordererOUFile, nodeOUs.OrdererOuIdentifier.Certificate)
 				mspConfig.NodeOUs.OrdererOUIdentifier.Certificate = path.Join(certPath, ordererOUFile)
 			}
 		}
 	}
 
-	if serialized.Config, err = yaml.Marshal(mspConfig); err != nil {
-		return nil, err
+	config, err := yaml.Marshal(mspConfig)
+	if err != nil {
+		return nil, fmt.Errorf(`marshal config.yaml: %w`, err)
 	}
+
+	serialized.Files.Add(MspConfigFile, config)
 
 	return serialized, nil
 }
