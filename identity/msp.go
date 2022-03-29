@@ -4,6 +4,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"os"
+	"path"
 
 	"github.com/hyperledger/fabric-protos-go/msp"
 	"go.uber.org/zap"
@@ -384,8 +385,14 @@ func (mc MSPFiles) Add(path string, file []byte) {
 }
 
 func (mc MSPFiles) Merge(files MSPFiles) {
-	for path, file := range files {
-		mc[path] = file
+	for filePath, file := range files {
+		mc[filePath] = file
+	}
+}
+
+func (mc MSPFiles) MergeToPath(mergePath string, files MSPFiles) {
+	for filePath, file := range files {
+		mc[path.Join(mergePath, filePath)] = file
 	}
 }
 
