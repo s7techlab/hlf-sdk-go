@@ -74,6 +74,8 @@ var _ = Describe(`Cert`, func() {
 			Expect(files[`ou/peer.pem`]).To(Equal(Org1MSP.CACert))
 			Expect(files[`ou/client.pem`]).To(Equal(Org1MSP.CACert))
 			Expect(files[`ou/orderer.pem`]).To(Equal(Org1MSP.CACert))
+
+			Expect(files).To(HaveKey(`config.yaml`))
 		})
 
 		It(`allow to create msp from FabricMSPConfig`, func() {
