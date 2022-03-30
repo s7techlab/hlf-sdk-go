@@ -239,11 +239,11 @@ func SerializeMSP(fabricMSPConfig *mspproto.FabricMSPConfig) (MSPFiles, error) {
 		files.Add(SerializedCertName(MSPTLSIntermediateCertsPath, pos), cert)
 	}
 
-	const (
-		clientOUFile  = `client.pem`
-		peerOUFile    = `peer.pem`
-		adminOUFile   = `admin.pem`
-		ordererOUFile = `orderer.pem`
+	var (
+		clientOUFile  = path.Join(MSPOuCertsPath, `client.pem`)
+		peerOUFile    = path.Join(MSPOuCertsPath, `peer.pem`)
+		adminOUFile   = path.Join(MSPOuCertsPath, `admin.pem`)
+		ordererOUFile = path.Join(MSPOuCertsPath, `orderer.pem`)
 	)
 
 	if nodeOUs := fabricMSPConfig.FabricNodeOus; nodeOUs != nil && nodeOUs.Enable {
@@ -261,7 +261,7 @@ func SerializeMSP(fabricMSPConfig *mspproto.FabricMSPConfig) (MSPFiles, error) {
 
 			if len(nodeOUs.ClientOuIdentifier.Certificate) != 0 {
 				files.Add(clientOUFile, nodeOUs.ClientOuIdentifier.Certificate)
-				mspConfig.NodeOUs.ClientOUIdentifier.Certificate = path.Join(MSPOuCertsPath, clientOUFile)
+				mspConfig.NodeOUs.ClientOUIdentifier.Certificate = clientOUFile
 			}
 		}
 
@@ -272,7 +272,7 @@ func SerializeMSP(fabricMSPConfig *mspproto.FabricMSPConfig) (MSPFiles, error) {
 
 			if len(nodeOUs.PeerOuIdentifier.Certificate) != 0 {
 				files.Add(peerOUFile, nodeOUs.PeerOuIdentifier.Certificate)
-				mspConfig.NodeOUs.PeerOUIdentifier.Certificate = path.Join(MSPOuCertsPath, peerOUFile)
+				mspConfig.NodeOUs.PeerOUIdentifier.Certificate = peerOUFile
 			}
 		}
 
@@ -283,7 +283,7 @@ func SerializeMSP(fabricMSPConfig *mspproto.FabricMSPConfig) (MSPFiles, error) {
 
 			if len(nodeOUs.AdminOuIdentifier.Certificate) != 0 {
 				files.Add(adminOUFile, nodeOUs.AdminOuIdentifier.Certificate)
-				mspConfig.NodeOUs.AdminOUIdentifier.Certificate = path.Join(MSPOuCertsPath, adminOUFile)
+				mspConfig.NodeOUs.AdminOUIdentifier.Certificate = adminOUFile
 			}
 		}
 
@@ -294,7 +294,7 @@ func SerializeMSP(fabricMSPConfig *mspproto.FabricMSPConfig) (MSPFiles, error) {
 
 			if len(nodeOUs.OrdererOuIdentifier.Certificate) != 0 {
 				files.Add(ordererOUFile, nodeOUs.OrdererOuIdentifier.Certificate)
-				mspConfig.NodeOUs.OrdererOUIdentifier.Certificate = path.Join(MSPOuCertsPath, ordererOUFile)
+				mspConfig.NodeOUs.OrdererOUIdentifier.Certificate = ordererOUFile
 			}
 		}
 
