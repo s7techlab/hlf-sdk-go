@@ -324,6 +324,14 @@ func (m *MSPConfig) IntermediateCerts() []*x509.Certificate {
 	return m.intermediateCerts
 }
 
+func (m *MSPConfig) TLSCACerts() []*x509.Certificate {
+	return m.tlsCACerts
+}
+
+func (m *MSPConfig) TLSIntermediateCerts() []*x509.Certificate {
+	return m.tlsIntermediateCerts
+}
+
 // AdminOrSigner - returns admin identity if exists, in another case return msp.
 // installation, fetching  cc list should happen from admin identity
 // if there is admin identity, use it. in another case - try with msp identity
