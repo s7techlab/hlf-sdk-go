@@ -99,13 +99,13 @@ func SerializeOU(certPath string, ouConfig *OUConfig) (MSPFiles, error) {
 		ordererOUFile = `orderer.pem`
 	)
 
-	mspConfig := &msp.Configuration{
-		NodeOUs: &msp.NodeOUs{
-			Enable: ouConfig.NodeOUs.Enable,
-		},
-	}
+	mspConfig := &msp.Configuration{}
 
 	if nodeOUs := ouConfig.NodeOUs; nodeOUs != nil {
+
+		mspConfig.NodeOUs = &msp.NodeOUs{
+			Enable: nodeOUs.Enable,
+		}
 
 		if nodeOUs.ClientOuIdentifier != nil && nodeOUs.ClientOuIdentifier.OrganizationalUnitIdentifier != `` {
 			mspConfig.NodeOUs.ClientOUIdentifier = &msp.OrganizationalUnitIdentifiersConfiguration{
