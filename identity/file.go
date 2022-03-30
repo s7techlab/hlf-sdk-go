@@ -5,10 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
-
-	msp "github.com/hyperledger/fabric/msp"
 )
 
 var (
@@ -35,9 +32,8 @@ const (
 	MSPKeystorePath             = "keystore"
 	MSPSignCertsPath            = "signcerts"
 	MSPUsersCertsPath           = "user"
-
-	MSPOuCertsPath = "ou"
-	MspConfigFile  = "config.yaml"
+	MSPOuCertsPath              = "ou"
+	MspConfigFile               = "config.yaml"
 )
 
 func AdminCertsPath(mspPath string) string {
@@ -50,39 +46,6 @@ func KeystorePath(mspPath string) string {
 
 func SignCertsPath(mspPath string) string {
 	return filepath.Join(mspPath, MSPSignCertsPath)
-}
-
-func UsercertsPath(mspPath string) string {
-	return filepath.Join(mspPath, MSPUsersCertsPath)
-}
-
-func CACertsPath(mspPath string) string {
-	return filepath.Join(mspPath, MSPCaCertsPath)
-}
-
-func IntermediateCertsPath(mspPath string) string {
-	return filepath.Join(mspPath, MSPIntermediateCertsPath)
-}
-
-func TLSCACertsPath(mspPath string) string {
-	return filepath.Join(mspPath, MSPTLSCaCertsPath)
-}
-
-func TLSIntermediateCertsPath(mspPath string) string {
-	return filepath.Join(mspPath, MSPIntermediateCertsPath)
-}
-
-func readConfig(dir string) ([]byte, error) {
-	return ioutil.ReadFile(path.Join(dir, MspConfigFile))
-}
-func readOuCertificate(dir string, ouConfig *msp.OrganizationalUnitIdentifiersConfiguration) ([]byte, error) {
-	f := filepath.Join(dir, ouConfig.Certificate)
-	raw, err := ioutil.ReadFile(f)
-	if err != nil {
-		return nil, fmt.Errorf("read OrganizationalUnit=%s certificate fromm file=%s: %w", ouConfig.OrganizationalUnitIdentifier, f, err)
-	}
-
-	return raw, err
 }
 
 func readFirstFile(dir string) ([]byte, error) {
