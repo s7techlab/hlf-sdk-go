@@ -105,6 +105,19 @@ var _ = Describe(`Cert`, func() {
 				Expect(msp.Signer().GetPEM()).To(Equal(Org1MSPPeer.SignCert))
 			})
 
+			It(`allow to load peer msp and admin msp from one dir (with admincerts subdir)`, func() {
+				msp, err := identity.MSPFromPath(Org1MSPPeer.ID, `testdata/Org1MSPPeerAndAdmin`)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(msp).NotTo(BeNil())
+
+				Expect(msp.Admins()).To(HaveLen(1))
+				Expect(msp.Admins()[0].GetPEM()).To(Equal(Org1MSPAdmin.SignCert))
+
+				Expect(msp.Signer()).NotTo(BeNil())
+				Expect(msp.Signer().GetPEM()).To(Equal(Org1MSPPeer.SignCert))
+			})
+
 		})
 
 	})
