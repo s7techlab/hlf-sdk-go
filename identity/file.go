@@ -24,36 +24,28 @@ var (
 // - (optional) a folder tlsintermediatecerts to include PEM files each corresponding to an intermediate TLS CA’s certificate
 
 const (
-	MSPAdmincertsPath        = "admincerts"
-	MSPCacertsPath           = "cacerts"
-	MSPIntermediatecertsPath = "intermediatecerts"
-	MSPKeystorePath          = "keystore"
-	MSPSigncertsPath         = "signcerts"
-	MSPUserscertsPath        = "user"
+	MSPAdminCertsPath           = `admincerts`
+	MSPCaCertsPath              = `cacerts`
+	MSPIntermediateCertsPath    = `intermediatecerts`
+	MSPTLSCaCertsPath           = `tlscacerts`
+	MSPTLSIntermediateCertsPath = `tlsintermediatecerts`
+	MSPKeystorePath             = "keystore"
+	MSPSignCertsPath            = "signcerts"
+	MSPUsersCertsPath           = "user"
+	MSPOuCertsPath              = "ou"
+	MspConfigFile               = "config.yaml"
 )
 
-func AdmincertsPath(mspPath string) string {
-	return filepath.Join(mspPath, MSPAdmincertsPath)
+func AdminCertsPath(mspPath string) string {
+	return filepath.Join(mspPath, MSPAdminCertsPath)
 }
 
 func KeystorePath(mspPath string) string {
 	return filepath.Join(mspPath, MSPKeystorePath)
 }
 
-func SigncertsPath(mspPath string) string {
-	return filepath.Join(mspPath, MSPSigncertsPath)
-}
-
-func UsercertsPath(mspPath string) string {
-	return filepath.Join(mspPath, MSPUserscertsPath)
-}
-
-func CacertsPath(mspPath string) string {
-	return filepath.Join(mspPath, MSPCacertsPath)
-}
-
-func IntermediatecertsPath(mspPath string) string {
-	return filepath.Join(mspPath, MSPIntermediatecertsPath)
+func SignCertsPath(mspPath string) string {
+	return filepath.Join(mspPath, MSPSignCertsPath)
 }
 
 func readFirstFile(dir string) ([]byte, error) {

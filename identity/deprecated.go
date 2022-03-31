@@ -26,9 +26,9 @@ func NewMSPIdentityRaw(mspId string, cert *x509.Certificate, privateKey interfac
 	return New(mspId, cert, privateKey), nil
 }
 
-// Deprecated: use NewMSP to create MSP
-func NewMSPIdentitiesFromPath(mspID string, mspPath string) (*MSPContent, error) {
-	return NewMSP(mspID, WithMSPPath(mspPath))
+// Deprecated: use MSPFromPath to create MSP
+func NewMSPIdentitiesFromPath(mspID string, mspPath string) (*MSPConfig, error) {
+	return MSPFromPath(mspID, mspPath)
 }
 
 // Deprecated: use New

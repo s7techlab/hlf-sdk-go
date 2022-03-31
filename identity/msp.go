@@ -1,11 +1,15 @@
 package identity
 
 import (
-	"crypto/x509"
 	"fmt"
 	"os"
+	"path"
 
+	"github.com/golang/protobuf/proto"
+	mspproto "github.com/hyperledger/fabric-protos-go/msp"
+	"github.com/hyperledger/fabric/msp"
 	"go.uber.org/zap"
+	"gopkg.in/yaml.v2"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 )
@@ -14,8 +18,7 @@ import (
 // Should be used instead of single `api.Identity` which contains ONLY msp identity
 
 type (
-	MSPContent struct {
-		id string
+	MSPConfig struct {
 		// identity from 'signcerts'
 		signer api.Identity
 		// identities from 'admincerts'
@@ -23,83 +26,89 @@ type (
 		// identities from 'users'
 		users []api.Identity
 
-		caCerts           []*x509.Certificate
-		intermediateCerts []*x509.Certificate
+		mspConfig *mspproto.FabricMSPConfig
 	}
+
+	MSPFiles map[string][]byte
 
 	MSP interface {
 		GetMSPIdentifier() string
+		MSPConfig() *mspproto.FabricMSPConfig
+
 		Signer() api.Identity
 		Admins() []api.Identity
 		Users() []api.Identity
-		CACerts() []*x509.Certificate
-		IntermediateCerts() []*x509.Certificate
-
 		AdminOrSigner() api.Identity
 	}
 
-	MspOpts struct {
-		mspPath        string
-		admincertsPath string
-		signcertsPath  string
-		keystorePath   string
+	MSPOpts struct {
+		mspPath string
 
-		loadUsers bool
+		signCertsPath  string
+		keystorePath   string
+		adminCertsPath string
+		adminMSPPath   string
+
 		userPaths []string
 
-		cacertsPath           string
-		intermediatecertsPath string
-
-		loadCertChain     bool
 		validateCertChain bool
-
-		logger *zap.Logger
+		logger            *zap.Logger
 	}
 
-	MspOpt func(opts *MspOpts)
+	MSPOpt func(opts *MSPOpts)
 )
 
-func WithMSPPath(path string) MspOpt {
-	return func(opts *MspOpts) {
-		opts.mspPath = path
-	}
-}
+func applyDefaultMSPPaths(mspOpts *MSPOpts) {
 
-func WithCertChain() MspOpt {
-	return func(opts *MspOpts) {
-		opts.loadCertChain = true
-	}
-}
-
-func applyDefaultMSPPaths(mspOpts *MspOpts) {
-	if mspOpts.admincertsPath == `` {
-		mspOpts.admincertsPath = AdmincertsPath(mspOpts.mspPath)
+	if mspOpts.adminCertsPath == `` {
+		mspOpts.adminCertsPath = AdminCertsPath(mspOpts.mspPath)
 	}
 
-	if mspOpts.signcertsPath == `` {
-		mspOpts.signcertsPath = SigncertsPath(mspOpts.mspPath)
+	if mspOpts.signCertsPath == `` {
+		mspOpts.signCertsPath = SignCertsPath(mspOpts.mspPath)
 	}
 
 	if mspOpts.keystorePath == `` {
 		mspOpts.keystorePath = KeystorePath(mspOpts.mspPath)
 	}
+}
 
-	if len(mspOpts.userPaths) == 0 && mspOpts.loadUsers {
-		mspOpts.userPaths = []string{UsercertsPath(mspOpts.mspPath)}
+func FabricMSPConfigFromPath(mspID, mspDir string) (*mspproto.FabricMSPConfig, error) {
+	serializedConfig, err := msp.GetLocalMspConfig(mspDir, nil, mspID)
+	if err != nil {
+		return nil, fmt.Errorf(`get local msp config from path=%s: %w`, mspDir, err)
 	}
 
-	if mspOpts.cacertsPath == `` {
-		mspOpts.cacertsPath = CacertsPath(mspOpts.mspPath)
-	}
+	// double marshal/unmarshal
+	mspConfig := &mspproto.FabricMSPConfig{}
+	err = proto.Unmarshal(serializedConfig.Config, mspConfig)
 
-	if mspOpts.intermediatecertsPath == `` {
-		mspOpts.intermediatecertsPath = IntermediatecertsPath(mspOpts.mspPath)
+	return mspConfig, err
+}
+
+// MSPFromConfig created  msp config from msp.FabricMSPConfig
+func MSPFromConfig(fabricMspConfig *mspproto.FabricMSPConfig) (*MSPConfig, error) {
+	mspConfig := &MSPConfig{
+		admins:    nil,
+		signer:    nil, // no signer when creating from FabricMSPConfig
+		users:     nil,
+		mspConfig: fabricMspConfig,
+	}
+	return mspConfig, nil
+}
+
+func WithAdminMSPPath(adminMSPPath string) MSPOpt {
+	return func(mspOpts *MSPOpts) {
+		mspOpts.adminMSPPath = adminMSPPath
 	}
 }
 
-func NewMSP(mspID string, opts ...MspOpt) (*MSPContent, error) {
+// MSPFromPath loads msp config from filesystem
+func MSPFromPath(mspID, mspPath string, opts ...MSPOpt) (*MSPConfig, error) {
 	var err error
-	mspOpts := &MspOpts{}
+	mspOpts := &MSPOpts{
+		mspPath: mspPath,
+	}
 	for _, opt := range opts {
 		opt(mspOpts)
 	}
@@ -113,19 +122,29 @@ func NewMSP(mspID string, opts ...MspOpt) (*MSPContent, error) {
 
 	logger.Debug(`load msp`, zap.Reflect(`config`, mspOpts))
 
-	mspContent := &MSPContent{}
+	mspConfig := &MSPConfig{}
 
-	if mspOpts.admincertsPath != `` {
-		mspContent.admins, err = ListFromPath(mspID, mspOpts.admincertsPath, mspOpts.keystorePath)
+	// admin in separate msp path
+	if mspOpts.adminMSPPath != `` {
+		logger.Debug(`load admin identities from separate msp path`,
+			zap.String(`admin msp path`, mspOpts.adminMSPPath),
+			zap.String(`keystore path`, KeystorePath(mspOpts.adminMSPPath)))
+
+		mspConfig.admins, err = ListFromPath(mspID, SignCertsPath(mspOpts.adminMSPPath), KeystorePath(mspOpts.adminMSPPath))
+
 		if err != nil {
-			logger.Debug(`load admin identities`, zap.Error(err))
-			if !os.IsNotExist(err) {
-				return nil, fmt.Errorf(`read admin identity from=%s: %w`, mspOpts.admincertsPath, err)
-			}
+			return nil, fmt.Errorf(`read admin identity from=%s: %w`, mspOpts.adminMSPPath, err)
 		}
-
-		logger.Debug(`admin identities loaded`, zap.Int(`num`, len(mspContent.admins)))
+	} else if mspOpts.adminCertsPath != `` {
+		mspConfig.admins, err = ListFromPath(mspID, mspOpts.adminCertsPath, mspOpts.keystorePath)
 	}
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return nil, fmt.Errorf(`read admin identity from=%s: %w`, mspOpts.adminCertsPath, err)
+		}
+	}
+
+	logger.Debug(`admin identities loaded`, zap.Int(`num`, len(mspConfig.admins)))
 
 	if len(mspOpts.userPaths) > 0 {
 		for _, userPath := range mspOpts.userPaths {
@@ -135,80 +154,174 @@ func NewMSP(mspID string, opts ...MspOpt) (*MSPContent, error) {
 				return nil, fmt.Errorf(`read users identity from=%s: %w`, userPath, err)
 			}
 
-			mspContent.users = append(mspContent.users, users...)
+			mspConfig.users = append(mspConfig.users, users...)
 		}
 
-		logger.Debug(`user identities loaded`, zap.Int(`num`, len(mspContent.users)))
+		logger.Debug(`user identities loaded`, zap.Int(`num`, len(mspConfig.users)))
 	}
 
-	if mspOpts.signcertsPath != `` {
-		mspContent.signer, err = FirstFromPath(mspID, mspOpts.signcertsPath, mspOpts.keystorePath)
+	if mspOpts.signCertsPath != `` {
+		mspConfig.signer, err = FirstFromPath(mspID, mspOpts.signCertsPath, mspOpts.keystorePath)
 		if err != nil {
-			return nil, fmt.Errorf(`read signer identity from=%s: %w`, mspOpts.signcertsPath, err)
+			return nil, fmt.Errorf(`read signer identity from=%s: %w`, mspOpts.signCertsPath, err)
 		}
 	}
 
-	if mspOpts.loadCertChain {
-		mspContent.caCerts, err = CertificatesFromPath(mspOpts.cacertsPath)
-		if err != nil {
-			if os.IsNotExist(err) {
-				logger.Debug(`cacerts path not found`, zap.String(`path`, mspOpts.cacertsPath))
-			} else {
-				return nil, fmt.Errorf(`read cacerts from=%s: %w`, mspOpts.cacertsPath, err)
-			}
-		}
-
-		logger.Debug(`CA certs loaded`, zap.Int(`num`, len(mspContent.caCerts)))
-
-		mspContent.intermediateCerts, err = CertificatesFromPath(mspOpts.intermediatecertsPath)
-		if err != nil {
-			if os.IsNotExist(err) {
-				logger.Debug(`intermediatecerts path not found`, zap.String(`path`, mspOpts.intermediatecertsPath))
-			} else {
-				return nil, fmt.Errorf(`read intermediatecerts from=%s: %w`, mspOpts.cacertsPath, err)
-			}
-		}
-
-		logger.Debug(`intermediate certs loaded`, zap.Int(`num`, len(mspContent.caCerts)))
+	if mspConfig.mspConfig, err = FabricMSPConfigFromPath(mspID, mspOpts.mspPath); err != nil {
+		return nil, err
 	}
 
 	if mspOpts.validateCertChain {
 		// todo: validate
 	}
-	return mspContent, nil
+
+	return mspConfig, nil
 }
 
-func (m *MSPContent) GetMSPIdentifier() string {
-	return m.id
+func (m *MSPConfig) GetMSPIdentifier() string {
+	return m.mspConfig.GetName()
 }
 
-func (m *MSPContent) Signer() api.Identity {
+func (m *MSPConfig) Signer() api.Identity {
 	return m.signer
 }
 
-func (m *MSPContent) Admins() []api.Identity {
+func (m *MSPConfig) Admins() []api.Identity {
 	return m.admins
 }
 
-func (m *MSPContent) Users() []api.Identity {
+func (m *MSPConfig) Users() []api.Identity {
 	return m.users
-}
-
-func (m *MSPContent) CACerts() []*x509.Certificate {
-	return m.caCerts
-}
-
-func (m *MSPContent) IntermediateCerts() []*x509.Certificate {
-	return m.intermediateCerts
 }
 
 // AdminOrSigner - returns admin identity if exists, in another case return msp.
 // installation, fetching  cc list should happen from admin identity
 // if there is admin identity, use it. in another case - try with msp identity
-func (m *MSPContent) AdminOrSigner() api.Identity {
+func (m *MSPConfig) AdminOrSigner() api.Identity {
 	if len(m.admins) != 0 {
 		return m.admins[0]
 	}
 
 	return m.signer
+}
+
+func (m *MSPConfig) MSPConfig() *mspproto.FabricMSPConfig {
+	return m.mspConfig
+}
+
+func (m *MSPConfig) Serialize() (MSPFiles, error) {
+	return SerializeMSP(m.mspConfig)
+}
+
+func (mc MSPFiles) Add(path string, file []byte) {
+	mc[path] = file
+}
+
+func (mc MSPFiles) Merge(files MSPFiles) {
+	for filePath, file := range files {
+		mc[filePath] = file
+	}
+}
+
+func (mc MSPFiles) MergeToPath(mergePath string, files MSPFiles) {
+	for filePath, file := range files {
+		mc[path.Join(mergePath, filePath)] = file
+	}
+}
+
+func SerializedCertName(path string, pos int) string {
+	return fmt.Sprintf(`%s/cert_%d.pem`, path, pos)
+}
+
+func SerializeMSP(fabricMSPConfig *mspproto.FabricMSPConfig) (MSPFiles, error) {
+	files := make(MSPFiles)
+
+	for pos, cert := range fabricMSPConfig.Admins {
+		files.Add(SerializedCertName(MSPAdminCertsPath, pos), cert)
+	}
+
+	for pos, cert := range fabricMSPConfig.RootCerts {
+		files.Add(SerializedCertName(MSPCaCertsPath, pos), cert)
+	}
+
+	for pos, cert := range fabricMSPConfig.IntermediateCerts {
+		files.Add(SerializedCertName(MSPIntermediateCertsPath, pos), cert)
+	}
+
+	for pos, cert := range fabricMSPConfig.TlsRootCerts {
+		files.Add(SerializedCertName(MSPTLSCaCertsPath, pos), cert)
+	}
+
+	for pos, cert := range fabricMSPConfig.TlsIntermediateCerts {
+		files.Add(SerializedCertName(MSPTLSIntermediateCertsPath, pos), cert)
+	}
+
+	var (
+		clientOUFile  = path.Join(MSPOuCertsPath, `client.pem`)
+		peerOUFile    = path.Join(MSPOuCertsPath, `peer.pem`)
+		adminOUFile   = path.Join(MSPOuCertsPath, `admin.pem`)
+		ordererOUFile = path.Join(MSPOuCertsPath, `orderer.pem`)
+	)
+
+	if nodeOUs := fabricMSPConfig.FabricNodeOus; nodeOUs != nil && nodeOUs.Enable {
+
+		mspConfig := &msp.Configuration{}
+
+		mspConfig.NodeOUs = &msp.NodeOUs{
+			Enable: nodeOUs.Enable,
+		}
+
+		if nodeOUs.ClientOuIdentifier != nil && nodeOUs.ClientOuIdentifier.OrganizationalUnitIdentifier != `` {
+			mspConfig.NodeOUs.ClientOUIdentifier = &msp.OrganizationalUnitIdentifiersConfiguration{
+				OrganizationalUnitIdentifier: nodeOUs.ClientOuIdentifier.OrganizationalUnitIdentifier,
+			}
+
+			if len(nodeOUs.ClientOuIdentifier.Certificate) != 0 {
+				files.Add(clientOUFile, nodeOUs.ClientOuIdentifier.Certificate)
+				mspConfig.NodeOUs.ClientOUIdentifier.Certificate = clientOUFile
+			}
+		}
+
+		if nodeOUs.PeerOuIdentifier != nil && nodeOUs.PeerOuIdentifier.OrganizationalUnitIdentifier != `` {
+			mspConfig.NodeOUs.PeerOUIdentifier = &msp.OrganizationalUnitIdentifiersConfiguration{
+				OrganizationalUnitIdentifier: nodeOUs.PeerOuIdentifier.OrganizationalUnitIdentifier,
+			}
+
+			if len(nodeOUs.PeerOuIdentifier.Certificate) != 0 {
+				files.Add(peerOUFile, nodeOUs.PeerOuIdentifier.Certificate)
+				mspConfig.NodeOUs.PeerOUIdentifier.Certificate = peerOUFile
+			}
+		}
+
+		if nodeOUs.AdminOuIdentifier != nil && nodeOUs.AdminOuIdentifier.OrganizationalUnitIdentifier != `` {
+			mspConfig.NodeOUs.AdminOUIdentifier = &msp.OrganizationalUnitIdentifiersConfiguration{
+				OrganizationalUnitIdentifier: nodeOUs.AdminOuIdentifier.OrganizationalUnitIdentifier,
+			}
+
+			if len(nodeOUs.AdminOuIdentifier.Certificate) != 0 {
+				files.Add(adminOUFile, nodeOUs.AdminOuIdentifier.Certificate)
+				mspConfig.NodeOUs.AdminOUIdentifier.Certificate = adminOUFile
+			}
+		}
+
+		if nodeOUs.OrdererOuIdentifier != nil && nodeOUs.OrdererOuIdentifier.OrganizationalUnitIdentifier != `` {
+			mspConfig.NodeOUs.OrdererOUIdentifier = &msp.OrganizationalUnitIdentifiersConfiguration{
+				OrganizationalUnitIdentifier: nodeOUs.OrdererOuIdentifier.OrganizationalUnitIdentifier,
+			}
+
+			if len(nodeOUs.OrdererOuIdentifier.Certificate) != 0 {
+				files.Add(ordererOUFile, nodeOUs.OrdererOuIdentifier.Certificate)
+				mspConfig.NodeOUs.OrdererOUIdentifier.Certificate = ordererOUFile
+			}
+		}
+
+		config, err := yaml.Marshal(mspConfig)
+		if err != nil {
+			return nil, fmt.Errorf(`marshal config.yaml: %w`, err)
+		}
+
+		files.Add(MspConfigFile, config)
+	}
+
+	return files, nil
 }

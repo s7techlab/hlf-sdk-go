@@ -38,15 +38,24 @@ func New(mspId string, cert *x509.Certificate, privateKey interface{}) *identity
 	}
 }
 
+func FromBytesWithoutSigning(mspId string, certRaw []byte) (*identity, error) {
+	cert, err := Certificate(certRaw)
+	if err != nil {
+		return nil, fmt.Errorf(`certificate: %w`, err)
+	}
+
+	return New(mspId, cert, nil), nil
+}
+
 func FromBytes(mspId string, certRaw []byte, keyRaw []byte) (*identity, error) {
 	cert, err := Certificate(certRaw)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf(`certificate: %w`, err)
 	}
 
 	key, err := Key(keyRaw)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf(`key: %w`, err)
 	}
 
 	return New(mspId, cert, key), nil
@@ -67,7 +76,7 @@ func FromCertKeyPath(mspId string, certPath string, keyPath string) (api.Identit
 }
 
 func SignerFromMSPPath(mspId string, mspPath string) (*identity, error) {
-	return FirstFromPath(mspId, SigncertsPath(mspPath), KeystorePath(mspPath))
+	return FirstFromPath(mspId, SignCertsPath(mspPath), KeystorePath(mspPath))
 }
 
 func (i *identity) GetSigningIdentity(cs api.CryptoSuite) msp.SigningIdentity {

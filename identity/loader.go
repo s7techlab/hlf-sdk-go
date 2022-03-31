@@ -138,5 +138,5 @@ func KeyForCert(certRaw []byte, keyDir string) (interface{}, error) {
 		return Key(keyRaw)
 	}
 
-	return nil, ErrKeyNotFound
+	return nil, fmt.Errorf(`key dir = %s, files: %d: %w`, keyDir, len(files), ErrKeyNotFound)
 }
