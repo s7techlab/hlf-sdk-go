@@ -1,4 +1,4 @@
-package Org1MSP
+package Org1MSPPeer
 
 import (
 	_ "embed"
@@ -9,8 +9,8 @@ import (
 var (
 	ID = `Org1MSP`
 
-	//go:embed admincerts/cert.pem
-	AdminCert []byte
+	////go:embed admincerts/cert.pem
+	//AdminCert []byte
 
 	//go:embed cacerts/localhost-7054-ca-org1.pem
 	CACert []byte
@@ -24,10 +24,10 @@ var (
 
 func FabricMSPConfig() *mspproto.FabricMSPConfig {
 	return &mspproto.FabricMSPConfig{
-		Name:                          ID,
-		RootCerts:                     [][]byte{CACert},
-		IntermediateCerts:             [][]byte{},
-		Admins:                        [][]byte{AdminCert},
+		Name:              ID,
+		RootCerts:         [][]byte{CACert},
+		IntermediateCerts: [][]byte{},
+		//Admins:                        [][]byte{AdminCert},
 		RevocationList:                nil,
 		SigningIdentity:               nil,
 		OrganizationalUnitIdentifiers: nil,

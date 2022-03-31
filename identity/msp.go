@@ -41,12 +41,13 @@ type (
 		AdminOrSigner() api.Identity
 	}
 
-	MspOpts struct {
+	MSPOpts struct {
 		mspPath string
 
-		adminCertsPath string
 		signCertsPath  string
 		keystorePath   string
+		adminCertsPath string
+		adminMSPPath   string
 
 		userPaths []string
 
@@ -54,10 +55,10 @@ type (
 		logger            *zap.Logger
 	}
 
-	MspOpt func(opts *MspOpts)
+	MSPOpt func(opts *MSPOpts)
 )
 
-func applyDefaultMSPPaths(mspOpts *MspOpts) {
+func applyDefaultMSPPaths(mspOpts *MSPOpts) {
 
 	if mspOpts.adminCertsPath == `` {
 		mspOpts.adminCertsPath = AdminCertsPath(mspOpts.mspPath)
@@ -96,10 +97,16 @@ func MSPFromConfig(fabricMspConfig *mspproto.FabricMSPConfig) (*MSPConfig, error
 	return mspConfig, nil
 }
 
+func WithAdminMSPPath(adminMSPPath string) MSPOpt {
+	return func(mspOpts *MSPOpts) {
+		mspOpts.adminMSPPath = adminMSPPath
+	}
+}
+
 // MSPFromPath loads msp config from filesystem
-func MSPFromPath(mspID, mspPath string, opts ...MspOpt) (*MSPConfig, error) {
+func MSPFromPath(mspID, mspPath string, opts ...MSPOpt) (*MSPConfig, error) {
 	var err error
-	mspOpts := &MspOpts{
+	mspOpts := &MSPOpts{
 		mspPath: mspPath,
 	}
 	for _, opt := range opts {
@@ -117,17 +124,27 @@ func MSPFromPath(mspID, mspPath string, opts ...MspOpt) (*MSPConfig, error) {
 
 	mspConfig := &MSPConfig{}
 
-	if mspOpts.adminCertsPath != `` {
-		mspConfig.admins, err = ListFromPath(mspID, mspOpts.adminCertsPath, mspOpts.keystorePath)
-		if err != nil {
-			logger.Debug(`load admin identities`, zap.Error(err))
-			if !os.IsNotExist(err) {
-				return nil, fmt.Errorf(`read admin identity from=%s: %w`, mspOpts.adminCertsPath, err)
-			}
-		}
+	// admin in separate msp path
+	if mspOpts.adminMSPPath != `` {
+		logger.Debug(`load admin identities from separate msp path`,
+			zap.String(`admin msp path`, mspOpts.adminMSPPath),
+			zap.String(`keystore path`, KeystorePath(mspOpts.adminMSPPath)))
 
-		logger.Debug(`admin identities loaded`, zap.Int(`num`, len(mspConfig.admins)))
+		mspConfig.admins, err = ListFromPath(mspID, SignCertsPath(mspOpts.adminMSPPath), KeystorePath(mspOpts.adminMSPPath))
+
+		if err != nil {
+			return nil, fmt.Errorf(`read admin identity from=%s: %w`, mspOpts.adminMSPPath, err)
+		}
+	} else if mspOpts.adminCertsPath != `` {
+		mspConfig.admins, err = ListFromPath(mspID, mspOpts.adminCertsPath, mspOpts.keystorePath)
 	}
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return nil, fmt.Errorf(`read admin identity from=%s: %w`, mspOpts.adminCertsPath, err)
+		}
+	}
+
+	logger.Debug(`admin identities loaded`, zap.Int(`num`, len(mspConfig.admins)))
 
 	if len(mspOpts.userPaths) > 0 {
 		for _, userPath := range mspOpts.userPaths {
