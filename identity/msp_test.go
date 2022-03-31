@@ -6,10 +6,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/s7techlab/hlf-sdk-go/identity"
 	"github.com/s7techlab/hlf-sdk-go/identity/testdata/Org1MSPAdmin"
 	"github.com/s7techlab/hlf-sdk-go/identity/testdata/Org1MSPPeer"
-
-	"github.com/s7techlab/hlf-sdk-go/identity"
 )
 
 func TestIdentity(t *testing.T) {
