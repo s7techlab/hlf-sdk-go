@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 
-	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
 )
@@ -105,20 +104,6 @@ type ChaincodeQueryBuilder interface {
 	AsProposalResponse(ctx context.Context) (*peer.ProposalResponse, error)
 	// Do makes query with built arguments
 	Do(ctx context.Context) (*peer.Response, error)
-}
-
-// QSCC describes Query System Chaincode (QSCC)
-type QSCC interface {
-	// GetChainInfo allows getting common info about channel blockchain
-	GetChainInfo(ctx context.Context, channelName string) (*common.BlockchainInfo, error)
-	// GetBlockByNumber allows getting block by number
-	GetBlockByNumber(ctx context.Context, channelName string, blockNumber int64) (*common.Block, error)
-	// GetBlockByHash allows getting block by hash
-	GetBlockByHash(ctx context.Context, channelName string, blockHash []byte) (*common.Block, error)
-	// GetTransactionByID allows getting transaction by id
-	GetTransactionByID(ctx context.Context, channelName string, tx ChaincodeTx) (*peer.ProcessedTransaction, error)
-	// GetBlockByTxID allows getting block by transaction
-	GetBlockByTxID(ctx context.Context, channelName string, tx ChaincodeTx) (*common.Block, error)
 }
 
 type CCFetcher interface {

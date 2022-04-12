@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
 )
 
 type SeekOptConverter struct {
@@ -19,7 +20,7 @@ type SeekOptConverter struct {
 func NewSeekOptConverter(c *core) *SeekOptConverter {
 	return &SeekOptConverter{
 		GetChannelHeight: func(ctx context.Context, channel string) (uint64, error) {
-			channelInfo, err := c.System().QSCC().GetChainInfo(ctx, channel)
+			channelInfo, err := c.System().QSCC().GetChainInfo(ctx, &system.GetChainInfoRequest{ChannelName: channel})
 			if err != nil {
 				return 0, err
 			}
