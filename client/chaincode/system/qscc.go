@@ -23,14 +23,14 @@ type QSCCService struct {
 	Querier api.Querier
 }
 
-func NewQSCCService(querier api.Querier) *QSCCService {
+func QSCC(querier api.Querier) *QSCCService {
 	return &QSCCService{
 		Querier: querier,
 	}
 }
 
-func (q *QSCCService) ServiceDef() api.ServiceDef {
-	return api.NewServiceDef(
+func (q *QSCCService) ServiceDef() ServiceDef {
+	return NewServiceDef(
 		_QSCCService_serviceDesc.ServiceName,
 		QSCCServiceSwagger,
 		&_QSCCService_serviceDesc,

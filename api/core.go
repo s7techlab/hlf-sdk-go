@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"github.com/hyperledger/fabric/msp"
-
-	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
 )
 
 type Channel interface {
@@ -46,7 +44,6 @@ const (
 // SystemCC describes interface to access Fabric System Chaincodes
 type SystemCC interface {
 	CSCC() CSCC
-	QSCC() *system.QSCCService
 	LSCC() LSCC
 	Lifecycle() Lifecycle
 }

@@ -92,7 +92,7 @@ func (c *core) CurrentMspPeers() []api.Peer {
 }
 
 func (c *core) Channel(name string) api.Channel {
-	log := c.logger.Named(`Channel`).With(zap.String(`channel`, name))
+	log := c.logger.Named(`channel`).With(zap.String(`channel`, name))
 	c.channelMx.Lock()
 	defer c.channelMx.Unlock()
 
