@@ -73,7 +73,12 @@ func (so *SeekOptConverter) ByBlockRange(ctx context.Context, channel string, bl
 			so.Logger.Debug(`get channel info for calculate negative block from`,
 				zap.Uint64(`channel_height`, height))
 
-			seekFrom = api.SeekSpecified(uint64(int64(height) + blockRangeFrom))
+			from := int64(height) + blockRangeFrom
+			if from < 0 {
+				seekFrom = api.SeekFromOldest
+			} else {
+				seekFrom = api.SeekSpecified(uint64(from))
+			}
 		}
 
 	default:
@@ -104,7 +109,12 @@ func (so *SeekOptConverter) ByBlockRange(ctx context.Context, channel string, bl
 			so.Logger.Debug(`get channel info for calculate negative block to`,
 				zap.Uint64(`channel_height`, height))
 
-			seekTo = api.SeekSpecified(uint64(int64(height) + blockRangeTo))
+			to := int64(height) + blockRangeTo
+			if to < 0 {
+				to = 0
+			}
+
+			seekTo = api.SeekSpecified(uint64(to))
 		}
 
 	default:
