@@ -3,6 +3,7 @@ package util
 import (
 	"bytes"
 	"context"
+	"fmt"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
@@ -11,6 +12,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/client/tx"
+	proto2 "github.com/s7techlab/hlf-sdk-go/proto"
 )
 
 var (
@@ -49,19 +52,19 @@ func ProceedChannelUpdate(
 		return errors.Wrap(err, `failed to marshal common.ConfigUpdate`)
 	}
 
-	txId, nonce, err := NewTxWithNonce(ids[0])
+	serialized, err := ids[0].Serialize()
 	if err != nil {
-		return errors.Wrap(err, `failed to get nonce`)
+		return fmt.Errorf(`serialize identity: %w`, err)
 	}
 
-	signatureHeader, err := NewSignatureHeader(ids[0], nonce)
+	txParams, err := tx.GenerateParamsForSerializedIdentity(serialized)
 	if err != nil {
-		return errors.Wrap(err, `failed to get signature header`)
+		return errors.Wrap(err, `tx id`)
 	}
 
 	signatures := make([]*common.ConfigSignature, len(ids))
 	for i := range ids {
-		signatures[i], err = signConfig(ids[i], confUpdBytes, nonce)
+		signatures[i], err = signConfig(ids[i], confUpdBytes, txParams.Nonce)
 		if err != nil {
 			return errors.Wrap(err, `failed to sign config update`)
 		}
@@ -77,12 +80,12 @@ func ProceedChannelUpdate(
 		return errors.Wrap(err, `failed to marshal common.ConfigUpdateEnvelope`)
 	}
 
-	channelHeader, err := NewChannelHeader(common.HeaderType_CONFIG_UPDATE, txId, channelName, 0, nil)
+	channelHeader, err := proto2.NewCommonHeader(common.HeaderType_CONFIG_UPDATE, txParams.ID, txParams.Nonce, txParams.Timestamp, serialized, channelName, ``)
 	if err != nil {
 		return errors.Wrap(err, `failed to get channel header`)
 	}
 
-	payload, err := NewPayloadFromHeader(channelHeader, signatureHeader, confUpdEnvBytes)
+	payload, err := proto2.NewMarshalledCommonPayload(channelHeader, confUpdEnvBytes)
 	if err != nil {
 		return errors.Wrap(err, `failed to get payload`)
 	}
@@ -104,7 +107,12 @@ func ProceedChannelUpdate(
 }
 
 func signConfig(id msp.SigningIdentity, configUpdateBytes, nonce []byte) (*common.ConfigSignature, error) {
-	signatureHeader, err := NewSignatureHeader(id, nonce)
+
+	serialized, err := id.Serialize()
+	if err != nil {
+		return nil, err
+	}
+	signatureHeader, err := proto2.NewMarshalledSignatureHeader(serialized, nonce)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to get signature header`)
 	}
