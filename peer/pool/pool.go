@@ -41,6 +41,16 @@ func (p *peerPool) GetPeers() map[string][]api.Peer {
 	return m
 }
 
+func (p *peerPool) GetMSPPeers(mspID string) []api.Peer {
+	var peers []api.Peer
+	if mspPeers, ok := p.store[mspID]; ok {
+		for _, mspPeer := range mspPeers {
+			peers = append(peers, mspPeer.peer)
+		}
+	}
+	return peers
+}
+
 func (p *peerPool) Add(mspId string, peer api.Peer, peerChecker api.PeerPoolCheckStrategy) error {
 	log := p.log.Named(`Add`).With(zap.String(`mspId`, mspId))
 	log.Debug(`add peer`, zap.String(`peerUri`, peer.Uri()))

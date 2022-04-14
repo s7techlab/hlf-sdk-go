@@ -10,6 +10,8 @@ import (
 	"github.com/hyperledger/fabric-protos-go/orderer"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"google.golang.org/grpc/codes"
+
+	"github.com/s7techlab/hlf-sdk-go/proto"
 )
 
 var (
@@ -17,7 +19,7 @@ var (
 		Type: &orderer.SeekPosition_Oldest{Oldest: &orderer.SeekOldest{}}}
 	SeekFromNewest = &orderer.SeekPosition{
 		Type: &orderer.SeekPosition_Newest{Newest: &orderer.SeekNewest{}}}
-	SeekToMax = SeekSpecified(math.MaxUint64)
+	SeekToMax = proto.NewSeekSpecified(math.MaxUint64)
 )
 
 type DeliverClient interface {
@@ -53,21 +55,16 @@ func SeekSingle(num uint64) EventCCSeekOption {
 	}
 }
 
-// SeekSpecified returns orderer.SeekPosition_Specified position
-func SeekSpecified(number uint64) *orderer.SeekPosition {
-	return &orderer.SeekPosition{Type: &orderer.SeekPosition_Specified{Specified: &orderer.SeekSpecified{Number: number}}}
-}
-
 // SeekRange sets offset from one block to another by their numbers
 func SeekRange(start, end uint64) EventCCSeekOption {
 	var seekFrom *orderer.SeekPosition
 	if start == 0 {
 		seekFrom = SeekFromOldest
 	} else {
-		seekFrom = SeekSpecified(start)
+		seekFrom = proto.NewSeekSpecified(start)
 	}
 	return func() (*orderer.SeekPosition, *orderer.SeekPosition) {
-		return seekFrom, SeekSpecified(end)
+		return seekFrom, proto.NewSeekSpecified(end)
 	}
 }
 

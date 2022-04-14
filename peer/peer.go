@@ -14,12 +14,13 @@ import (
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/client/tx"
 	"github.com/s7techlab/hlf-sdk-go/peer/deliver"
 	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
 type peer struct {
-	log     *zap.Logger
+	logger  *zap.Logger
 	conn    *grpc.ClientConn
 	timeout time.Duration
 	client  fabricPeer.EndorserClient
@@ -29,12 +30,48 @@ var (
 	defaultTimeout = 5 * time.Second
 )
 
-func (p *peer) Endorse(ctx context.Context, proposal *fabricPeer.SignedProposal, opts ...api.PeerEndorseOpt) (*fabricPeer.ProposalResponse, error) {
+func (p *peer) Query(
+	ctx context.Context,
+	channel string,
+	chaincode string,
+	args [][]byte,
+	signer msp.SigningIdentity,
+	transientMap map[string][]byte) (*fabricPeer.Response, error) {
+
+	p.logger.Debug(`endorser query`,
+		zap.String(`channel`, channel),
+		zap.String(`chaincode`, chaincode),
+		zap.String(`args[0] (fn)`, string(args[0])))
+
+	proposal, _, err := tx.Endorsement{
+		Channel:      channel,
+		Chaincode:    chaincode,
+		Args:         args,
+		Signer:       signer,
+		TransientMap: transientMap,
+	}.SignedProposal()
+
+	fmt.Println(proposal)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := p.Endorse(ctx, proposal)
+	if err != nil {
+		return nil, err
+	}
+
+	return response.Response, nil
+}
+
+func (p *peer) Endorse(ctx context.Context, proposal *fabricPeer.SignedProposal) (*fabricPeer.ProposalResponse, error) {
 	if _, ok := ctx.Deadline(); !ok {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, p.timeout)
 		defer cancel()
 	}
+
+	p.logger.Debug(`endorse`, zap.String(`uri`, p.Uri()))
 
 	resp, err := p.client.ProcessProposal(ctx, proposal)
 	if err != nil {
@@ -103,12 +140,15 @@ func New(c config.ConnectionConfig, log *zap.Logger) (api.Peer, error) {
 }
 
 // NewFromGRPC allows initializing peer from existing GRPC connection
-func NewFromGRPC(conn *grpc.ClientConn, log *zap.Logger, timeout time.Duration) (api.Peer, error) {
-	l := log.Named(`NewFromGRPC`)
-	p := &peer{conn: conn, log: log.Named(`peer`), timeout: timeout}
+func NewFromGRPC(conn *grpc.ClientConn, logger *zap.Logger, timeout time.Duration) (api.Peer, error) {
+	p := &peer{
+		conn:    conn,
+		logger:  logger.Named(`peer`),
+		timeout: timeout,
+	}
+
 	if err := p.initEndorserClient(); err != nil {
-		l.Error(`Failed to initialize endorser client`, zap.Error(err))
-		return nil, errors.Wrap(err, `failed to initialize EndorserClient`)
+		return nil, fmt.Errorf(`initialize endorser: %w`, err)
 	}
 	return p, nil
 }

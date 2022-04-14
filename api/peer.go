@@ -9,10 +9,17 @@ import (
 	"google.golang.org/grpc"
 )
 
+type Endorser interface {
+	// Endorse sends proposal to endorsing peer and returns its result
+	Endorse(ctx context.Context, proposal *peer.SignedProposal) (*peer.ProposalResponse, error)
+}
+
 // Peer is common interface for endorsing peer
 type Peer interface {
-	// Endorse sends proposal to endorsing peer and returns its result
-	Endorse(ctx context.Context, proposal *peer.SignedProposal, opts ...PeerEndorseOpt) (*peer.ProposalResponse, error)
+	Querier
+
+	Endorser
+
 	// DeliverClient returns DeliverClient
 	DeliverClient(identity msp.SigningIdentity) (DeliverClient, error)
 	// Uri returns url used for grpc connection
@@ -40,17 +47,4 @@ type PeerEndorseError struct {
 
 func (e PeerEndorseError) Error() string {
 	return fmt.Sprintf("failed to endorse: %s (code: %d)", e.Message, e.Status)
-}
-
-type PeerEndorseOpts struct {
-	Context context.Context
-}
-
-type PeerEndorseOpt func(opts *PeerEndorseOpts) error
-
-func WithContext(ctx context.Context) PeerEndorseOpt {
-	return func(opts *PeerEndorseOpts) error {
-		opts.Context = ctx
-		return nil
-	}
 }

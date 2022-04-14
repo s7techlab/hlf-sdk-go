@@ -186,7 +186,7 @@ func NewGRPCConnectionFromConfigs(ctx context.Context, log *zap.Logger, conf ...
 
 	conn, err := grpc.DialContext(ctxConn, fmt.Sprintf("%s:///%s", r.Scheme(), dnsResolverName), opts...)
 	if err != nil {
-		return nil, errors.Wrap(err, `failed to initialize GRPC connection`)
+		return nil, errors.Wrap(err, `grpc dial`)
 	}
 
 	return conn, nil
