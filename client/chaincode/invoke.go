@@ -115,7 +115,7 @@ func (b *invokeBuilder) Do(ctx context.Context, options ...api.DoOption) (*fabri
 		return nil, tx, fmt.Errorf("send proposal: %w", err)
 	}
 
-	envelope, err := getTransaction(proposal, peerResponses, doOpts.Identity)
+	envelope, err := CreateEnvelope(proposal, peerResponses, doOpts.Identity)
 	if err != nil {
 		return nil, tx, fmt.Errorf("create signed transaction: %w", err)
 	}
@@ -132,7 +132,7 @@ func (b *invokeBuilder) Do(ctx context.Context, options ...api.DoOption) (*fabri
 	return peerResponses[0].Response, tx, nil
 }
 
-func getTransaction(
+func CreateEnvelope(
 	proposal *fabricPeer.SignedProposal, peerResponses []*fabricPeer.ProposalResponse, identity msp.SigningIdentity) (
 	*common.Envelope, error) {
 
