@@ -40,6 +40,12 @@ func TestSeek(t *testing.T) {
 		{blockRange: []int64{-2, -1}, want: api.SeekRange(channelHeight-2, channelHeight-1)},
 		// -2 blocks back from channel height to block 4
 		{blockRange: []int64{-2, 4}, want: api.SeekRange(channelHeight-2, 4)},
+		// from first block if offset greater than channel height
+		{blockRange: []int64{-10, 4}, want: api.SeekRange(0, 4)},
+		// from first block to -2 block from channel height
+		{blockRange: []int64{-10, -2}, want: api.SeekRange(0, 3)},
+		// from first block to block 7
+		{blockRange: []int64{-10, 7}, want: api.SeekRange(0, 7)},
 	}
 
 	logger, _ := zap.NewDevelopment()
