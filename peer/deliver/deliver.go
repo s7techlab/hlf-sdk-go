@@ -2,6 +2,7 @@ package deliver
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"math"
 	"sync"
@@ -13,8 +14,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/client/tx"
 	"github.com/s7techlab/hlf-sdk-go/peer/deliver/subs"
-	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
 func New(deliverCli peer.DeliverClient, identity msp.SigningIdentity) *deliverImpl {
@@ -157,9 +158,9 @@ func (d *deliverImpl) handleSubscription(ctx context.Context, channel string, bl
 		startPos, stopPos = api.SeekNewest()()
 	}
 
-	seek, err := util.SeekEnvelope(channel, startPos, stopPos, d.identity)
+	seekEnvelope, err := tx.NewSeekBlockEnvelope(channel, d.identity, startPos, stopPos)
 	if err != nil {
-		return nil, errors.Wrap(err, `failed to get seek envelope`)
+		return nil, fmt.Errorf(`seek envelope: %w`, err)
 	}
 
 	subCtx, stopSub := context.WithCancel(ctx)
@@ -170,7 +171,7 @@ func (d *deliverImpl) handleSubscription(ctx context.Context, channel string, bl
 		return nil, errors.Wrap(err, `failed to open deliver stream`)
 	}
 
-	err = stream.Send(seek)
+	err = stream.Send(seekEnvelope)
 	if err != nil {
 		stopSub()
 		return nil, errors.Wrap(err, `failed to send seek envelope to stream`)

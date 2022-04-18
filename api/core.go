@@ -44,7 +44,6 @@ const (
 // SystemCC describes interface to access Fabric System Chaincodes
 type SystemCC interface {
 	CSCC() CSCC
-	QSCC() QSCC
 	LSCC() LSCC
 	Lifecycle() Lifecycle
 }

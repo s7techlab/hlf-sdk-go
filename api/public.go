@@ -37,11 +37,22 @@ type BlocksDeliverer interface {
 		blockRange ...int64,
 	) (blockChan <-chan *common.Block, closer func() error, err error)
 }
-type Public interface {
-	EventsDeliverer
-	BlocksDeliverer
 
-	// Invoke - shortcut for invoking chanincodes
+type Querier interface {
+	// Query - shortcut for querying chanincodes
+	// if provided 'identity' is 'nil' default one will be set
+	Query(
+		ctx context.Context,
+		chanName string,
+		ccName string,
+		args [][]byte,
+		identity msp.SigningIdentity,
+		transient map[string][]byte,
+	) (*peer.Response, error)
+}
+
+type Invoker interface {
+	// Invoke - shortcut for invoking chaincodes
 	// if provided 'identity' is 'nil' default one will be set
 	// txWaiterType - param which identify transaction waiting policy.
 	// available: 'self'(wait for one peer of endorser org), 'all'(wait for each organization from endorsement policy)
@@ -55,15 +66,12 @@ type Public interface {
 		transient map[string][]byte,
 		txWaiterType string,
 	) (res *peer.Response, chaincodeTx string, err error)
+}
 
-	// Query - shortcut for querying chanincodes
-	// if provided 'identity' is 'nil' default one will be set
-	Query(
-		ctx context.Context,
-		chanName string,
-		ccName string,
-		args [][]byte,
-		identity msp.SigningIdentity,
-		transient map[string][]byte,
-	) (*peer.Response, error)
+type Public interface {
+	EventsDeliverer
+	BlocksDeliverer
+
+	Querier
+	Invoker
 }

@@ -9,13 +9,14 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/client/tx"
 )
 
 // GetConfigBlockFromOrderer returns config block from orderer by channel name
-func GetConfigBlockFromOrderer(ctx context.Context, id msp.SigningIdentity, orderer api.Orderer, channelName string) (*common.Block, error) {
+func GetConfigBlockFromOrderer(ctx context.Context, signer msp.SigningIdentity, orderer api.Orderer, channelName string) (*common.Block, error) {
 	startPos, endPos := api.SeekNewest()()
 
-	seekEnvelope, err := SeekEnvelope(channelName, startPos, endPos, id)
+	seekEnvelope, err := tx.NewSeekBlockEnvelope(channelName, signer, startPos, endPos)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to create seek envelope`)
 	}
@@ -32,7 +33,7 @@ func GetConfigBlockFromOrderer(ctx context.Context, id msp.SigningIdentity, orde
 
 	startPos, endPos = api.SeekSingle(blockId)()
 
-	seekEnvelope, err = SeekEnvelope(channelName, startPos, endPos, id)
+	seekEnvelope, err = tx.NewSeekBlockEnvelope(channelName, signer, startPos, endPos)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to create seek envelope`)
 	}

@@ -7,29 +7,17 @@ import (
 	"log"
 
 	"github.com/s7techlab/hlf-sdk-go/client"
+	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
 	_ "github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
 	"github.com/s7techlab/hlf-sdk-go/identity"
 )
 
 func main() {
-	// mspId := os.Getenv(`MSP_ID`)
-	// if mspId == `` {
-	// 	log.Fatalln(`MSP_ID env must be defined`)
-	// }
 
-	// configPath := os.Getenv(`CONFIG_PATH`)
-	// if configPath == `` {
-	// 	log.Fatalln(`CONFIG_PATH env must be defined`)
-	// }
-
-	// identityPath := os.Getenv(`IDENTITY_PATH`)
-	// if identityPath == `` {
-	// 	log.Fatalln(`KEY_PATH env must be defined`)
-	// }
 	mspId := "Org1MSP"
 	configPath := "./cfg.yaml"
 
-	id, err := identity.NewMSPIdentity(
+	id, err := identity.FromCertKeyPath(
 		mspId,
 		// PROVIDE YOUR OWN PATHS
 		"../../../../github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/cert.pem",
@@ -51,7 +39,8 @@ func main() {
 	for _, ch := range chInfo.Channels {
 		fmt.Printf("Fetching info about channel: %s\n", ch.ChannelId)
 		// get blockchain info about channel
-		blockchainInfo, err := core.System().QSCC().GetChainInfo(ctx, ch.ChannelId)
+
+		blockchainInfo, err := system.QSCC(core).GetChainInfo(ctx, &system.GetChainInfoRequest{ChannelName: ch.ChannelId})
 		if err != nil {
 			fmt.Println(`Failed to fetch info about channel:`, err)
 			continue

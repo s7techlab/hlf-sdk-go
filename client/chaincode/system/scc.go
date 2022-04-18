@@ -4,22 +4,11 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
-const (
-	csccName      = `cscc`
-	qsccName      = `qscc`
-	lsccName      = `lscc`
-	lifecycleName = `_lifecycle`
-)
-
 type scc struct {
 	core api.Core
 }
 
 var _ api.SystemCC = (*scc)(nil)
-
-func (c *scc) QSCC() api.QSCC {
-	return NewQSCC(c.core.PeerPool(), c.core.CurrentIdentity())
-}
 
 func (c *scc) CSCC() api.CSCC {
 	if c.core.FabricV2() {

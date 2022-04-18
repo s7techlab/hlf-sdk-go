@@ -3,72 +3,11 @@ package util
 import (
 	"fmt"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
-	"github.com/hyperledger/fabric-protos-go/orderer"
 	"github.com/hyperledger/fabric-protos-go/peer"
-	"github.com/hyperledger/fabric/common/util"
-	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
-
-	"github.com/s7techlab/hlf-sdk-go/crypto"
 )
-
-func SeekEnvelope(channelName string, startPos *orderer.SeekPosition, stopPos *orderer.SeekPosition, identity msp.SigningIdentity) (*common.Envelope, error) {
-	creator, err := identity.Serialize()
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to get creator`)
-	}
-
-	channelHeader, err := proto.Marshal(&common.ChannelHeader{
-		Type:      int32(common.HeaderType_DELIVER_SEEK_INFO),
-		Version:   0,
-		Timestamp: util.CreateUtcTimestamp(),
-		ChannelId: channelName,
-		Epoch:     0,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to marshal channel header`)
-	}
-
-	nonce, err := crypto.RandomBytes(24)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to get nonce`)
-	}
-
-	signatureHeader, err := proto.Marshal(&common.SignatureHeader{
-		Creator: creator,
-		Nonce:   nonce,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to marshal signature header`)
-	}
-
-	seekData, err := proto.Marshal(&orderer.SeekInfo{
-		Start:    startPos,
-		Stop:     stopPos,
-		Behavior: orderer.SeekInfo_BLOCK_UNTIL_READY,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to marshal seek info`)
-	}
-
-	payload, err := proto.Marshal(&common.Payload{
-		Header: &common.Header{ChannelHeader: channelHeader, SignatureHeader: signatureHeader},
-		Data:   seekData,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to marshal payload`)
-	}
-
-	payloadSignature, err := identity.Sign(payload)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to sign payload`)
-	}
-
-	return &common.Envelope{Payload: payload, Signature: payloadSignature}, nil
-}
 
 type ErrUnsupportedTxType struct {
 	Type string

@@ -229,7 +229,7 @@ func (l *lifecycleNoDiscovery) QueryChaincodeDefinitions(ctx context.Context, ch
 
 func (l *lifecycleNoDiscovery) endorse(ctx context.Context, channel string, fn string, args ...[]byte) ([]byte, error) {
 	processor := peerSDK.NewProcessor(channel)
-	prop, _, err := processor.CreateProposal(lifecycleName, l.signingIdentity, fn, args, nil)
+	prop, _, err := processor.CreateProposal(LifecycleName, l.signingIdentity, fn, args, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create proposal: %w", err)
 	}
@@ -244,7 +244,7 @@ func (l *lifecycleNoDiscovery) endorse(ctx context.Context, channel string, fn s
 /* lifecycleWithDiscovery */
 
 func (l *lifecycleWithDiscovery) ApproveChaincodeDefinitionForMyOrg(ctx context.Context, channel string, args *lb.ApproveChaincodeDefinitionForMyOrgArgs) error {
-	cc, err := l.core.Channel(channel).Chaincode(ctx, lifecycleName)
+	cc, err := l.core.Channel(channel).Chaincode(ctx, LifecycleName)
 	if err != nil {
 		return err
 	}
@@ -264,7 +264,7 @@ func (l *lifecycleWithDiscovery) ApproveChaincodeDefinitionForMyOrg(ctx context.
 	return nil
 }
 func (l *lifecycleWithDiscovery) CommitChaincodeDefinition(ctx context.Context, channel string, args *lb.CommitChaincodeDefinitionArgs) (*lb.CommitChaincodeDefinitionResult, error) {
-	cc, err := l.core.Channel(channel).Chaincode(ctx, lifecycleName)
+	cc, err := l.core.Channel(channel).Chaincode(ctx, LifecycleName)
 	if err != nil {
 		return nil, err
 	}

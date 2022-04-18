@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	ErrNoPeersForMSP = Error(`no peers for presented MSP`)
+	ErrNoPeersForMSP = Error(`no peers for MSP`)
 	ErrMSPNotFound   = Error(`MSP not found`)
 	ErrPeerNotReady  = Error(`peer not ready`)
 )
@@ -26,6 +26,7 @@ func (e ErrNoReadyPeers) Error() string {
 
 type PeerPool interface {
 	GetPeers() map[string][]Peer
+	GetMSPPeers(mspID string) []Peer
 	Add(mspId string, peer Peer, strategy PeerPoolCheckStrategy) error
 	Process(ctx context.Context, mspId string, proposal *peer.SignedProposal) (*peer.ProposalResponse, error)
 	DeliverClient(mspId string, identity msp.SigningIdentity) (DeliverClient, error)

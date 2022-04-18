@@ -2,98 +2,110 @@ package system
 
 import (
 	"context"
+	_ "embed"
+	"fmt"
+	"reflect"
 	"strconv"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
-	"github.com/hyperledger/fabric/common/util"
-	qsccPkg "github.com/hyperledger/fabric/core/scc/qscc"
-	"github.com/hyperledger/fabric/msp"
-	"github.com/pkg/errors"
+	qscccore "github.com/hyperledger/fabric/core/scc/qscc"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
-	peerSDK "github.com/s7techlab/hlf-sdk-go/peer"
 )
 
-type qscc struct {
-	peerPool  api.PeerPool
-	identity  msp.SigningIdentity
-	processor api.PeerProcessor
+//go:embed qscc.swagger.json
+var QSCCServiceSwagger []byte
+
+type QSCCService struct {
+	UnimplementedQSCCServiceServer
+	Querier api.Querier
 }
 
-func (c *qscc) GetChainInfo(ctx context.Context, channelName string) (*common.BlockchainInfo, error) {
-	if infoBytes, err := c.endorse(ctx, qsccPkg.GetChainInfo, channelName); err != nil {
-		return nil, errors.Wrap(err, `failed to get chainInfo`)
-	} else {
-		chainInfo := new(common.BlockchainInfo)
-		if err = proto.Unmarshal(infoBytes, chainInfo); err != nil {
-			return nil, errors.Wrap(err, `failed to unmarshal protobuf`)
-		}
-		return chainInfo, nil
+func QSCC(querier api.Querier) *QSCCService {
+	return &QSCCService{
+		Querier: querier,
 	}
 }
 
-func (c *qscc) GetBlockByNumber(ctx context.Context, channelName string, blockNumber int64) (*common.Block, error) {
-	if blockBytes, err := c.endorse(ctx, qsccPkg.GetBlockByNumber, strconv.FormatInt(blockNumber, 10)); err != nil {
-		return nil, errors.Wrap(err, `failed to get block`)
-	} else {
-		block := new(common.Block)
-		if err = proto.Unmarshal(blockBytes, block); err != nil {
-			return nil, errors.Wrap(err, `failed to unmarshal protobuf`)
-		}
-		return block, nil
-	}
+func (q *QSCCService) ServiceDef() ServiceDef {
+	return NewServiceDef(
+		_QSCCService_serviceDesc.ServiceName,
+		QSCCServiceSwagger,
+		&_QSCCService_serviceDesc,
+		q,
+		RegisterQSCCServiceHandlerFromEndpoint,
+	)
 }
 
-func (c *qscc) GetBlockByHash(ctx context.Context, channelName string, blockHash []byte) (*common.Block, error) {
-	if blockBytes, err := c.endorse(ctx, qsccPkg.GetBlockByHash, string(blockHash)); err != nil {
-		return nil, errors.Wrap(err, `failed to get block`)
-	} else {
-		block := new(common.Block)
-		if err = proto.Unmarshal(blockBytes, block); err != nil {
-			return nil, errors.Wrap(err, `failed to unmarshal protobuf`)
-		}
-		return block, nil
+func (q *QSCCService) query(ctx context.Context, args []string, target proto.Message) (proto.Message, error) {
+	var queryArgs [][]byte
+	for _, arg := range args {
+		queryArgs = append(queryArgs, []byte(arg))
 	}
-}
 
-func (c *qscc) GetTransactionByID(ctx context.Context, channelName string, tx api.ChaincodeTx) (*peer.ProcessedTransaction, error) {
-	if txBytes, err := c.endorse(ctx, qsccPkg.GetTransactionByID, string(tx)); err != nil {
-		return nil, errors.Wrap(err, `failed to get transaction`)
-	} else {
-		transaction := new(peer.ProcessedTransaction)
-		if err = proto.Unmarshal(txBytes, transaction); err != nil {
-			return nil, errors.Wrap(err, `failed to unmarshal protobuf`)
-		}
-		return transaction, nil
-	}
-}
+	res, err := q.Querier.Query(
+		ctx, ``, QSCCName, queryArgs, nil, nil)
 
-func (c *qscc) GetBlockByTxID(ctx context.Context, channelName string, tx api.ChaincodeTx) (*common.Block, error) {
-	if blockBytes, err := c.endorse(ctx, qsccPkg.GetBlockByTxID, channelName, string(tx)); err != nil {
-		return nil, errors.Wrap(err, `failed to get block`)
-	} else {
-		block := new(common.Block)
-		if err = proto.Unmarshal(blockBytes, block); err != nil {
-			return nil, errors.Wrap(err, `failed to unmarshal protobuf`)
-		}
-		return block, nil
-	}
-}
-func (c *qscc) endorse(ctx context.Context, fn string, args ...string) ([]byte, error) {
-	prop, _, err := c.processor.CreateProposal(qsccName, c.identity, fn, util.ToChaincodeArgs(args...), nil)
 	if err != nil {
-		return nil, errors.Wrap(err, `failed to create proposal`)
+		return nil, fmt.Errorf(`query QSCC: %w`, err)
 	}
 
-	resp, err := c.peerPool.Process(ctx, c.identity.GetMSPIdentifier(), prop)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to endorse proposal`)
+	if err = proto.Unmarshal(res.Payload, target); err != nil {
+		return nil, fmt.Errorf(`unmarshal result to %s: %w`, reflect.TypeOf(target), err)
 	}
-	return resp.Response.Payload, nil
+
+	return target, nil
 }
 
-func NewQSCC(peerPool api.PeerPool, identity msp.SigningIdentity) api.QSCC {
-	return &qscc{peerPool: peerPool, identity: identity, processor: peerSDK.NewProcessor(``)}
+func (q *QSCCService) GetChainInfo(ctx context.Context, request *GetChainInfoRequest) (*common.BlockchainInfo, error) {
+	res, err := q.query(ctx,
+		[]string{qscccore.GetChainInfo, request.ChannelName},
+		&common.BlockchainInfo{})
+	if err != nil {
+		return nil, err
+	}
+
+	return res.(*common.BlockchainInfo), nil
+}
+
+func (q *QSCCService) GetBlockByNumber(ctx context.Context, request *GetBlockByNumberRequest) (*common.Block, error) {
+	res, err := q.query(ctx,
+		[]string{qscccore.GetBlockByNumber, request.ChannelName, strconv.FormatInt(request.BlockNumber, 10)},
+		&common.Block{})
+	if err != nil {
+		return nil, err
+	}
+	return res.(*common.Block), nil
+}
+
+func (q *QSCCService) GetBlockByHash(ctx context.Context, request *GetBlockByHashRequest) (*common.Block, error) {
+	res, err := q.query(ctx,
+		[]string{qscccore.GetBlockByHash, request.ChannelName, string(request.BlockHash)},
+		&common.Block{})
+	if err != nil {
+		return nil, err
+	}
+	return res.(*common.Block), nil
+}
+
+func (q *QSCCService) GetBlockByTxID(ctx context.Context, request *GetBlockByTxIDRequest) (*common.Block, error) {
+	res, err := q.query(ctx,
+		[]string{qscccore.GetBlockByTxID, request.ChannelName, request.TxId},
+		&common.Block{})
+	if err != nil {
+		return nil, err
+	}
+	return res.(*common.Block), nil
+}
+
+func (q *QSCCService) GetTransactionByID(ctx context.Context, request *GetTransactionByIDRequest) (*peer.ProcessedTransaction, error) {
+	res, err := q.query(ctx,
+		[]string{qscccore.GetTransactionByID, request.ChannelName, request.TxId},
+		&peer.ProcessedTransaction{})
+	if err != nil {
+		return nil, err
+	}
+	return res.(*peer.ProcessedTransaction), nil
 }

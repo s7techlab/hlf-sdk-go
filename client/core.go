@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hyperledger/fabric/core/chaincode/platforms/golang"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -16,7 +15,6 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
 	"github.com/s7techlab/hlf-sdk-go/client/channel"
-	"github.com/s7techlab/hlf-sdk-go/client/fetcher"
 	"github.com/s7techlab/hlf-sdk-go/crypto"
 	"github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
 	"github.com/s7techlab/hlf-sdk-go/discovery"
@@ -92,7 +90,7 @@ func (c *core) CurrentMspPeers() []api.Peer {
 }
 
 func (c *core) Channel(name string) api.Channel {
-	log := c.logger.Named(`Channel`).With(zap.String(`channel`, name))
+	log := c.logger.Named(`channel`).With(zap.String(`channel`, name))
 	c.channelMx.Lock()
 	defer c.channelMx.Unlock()
 
@@ -300,10 +298,10 @@ func NewCore(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 		}
 	}
 
-	// use chaincode fetcher for Go chaincodes by default
-	if core.fetcher == nil {
-		core.fetcher = fetcher.NewLocal(&golang.Platform{})
-	}
+	//// use chaincode fetcher for Go chaincodes by default
+	//if core.fetcher == nil {
+	//	core.fetcher = fetcher.NewLocal(&golang.Platform{})
+	//}
 
 	return core, nil
 }
