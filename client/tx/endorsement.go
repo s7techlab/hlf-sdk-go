@@ -68,7 +68,7 @@ func NewEndorsementSignedProposal(
 
 	signedProposal, err = proto.NewPeerSignedProposal(proposal, signer)
 
-	return signedProposal, txID, err
+	return signedProposal, txParams.ID, err
 
 }
 
