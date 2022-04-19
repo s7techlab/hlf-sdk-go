@@ -3,6 +3,7 @@ package proto
 import (
 	"crypto/sha256"
 	"encoding/pem"
+	"errors"
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
@@ -12,6 +13,10 @@ import (
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/common/channelconfig"
 	"google.golang.org/protobuf/encoding/protojson"
+)
+
+var (
+	ErrUnknownFabricVersion = errors.New(`unknown fabric version`)
 )
 
 type FabricVersion string

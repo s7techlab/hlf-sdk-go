@@ -528,7 +528,7 @@ type QSCCServiceClient interface {
 	GetBlockByNumber(ctx context.Context, in *GetBlockByNumberRequest, opts ...grpc.CallOption) (*common.Block, error)
 	// GetBlockByHash allows getting block by hash
 	GetBlockByHash(ctx context.Context, in *GetBlockByHashRequest, opts ...grpc.CallOption) (*common.Block, error)
-	// GetBlockByTxID  allows getting block by transaction
+	// GetBlockByTxID allows getting block by transaction
 	GetBlockByTxID(ctx context.Context, in *GetBlockByTxIDRequest, opts ...grpc.CallOption) (*common.Block, error)
 	// GetTransactionByID allows getting transaction by id
 	GetTransactionByID(ctx context.Context, in *GetTransactionByIDRequest, opts ...grpc.CallOption) (*peer.ProcessedTransaction, error)
@@ -595,7 +595,7 @@ type QSCCServiceServer interface {
 	GetBlockByNumber(context.Context, *GetBlockByNumberRequest) (*common.Block, error)
 	// GetBlockByHash allows getting block by hash
 	GetBlockByHash(context.Context, *GetBlockByHashRequest) (*common.Block, error)
-	// GetBlockByTxID  allows getting block by transaction
+	// GetBlockByTxID allows getting block by transaction
 	GetBlockByTxID(context.Context, *GetBlockByTxIDRequest) (*common.Block, error)
 	// GetTransactionByID allows getting transaction by id
 	GetTransactionByID(context.Context, *GetTransactionByIDRequest) (*peer.ProcessedTransaction, error)

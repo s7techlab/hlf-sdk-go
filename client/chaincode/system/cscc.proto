@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package hlfsdk.client.chaincode.system;
+
+option go_package = "hlfsdk/client/chaincode/system";
+
+
+import "common/common.proto";
+import "common/configtx.proto";
+import "peer/query.proto";
+
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
+
+service CSCCService {
+
+  // GetChainInfo allows joining channel using presented genesis block
+  rpc JoinChain (JoinChainRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/cscc/joinchain"
+    };
+  }
+
+  rpc GetChannels(google.protobuf.Empty) returns (protos.ChannelQueryResponse) {
+    option (google.api.http) = {
+      get: "/cscc/chains"
+    };
+  }
+
+  // GetConfigBlock returns genesis block of channel
+  rpc GetConfigBlock (GetConfigBlockRequest) returns (common.Block) {
+    option (google.api.http) = {
+     get: "/cscc/chains/{channel}"
+    };
+  }
+
+  // GetChannelConfig returns channel configuration
+  rpc GetChannelConfig (GetChannelConfigRequest) returns (common.Config) {
+    option (google.api.http) = {
+      get: "/cscc/chains/{channel}/config"
+    };
+  }
+}
+
+
+
+service ChannelsService {
+  rpc GetChannels(google.protobuf.Empty) returns (protos.ChannelQueryResponse) {
+    option (google.api.http) = {
+      get: "/cscc/chains"
+    };
+  }
+}
+
+message JoinChainRequest{
+  string channel = 1;
+  common.Block genesis_block = 2;
+}
+
+message GetConfigBlockRequest {
+  string channel = 1;
+}
+
+message GetChannelConfigRequest {
+  string channel = 1;
+}

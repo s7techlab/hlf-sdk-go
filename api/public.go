@@ -52,6 +52,8 @@ type Querier interface {
 }
 
 type Invoker interface {
+	Querier
+
 	// Invoke - shortcut for invoking chaincodes
 	// if provided 'identity' is 'nil' default one will be set
 	// txWaiterType - param which identify transaction waiting policy.

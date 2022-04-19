@@ -8,11 +8,14 @@ import (
 
 	"github.com/hyperledger/fabric-protos-go/common"
 	fabricOrderer "github.com/hyperledger/fabric-protos-go/orderer"
+	"github.com/hyperledger/fabric/msp"
+	"github.com/hyperledger/fabric/protoutil"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/client/tx"
 	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
@@ -25,7 +28,7 @@ func (e *ErrUnexpectedStatus) Error() string {
 	return fmt.Sprintf("unexpected status: %s. message: %v", e.status.String(), e.message)
 }
 
-type orderer struct {
+type Orderer struct {
 	uri             string
 	conn            *grpc.ClientConn
 	ctx             context.Context
@@ -35,7 +38,41 @@ type orderer struct {
 	grpcOptions     []grpc.DialOption
 }
 
-func (o *orderer) Broadcast(ctx context.Context, envelope *common.Envelope) (resp *fabricOrderer.BroadcastResponse, err error) {
+func New(c config.ConnectionConfig, log *zap.Logger) (*Orderer, error) {
+	l := log.Named(`New`)
+	opts, err := util.NewGRPCOptionsFromConfig(c, log)
+	if err != nil {
+		l.Error(`Failed to get GRPC options`, zap.Error(err))
+		return nil, fmt.Errorf(`get GRPC options: %w`, err)
+	}
+
+	ctx, _ := context.WithTimeout(context.Background(), c.Timeout.Duration)
+	conn, err := grpc.DialContext(ctx, c.Host, opts...)
+	if err != nil {
+		l.Error(`Failed to initialize GRPC connection`, zap.Error(err))
+		return nil, fmt.Errorf(`initialize GRPC connection: %w`, err)
+	}
+
+	return NewFromGRPC(ctx, conn, opts...)
+}
+
+// NewFromGRPC allows initializing orderer from existing GRPC connection
+func NewFromGRPC(ctx context.Context, conn *grpc.ClientConn, grpcOptions ...grpc.DialOption) (*Orderer, error) {
+	obj := &Orderer{
+		uri:         conn.Target(),
+		conn:        conn,
+		ctx:         ctx,
+		grpcOptions: grpcOptions,
+	}
+
+	if err := obj.initBroadcastClient(); err != nil {
+		return nil, fmt.Errorf(`initialize BroadcastClient: %w`, err)
+	}
+
+	return obj, nil
+}
+
+func (o *Orderer) Broadcast(ctx context.Context, envelope *common.Envelope) (resp *fabricOrderer.BroadcastResponse, err error) {
 	cli, err := o.broadcastClient.Broadcast(ctx)
 	if err != nil {
 		err = fmt.Errorf(`initialize broadcast client: %w`, err)
@@ -74,7 +111,7 @@ func (o *orderer) Broadcast(ctx context.Context, envelope *common.Envelope) (res
 	return
 }
 
-func (o *orderer) Deliver(ctx context.Context, envelope *common.Envelope) (block *common.Block, err error) {
+func (o *Orderer) Deliver(ctx context.Context, envelope *common.Envelope) (block *common.Block, err error) {
 	cli, err := o.broadcastClient.Deliver(ctx)
 	if err != nil {
 		err = fmt.Errorf(`initialize deliver client: %w`, err)
@@ -121,7 +158,7 @@ func (o *orderer) Deliver(ctx context.Context, envelope *common.Envelope) (block
 	return
 }
 
-func (o *orderer) initBroadcastClient() error {
+func (o *Orderer) initBroadcastClient() error {
 	var err error
 	if o.conn == nil {
 		o.connMx.Lock()
@@ -136,36 +173,36 @@ func (o *orderer) initBroadcastClient() error {
 	return nil
 }
 
-func New(c config.ConnectionConfig, log *zap.Logger) (api.Orderer, error) {
-	l := log.Named(`New`)
-	opts, err := util.NewGRPCOptionsFromConfig(c, log)
+// GetConfigBlock returns config block by channel name
+func (o *Orderer) GetConfigBlock(ctx context.Context, signer msp.SigningIdentity, channelName string) (*common.Block, error) {
+	startPos, endPos := api.SeekNewest()()
+
+	seekEnvelope, err := tx.NewSeekBlockEnvelope(channelName, signer, startPos, endPos)
 	if err != nil {
-		l.Error(`Failed to get GRPC options`, zap.Error(err))
-		return nil, fmt.Errorf(`get GRPC options: %w`, err)
+		return nil, fmt.Errorf(`create seek envelope: %w`, err)
 	}
 
-	ctx, _ := context.WithTimeout(context.Background(), c.Timeout.Duration)
-	conn, err := grpc.DialContext(ctx, c.Host, opts...)
+	lastBlock, err := o.Deliver(ctx, seekEnvelope)
 	if err != nil {
-		l.Error(`Failed to initialize GRPC connection`, zap.Error(err))
-		return nil, fmt.Errorf(`initialize GRPC connection: %w`, err)
+		return nil, fmt.Errorf(`fetch last block: %w`, err)
 	}
 
-	return NewFromGRPC(ctx, conn, opts...)
-}
-
-// NewFromGRPC allows initializing orderer from existing GRPC connection
-func NewFromGRPC(ctx context.Context, conn *grpc.ClientConn, grpcOptions ...grpc.DialOption) (api.Orderer, error) {
-	obj := &orderer{
-		uri:         conn.Target(),
-		conn:        conn,
-		ctx:         ctx,
-		grpcOptions: grpcOptions,
+	blockId, err := protoutil.GetLastConfigIndexFromBlock(lastBlock)
+	if err != nil {
+		return nil, fmt.Errorf(`get last config index fron block: %w`, err)
 	}
 
-	if err := obj.initBroadcastClient(); err != nil {
-		return nil, fmt.Errorf(`initialize BroadcastClient: %w`, err)
+	startPos, endPos = api.SeekSingle(blockId)()
+
+	seekEnvelope, err = tx.NewSeekBlockEnvelope(channelName, signer, startPos, endPos)
+	if err != nil {
+		return nil, fmt.Errorf(`create seek envelope for last config block: %w`, err)
 	}
 
-	return obj, nil
+	configBlock, err := o.Deliver(ctx, seekEnvelope)
+	if err != nil {
+		return nil, fmt.Errorf(`fetch block with config: %w`, err)
+	}
+
+	return configBlock, nil
 }

@@ -74,7 +74,7 @@
     },
     "/qscc/chain/{channel_name}/bytxid/{tx_id}": {
       "get": {
-        "summary": "GetBlockByTxID  allows getting block by transaction",
+        "summary": "GetBlockByTxID allows getting block by transaction",
         "operationId": "GetBlockByTxID",
         "responses": {
           "200": {
