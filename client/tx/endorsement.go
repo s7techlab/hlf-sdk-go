@@ -67,11 +67,5 @@ func NewEndorsementSignedProposal(
 	}
 
 	signedProposal, err = proto.NewPeerSignedProposal(proposal, signer)
-
 	return signedProposal, txParams.ID, err
-
-}
-
-func FnArgs(fn string, args [][]byte) [][]byte {
-	return append([][]byte{[]byte(fn)}, args...)
 }

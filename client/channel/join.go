@@ -7,9 +7,9 @@ import (
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/pkg/errors"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
+	"github.com/s7techlab/hlf-sdk-go/proto"
 )
 
 func (c *Core) Join(ctx context.Context) error {
@@ -18,15 +18,21 @@ func (c *Core) Join(ctx context.Context) error {
 		return errors.Wrap(err, `failed to retrieve genesis block from orderer`)
 	}
 
-	var cscc api.CSCC
+	// todo: refactor
+	peers := c.peerPool.GetMSPPeers(c.mspId)
 
-	if c.fabricV2 {
-		cscc = system.NewCSCCV2(c.peerPool, c.identity)
-	} else {
-		cscc = system.NewCSCCV1(c.peerPool, c.identity)
+	if len(peers) == 0 {
+		return fmt.Errorf(`no peeers for msp if=%s`, c.mspId)
 	}
 
-	return cscc.JoinChain(ctx, c.chanName, channelGenesis)
+	cscc := system.NewCSCC(peers[0], proto.FabricVersionIsV2(c.fabricV2))
+
+	_, err = cscc.JoinChain(ctx, &system.JoinChainRequest{
+		Channel:      c.chanName,
+		GenesisBlock: channelGenesis,
+	})
+
+	return err
 }
 
 func (c *Core) getGenesisBlockFromOrderer(ctx context.Context) (*common.Block, error) {

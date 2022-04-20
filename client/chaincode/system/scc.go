@@ -10,13 +10,6 @@ type scc struct {
 
 var _ api.SystemCC = (*scc)(nil)
 
-func (c *scc) CSCC() api.CSCC {
-	if c.core.FabricV2() {
-		return NewCSCCV2(c.core.PeerPool(), c.core.CurrentIdentity())
-	}
-	return NewCSCCV1(c.core.PeerPool(), c.core.CurrentIdentity())
-}
-
 func (c *scc) LSCC() api.LSCC {
 	return NewLSCC(c.core.PeerPool(), c.core.CurrentIdentity())
 }

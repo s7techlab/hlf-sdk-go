@@ -18,7 +18,6 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/crypto"
 	"github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
 	"github.com/s7techlab/hlf-sdk-go/discovery"
-	"github.com/s7techlab/hlf-sdk-go/logger"
 	"github.com/s7techlab/hlf-sdk-go/orderer"
 	"github.com/s7techlab/hlf-sdk-go/peer"
 	"github.com/s7techlab/hlf-sdk-go/peer/pool"
@@ -148,7 +147,12 @@ func (c *core) FabricV2() bool {
 	return c.fabricV2
 }
 
+// Deprecated: use New
 func NewCore(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
+	return New(identity, opts...)
+}
+
+func New(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 	var err error
 	core := &core{
 		channels:   make(map[string]api.Channel),
@@ -166,7 +170,7 @@ func NewCore(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 	}
 
 	if core.logger == nil {
-		core.logger = logger.DefaultLogger
+		core.logger = DefaultLogger
 	}
 
 	if core.cs == nil {

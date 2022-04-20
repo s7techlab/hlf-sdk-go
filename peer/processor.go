@@ -21,11 +21,11 @@ type endorseChannelResponse struct {
 	Error    error
 }
 
-func (p *processor) CreateProposal(chaincode string, signer msp.SigningIdentity, fn string, args [][]byte, transArgs api.TransArgs) (*fabricPeer.SignedProposal, api.ChaincodeTx, error) {
+func (p *processor) CreateProposal(chaincodeName string, signer msp.SigningIdentity, fn string, args [][]byte, transArgs api.TransArgs) (*fabricPeer.SignedProposal, api.ChaincodeTx, error) {
 	signedProposal, txID, err := tx.Endorsement{
 		Channel:      p.channelName,
-		Chaincode:    chaincode,
-		Args:         tx.FnArgs(fn, args),
+		Chaincode:    chaincodeName,
+		Args:         p.prepareArgs(fn, args),
 		Signer:       signer,
 		TransientMap: transArgs,
 	}.SignedProposal()

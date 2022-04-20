@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/golang/protobuf/ptypes/empty"
+
 	"github.com/s7techlab/hlf-sdk-go/client"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
 	_ "github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
 	"github.com/s7techlab/hlf-sdk-go/identity"
+	"github.com/s7techlab/hlf-sdk-go/proto"
 )
 
 func main() {
@@ -32,7 +35,7 @@ func main() {
 	ctx := context.Background()
 
 	// get chainInfo for all joined channels
-	chInfo, err := core.System().CSCC().GetChannels(ctx)
+	chInfo, err := system.NewCSCC(core, proto.FabricV2).GetChannels(ctx, &empty.Empty{})
 	if err != nil {
 		log.Fatalln(`failed to fetch channel list:`, err)
 	}
@@ -40,7 +43,7 @@ func main() {
 		fmt.Printf("Fetching info about channel: %s\n", ch.ChannelId)
 		// get blockchain info about channel
 
-		blockchainInfo, err := system.QSCC(core).GetChainInfo(ctx, &system.GetChainInfoRequest{ChannelName: ch.ChannelId})
+		blockchainInfo, err := system.NewQSCC(core).GetChainInfo(ctx, &system.GetChainInfoRequest{ChannelName: ch.ChannelId})
 		if err != nil {
 			fmt.Println(`Failed to fetch info about channel:`, err)
 			continue

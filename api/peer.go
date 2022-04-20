@@ -14,6 +14,10 @@ type Endorser interface {
 	Endorse(ctx context.Context, proposal *peer.SignedProposal) (*peer.ProposalResponse, error)
 }
 
+type ChannelsFetcher interface {
+	GetChannels(ctx context.Context) (*peer.ChannelQueryResponse, error)
+}
+
 // Peer is common interface for endorsing peer
 type Peer interface {
 	Querier
