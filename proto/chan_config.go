@@ -27,6 +27,14 @@ const (
 	FabricV2               FabricVersion = "2"
 )
 
+func FabricVersionIsV2(isV2 bool) FabricVersion {
+	if isV2 {
+		return FabricV2
+	}
+
+	return FabricV1
+}
+
 func (c *ChannelConfig) ToJSON() ([]byte, error) {
 	opt := protojson.MarshalOptions{
 		UseProtoNames: true,

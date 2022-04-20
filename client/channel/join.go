@@ -25,12 +25,7 @@ func (c *Core) Join(ctx context.Context) error {
 		return fmt.Errorf(`no peeers for msp if=%s`, c.mspId)
 	}
 
-	fabricVersion := proto.FabricV1
-	if c.fabricV2 {
-		fabricVersion = proto.FabricV2
-	}
-
-	cscc := system.NewCSCC(peers[0], fabricVersion)
+	cscc := system.NewCSCC(peers[0], proto.FabricVersionIsV2(c.fabricV2))
 
 	_, err = cscc.JoinChain(ctx, &system.JoinChainRequest{
 		Channel:      c.chanName,
