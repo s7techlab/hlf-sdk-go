@@ -27,17 +27,23 @@ const (
 	GetChannelConfig string = "GetChannelConfig" // HLF Peer V2 +
 )
 
-type CSCCService struct {
-	UnimplementedCSCCServiceServer
+type (
+	CSCCService struct {
+		UnimplementedCSCCServiceServer
 
-	Querier         *chaincode.ProtoQuerier
-	ChannelsFetcher *ChannelsFetcher
-	FabricVersion   hlfproto.FabricVersion
-}
+		Querier         *chaincode.ProtoQuerier
+		ChannelsFetcher *CSCCChannelsFetcher
+		FabricVersion   hlfproto.FabricVersion
+	}
 
-type ChannelsFetcher struct {
-	Querier *chaincode.ProtoQuerier
-}
+	CSCCChannelsFetcher struct {
+		Querier *chaincode.ProtoQuerier
+	}
+
+	ChannelsFetcher interface {
+		GetChannels(ctx context.Context) (*peer.ChannelQueryResponse, error)
+	}
+)
 
 func NewCSCCFromClient(client api.Core) *CSCCService {
 	return NewCSCC(client, hlfproto.FabricVersionIsV2(client.FabricV2()))
@@ -46,18 +52,18 @@ func NewCSCCFromClient(client api.Core) *CSCCService {
 func NewCSCC(querier api.Querier, version hlfproto.FabricVersion) *CSCCService {
 	return &CSCCService{
 		Querier:         chaincode.NewProtoQuerier(querier, ``, CSCCName),
-		ChannelsFetcher: NewChannelsFetcher(querier),
+		ChannelsFetcher: NewCSCCChannelsFetcher(querier),
 		FabricVersion:   version,
 	}
 }
 
-func NewChannelsFetcher(querier api.Querier) *ChannelsFetcher {
-	return &ChannelsFetcher{
+func NewCSCCChannelsFetcher(querier api.Querier) *CSCCChannelsFetcher {
+	return &CSCCChannelsFetcher{
 		Querier: chaincode.NewProtoQuerier(querier, ``, CSCCName),
 	}
 }
 
-func (f *ChannelsFetcher) GetChannels(ctx context.Context) (*peer.ChannelQueryResponse, error) {
+func (f *CSCCChannelsFetcher) GetChannels(ctx context.Context) (*peer.ChannelQueryResponse, error) {
 	res, err := f.Querier.QueryStringsProto(ctx, []string{GetChannels}, &peer.ChannelQueryResponse{})
 	if err != nil {
 		return nil, err
