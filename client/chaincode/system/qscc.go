@@ -10,7 +10,7 @@ import (
 	qscccore "github.com/hyperledger/fabric/core/scc/qscc"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/client"
+	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
 )
 
 //go:embed qscc.swagger.json
@@ -18,12 +18,12 @@ var QSCCServiceSwagger []byte
 
 type QSCCService struct {
 	UnimplementedQSCCServiceServer
-	Querier *client.ChaincodeProtoQuerier
+	Querier *chaincode.ProtoQuerier
 }
 
 func NewQSCC(querier api.Querier) *QSCCService {
 	return &QSCCService{
-		Querier: client.NewChaincodeProtoQuerier(querier, ``, QSCCName),
+		Querier: chaincode.NewProtoQuerier(querier, ``, QSCCName),
 	}
 }
 

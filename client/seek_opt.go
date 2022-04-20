@@ -21,7 +21,7 @@ type SeekOptConverter struct {
 func NewSeekOptConverter(c *core) *SeekOptConverter {
 	return &SeekOptConverter{
 		GetChannelHeight: func(ctx context.Context, channel string) (uint64, error) {
-			channelInfo, err := systemcc.QSCC(c).GetChainInfo(ctx, &systemcc.GetChainInfoRequest{ChannelName: channel})
+			channelInfo, err := systemcc.NewQSCC(c).GetChainInfo(ctx, &systemcc.GetChainInfoRequest{ChannelName: channel})
 			if err != nil {
 				return 0, err
 			}

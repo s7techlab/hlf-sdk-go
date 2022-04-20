@@ -2,92 +2,123 @@ package chaincode
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
+	"fmt"
+	"reflect"
 
-	fabricPeer "github.com/hyperledger/fabric-protos-go/peer"
-	"github.com/hyperledger/fabric/msp"
-	"github.com/pkg/errors"
+	"github.com/golang/protobuf/proto"
+	"github.com/hyperledger/fabric-protos-go/peer"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/peer"
 )
 
-type QueryBuilder struct {
-	cc            string
-	fn            string
-	argBytes      [][]byte
-	identity      msp.SigningIdentity
-	processor     api.PeerProcessor
-	peerPool      api.PeerPool
-	transientArgs api.TransArgs
+var (
+	ErrUnknownArgType = errors.New(`unknown arg type`)
+)
+
+func FnArgs(fn string, args [][]byte) [][]byte {
+	return append([][]byte{[]byte(fn)}, args...)
 }
 
-func (q *QueryBuilder) WithIdentity(identity msp.SigningIdentity) api.ChaincodeQueryBuilder {
-	q.identity = identity
+func ArgBytes(arg interface{}) ([]byte, error) {
+	switch val := arg.(type) {
 
-	return q
-}
-
-func (q *QueryBuilder) WithArguments(argBytes [][]byte) api.ChaincodeQueryBuilder {
-	q.argBytes = argBytes
-
-	return q
-}
-
-// AsBytes TODO: think about interface in one style with Invoke
-func (q *QueryBuilder) AsBytes(ctx context.Context) ([]byte, error) {
-	if response, err := q.AsProposalResponse(ctx); err != nil {
-		return nil, errors.Wrap(err, `failed to get proposal response`)
-	} else {
-		return response.Response.Payload, nil
+	case string:
+		return []byte(val), nil
+	case proto.Message:
+		return proto.Marshal(val)
+	default:
+		return nil, ErrUnknownArgType
 	}
 }
 
-func (q *QueryBuilder) AsJSON(ctx context.Context, out interface{}) error {
-	if bytes, err := q.AsBytes(ctx); err != nil {
-		return err
-	} else {
-		if err = json.Unmarshal(bytes, out); err != nil {
-			return errors.Wrap(err, `failed to unmarshal JSON`)
+func StringArgsBytes(args []string) [][]byte {
+	var argsBytes [][]byte
+
+	for _, arg := range args {
+		argsBytes = append(argsBytes, []byte(arg))
+	}
+
+	return argsBytes
+}
+
+func ArgsBytes(args []interface{}) ([][]byte, error) {
+	var argsBytes [][]byte
+
+	for pos, arg := range args {
+
+		converted, err := ArgBytes(arg)
+		if err != nil {
+			return nil, fmt.Errorf(`args[%d]: %w`, pos, err)
 		}
+
+		argsBytes = append(argsBytes, converted)
 	}
-	return nil
+
+	return argsBytes, nil
 }
 
-func (q *QueryBuilder) AsProposalResponse(ctx context.Context) (*fabricPeer.ProposalResponse, error) {
-	proposal, _, err := q.processor.CreateProposal(q.cc, q.identity, q.fn, q.argBytes, q.transientArgs)
+type ProtoQuerier struct {
+	Querier   api.Querier
+	Channel   string
+	Chaincode string
+}
+
+func (c *ProtoQuerier) Query(ctx context.Context, args ...interface{}) (*peer.Response, error) {
+	argsBytes, err := ArgsBytes(args)
 	if err != nil {
-		return nil, errors.Wrap(err, `failed to create peer proposal`)
+		return nil, err
 	}
-
-	return q.peerPool.Process(ctx, q.identity.GetMSPIdentifier(), proposal)
+	return c.Querier.Query(ctx, c.Channel, c.Chaincode, argsBytes, nil, nil)
 }
 
-// Do makes invoke with built arguments
-func (q *QueryBuilder) Do(ctx context.Context) (*fabricPeer.Response, error) {
-	res, err := q.AsProposalResponse(ctx)
+func (c *ProtoQuerier) QueryBytes(ctx context.Context, args ...[]byte) (*peer.Response, error) {
+	return c.Querier.Query(ctx, c.Channel, c.Chaincode, args, nil, nil)
+}
+
+func (c *ProtoQuerier) QueryProto(ctx context.Context, args []interface{}, target proto.Message) (proto.Message, error) {
+	return QueryProto(ctx, c.Querier, c.Channel, c.Chaincode, args, target)
+}
+
+func (c *ProtoQuerier) QueryStringsProto(ctx context.Context, args []string, target proto.Message) (proto.Message, error) {
+	return QueryBytesProto(ctx, c.Querier, c.Channel, c.Chaincode, StringArgsBytes(args), target)
+}
+
+func (c *ProtoQuerier) QueryBytesProto(ctx context.Context, args [][]byte, target proto.Message) (proto.Message, error) {
+	return QueryBytesProto(ctx, c.Querier, c.Channel, c.Chaincode, args, target)
+}
+
+func NewProtoQuerier(querier api.Querier, channel, chaincode string) *ProtoQuerier {
+	return &ProtoQuerier{
+		Querier:   querier,
+		Channel:   channel,
+		Chaincode: chaincode,
+	}
+}
+
+func QueryProto(ctx context.Context, querier api.Querier, channel, chaincode string, args []interface{}, target proto.Message) (proto.Message, error) {
+	argsBytes, err := ArgsBytes(args)
 	if err != nil {
 		return nil, err
 	}
 
-	return res.Response, nil
+	return QueryBytesProto(ctx, querier, channel, chaincode, argsBytes, target)
 }
 
-func (q *QueryBuilder) Transient(args api.TransArgs) api.ChaincodeQueryBuilder {
-	q.transientArgs = args
+func QueryBytesProto(ctx context.Context, querier api.Querier, channel, chaincode string, args [][]byte, target proto.Message) (proto.Message, error) {
 
-	return q
-}
+	res, err := querier.Query(
+		ctx, channel, chaincode, args, nil, nil)
 
-func NewQueryBuilder(ccCore *Core, identity msp.SigningIdentity, fn string, args ...string) api.ChaincodeQueryBuilder {
-	q := &QueryBuilder{
-		cc:        ccCore.name,
-		fn:        fn,
-		argBytes:  argsToBytes(args...),
-		identity:  identity,
-		processor: peer.NewProcessor(ccCore.channelName),
-		peerPool:  ccCore.peerPool,
+	if err != nil {
+		return nil, fmt.Errorf(`query channel=%s chaincode=%s: %w`, channel, chaincode, err)
 	}
 
-	return q
+	resProto := proto.Clone(target)
+
+	if err = proto.Unmarshal(res.Payload, resProto); err != nil {
+		return nil, fmt.Errorf(`unmarshal result to %s: %w`, reflect.TypeOf(target), err)
+	}
+
+	return resProto, nil
 }
