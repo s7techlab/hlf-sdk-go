@@ -42,16 +42,6 @@ service CSCCService {
   }
 }
 
-
-
-service ChannelsService {
-  rpc GetChannels(google.protobuf.Empty) returns (protos.ChannelQueryResponse) {
-    option (google.api.http) = {
-      get: "/cscc/chains"
-    };
-  }
-}
-
 message JoinChainRequest{
   string channel = 1;
   common.Block genesis_block = 2;

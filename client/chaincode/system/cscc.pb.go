@@ -232,16 +232,10 @@ var file_cscc_proto_rawDesc = []byte{
 	0x1a, 0x0e, 0x2e, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67,
 	0x22, 0x25, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x1f, 0x12, 0x1d, 0x2f, 0x63, 0x73, 0x63, 0x63, 0x2f,
 	0x63, 0x68, 0x61, 0x69, 0x6e, 0x73, 0x2f, 0x7b, 0x63, 0x68, 0x61, 0x6e, 0x6e, 0x65, 0x6c, 0x7d,
-	0x2f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x32, 0x6c, 0x0a, 0x0f, 0x43, 0x68, 0x61, 0x6e, 0x6e,
-	0x65, 0x6c, 0x73, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x59, 0x0a, 0x0b, 0x47, 0x65,
-	0x74, 0x43, 0x68, 0x61, 0x6e, 0x6e, 0x65, 0x6c, 0x73, 0x12, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67,
-	0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74,
-	0x79, 0x1a, 0x1c, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x73, 0x2e, 0x43, 0x68, 0x61, 0x6e, 0x6e,
-	0x65, 0x6c, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
-	0x14, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x0e, 0x12, 0x0c, 0x2f, 0x63, 0x73, 0x63, 0x63, 0x2f, 0x63,
-	0x68, 0x61, 0x69, 0x6e, 0x73, 0x42, 0x20, 0x5a, 0x1e, 0x68, 0x6c, 0x66, 0x73, 0x64, 0x6b, 0x2f,
-	0x63, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x2f, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x63, 0x6f, 0x64, 0x65,
-	0x2f, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x2f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x42, 0x20, 0x5a, 0x1e, 0x68, 0x6c, 0x66, 0x73, 0x64,
+	0x6b, 0x2f, 0x63, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x2f, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x63, 0x6f,
+	0x64, 0x65, 0x2f, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x33,
 }
 
 var (
@@ -272,14 +266,12 @@ var file_cscc_proto_depIdxs = []int32{
 	4, // 2: hlfsdk.client.chaincode.system.CSCCService.GetChannels:input_type -> google.protobuf.Empty
 	1, // 3: hlfsdk.client.chaincode.system.CSCCService.GetConfigBlock:input_type -> hlfsdk.client.chaincode.system.GetConfigBlockRequest
 	2, // 4: hlfsdk.client.chaincode.system.CSCCService.GetChannelConfig:input_type -> hlfsdk.client.chaincode.system.GetChannelConfigRequest
-	4, // 5: hlfsdk.client.chaincode.system.ChannelsService.GetChannels:input_type -> google.protobuf.Empty
-	4, // 6: hlfsdk.client.chaincode.system.CSCCService.JoinChain:output_type -> google.protobuf.Empty
-	5, // 7: hlfsdk.client.chaincode.system.CSCCService.GetChannels:output_type -> protos.ChannelQueryResponse
-	3, // 8: hlfsdk.client.chaincode.system.CSCCService.GetConfigBlock:output_type -> common.Block
-	6, // 9: hlfsdk.client.chaincode.system.CSCCService.GetChannelConfig:output_type -> common.Config
-	5, // 10: hlfsdk.client.chaincode.system.ChannelsService.GetChannels:output_type -> protos.ChannelQueryResponse
-	6, // [6:11] is the sub-list for method output_type
-	1, // [1:6] is the sub-list for method input_type
+	4, // 5: hlfsdk.client.chaincode.system.CSCCService.JoinChain:output_type -> google.protobuf.Empty
+	5, // 6: hlfsdk.client.chaincode.system.CSCCService.GetChannels:output_type -> protos.ChannelQueryResponse
+	3, // 7: hlfsdk.client.chaincode.system.CSCCService.GetConfigBlock:output_type -> common.Block
+	6, // 8: hlfsdk.client.chaincode.system.CSCCService.GetChannelConfig:output_type -> common.Config
+	5, // [5:9] is the sub-list for method output_type
+	1, // [1:5] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -336,7 +328,7 @@ func file_cscc_proto_init() {
 			NumEnums:      0,
 			NumMessages:   3,
 			NumExtensions: 0,
-			NumServices:   2,
+			NumServices:   1,
 		},
 		GoTypes:           file_cscc_proto_goTypes,
 		DependencyIndexes: file_cscc_proto_depIdxs,
@@ -536,78 +528,6 @@ var _CSCCService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetChannelConfig",
 			Handler:    _CSCCService_GetChannelConfig_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "cscc.proto",
-}
-
-// ChannelsServiceClient is the client API for ChannelsService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type ChannelsServiceClient interface {
-	GetChannels(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*peer.ChannelQueryResponse, error)
-}
-
-type channelsServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewChannelsServiceClient(cc grpc.ClientConnInterface) ChannelsServiceClient {
-	return &channelsServiceClient{cc}
-}
-
-func (c *channelsServiceClient) GetChannels(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*peer.ChannelQueryResponse, error) {
-	out := new(peer.ChannelQueryResponse)
-	err := c.cc.Invoke(ctx, "/hlfsdk.client.chaincode.system.ChannelsService/GetChannels", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// ChannelsServiceServer is the server API for ChannelsService service.
-type ChannelsServiceServer interface {
-	GetChannels(context.Context, *empty.Empty) (*peer.ChannelQueryResponse, error)
-}
-
-// UnimplementedChannelsServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedChannelsServiceServer struct {
-}
-
-func (*UnimplementedChannelsServiceServer) GetChannels(context.Context, *empty.Empty) (*peer.ChannelQueryResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetChannels not implemented")
-}
-
-func RegisterChannelsServiceServer(s *grpc.Server, srv ChannelsServiceServer) {
-	s.RegisterService(&_ChannelsService_serviceDesc, srv)
-}
-
-func _ChannelsService_GetChannels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChannelsServiceServer).GetChannels(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/hlfsdk.client.chaincode.system.ChannelsService/GetChannels",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChannelsServiceServer).GetChannels(ctx, req.(*empty.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _ChannelsService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "hlfsdk.client.chaincode.system.ChannelsService",
-	HandlerType: (*ChannelsServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetChannels",
-			Handler:    _ChannelsService_GetChannels_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

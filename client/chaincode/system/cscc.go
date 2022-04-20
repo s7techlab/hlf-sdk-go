@@ -47,6 +47,7 @@ func NewCSCC(querier api.Querier, version hlfproto.FabricVersion) *CSCCService {
 	return &CSCCService{
 		Querier:         chaincode.NewProtoQuerier(querier, ``, CSCCName),
 		ChannelsFetcher: NewChannelsFetcher(querier),
+		FabricVersion:   version,
 	}
 }
 
@@ -117,6 +118,6 @@ func (c *CSCCService) GetChannelConfig(ctx context.Context, request *GetChannelC
 		return res.(*common.Config), nil
 
 	default:
-		return nil, hlfproto.ErrUnknownFabricVersion
+		return nil, fmt.Errorf(`fabric version=%s: %w`, c.FabricVersion, hlfproto.ErrUnknownFabricVersion)
 	}
 }
