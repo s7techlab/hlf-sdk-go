@@ -2,6 +2,7 @@ package system
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
@@ -13,6 +14,9 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
 	hlfproto "github.com/s7techlab/hlf-sdk-go/proto"
 )
+
+//go:embed qscc.swagger.json
+var CSCCServiceSwagger []byte
 
 // These are function names from Invoke first parameter
 const (
@@ -58,6 +62,16 @@ func (f *ChannelsFetcher) GetChannels(ctx context.Context) (*peer.ChannelQueryRe
 		return nil, err
 	}
 	return res.(*peer.ChannelQueryResponse), nil
+}
+
+func (c *CSCCService) ServiceDef() ServiceDef {
+	return NewServiceDef(
+		_CSCCService_serviceDesc.ServiceName,
+		CSCCServiceSwagger,
+		&_CSCCService_serviceDesc,
+		c,
+		RegisterCSCCServiceHandlerFromEndpoint,
+	)
 }
 
 func (c *CSCCService) GetChannels(ctx context.Context, _ *empty.Empty) (*peer.ChannelQueryResponse, error) {
