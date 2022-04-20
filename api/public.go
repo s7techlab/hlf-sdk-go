@@ -73,7 +73,5 @@ type Invoker interface {
 type Public interface {
 	EventsDeliverer
 	BlocksDeliverer
-
-	Querier
 	Invoker
 }

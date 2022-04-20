@@ -35,6 +35,10 @@ type ChannelsFetcher struct {
 	Querier *chaincode.ProtoQuerier
 }
 
+func NewCSCCFromClient(client api.Core) *CSCCService {
+	return NewCSCC(client, hlfproto.FabricVersionIsV2(client.FabricV2()))
+}
+
 func NewCSCC(querier api.Querier, version hlfproto.FabricVersion) *CSCCService {
 	return &CSCCService{
 		Querier:         chaincode.NewProtoQuerier(querier, ``, CSCCName),
