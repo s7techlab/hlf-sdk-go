@@ -3,10 +3,10 @@ package chaincode
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	fabricPeer "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
-	"github.com/pkg/errors"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/peer"
@@ -37,7 +37,7 @@ func (q *QueryBuilder) WithArguments(argBytes [][]byte) api.ChaincodeQueryBuilde
 // AsBytes TODO: think about interface in one style with Invoke
 func (q *QueryBuilder) AsBytes(ctx context.Context) ([]byte, error) {
 	if response, err := q.AsProposalResponse(ctx); err != nil {
-		return nil, errors.Wrap(err, `failed to get proposal response`)
+		return nil, fmt.Errorf(`get proposal response: %w`, err)
 	} else {
 		return response.Response.Payload, nil
 	}
@@ -48,7 +48,7 @@ func (q *QueryBuilder) AsJSON(ctx context.Context, out interface{}) error {
 		return err
 	} else {
 		if err = json.Unmarshal(bytes, out); err != nil {
-			return errors.Wrap(err, `failed to unmarshal JSON`)
+			return fmt.Errorf(`unmarshal JSON: %w`, err)
 		}
 	}
 	return nil
@@ -57,7 +57,7 @@ func (q *QueryBuilder) AsJSON(ctx context.Context, out interface{}) error {
 func (q *QueryBuilder) AsProposalResponse(ctx context.Context) (*fabricPeer.ProposalResponse, error) {
 	proposal, _, err := q.processor.CreateProposal(q.cc, q.identity, q.fn, q.argBytes, q.transientArgs)
 	if err != nil {
-		return nil, errors.Wrap(err, `failed to create peer proposal`)
+		return nil, fmt.Errorf(`create peer proposal: %w`, err)
 	}
 
 	return q.peerPool.Process(ctx, q.identity.GetMSPIdentifier(), proposal)
