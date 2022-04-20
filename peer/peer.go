@@ -51,7 +51,6 @@ func (p *peer) Query(
 		TransientMap: transientMap,
 	}.SignedProposal()
 
-	fmt.Println(proposal)
 	if err != nil {
 		return nil, err
 	}

@@ -39,10 +39,6 @@ type (
 	CSCCChannelsFetcher struct {
 		Querier *chaincode.ProtoQuerier
 	}
-
-	ChannelsFetcher interface {
-		GetChannels(ctx context.Context) (*peer.ChannelQueryResponse, error)
-	}
 )
 
 func NewCSCCFromClient(client api.Core) *CSCCService {
