@@ -7,7 +7,6 @@ import (
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/pkg/errors"
 
-	"github.com/s7techlab/hlf-sdk-go/client"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
 	"github.com/s7techlab/hlf-sdk-go/proto"
@@ -26,10 +25,9 @@ func (c *Core) Join(ctx context.Context) error {
 		return fmt.Errorf(`no peeers for msp if=%s`, c.mspId)
 	}
 
-	// todo: add default signer to peer, hack yet
 	cscc := system.NewCSCC(
 		// use specified peer to process join (pool can contain more than one peer)
-		client.QuerierDecorator{Querier: peers[0], DefaultSigner: c.identity},
+		peers[0],
 		proto.FabricVersionIsV2(c.fabricV2))
 
 	_, err = cscc.JoinChain(ctx, &system.JoinChainRequest{

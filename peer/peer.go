@@ -20,15 +20,59 @@ import (
 )
 
 type peer struct {
-	logger  *zap.Logger
-	conn    *grpc.ClientConn
-	timeout time.Duration
-	client  fabricPeer.EndorserClient
+	conn     *grpc.ClientConn
+	timeout  time.Duration
+	client   fabricPeer.EndorserClient
+	identity msp.SigningIdentity
+	logger   *zap.Logger
 }
 
 var (
 	defaultTimeout = 5 * time.Second
 )
+
+// New returns new peer instance based on peer config
+func New(c config.ConnectionConfig, identity msp.SigningIdentity, logger *zap.Logger) (api.Peer, error) {
+	opts, err := util.NewGRPCOptionsFromConfig(c, logger)
+	if err != nil {
+		return nil, fmt.Errorf(`grpc options from config: %w`, err)
+	}
+
+	timeout := c.Timeout.Duration
+	if timeout == 0 {
+		timeout = defaultTimeout
+	}
+
+	//ctx, _ := context.WithTimeout(context.Background(), c.Timeout.Duration)
+	logger.Debug(`dial to peer`, zap.String(`host`, c.Host), zap.Duration(`timeout`, timeout))
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	conn, err := grpc.DialContext(ctx, c.Host, opts...)
+	if err != nil {
+		return nil, fmt.Errorf(`grpc dial to host=%s: %w`, c.Host, err)
+	}
+
+	return NewFromGRPC(conn, identity, logger, timeout)
+}
+
+// NewFromGRPC allows initializing peer from existing GRPC connection
+func NewFromGRPC(conn *grpc.ClientConn, identity msp.SigningIdentity, logger *zap.Logger, timeout time.Duration) (api.Peer, error) {
+	if conn == nil {
+		return nil, errors.New(`empty connection`)
+	}
+
+	p := &peer{
+		conn:     conn,
+		client:   fabricPeer.NewEndorserClient(conn),
+		identity: identity,
+		logger:   logger.Named(`peer`),
+		timeout:  timeout,
+	}
+
+	return p, nil
+}
 
 func (p *peer) Query(
 	ctx context.Context,
@@ -42,6 +86,10 @@ func (p *peer) Query(
 		zap.String(`channel`, channel),
 		zap.String(`chaincode`, chaincode),
 		zap.String(`args[0] (fn)`, string(args[0])))
+
+	if signer == nil {
+		signer = p.identity
+	}
 
 	proposal, _, err := tx.Endorsement{
 		Channel:      channel,
@@ -64,7 +112,7 @@ func (p *peer) Query(
 }
 
 func (p *peer) Endorse(ctx context.Context, proposal *fabricPeer.SignedProposal) (*fabricPeer.ProposalResponse, error) {
-	if _, ok := ctx.Deadline(); !ok {
+	if _, ok := ctx.Deadline(); !ok && p.timeout != 0 {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, p.timeout)
 		defer cancel()
@@ -98,56 +146,4 @@ func (p *peer) Uri() string {
 
 func (p *peer) Close() error {
 	return p.conn.Close()
-}
-
-func (p *peer) initEndorserClient() error {
-	if p.conn == nil {
-		return errors.New(`empty connection`)
-	}
-
-	if p.client == nil {
-		p.client = fabricPeer.NewEndorserClient(p.conn)
-	}
-
-	return nil
-}
-
-// New returns new peer instance based on peer config
-func New(c config.ConnectionConfig, log *zap.Logger) (api.Peer, error) {
-	opts, err := util.NewGRPCOptionsFromConfig(c, log)
-	if err != nil {
-		return nil, fmt.Errorf(`grpc options from config: %w`, err)
-	}
-
-	timeout := c.Timeout.Duration
-	if timeout == 0 {
-		timeout = defaultTimeout
-	}
-
-	//ctx, _ := context.WithTimeout(context.Background(), c.Timeout.Duration)
-	log.Debug(`dial to peer`, zap.String(`host`, c.Host), zap.Duration(`timeout`, timeout))
-
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	conn, err := grpc.DialContext(ctx, c.Host, opts...)
-	if err != nil {
-		return nil, fmt.Errorf(`grpc dial to host=%s: %w`, c.Host, err)
-	}
-
-	return NewFromGRPC(conn, log, timeout)
-}
-
-// NewFromGRPC allows initializing peer from existing GRPC connection
-func NewFromGRPC(conn *grpc.ClientConn, logger *zap.Logger, timeout time.Duration) (api.Peer, error) {
-	p := &peer{
-		conn:    conn,
-		logger:  logger.Named(`peer`),
-		timeout: timeout,
-	}
-
-	if err := p.initEndorserClient(); err != nil {
-		return nil, fmt.Errorf(`initialize endorser: %w`, err)
-	}
-	return p, nil
 }

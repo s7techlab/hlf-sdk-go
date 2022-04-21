@@ -189,7 +189,7 @@ func New(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 		for _, mspConfig := range core.config.MSP {
 			for _, peerConfig := range mspConfig.Endorsers {
 				var p api.Peer
-				p, err = peer.New(peerConfig, core.logger)
+				p, err = peer.New(peerConfig, core.identity, core.logger)
 				if err != nil {
 					return nil, fmt.Errorf("initialize endorsers for MSP: %s: %w", mspConfig.Name, err)
 				}
@@ -255,7 +255,7 @@ func New(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 						Host: lpAddresses.Address,
 						Tls:  lpAddresses.TLSSettings,
 					}
-					p, err := peer.New(peerCfg, core.logger)
+					p, err := peer.New(peerCfg, core.identity, core.logger)
 					if err != nil {
 						return nil, fmt.Errorf(`initialize endorsers for MSP: %s: %w`, mspID, err)
 					}
