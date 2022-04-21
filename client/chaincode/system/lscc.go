@@ -81,12 +81,12 @@ func (l *LSCCService) Install(ctx context.Context, spec *peer.ChaincodeDeploymen
 
 	return nil, err
 }
-func (l *LSCCService) Deploy(ctx context.Context, deploy *DeployRequest) (response *peer.Response, txId string, err error) {
+func (l *LSCCService) Deploy(ctx context.Context, deploy *DeployRequest) (response *peer.Response, err error) {
 
 	// Find chaincode instantiated or not
 	ccList, err := l.GetChaincodes(ctx, &GetChaincodesRequest{Channel: deploy.Channel})
 	if err != nil {
-		return nil, ``, fmt.Errorf(`get chaincodes: %w`, err)
+		return nil, fmt.Errorf(`get chaincodes: %w`, err)
 	}
 	lsccCmd := lsccPkg.DEPLOY
 
@@ -113,8 +113,9 @@ func (l *LSCCService) Deploy(ctx context.Context, deploy *DeployRequest) (respon
 
 	argsBytes, err := chaincode.ArgsBytes(args)
 	if err != nil {
-		return nil, ``, fmt.Errorf(`args: %w`, err)
+		return nil, fmt.Errorf(`args: %w`, err)
 	}
 	// Invoke here (with broadcast to orderer)
-	return l.Invoker.Invoke(ctx, deploy.Channel, LSCCName, argsBytes, nil, deploy.Transient, ``)
+	res, _, err := l.Invoker.Invoke(ctx, deploy.Channel, LSCCName, argsBytes, nil, deploy.Transient, ``)
+	return res, err
 }
