@@ -5,7 +5,6 @@ import (
 	_ "embed"
 	"fmt"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
@@ -47,6 +46,7 @@ func NewCSCCFromClient(client api.Core) *CSCCService {
 
 func NewCSCC(querier api.Querier, version hlfproto.FabricVersion) *CSCCService {
 	return &CSCCService{
+		// Channel and chaincode are fixed in queries to CSCC
 		Querier:         chaincode.NewProtoQuerier(querier, ``, CSCCName),
 		ChannelsFetcher: NewCSCCChannelsFetcher(querier),
 		FabricVersion:   version,
@@ -82,12 +82,7 @@ func (c *CSCCService) GetChannels(ctx context.Context, _ *empty.Empty) (*peer.Ch
 }
 
 func (c *CSCCService) JoinChain(ctx context.Context, request *JoinChainRequest) (*empty.Empty, error) {
-	blockBytes, err := proto.Marshal(request.GenesisBlock)
-	if err != nil {
-		return nil, fmt.Errorf("marshal genesis block: %w", err)
-	}
-
-	if _, err = c.Querier.Query(ctx, JoinChain, blockBytes); err != nil {
+	if _, err := c.Querier.Query(ctx, JoinChain, request.GenesisBlock); err != nil {
 		return nil, err
 	}
 	return &empty.Empty{}, nil

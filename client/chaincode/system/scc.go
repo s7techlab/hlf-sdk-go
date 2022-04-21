@@ -10,10 +10,6 @@ type scc struct {
 
 var _ api.SystemCC = (*scc)(nil)
 
-func (c *scc) LSCC() api.LSCC {
-	return NewLSCC(c.core.PeerPool(), c.core.CurrentIdentity())
-}
-
 func (c *scc) Lifecycle() api.Lifecycle {
 	return NewLifecycle(c.core)
 }

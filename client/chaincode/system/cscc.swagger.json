@@ -93,6 +93,16 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/systemJoinChainRequest"
+            }
+          }
+        ],
         "tags": [
           "CSCCService"
         ]
@@ -267,6 +277,17 @@
         }
       },
       "title": "ChannelQueryResponse returns information about each channel that pertains\nto a query in lscc.go, such as GetChannels (returns all channels for a\ngiven peer)"
+    },
+    "systemJoinChainRequest": {
+      "type": "object",
+      "properties": {
+        "channel": {
+          "type": "string"
+        },
+        "genesis_block": {
+          "$ref": "#/definitions/commonBlock"
+        }
+      }
     }
   }
 }

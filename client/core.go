@@ -12,7 +12,6 @@ import (
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
 	"github.com/s7techlab/hlf-sdk-go/client/channel"
 	"github.com/s7techlab/hlf-sdk-go/crypto"
@@ -46,20 +45,6 @@ type core struct {
 
 func (c *core) ChaincodeLifecycle() api.Lifecycle {
 	return system.NewLifecycle(c)
-}
-
-func (c *core) Chaincode(name string) api.ChaincodePackage {
-	c.chaincodeMx.Lock()
-	defer c.chaincodeMx.Unlock()
-
-	cc, ok := c.chaincodes[name]
-	if !ok {
-		cc = chaincode.NewCorePackage(name, system.NewLSCC(c.peerPool, c.identity), c.fetcher, c.orderer, c.identity)
-		c.chaincodes[name] = cc
-		return cc
-	}
-
-	return cc
 }
 
 func (c *core) System() api.SystemCC {

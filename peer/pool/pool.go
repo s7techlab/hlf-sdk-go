@@ -111,6 +111,9 @@ func (p *peerPool) poolChecker(ctx context.Context, aliveChan chan bool, peer *p
 	}
 }
 
+// Process finds first ready peer in pool for specified mspId , endorses proposal and returns proposal response
+// - no load balancing between msp peers
+// - no data is not sent to the orderer
 func (p *peerPool) Process(ctx context.Context, mspId string, proposal *peer.SignedProposal) (*peer.ProposalResponse, error) {
 	log := p.log.Named(`Process`)
 	p.storeMx.RLock()

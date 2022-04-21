@@ -18,6 +18,7 @@ service CSCCService {
   rpc JoinChain (JoinChainRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       post: "/cscc/joinchain"
+      body: "*"
     };
   }
 
