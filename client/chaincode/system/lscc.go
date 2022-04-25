@@ -9,7 +9,7 @@ import (
 	lsccPkg "github.com/hyperledger/fabric/core/scc/lscc"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
+	"github.com/s7techlab/hlf-sdk-go/client/tx"
 )
 
 type (
@@ -27,7 +27,7 @@ func NewLSCC(invoker api.Invoker) *LSCCService {
 }
 
 func (l *LSCCService) GetChaincodeData(ctx context.Context, getChaincodeData *GetChaincodeDataRequest) (*peer.ChaincodeData, error) {
-	res, err := chaincode.QueryStringsProto(ctx,
+	res, err := tx.QueryStringsProto(ctx,
 		l.Invoker,
 		getChaincodeData.Channel, LSCCName,
 		[]string{lsccPkg.GETCCDATA, getChaincodeData.Channel, getChaincodeData.Chaincode},
@@ -39,7 +39,7 @@ func (l *LSCCService) GetChaincodeData(ctx context.Context, getChaincodeData *Ge
 }
 
 func (l *LSCCService) GetInstalledChaincodes(ctx context.Context, _ *empty.Empty) (*peer.ChaincodeQueryResponse, error) {
-	res, err := chaincode.QueryStringsProto(ctx,
+	res, err := tx.QueryStringsProto(ctx,
 		l.Invoker,
 		``, LSCCName,
 		[]string{lsccPkg.GETINSTALLEDCHAINCODES},
@@ -50,7 +50,7 @@ func (l *LSCCService) GetInstalledChaincodes(ctx context.Context, _ *empty.Empty
 	return res.(*peer.ChaincodeQueryResponse), nil
 }
 func (l *LSCCService) GetChaincodes(ctx context.Context, getChaincodes *GetChaincodesRequest) (*peer.ChaincodeQueryResponse, error) {
-	res, err := chaincode.QueryStringsProto(ctx,
+	res, err := tx.QueryStringsProto(ctx,
 		l.Invoker,
 		getChaincodes.Channel, LSCCName,
 		[]string{lsccPkg.GETCHAINCODES},
@@ -62,7 +62,7 @@ func (l *LSCCService) GetChaincodes(ctx context.Context, getChaincodes *GetChain
 }
 
 func (l *LSCCService) GetDeploymentSpec(ctx context.Context, getDeploymentSpec *GetDeploymentSpecRequest) (*peer.ChaincodeDeploymentSpec, error) {
-	res, err := chaincode.QueryStringsProto(ctx,
+	res, err := tx.QueryStringsProto(ctx,
 		l.Invoker,
 		getDeploymentSpec.Channel, LSCCName,
 		[]string{lsccPkg.GETDEPSPEC, getDeploymentSpec.Channel, getDeploymentSpec.Chaincode},
@@ -73,7 +73,7 @@ func (l *LSCCService) GetDeploymentSpec(ctx context.Context, getDeploymentSpec *
 	return res.(*peer.ChaincodeDeploymentSpec), nil
 }
 func (l *LSCCService) Install(ctx context.Context, spec *peer.ChaincodeDeploymentSpec) (*empty.Empty, error) {
-	_, err := chaincode.QueryProto(ctx,
+	_, err := tx.QueryProto(ctx,
 		l.Invoker,
 		``, LSCCName,
 		[]interface{}{lsccPkg.INSTALL, spec},
@@ -111,7 +111,7 @@ func (l *LSCCService) Deploy(ctx context.Context, deploy *DeployRequest) (respon
 		args = append(args, deploy.CollectionConfig)
 	}
 
-	argsBytes, err := chaincode.ArgsBytes(args)
+	argsBytes, err := tx.ArgsBytes(args)
 	if err != nil {
 		return nil, fmt.Errorf(`args: %w`, err)
 	}

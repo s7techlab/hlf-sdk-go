@@ -1,4 +1,4 @@
-package chaincode
+package tx
 
 import (
 	"context"
@@ -16,7 +16,7 @@ var (
 	ErrUnknownArgType = errors.New(`unknown arg type`)
 )
 
-func FnArgs(fn string, args [][]byte) [][]byte {
+func FnArgs(fn string, args ...[]byte) [][]byte {
 	return append([][]byte{[]byte(fn)}, args...)
 }
 
@@ -37,7 +37,7 @@ func ArgBytes(arg interface{}) ([]byte, error) {
 	}
 }
 
-func StringArgsBytes(args []string) [][]byte {
+func StringArgsBytes(args ...string) [][]byte {
 	var argsBytes [][]byte
 
 	for _, arg := range args {
@@ -47,7 +47,7 @@ func StringArgsBytes(args []string) [][]byte {
 	return argsBytes
 }
 
-func ArgsBytes(args []interface{}) ([][]byte, error) {
+func ArgsBytes(args ...interface{}) ([][]byte, error) {
 	var argsBytes [][]byte
 
 	for pos, arg := range args {
@@ -102,7 +102,7 @@ func (c *ProtoQuerier) QueryBytesProto(ctx context.Context, args [][]byte, targe
 }
 
 func QueryProto(ctx context.Context, querier api.Querier, channel, chaincode string, args []interface{}, target proto.Message) (proto.Message, error) {
-	argsBytes, err := ArgsBytes(args)
+	argsBytes, err := ArgsBytes(args...)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func QueryProto(ctx context.Context, querier api.Querier, channel, chaincode str
 }
 
 func QueryStringsProto(ctx context.Context, querier api.Querier, channel, chaincode string, args []string, target proto.Message) (proto.Message, error) {
-	return QueryBytesProto(ctx, querier, channel, chaincode, StringArgsBytes(args), target)
+	return QueryBytesProto(ctx, querier, channel, chaincode, StringArgsBytes(args...), target)
 }
 
 func QueryBytesProto(ctx context.Context, querier api.Querier, channel, chaincode string, args [][]byte, target proto.Message) (proto.Message, error) {

@@ -183,14 +183,14 @@ func (p *peerPool) Process(ctx context.Context, mspId string, proposal *peer.Sig
 
 }
 func (p *peerPool) DeliverClient(mspId string, identity msp.SigningIdentity) (api.DeliverClient, error) {
-	poolPeer, err := p.getFirstReadyPeer(mspId)
+	poolPeer, err := p.FirstReadyPeer(mspId)
 	if err != nil {
 		return nil, err
 	}
 	return poolPeer.DeliverClient(identity)
 }
 
-func (p *peerPool) getFirstReadyPeer(mspId string) (api.Peer, error) {
+func (p *peerPool) FirstReadyPeer(mspId string) (api.Peer, error) {
 	log := p.log.Named(`getFirstReadyPeer`)
 	p.storeMx.RLock()
 	//check MspId exists

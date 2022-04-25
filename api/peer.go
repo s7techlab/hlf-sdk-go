@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
 	"google.golang.org/grpc"
@@ -18,11 +19,23 @@ type ChannelsFetcher interface {
 	GetChannels(ctx context.Context) (*peer.ChannelQueryResponse, error)
 }
 
+type ChannelInfo interface {
+	GetChainInfo(ctx context.Context, channel string) (*common.BlockchainInfo, error)
+}
+
 // Peer is common interface for endorsing peer
 type Peer interface {
 	Querier
 
 	Endorser
+
+	ChannelInfo
+
+	ChannelsFetcher
+
+	BlocksDeliverer
+
+	EventsDeliverer
 
 	// DeliverClient returns DeliverClient
 	DeliverClient(identity msp.SigningIdentity) (DeliverClient, error)

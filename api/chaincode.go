@@ -19,19 +19,9 @@ type Chaincode interface {
 	Invoke(fn string) ChaincodeInvokeBuilder
 	// Query returns query builder for presented function and arguments
 	Query(fn string, args ...string) ChaincodeQueryBuilder
-	// Deprecated: Install fetches chaincode from repository and installs it on local peer
-	Install(version string)
+
 	// Subscribe returns subscription on chaincode events
 	Subscribe(ctx context.Context) (EventCCSubscription, error)
-}
-
-type ChaincodePackage interface {
-	// Latest allows to get latest version of chaincode
-	Latest(ctx context.Context) (*peer.ChaincodeDeploymentSpec, error)
-	// Install chaincode using defined chaincode fetcher
-	Install(ctx context.Context, path, version string) error
-	// Instantiate chaincode on channel with presented params
-	Instantiate(ctx context.Context, channelName, path, version, policy string, args [][]byte, transArgs TransArgs) error
 }
 
 type ChaincodeInvokeResponse struct {
@@ -104,8 +94,4 @@ type ChaincodeQueryBuilder interface {
 	AsProposalResponse(ctx context.Context) (*peer.ProposalResponse, error)
 	// Do makes query with built arguments
 	Do(ctx context.Context) (*peer.Response, error)
-}
-
-type CCFetcher interface {
-	Fetch(ctx context.Context, id *peer.ChaincodeID) (*peer.ChaincodeDeploymentSpec, error)
 }

@@ -22,8 +22,6 @@ type Core interface {
 	CurrentMspPeers() []Peer
 	// CryptoSuite returns current crypto suite implementation
 	CryptoSuite() CryptoSuite
-	// System allows access to system chaincodes
-	System() SystemCC
 	// PeerPool current peer pool
 	PeerPool() PeerPool
 	// FabricV2 returns if core works in fabric v2 mode

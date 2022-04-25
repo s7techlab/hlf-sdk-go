@@ -10,7 +10,7 @@ import (
 	"github.com/hyperledger/fabric-protos-go/peer"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
+	"github.com/s7techlab/hlf-sdk-go/client/tx"
 	hlfproto "github.com/s7techlab/hlf-sdk-go/proto"
 )
 
@@ -30,13 +30,13 @@ type (
 	CSCCService struct {
 		UnimplementedCSCCServiceServer
 
-		Querier         *chaincode.ProtoQuerier
+		Querier         *tx.ProtoQuerier
 		ChannelsFetcher *CSCCChannelsFetcher
 		FabricVersion   hlfproto.FabricVersion
 	}
 
 	CSCCChannelsFetcher struct {
-		Querier *chaincode.ProtoQuerier
+		Querier *tx.ProtoQuerier
 	}
 )
 
@@ -47,7 +47,7 @@ func NewCSCCFromClient(client api.Core) *CSCCService {
 func NewCSCC(querier api.Querier, version hlfproto.FabricVersion) *CSCCService {
 	return &CSCCService{
 		// Channel and chaincode are fixed in queries to CSCC
-		Querier:         chaincode.NewProtoQuerier(querier, ``, CSCCName),
+		Querier:         tx.NewProtoQuerier(querier, ``, CSCCName),
 		ChannelsFetcher: NewCSCCChannelsFetcher(querier),
 		FabricVersion:   version,
 	}
@@ -55,7 +55,7 @@ func NewCSCC(querier api.Querier, version hlfproto.FabricVersion) *CSCCService {
 
 func NewCSCCChannelsFetcher(querier api.Querier) *CSCCChannelsFetcher {
 	return &CSCCChannelsFetcher{
-		Querier: chaincode.NewProtoQuerier(querier, ``, CSCCName),
+		Querier: tx.NewProtoQuerier(querier, ``, CSCCName),
 	}
 }
 

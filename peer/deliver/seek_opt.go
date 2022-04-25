@@ -1,4 +1,4 @@
-package client
+package deliver
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
-	systemcc "github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
 	"github.com/s7techlab/hlf-sdk-go/proto"
 )
 
@@ -18,17 +17,17 @@ type SeekOptConverter struct {
 	Logger           *zap.Logger
 }
 
-func NewSeekOptConverter(c *core) *SeekOptConverter {
+func NewSeekOptConverter(channelInfo api.ChannelInfo, logger *zap.Logger) *SeekOptConverter {
 	return &SeekOptConverter{
 		GetChannelHeight: func(ctx context.Context, channel string) (uint64, error) {
-			channelInfo, err := systemcc.NewQSCC(c).GetChainInfo(ctx, &systemcc.GetChainInfoRequest{ChannelName: channel})
+			channelInfo, err := channelInfo.GetChainInfo(ctx, channel)
 			if err != nil {
 				return 0, err
 			}
 
 			return channelInfo.Height, nil
 		},
-		Logger: c.logger,
+		Logger: logger,
 	}
 }
 

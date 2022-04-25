@@ -20,6 +20,26 @@ type Core struct {
 	identity msp.SigningIdentity
 }
 
+func NewCore(
+	mspId,
+	ccName,
+	channelName string,
+	endorsingMSPs []string,
+	peerPool api.PeerPool,
+	orderer api.Orderer,
+	identity msp.SigningIdentity,
+) *Core {
+	return &Core{
+		mspId:         mspId,
+		name:          ccName,
+		channelName:   channelName,
+		endorsingMSPs: endorsingMSPs,
+		peerPool:      peerPool,
+		orderer:       orderer,
+		identity:      identity,
+	}
+}
+
 func (c *Core) GetPeers() []api.Peer {
 	peers := make([]api.Peer, 0)
 
@@ -41,34 +61,10 @@ func (c *Core) Query(fn string, args ...string) api.ChaincodeQueryBuilder {
 	return NewQueryBuilder(c, c.identity, fn, args...)
 }
 
-func (c *Core) Install(version string) {
-	panic("implement me")
-}
-
 func (c *Core) Subscribe(ctx context.Context) (api.EventCCSubscription, error) {
 	peerDeliver, err := c.peerPool.DeliverClient(c.mspId, c.identity)
 	if err != nil {
 		return nil, fmt.Errorf(`initiate DeliverClient: %w`, err)
 	}
 	return peerDeliver.SubscribeCC(ctx, c.channelName, c.name)
-}
-
-func NewCore(
-	mspId,
-	ccName,
-	channelName string,
-	endorsingMSPs []string,
-	peerPool api.PeerPool,
-	orderer api.Orderer,
-	identity msp.SigningIdentity,
-) *Core {
-	return &Core{
-		mspId:         mspId,
-		name:          ccName,
-		channelName:   channelName,
-		endorsingMSPs: endorsingMSPs,
-		peerPool:      peerPool,
-		orderer:       orderer,
-		identity:      identity,
-	}
 }

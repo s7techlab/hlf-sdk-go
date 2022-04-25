@@ -12,7 +12,6 @@ import (
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
 	"github.com/s7techlab/hlf-sdk-go/client/channel"
 	"github.com/s7techlab/hlf-sdk-go/crypto"
 	"github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
@@ -36,20 +35,18 @@ type core struct {
 	discoveryProvider api.DiscoveryProvider
 	channels          map[string]api.Channel
 	channelMx         sync.Mutex
-	chaincodes        map[string]api.ChaincodePackage
 	chaincodeMx       sync.Mutex
 	cs                api.CryptoSuite
-	fetcher           api.CCFetcher
 	fabricV2          bool
 }
 
-func (c *core) ChaincodeLifecycle() api.Lifecycle {
-	return system.NewLifecycle(c)
-}
-
-func (c *core) System() api.SystemCC {
-	return system.NewSCC(c)
-}
+//func (c *core) ChaincodeLifecycle() api.Lifecycle {
+//	return system.NewLifecycle(c)
+//}
+//
+//func (c *core) System() api.SystemCC {
+//	return system.NewSCC(c)
+//}
 
 func (c *core) CurrentIdentity() msp.SigningIdentity {
 	return c.identity
@@ -140,8 +137,7 @@ func NewCore(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 func New(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 	var err error
 	core := &core{
-		channels:   make(map[string]api.Channel),
-		chaincodes: make(map[string]api.ChaincodePackage),
+		channels: make(map[string]api.Channel),
 	}
 
 	for _, option := range opts {

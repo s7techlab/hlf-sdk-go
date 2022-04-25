@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/hyperledger/fabric-chaincode-go/shim"
+	"github.com/hyperledger/fabric-protos-go/common"
 	fabricPeer "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
@@ -14,6 +16,7 @@ import (
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
 	"github.com/s7techlab/hlf-sdk-go/peer/deliver"
 	"github.com/s7techlab/hlf-sdk-go/util"
@@ -82,14 +85,19 @@ func (p *peer) Query(
 	signer msp.SigningIdentity,
 	transientMap map[string][]byte) (*fabricPeer.Response, error) {
 
-	p.logger.Debug(`endorser query`,
+	zapFields := []zap.Field{
 		zap.String(`channel`, channel),
 		zap.String(`chaincode`, chaincode),
-		zap.String(`args[0] (fn)`, string(args[0])))
-
-	if signer == nil {
-		signer = p.identity
+		zap.String(`args[0] (fn)`, string(args[0])),
 	}
+
+	if signer == nil && p.identity != nil {
+		signer = p.identity
+
+		zapFields = append(zapFields, zap.String(`use default identity`, p.identity.GetMSPIdentifier()))
+	}
+
+	p.logger.Debug(`peer query`, zapFields...)
 
 	proposal, _, err := tx.Endorsement{
 		Channel:      channel,
@@ -109,6 +117,76 @@ func (p *peer) Query(
 	}
 
 	return response.Response, nil
+}
+
+func (p *peer) Blocks(ctx context.Context, channel string, identity msp.SigningIdentity, blockRange ...int64) (blockChan <-chan *common.Block, closer func() error, err error) {
+	p.logger.Debug(`peer blocks request`,
+		zap.String(`uri`, p.Uri()),
+		zap.String(`channel`, channel),
+		zap.Reflect(`range`, blockRange))
+
+	dc, err := p.DeliverClient(identity)
+	if err != nil {
+		return nil, nil, fmt.Errorf(`deliver client: %w`, err)
+	}
+
+	var seekOpts []api.EventCCSeekOption
+	seekOpt, err := deliver.NewSeekOptConverter(p, p.logger).ByBlockRange(ctx, channel, blockRange...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if seekOpt != nil {
+		seekOpts = append(seekOpts, seekOpt)
+	}
+
+	bs, err := dc.SubscribeBlock(ctx, channel, seekOpts...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return bs.Blocks(), bs.Close, nil
+}
+
+func (p *peer) Events(ctx context.Context, channel string, chaincode string, identity msp.SigningIdentity, blockRange ...int64) (events chan interface {
+	Event() *fabricPeer.ChaincodeEvent
+	Block() uint64
+	TxTimestamp() *timestamp.Timestamp
+}, closer func() error, err error) {
+
+	p.logger.Debug(`peer events request`,
+		zap.String(`uri`, p.Uri()),
+		zap.String(`channel`, channel),
+		zap.Reflect(`range`, blockRange))
+
+	dc, err := p.DeliverClient(identity)
+	if err != nil {
+		return nil, nil, fmt.Errorf(`deliver client: %w`, err)
+	}
+	var seekOpts []api.EventCCSeekOption
+	seekOpt, err := deliver.NewSeekOptConverter(p, p.logger).ByBlockRange(ctx, channel, blockRange...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if seekOpt != nil {
+		seekOpts = append(seekOpts, seekOpt)
+	}
+
+	sub, err := dc.SubscribeCC(ctx, channel, chaincode, seekOpts...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return sub.EventsExtended(), sub.Close, nil
+}
+
+func (p *peer) GetChainInfo(ctx context.Context, channel string) (*common.BlockchainInfo, error) {
+	return system.NewQSCC(p).GetChainInfo(ctx, &system.GetChainInfoRequest{ChannelName: channel})
+}
+
+func (p *peer) GetChannels(ctx context.Context) (*fabricPeer.ChannelQueryResponse, error) {
+	return system.NewCSCCChannelsFetcher(p).GetChannels(ctx)
 }
 
 func (p *peer) Endorse(ctx context.Context, proposal *fabricPeer.SignedProposal) (*fabricPeer.ProposalResponse, error) {

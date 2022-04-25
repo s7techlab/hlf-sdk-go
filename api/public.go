@@ -15,8 +15,8 @@ type EventsDeliverer interface {
 	// if provided 'identity' is 'nil' default one will be set
 	Events(
 		ctx context.Context,
-		channelName string,
-		ccName string,
+		channel string,
+		chaincode string,
 		identity msp.SigningIdentity,
 		blockRange ...int64,
 	) (events chan interface {
@@ -32,7 +32,7 @@ type BlocksDeliverer interface {
 	// if provided 'identity' is 'nil' default one will be set
 	Blocks(
 		ctx context.Context,
-		channelName string,
+		channel string,
 		identity msp.SigningIdentity,
 		blockRange ...int64,
 	) (blockChan <-chan *common.Block, closer func() error, err error)
@@ -43,8 +43,8 @@ type Querier interface {
 	// if provided 'identity' is 'nil' default one will be set
 	Query(
 		ctx context.Context,
-		chanName string,
-		ccName string,
+		channel string,
+		chaincode string,
 		args [][]byte,
 		identity msp.SigningIdentity,
 		transient map[string][]byte,
@@ -61,8 +61,8 @@ type Invoker interface {
 	// default is 'self'(even if you pass empty string)
 	Invoke(
 		ctx context.Context,
-		chanName string,
-		ccName string,
+		channel string,
+		chaincode string,
 		args [][]byte,
 		identity msp.SigningIdentity,
 		transient map[string][]byte,
