@@ -40,10 +40,10 @@ func (l *LifecycleService) ServiceDef() ServiceDef {
 }
 
 func (l *LifecycleService) QueryInstalledChaincodes(ctx context.Context, _ *empty.Empty) (*lifecycleproto.QueryInstalledChaincodesResult, error) {
-	res, err := tx.QueryStringsProto(ctx,
+	res, err := tx.QueryProto(ctx,
 		l.Invoker,
 		``, LifecycleName,
-		[]string{lifecyclecc.QueryInstalledChaincodesFuncName},
+		[]interface{}{lifecyclecc.QueryInstalledChaincodesFuncName, []byte{}},
 		&lifecycleproto.QueryInstalledChaincodesResult{})
 	if err != nil {
 		return nil, err

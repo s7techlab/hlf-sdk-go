@@ -18,7 +18,6 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/discovery"
 	"github.com/s7techlab/hlf-sdk-go/orderer"
 	"github.com/s7techlab/hlf-sdk-go/peer"
-	"github.com/s7techlab/hlf-sdk-go/peer/pool"
 	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
@@ -166,7 +165,7 @@ func New(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 		if core.config == nil {
 			return nil, api.ErrEmptyConfig
 		}
-		core.peerPool = pool.New(core.ctx, core.logger)
+		core.peerPool = peer.NewPool(core.ctx, core.logger)
 		for _, mspConfig := range core.config.MSP {
 			for _, peerConfig := range mspConfig.Endorsers {
 				var p api.Peer

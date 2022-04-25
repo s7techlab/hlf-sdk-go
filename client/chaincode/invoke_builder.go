@@ -15,7 +15,7 @@ import (
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode/txwaiter"
-	"github.com/s7techlab/hlf-sdk-go/peer"
+	"github.com/s7techlab/hlf-sdk-go/client/tx"
 )
 
 type invokeBuilder struct {
@@ -23,7 +23,6 @@ type invokeBuilder struct {
 	fn            string
 	args          [][]byte
 	transientArgs api.TransArgs
-	processor     api.PeerProcessor
 	doOptions     []api.DoOption
 	err           *errArgMap
 }
@@ -34,18 +33,15 @@ var ErrOrdererNotDefined = errors.New(`orderer not defined`)
 
 func NewInvokeBuilder(ccCore *Core, fn string) api.ChaincodeInvokeBuilder {
 	return &invokeBuilder{
-		ccCore:    ccCore,
-		fn:        fn,
-		processor: peer.NewProcessor(ccCore.channelName),
-
-		err: newErrArgMap(),
+		ccCore: ccCore,
+		fn:     fn,
+		err:    newErrArgMap(),
 	}
 }
 
 // WithIdentity instructs invoke builder to use given identity for signing transaction proposals
 func (b *invokeBuilder) WithIdentity(identity msp.SigningIdentity) api.ChaincodeInvokeBuilder {
 	b.doOptions = append(b.doOptions, api.WithIdentity(identity))
-
 	return b
 }
 
@@ -74,10 +70,10 @@ func (b *invokeBuilder) ArgJSON(in ...interface{}) api.ChaincodeInvokeBuilder {
 }
 
 func (b *invokeBuilder) ArgString(args ...string) api.ChaincodeInvokeBuilder {
-	return b.ArgBytes(argsToBytes(args...))
+	return b.ArgBytes(tx.StringArgsBytes(args...))
 }
 
-func (b *invokeBuilder) Do(ctx context.Context, options ...api.DoOption) (*fabricPeer.Response, api.ChaincodeTx, error) {
+func (b *invokeBuilder) Do(ctx context.Context, options ...api.DoOption) (*fabricPeer.Response, string, error) {
 	err := b.err.Err()
 	if err != nil {
 		return nil, ``, err
@@ -105,31 +101,38 @@ func (b *invokeBuilder) Do(ctx context.Context, options ...api.DoOption) (*fabri
 		}
 	}
 
-	proposal, tx, err := b.processor.CreateProposal(b.ccCore.name, doOpts.Identity, b.fn, b.args, b.transientArgs)
+	proposal, txID, err := tx.Endorsement{
+		Channel:      b.ccCore.channelName,
+		Chaincode:    b.ccCore.name,
+		Args:         tx.FnArgs(b.fn, b.args...),
+		Signer:       doOpts.Identity,
+		TransientMap: b.transientArgs,
+	}.SignedProposal()
+
 	if err != nil {
 		return nil, ``, fmt.Errorf("create proposal: %w", err)
 	}
 
-	peerResponses, err := b.processor.Send(ctx, proposal, doOpts.EndorsingMspIDs, doOpts.Pool)
+	peerResponses, err := b.ccCore.peerPool.EndorseOnMSPs(ctx, doOpts.EndorsingMspIDs, proposal)
 	if err != nil {
-		return nil, tx, fmt.Errorf("send proposal: %w", err)
+		return nil, txID, fmt.Errorf("send proposal: %w", err)
 	}
 
 	envelope, err := CreateEnvelope(proposal, peerResponses, doOpts.Identity)
 	if err != nil {
-		return nil, tx, fmt.Errorf("create signed transaction: %w", err)
+		return nil, txID, fmt.Errorf("create signed transaction: %w", err)
 	}
 
 	_, err = b.ccCore.orderer.Broadcast(ctx, envelope)
 	if err != nil {
-		return nil, tx, fmt.Errorf("broadcast transaction: %w", err)
+		return nil, txID, fmt.Errorf("broadcast transaction: %w", err)
 	}
 
-	if err = doOpts.TxWaiter.Wait(ctx, b.ccCore.channelName, tx); err != nil {
-		return nil, tx, err
+	if err = doOpts.TxWaiter.Wait(ctx, b.ccCore.channelName, txID); err != nil {
+		return nil, txID, err
 	}
 
-	return peerResponses[0].Response, tx, nil
+	return peerResponses[0].Response, txID, nil
 }
 
 func CreateEnvelope(

@@ -35,11 +35,11 @@ var (
 )
 
 type GetBlockerInfo interface {
-	GetBlockByTxID(ctx context.Context, channelName string, tx api.ChaincodeTx) (*common.Block, error)
+	GetBlockByTxID(ctx context.Context, channelName string, txID string) (*common.Block, error)
 }
 
 type subscribeEventOption struct {
-	fromTx   api.ChaincodeTx
+	fromTx   string
 	seekOpts []api.EventCCSeekOption
 	qscc     GetBlockerInfo
 }
@@ -53,15 +53,15 @@ func newEventDefaultOptions() *subscribeEventOption {
 	}
 }
 
-func FromTxID(qscc GetBlockerInfo, txid api.ChaincodeTx) func(*subscribeEventOption) error {
+func FromTxID(qscc GetBlockerInfo, txID string) func(*subscribeEventOption) error {
 	return func(opt *subscribeEventOption) error {
-		if len(txid) == 0 {
+		if len(txID) == 0 {
 			return nil
 		} else if qscc == nil {
 			return errors.New(`GetBlockerInfo must be set for txid filter`)
 		}
 
-		opt.fromTx = txid
+		opt.fromTx = txID
 		opt.qscc = qscc
 		return nil
 	}
@@ -128,8 +128,8 @@ func (d *deliverImpl) SubscribeCC(ctx context.Context, channelName string, ccNam
 	return events.Serve(sub, sub.readyForHandling), nil
 }
 
-func (d *deliverImpl) SubscribeTx(ctx context.Context, channelName string, txId api.ChaincodeTx, seekOpt ...api.EventCCSeekOption) (api.TxSubscription, error) {
-	txSub := subs.NewTxSubscription(txId)
+func (d *deliverImpl) SubscribeTx(ctx context.Context, channelName string, txID string, seekOpt ...api.EventCCSeekOption) (api.TxSubscription, error) {
+	txSub := subs.NewTxSubscription(txID)
 	sub, err := d.handleSubscription(ctx, channelName, txSub.Handler, seekOpt...)
 	if err != nil {
 		return nil, err

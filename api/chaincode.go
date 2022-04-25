@@ -7,8 +7,6 @@ import (
 	"github.com/hyperledger/fabric/msp"
 )
 
-type ChaincodeTx string
-
 type TransArgs map[string][]byte
 
 // Chaincode describes common operations with chaincode
@@ -25,14 +23,14 @@ type Chaincode interface {
 }
 
 type ChaincodeInvokeResponse struct {
-	TxID    ChaincodeTx
+	TxID    string
 	Payload []byte
 	Err     error
 }
 
 // TxWaiter is interface for build your custom function for wait of result of tx after endorsement
 type TxWaiter interface {
-	Wait(ctx context.Context, channel string, txId ChaincodeTx) error
+	Wait(ctx context.Context, channel string, txId string) error
 }
 
 type DoOptions struct {
@@ -75,7 +73,7 @@ type ChaincodeInvokeBuilder interface {
 	// ArgString set slice of strings as arguments
 	ArgString(args ...string) ChaincodeInvokeBuilder
 	// Do makes invoke with built arguments
-	Do(ctx context.Context, opts ...DoOption) (*peer.Response, ChaincodeTx, error)
+	Do(ctx context.Context, opts ...DoOption) (response *peer.Response, txID string, err error)
 }
 
 // ChaincodeQueryBuilder describe possibilities how to get query results

@@ -26,7 +26,7 @@ type DeliverClient interface {
 	// SubscribeCC allows subscribing on chaincode events using name of channel, chaincode and block offset
 	SubscribeCC(ctx context.Context, channelName string, ccName string, seekOpt ...EventCCSeekOption) (EventCCSubscription, error)
 	// SubscribeTx allows subscribing on transaction events by id
-	SubscribeTx(ctx context.Context, channelName string, tx ChaincodeTx, seekOpt ...EventCCSeekOption) (TxSubscription, error)
+	SubscribeTx(ctx context.Context, channelName string, txID string, seekOpt ...EventCCSeekOption) (TxSubscription, error)
 	// SubscribeBlock allows subscribing on block events. Always returns new instance of block subscription
 	SubscribeBlock(ctx context.Context, channelName string, seekOpt ...EventCCSeekOption) (BlockSubscription, error)
 }
@@ -98,7 +98,7 @@ type BlockSubscription interface {
 }
 
 type TxEvent struct {
-	TxId    ChaincodeTx
+	TxId    string
 	Success bool
 	Error   error
 }
@@ -130,7 +130,7 @@ func (e UnknownEventTypeError) Error() string {
 }
 
 type InvalidTxError struct {
-	TxId ChaincodeTx
+	TxId string
 	Code peer.TxValidationCode
 }
 

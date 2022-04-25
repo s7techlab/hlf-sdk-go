@@ -24,14 +24,14 @@ type selfPeerWaiter struct {
 }
 
 // Wait - implementation of api.TxWaiter interface
-func (w *selfPeerWaiter) Wait(ctx context.Context, channel string, txId api.ChaincodeTx) error {
+func (w *selfPeerWaiter) Wait(ctx context.Context, channel string, txID string) error {
 	mspID := w.identity.GetMSPIdentifier()
 	deliver, err := w.pool.DeliverClient(mspID, w.identity)
 	if err != nil {
 		return errors.Wrapf(err, "%s: failed to get delivery client", mspID)
 	}
 
-	sub, err := deliver.SubscribeTx(ctx, channel, txId)
+	sub, err := deliver.SubscribeTx(ctx, channel, txID)
 	if err != nil {
 		return errors.Wrapf(err, "%s: failed to subscribe on tx event", mspID)
 	}

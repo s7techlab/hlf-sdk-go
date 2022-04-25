@@ -5,7 +5,6 @@ import (
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/proto"
 )
 
@@ -27,10 +26,10 @@ func (eb *ChaincodeEventWithBlock) TxTimestamp() *timestamp.Timestamp {
 	return eb.txTimestamp
 }
 
-func NewEventSubscription(cid string, fromTx api.ChaincodeTx) *EventSubscription {
+func NewEventSubscription(cid string, fromTxID string) *EventSubscription {
 	return &EventSubscription{
 		chaincodeID: cid,
-		fromTx:      string(fromTx),
+		fromTx:      fromTxID,
 		events: make(chan interface {
 			Event() *peer.ChaincodeEvent
 			Block() uint64

@@ -45,7 +45,7 @@ func (w *allMspWaiter) setErr() {
 }
 
 // Wait - implementation of api.TxWaiter interface
-func (w *allMspWaiter) Wait(ctx context.Context, channel string, txId api.ChaincodeTx) error {
+func (w *allMspWaiter) Wait(ctx context.Context, channel string, txId string) error {
 	var (
 		wg   = new(sync.WaitGroup)
 		errS = make(chan error, len(w.delivers))
@@ -78,7 +78,7 @@ func (w *allMspWaiter) Wait(ctx context.Context, channel string, txId api.Chainc
 	return nil
 }
 
-func waitPerOne(ctx context.Context, deliver api.DeliverClient, channelName string, txId api.ChaincodeTx) error {
+func waitPerOne(ctx context.Context, deliver api.DeliverClient, channelName string, txId string) error {
 	sub, err := deliver.SubscribeTx(ctx, channelName, txId)
 	if err != nil {
 		return errors.Wrap(err, "failed to subscribe on tx event")
