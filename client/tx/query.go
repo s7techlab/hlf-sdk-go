@@ -78,7 +78,7 @@ func NewProtoQuerier(querier api.Querier, channel, chaincode string) *ProtoQueri
 }
 
 func (c *ProtoQuerier) Query(ctx context.Context, args ...interface{}) (*peer.Response, error) {
-	argsBytes, err := ArgsBytes(args)
+	argsBytes, err := ArgsBytes(args...)
 	if err != nil {
 		return nil, err
 	}

@@ -111,7 +111,7 @@ func (l *LSCCService) Deploy(ctx context.Context, deploy *DeployRequest) (respon
 		args = append(args, deploy.CollectionConfig)
 	}
 
-	argsBytes, err := tx.ArgsBytes(args)
+	argsBytes, err := tx.ArgsBytes(args...)
 	if err != nil {
 		return nil, fmt.Errorf(`args: %w`, err)
 	}

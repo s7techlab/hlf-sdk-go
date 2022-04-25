@@ -11,7 +11,7 @@ import (
 )
 
 func InvokeProto(ctx context.Context, invoker api.Invoker, channel, chaincode string, args []interface{}, target proto.Message) (proto.Message, error) {
-	argsBytes, err := ArgsBytes(args)
+	argsBytes, err := ArgsBytes(args...)
 	if err != nil {
 		return nil, err
 	}
