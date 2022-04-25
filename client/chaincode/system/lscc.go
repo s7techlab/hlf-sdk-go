@@ -2,6 +2,7 @@ package system
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -11,6 +12,9 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
 )
+
+//go:embed lscc.swagger.json
+var LSCCServiceSwagger []byte
 
 type (
 	LSCCService struct {
@@ -24,6 +28,16 @@ func NewLSCC(invoker api.Invoker) *LSCCService {
 	return &LSCCService{
 		Invoker: invoker,
 	}
+}
+
+func (l *LSCCService) ServiceDef() ServiceDef {
+	return NewServiceDef(
+		_LSCCService_serviceDesc.ServiceName,
+		LSCCServiceSwagger,
+		&_LSCCService_serviceDesc,
+		l,
+		RegisterLSCCServiceHandlerFromEndpoint,
+	)
 }
 
 func (l *LSCCService) GetChaincodeData(ctx context.Context, getChaincodeData *GetChaincodeDataRequest) (*peer.ChaincodeData, error) {

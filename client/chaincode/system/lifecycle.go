@@ -2,6 +2,7 @@ package system
 
 import (
 	"context"
+	_ "embed"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	lifecycleproto "github.com/hyperledger/fabric-protos-go/peer/lifecycle"
@@ -10,6 +11,9 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
 )
+
+//go:embed lifecycle.swagger.json
+var LifecycleServiceSwagger []byte
 
 type (
 	LifecycleService struct {
@@ -23,6 +27,16 @@ func NewLifecycle(invoker api.Invoker) *LifecycleService {
 	return &LifecycleService{
 		Invoker: invoker,
 	}
+}
+
+func (l *LifecycleService) ServiceDef() ServiceDef {
+	return NewServiceDef(
+		_LifecycleService_serviceDesc.ServiceName,
+		LifecycleServiceSwagger,
+		&_LifecycleService_serviceDesc,
+		l,
+		RegisterLifecycleServiceHandlerFromEndpoint,
+	)
 }
 
 func (l *LifecycleService) QueryInstalledChaincodes(ctx context.Context, _ *empty.Empty) (*lifecycleproto.QueryInstalledChaincodesResult, error) {
