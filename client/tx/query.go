@@ -119,7 +119,7 @@ func QueryBytesProto(ctx context.Context, querier api.Querier, channel, chaincod
 		ctx, channel, chaincode, args, nil, nil)
 
 	if err != nil {
-		return nil, fmt.Errorf(`query channel=%s chaincode=%s: %w`, channel, chaincode, err)
+		return nil, err
 	}
 
 	resProto := proto.Clone(target)

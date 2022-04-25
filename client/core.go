@@ -40,14 +40,6 @@ type core struct {
 	fabricV2          bool
 }
 
-//func (c *core) ChaincodeLifecycle() api.Lifecycle {
-//	return system.NewLifecycle(c)
-//}
-//
-//func (c *core) System() api.SystemCC {
-//	return system.NewSCC(c)
-//}
-
 func (c *core) CurrentIdentity() msp.SigningIdentity {
 	return c.identity
 }
@@ -135,9 +127,22 @@ func NewCore(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 }
 
 func New(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
-	var err error
+
+	if identity == nil {
+		return nil, errors.New("identity wasn't provided")
+	}
+
+	// todo: allow to change crypto config
+	defaultCS := ecdsa.DefaultConfig
+	cs, err := crypto.GetSuite(defaultCS.Type, defaultCS.Options)
+	if err != nil {
+		return nil, fmt.Errorf(`initialize crypto suite: %w`, err)
+	}
+
 	core := &core{
 		channels: make(map[string]api.Channel),
+		identity: identity.GetSigningIdentity(cs),
+		cs:       cs,
 	}
 
 	for _, option := range opts {
@@ -153,26 +158,6 @@ func New(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 	if core.logger == nil {
 		core.logger = DefaultLogger
 	}
-
-	if core.cs == nil {
-
-		if core.config == nil {
-			return nil, api.ErrEmptyConfig
-		}
-		if core.config.Crypto.Type == `` {
-			core.logger.Debug("crypto suite: use default config")
-			core.config.Crypto = ecdsa.DefaultConfig
-		}
-		if core.cs, err = crypto.GetSuite(core.config.Crypto.Type, core.config.Crypto.Options); err != nil {
-			return nil, fmt.Errorf(`initialize crypto suite: %w`, err)
-		}
-	}
-
-	if identity == nil {
-		return nil, errors.New("identity wasn't provided")
-	}
-
-	core.identity = identity.GetSigningIdentity(core.cs)
 
 	// if peerPool is empty, set it from config
 	if core.peerPool == nil {

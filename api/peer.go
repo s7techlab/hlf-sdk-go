@@ -23,8 +23,15 @@ type ChannelInfo interface {
 	GetChainInfo(ctx context.Context, channel string) (*common.BlockchainInfo, error)
 }
 
+type CurrentIdentity interface {
+	// CurrentIdentity identity returns current signing identity used by core
+	CurrentIdentity() msp.SigningIdentity
+}
+
 // Peer is common interface for endorsing peer
 type Peer interface {
+	CurrentIdentity
+
 	Querier
 
 	Endorser

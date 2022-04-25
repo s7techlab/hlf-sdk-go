@@ -22,6 +22,9 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
+// FnShowMaxLength limit to show fn name (args[0]) in debug and error messages
+const FnShowMaxLength = 100
+
 type peer struct {
 	conn     *grpc.ClientConn
 	timeout  time.Duration
@@ -85,15 +88,21 @@ func (p *peer) Query(
 	signer msp.SigningIdentity,
 	transientMap map[string][]byte) (*fabricPeer.Response, error) {
 
+	fn := ``
 	zapFields := []zap.Field{
 		zap.String(`channel`, channel),
 		zap.String(`chaincode`, chaincode),
-		zap.String(`args[0] (fn)`, string(args[0])),
+	}
+
+	if len(args) > 0 {
+		if len(args[0]) < FnShowMaxLength {
+			fn = string(args[0])
+			zapFields = append(zapFields, zap.String(`args[0] (fn)`, fn))
+		}
 	}
 
 	if signer == nil && p.identity != nil {
 		signer = p.identity
-
 		zapFields = append(zapFields, zap.String(`use default identity`, p.identity.GetMSPIdentifier()))
 	}
 
@@ -113,7 +122,7 @@ func (p *peer) Query(
 
 	response, err := p.Endorse(ctx, proposal)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf(`peer query channel=%s chaincode=%s fn=%s: %w`, channel, chaincode, fn, err)
 	}
 
 	return response.Response, nil
@@ -212,6 +221,11 @@ func (p *peer) Endorse(ctx context.Context, proposal *fabricPeer.SignedProposal)
 
 func (p *peer) DeliverClient(identity msp.SigningIdentity) (api.DeliverClient, error) {
 	return deliver.New(fabricPeer.NewDeliverClient(p.conn), identity), nil
+}
+
+// CurrentIdentity identity returns current signing identity used by core
+func (p *peer) CurrentIdentity() msp.SigningIdentity {
+	return p.identity
 }
 
 func (p *peer) Conn() *grpc.ClientConn {
