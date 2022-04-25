@@ -12,14 +12,15 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode/txwaiter"
+	"github.com/s7techlab/hlf-sdk-go/client/tx"
 )
 
 func (c *core) Invoke(
 	ctx context.Context,
-	chanName string,
+	channel string,
 	ccName string,
 	args [][]byte,
-	identity msp.SigningIdentity,
+	signer msp.SigningIdentity,
 	transient map[string][]byte,
 	txWaiterType string,
 ) (*fabPeer.Response, string, error) {
@@ -36,25 +37,29 @@ func (c *core) Invoke(
 		return nil, "", fmt.Errorf("invalid tx waiter type. got %v, available: '%v', '%v'", txWaiterType, api.TxWaiterSelfType, api.TxWaiterAllType)
 	}
 
-	if identity == nil {
-		identity = c.CurrentIdentity()
+	if signer == nil {
+		signer = c.CurrentIdentity()
 	}
 
-	ccAPI, err := c.Channel(chanName).Chaincode(ctx, ccName)
+	if endorserMSPs := tx.EndorserMSPsFromContext(ctx); len(endorserMSPs) > 0 {
+		doOpts = append(doOpts, api.WithEndorsingMpsIDs(endorserMSPs))
+	}
+
+	ccAPI, err := c.Channel(channel).Chaincode(ctx, ccName)
 	if err != nil {
 		return nil, "", err
 	}
 
-	res, tx, err := ccAPI.Invoke(string(args[0])).
+	res, txID, err := ccAPI.Invoke(string(args[0])).
 		ArgBytes(args[1:]).
-		WithIdentity(identity).
+		WithIdentity(signer).
 		Transient(transient).
 		Do(ctx, doOpts...)
 	if err != nil {
 		return nil, "", err
 	}
 
-	return res, string(tx), nil
+	return res, txID, nil
 }
 
 func (c *core) Query(

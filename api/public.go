@@ -9,6 +9,11 @@ import (
 	"github.com/hyperledger/fabric/msp"
 )
 
+type CurrentIdentity interface {
+	// CurrentIdentity identity returns current signing identity used by core
+	CurrentIdentity() msp.SigningIdentity
+}
+
 type EventsDeliverer interface {
 	// Events - shortcut for PeerPool().DeliverClient(...).SubscribeCC(...).Events()
 	// subscribe on chaincode events using name of channel, chaincode and block offset
@@ -39,6 +44,7 @@ type BlocksDeliverer interface {
 }
 
 type Querier interface {
+	CurrentIdentity
 	// Query - shortcut for querying chanincodes
 	// if provided 'identity' is 'nil' default one will be set
 	Query(

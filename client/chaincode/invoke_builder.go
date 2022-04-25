@@ -47,13 +47,11 @@ func (b *invokeBuilder) WithIdentity(identity msp.SigningIdentity) api.Chaincode
 
 func (b *invokeBuilder) ArgBytes(args [][]byte) api.ChaincodeInvokeBuilder {
 	b.args = args
-
 	return b
 }
 
 func (b *invokeBuilder) Transient(args api.TransArgs) api.ChaincodeInvokeBuilder {
 	b.transientArgs = args
-
 	return b
 }
 

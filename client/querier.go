@@ -15,7 +15,6 @@ type QuerierDecorator struct {
 }
 
 func (q QuerierDecorator) Query(ctx context.Context, channel string, chaincode string, args [][]byte, signer msp.SigningIdentity, transient map[string][]byte) (*peer.Response, error) {
-
 	if signer == nil {
 		signer = q.DefaultSigner
 	}

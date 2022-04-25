@@ -75,16 +75,26 @@ func (l *LifecycleService) InstallChaincode(ctx context.Context, args *lifecycle
 	return res.(*lifecycleproto.InstallChaincodeResult), nil
 }
 
-func (l *LifecycleService) ApproveChaincodeDefinitionForMyOrg(ctx context.Context, approveChaincodeDefinitionForMyOrg *ApproveChaincodeDefinitionForMyOrgRequest) (*empty.Empty, error) {
+func (l *LifecycleService) ApproveChaincodeDefinitionForMyOrg(ctx context.Context,
+	approveChaincodeDefinitionForMyOrg *ApproveChaincodeDefinitionForMyOrgRequest) (*empty.Empty, error) {
 
-	// for invoker need to set endorser msp
-	// Do(ctx, api.WithEndorsingMpsIDs([]string{l.core.CurrentIdentity().GetMSPIdentifier()}))
-	args, err := tx.ArgsBytes(lifecyclecc.ApproveChaincodeDefinitionForMyOrgFuncName, approveChaincodeDefinitionForMyOrg.Args)
+	// approve method should be endorsed only on local msp peer
+	ctxWithEndorserSpecified := tx.ContextWithEndorserMSPs(ctx,
+		[]string{l.Invoker.CurrentIdentity().GetMSPIdentifier()})
+
+	args, err := tx.ArgsBytes(
+		lifecyclecc.ApproveChaincodeDefinitionForMyOrgFuncName,
+		approveChaincodeDefinitionForMyOrg.Args,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	_, _, err = l.Invoker.Invoke(ctx, approveChaincodeDefinitionForMyOrg.Channel, LifecycleName, args, nil, nil, ``)
+	_, _, err = l.Invoker.Invoke(
+		ctxWithEndorserSpecified,
+		approveChaincodeDefinitionForMyOrg.Channel,
+		LifecycleName,
+		args, nil, nil, ``)
 	if err != nil {
 		return nil, err
 	}
