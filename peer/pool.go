@@ -16,6 +16,8 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
+var ErrEndorsingMSPsRequired = errors.New(`endorsing MSPs required`)
+
 type peerPool struct {
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -191,6 +193,10 @@ func (p *peerPool) EndorseOnMSP(ctx context.Context, mspID string, proposal *pee
 }
 
 func (p *peerPool) EndorseOnMSPs(ctx context.Context, mspIDs []string, proposal *peerproto.SignedProposal) ([]*peerproto.ProposalResponse, error) {
+	if len(mspIDs) == 0 {
+		return nil, ErrEndorsingMSPsRequired
+	}
+
 	respList := make([]*peerproto.ProposalResponse, 0)
 	respChan := make(chan endorseChannelResponse)
 

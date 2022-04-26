@@ -29,7 +29,10 @@ type invokeBuilder struct {
 
 var _ api.ChaincodeInvokeBuilder = (*invokeBuilder)(nil)
 
-var ErrOrdererNotDefined = errors.New(`orderer not defined`)
+var (
+	ErrOrdererNotDefined     = errors.New(`orderer not defined`)
+	ErrNotEnoughEndorsements = errors.New(`not enough endorsements`)
+)
 
 func NewInvokeBuilder(ccCore *Core, fn string) api.ChaincodeInvokeBuilder {
 	return &invokeBuilder{
@@ -114,6 +117,11 @@ func (b *invokeBuilder) Do(ctx context.Context, options ...api.DoOption) (*fabri
 	peerResponses, err := b.ccCore.peerPool.EndorseOnMSPs(ctx, doOpts.EndorsingMspIDs, proposal)
 	if err != nil {
 		return nil, txID, fmt.Errorf("send proposal: %w", err)
+	}
+
+	if len(peerResponses) == 0 || len(peerResponses) != len(doOpts.EndorsingMspIDs) {
+		return nil, ``, fmt.Errorf(`endorsements received num=%d, required=%d: %w`,
+			len(peerResponses), len(doOpts.EndorsingMspIDs), ErrNotEnoughEndorsements)
 	}
 
 	envelope, err := CreateEnvelope(proposal, peerResponses, doOpts.Identity)
