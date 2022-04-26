@@ -76,7 +76,7 @@ func (c *Core) Chaincode(serviceDiscCtx context.Context, ccName string) (api.Cha
 
 			errGr.Go(func() error {
 				var p api.Peer
-				p, err = peer.New(grpcCfg, l)
+				p, err = peer.New(grpcCfg, c.identity, l)
 				if err != nil {
 					return fmt.Errorf("initialize endorsers for MSP: %s: %w", mspID, err)
 				}

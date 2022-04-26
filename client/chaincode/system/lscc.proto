@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package hlfsdk.client.chaincode.system;
+
+option go_package = "hlfsdk/client/chaincode/system";
+
+import "common/collection.proto";
+import "common/policies.proto";
+import "peer/query.proto";
+import "peer/chaincode.proto";
+//import "peer/proposal.proto";
+import "peer/proposal_response.proto";
+
+
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
+
+// LSCC implements gateway to Life Cycle System Chaincode (LSCC)
+service LSCCService {
+
+  // GetChaincodeData returns information about instantiated chaincode on target channel
+  rpc GetChaincodeData (GetChaincodeDataRequest) returns (protos.ChaincodeData) {
+    option (google.api.http) = {
+      get: "/lscc/chaincodes/{channel}/{chaincode}"
+    };
+  }
+
+  // GetInstalledChaincodes returns list of installed chaincodes on peer
+  rpc GetInstalledChaincodes (google.protobuf.Empty) returns (protos.ChaincodeQueryResponse) {
+    option (google.api.http) = {
+      get: "/lscc/chaincodes"
+    };
+  }
+
+  // GetChaincodes returns list of instantiated chaincodes on channel
+  rpc GetChaincodes (GetChaincodesRequest) returns (protos.ChaincodeQueryResponse) {
+    option (google.api.http) = {
+      get: "/lscc/chaincodes/{channel}"
+    };
+  }
+
+  // GetDeploymentSpec returns spec for installed chaincode
+  rpc GetDeploymentSpec (GetDeploymentSpecRequest) returns (protos.ChaincodeDeploymentSpec) {
+    option (google.api.http) = {
+      get: "/lscc/chaincodes/{channel}/{chaincode}/deployment-spec"
+    };
+  }
+
+  // Install allows installing chaincode using deployment specification
+  rpc Install (protos.ChaincodeDeploymentSpec) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/lscc/chaincodes"
+      body: "*"
+    };
+  }
+
+  // Deploy allows instantiating or upgrade chaincode if instantiated
+  // Currently, deploy method is not canonical as lscc implementation, but currently we need to get full proposal, and it's response to broadcast to orderer
+  rpc Deploy (DeployRequest) returns (protos.Response ) {
+    option (google.api.http) = {
+      post: "/lscc/chaincodes/{channel}"
+      body: "*"
+    };
+  }
+}
+
+message GetChaincodeDataRequest {
+  string channel = 1;
+  string chaincode = 2;
+}
+
+message GetChaincodesRequest {
+  string channel = 1;
+}
+
+message GetDeploymentSpecRequest {
+  string channel = 1;
+  string chaincode = 2;
+}
+
+message DeployRequest {
+  string channel = 1;
+  protos.ChaincodeDeploymentSpec deployment_spec = 2;
+  common.SignaturePolicyEnvelope policy = 3;
+  string ESCC = 4;
+  string VSCC = 5;
+  common.CollectionConfigPackage collection_config = 6;
+  map<string, bytes> transient = 7;
+}
+
+//message DeployResponse {
+//  protos.SignedProposal signed_proposal = 1;
+//  proposal_response = 2;
+//}
+

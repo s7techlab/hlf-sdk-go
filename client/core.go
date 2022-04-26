@@ -12,15 +12,12 @@ import (
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
-	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
 	"github.com/s7techlab/hlf-sdk-go/client/channel"
 	"github.com/s7techlab/hlf-sdk-go/crypto"
 	"github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
 	"github.com/s7techlab/hlf-sdk-go/discovery"
 	"github.com/s7techlab/hlf-sdk-go/orderer"
 	"github.com/s7techlab/hlf-sdk-go/peer"
-	"github.com/s7techlab/hlf-sdk-go/peer/pool"
 	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
@@ -37,33 +34,9 @@ type core struct {
 	discoveryProvider api.DiscoveryProvider
 	channels          map[string]api.Channel
 	channelMx         sync.Mutex
-	chaincodes        map[string]api.ChaincodePackage
 	chaincodeMx       sync.Mutex
 	cs                api.CryptoSuite
-	fetcher           api.CCFetcher
 	fabricV2          bool
-}
-
-func (c *core) ChaincodeLifecycle() api.Lifecycle {
-	return system.NewLifecycle(c)
-}
-
-func (c *core) Chaincode(name string) api.ChaincodePackage {
-	c.chaincodeMx.Lock()
-	defer c.chaincodeMx.Unlock()
-
-	cc, ok := c.chaincodes[name]
-	if !ok {
-		cc = chaincode.NewCorePackage(name, system.NewLSCC(c.peerPool, c.identity), c.fetcher, c.orderer, c.identity)
-		c.chaincodes[name] = cc
-		return cc
-	}
-
-	return cc
-}
-
-func (c *core) System() api.SystemCC {
-	return system.NewSCC(c)
 }
 
 func (c *core) CurrentIdentity() msp.SigningIdentity {
@@ -153,10 +126,22 @@ func NewCore(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 }
 
 func New(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
-	var err error
+
+	if identity == nil {
+		return nil, errors.New("identity wasn't provided")
+	}
+
+	// todo: allow to change crypto config
+	defaultCS := ecdsa.DefaultConfig
+	cs, err := crypto.GetSuite(defaultCS.Type, defaultCS.Options)
+	if err != nil {
+		return nil, fmt.Errorf(`initialize crypto suite: %w`, err)
+	}
+
 	core := &core{
-		channels:   make(map[string]api.Channel),
-		chaincodes: make(map[string]api.ChaincodePackage),
+		channels: make(map[string]api.Channel),
+		identity: identity.GetSigningIdentity(cs),
+		cs:       cs,
 	}
 
 	for _, option := range opts {
@@ -173,26 +158,6 @@ func New(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 		core.logger = DefaultLogger
 	}
 
-	if core.cs == nil {
-
-		if core.config == nil {
-			return nil, api.ErrEmptyConfig
-		}
-		if core.config.Crypto.Type == `` {
-			core.logger.Debug("crypto suite: use default config")
-			core.config.Crypto = ecdsa.DefaultConfig
-		}
-		if core.cs, err = crypto.GetSuite(core.config.Crypto.Type, core.config.Crypto.Options); err != nil {
-			return nil, fmt.Errorf(`initialize crypto suite: %w`, err)
-		}
-	}
-
-	if identity == nil {
-		return nil, errors.New("identity wasn't provided")
-	}
-
-	core.identity = identity.GetSigningIdentity(core.cs)
-
 	// if peerPool is empty, set it from config
 	if core.peerPool == nil {
 		core.logger.Info("initializing peer pool")
@@ -200,11 +165,11 @@ func New(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 		if core.config == nil {
 			return nil, api.ErrEmptyConfig
 		}
-		core.peerPool = pool.New(core.ctx, core.logger)
+		core.peerPool = peer.NewPool(core.ctx, core.logger)
 		for _, mspConfig := range core.config.MSP {
 			for _, peerConfig := range mspConfig.Endorsers {
 				var p api.Peer
-				p, err = peer.New(peerConfig, core.logger)
+				p, err = peer.New(peerConfig, core.identity, core.logger)
 				if err != nil {
 					return nil, fmt.Errorf("initialize endorsers for MSP: %s: %w", mspConfig.Name, err)
 				}
@@ -270,7 +235,7 @@ func New(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 						Host: lpAddresses.Address,
 						Tls:  lpAddresses.TLSSettings,
 					}
-					p, err := peer.New(peerCfg, core.logger)
+					p, err := peer.New(peerCfg, core.identity, core.logger)
 					if err != nil {
 						return nil, fmt.Errorf(`initialize endorsers for MSP: %s: %w`, mspID, err)
 					}

@@ -6,13 +6,12 @@ import (
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/util/txflags"
 )
 
-func NewTxSubscription(txId api.ChaincodeTx) *TxSubscription {
+func NewTxSubscription(txID string) *TxSubscription {
 	return &TxSubscription{
-		txId:   txId,
+		txId:   txID,
 		result: make(chan *result, 1),
 	}
 }
@@ -23,7 +22,7 @@ type result struct {
 }
 
 type TxSubscription struct {
-	txId   api.ChaincodeTx
+	txId   string
 	result chan *result
 	ErrorCloser
 }
@@ -86,8 +85,7 @@ func (ts *TxSubscription) Handler(block *common.Block) bool {
 			return true
 		}
 
-		//println("TXID", chHeader.TxId, txFilter.IsValid(i))
-		if api.ChaincodeTx(chHeader.TxId) == ts.txId {
+		if chHeader.TxId == ts.txId {
 			//defer ts.ErrorCloser.Close()
 			if txFilter.IsValid(i) {
 				ts.result <- &result{code: txFilter.Flag(i), err: nil}

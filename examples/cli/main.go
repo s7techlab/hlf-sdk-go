@@ -6,13 +6,8 @@ import (
 	"flag"
 	"log"
 
-	"github.com/hyperledger/fabric/common/util"
-	"go.uber.org/zap"
-
 	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/client"
 	_ "github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
-	"github.com/s7techlab/hlf-sdk-go/identity"
 )
 
 var ctx = context.Background()
@@ -32,34 +27,36 @@ var (
 )
 
 func main() {
-	id, err := identity.SignerFromMSPPath(*mspId, *mspPath)
+	//  no instantiate option yet
 
-	if err != nil {
-		log.Fatalln(`Failed to load identity:`, err)
-	}
+	//id, err := identity.SignerFromMSPPath(*mspId, *mspPath)
+	//
+	//if err != nil {
+	//	log.Fatalln(`Failed to load identity:`, err)
+	//}
+	//
+	//l, _ := zap.NewDevelopment()
+	//
+	//core, err := client.NewCore(id, client.WithConfigYaml(*configPath), client.WithLogger(l))
+	//if err != nil {
+	//	log.Fatalln(`unable to initialize core:`, err)
+	//}
 
-	l, _ := zap.NewDevelopment()
-
-	core, err := client.NewCore(id, client.WithConfigYaml(*configPath), client.WithLogger(l))
-	if err != nil {
-		log.Fatalln(`unable to initialize core:`, err)
-	}
-
-	if err = core.Chaincode(*cc).Install(ctx, *ccPath, *ccVersion); err != nil {
-		log.Fatalln(err)
-	}
-
-	if err = core.Chaincode(*cc).Instantiate(
-		ctx,
-		*channel,
-		*ccPath,
-		*ccVersion,
-		*ccPolicy,
-		util.ToChaincodeArgs(*ccArgs),
-		prepareTransArgs(*ccTransient),
-	); err != nil {
-		log.Fatalln(err)
-	}
+	//if err = core.Chaincode(*cc).Install(ctx, *ccPath, *ccVersion); err != nil {
+	//	log.Fatalln(err)
+	//}
+	//
+	//if err = core.Chaincode(*cc).Instantiate(
+	//	ctx,
+	//	*channel,
+	//	*ccPath,
+	//	*ccVersion,
+	//	*ccPolicy,
+	//	util.ToChaincodeArgs(*ccArgs),
+	//	prepareTransArgs(*ccTransient),
+	//); err != nil {
+	//	log.Fatalln(err)
+	//}
 
 	log.Println(`successfully initiated`)
 }

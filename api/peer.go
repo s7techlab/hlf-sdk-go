@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
 	"google.golang.org/grpc"
@@ -18,11 +19,23 @@ type ChannelsFetcher interface {
 	GetChannels(ctx context.Context) (*peer.ChannelQueryResponse, error)
 }
 
+type ChannelInfo interface {
+	GetChainInfo(ctx context.Context, channel string) (*common.BlockchainInfo, error)
+}
+
 // Peer is common interface for endorsing peer
 type Peer interface {
 	Querier
 
 	Endorser
+
+	ChannelInfo
+
+	ChannelsFetcher
+
+	BlocksDeliverer
+
+	EventsDeliverer
 
 	// DeliverClient returns DeliverClient
 	DeliverClient(identity msp.SigningIdentity) (DeliverClient, error)
@@ -32,14 +45,6 @@ type Peer interface {
 	Conn() *grpc.ClientConn
 	// Close terminates peer connection
 	Close() error
-}
-
-// PeerProcessor is interface for processing transaction
-type PeerProcessor interface {
-	// CreateProposal creates signed proposal for presented cc, function and args using signing identity
-	CreateProposal(chaincodeName string, identity msp.SigningIdentity, fn string, args [][]byte, transArgs TransArgs) (*peer.SignedProposal, ChaincodeTx, error)
-	// Send sends signed proposal to endorsing peers and collects their responses
-	Send(ctx context.Context, proposal *peer.SignedProposal, endorsingMspIDs []string, pool PeerPool) ([]*peer.ProposalResponse, error)
 }
 
 // PeerEndorseError describes peer endorse error

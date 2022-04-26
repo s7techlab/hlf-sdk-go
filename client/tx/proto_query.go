@@ -1,8 +1,7 @@
-package chaincode
+package tx
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 
@@ -12,60 +11,22 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
-var (
-	ErrUnknownArgType = errors.New(`unknown arg type`)
-)
-
-func FnArgs(fn string, args [][]byte) [][]byte {
-	return append([][]byte{[]byte(fn)}, args...)
-}
-
-func ArgBytes(arg interface{}) ([]byte, error) {
-	switch val := arg.(type) {
-
-	case string:
-		return []byte(val), nil
-	case proto.Message:
-		return proto.Marshal(val)
-	default:
-		return nil, ErrUnknownArgType
-	}
-}
-
-func StringArgsBytes(args []string) [][]byte {
-	var argsBytes [][]byte
-
-	for _, arg := range args {
-		argsBytes = append(argsBytes, []byte(arg))
-	}
-
-	return argsBytes
-}
-
-func ArgsBytes(args []interface{}) ([][]byte, error) {
-	var argsBytes [][]byte
-
-	for pos, arg := range args {
-
-		converted, err := ArgBytes(arg)
-		if err != nil {
-			return nil, fmt.Errorf(`args[%d]: %w`, pos, err)
-		}
-
-		argsBytes = append(argsBytes, converted)
-	}
-
-	return argsBytes, nil
-}
-
 type ProtoQuerier struct {
 	Querier   api.Querier
 	Channel   string
 	Chaincode string
 }
 
+func NewProtoQuerier(querier api.Querier, channel, chaincode string) *ProtoQuerier {
+	return &ProtoQuerier{
+		Querier:   querier,
+		Channel:   channel,
+		Chaincode: chaincode,
+	}
+}
+
 func (c *ProtoQuerier) Query(ctx context.Context, args ...interface{}) (*peer.Response, error) {
-	argsBytes, err := ArgsBytes(args)
+	argsBytes, err := ArgsBytes(args...)
 	if err != nil {
 		return nil, err
 	}
@@ -81,23 +42,15 @@ func (c *ProtoQuerier) QueryProto(ctx context.Context, args []interface{}, targe
 }
 
 func (c *ProtoQuerier) QueryStringsProto(ctx context.Context, args []string, target proto.Message) (proto.Message, error) {
-	return QueryBytesProto(ctx, c.Querier, c.Channel, c.Chaincode, StringArgsBytes(args), target)
+	return QueryStringsProto(ctx, c.Querier, c.Channel, c.Chaincode, args, target)
 }
 
 func (c *ProtoQuerier) QueryBytesProto(ctx context.Context, args [][]byte, target proto.Message) (proto.Message, error) {
 	return QueryBytesProto(ctx, c.Querier, c.Channel, c.Chaincode, args, target)
 }
 
-func NewProtoQuerier(querier api.Querier, channel, chaincode string) *ProtoQuerier {
-	return &ProtoQuerier{
-		Querier:   querier,
-		Channel:   channel,
-		Chaincode: chaincode,
-	}
-}
-
 func QueryProto(ctx context.Context, querier api.Querier, channel, chaincode string, args []interface{}, target proto.Message) (proto.Message, error) {
-	argsBytes, err := ArgsBytes(args)
+	argsBytes, err := ArgsBytes(args...)
 	if err != nil {
 		return nil, err
 	}
@@ -105,13 +58,16 @@ func QueryProto(ctx context.Context, querier api.Querier, channel, chaincode str
 	return QueryBytesProto(ctx, querier, channel, chaincode, argsBytes, target)
 }
 
-func QueryBytesProto(ctx context.Context, querier api.Querier, channel, chaincode string, args [][]byte, target proto.Message) (proto.Message, error) {
+func QueryStringsProto(ctx context.Context, querier api.Querier, channel, chaincode string, args []string, target proto.Message) (proto.Message, error) {
+	return QueryBytesProto(ctx, querier, channel, chaincode, StringArgsBytes(args...), target)
+}
 
+func QueryBytesProto(ctx context.Context, querier api.Querier, channel, chaincode string, args [][]byte, target proto.Message) (proto.Message, error) {
 	res, err := querier.Query(
 		ctx, channel, chaincode, args, nil, nil)
 
 	if err != nil {
-		return nil, fmt.Errorf(`query channel=%s chaincode=%s: %w`, channel, chaincode, err)
+		return nil, err
 	}
 
 	resProto := proto.Clone(target)
@@ -121,4 +77,21 @@ func QueryBytesProto(ctx context.Context, querier api.Querier, channel, chaincod
 	}
 
 	return resProto, nil
+}
+
+type ProtoInvoker struct {
+	*ProtoQuerier
+
+	Invoker   api.Invoker
+	Channel   string
+	Chaincode string
+}
+
+func NewProtoInvoker(invoker api.Invoker, channel, chaincode string) *ProtoInvoker {
+	return &ProtoInvoker{
+		ProtoQuerier: NewProtoQuerier(invoker, channel, chaincode),
+		Invoker:      invoker,
+		Channel:      channel,
+		Chaincode:    chaincode,
+	}
 }

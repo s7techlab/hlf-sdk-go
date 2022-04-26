@@ -1,4 +1,4 @@
-package client_test
+package deliver_test
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/client"
+	"github.com/s7techlab/hlf-sdk-go/peer/deliver"
 )
 
 func TestSeek(t *testing.T) {
@@ -49,7 +49,7 @@ func TestSeek(t *testing.T) {
 	}
 
 	logger, _ := zap.NewDevelopment()
-	opt := &client.SeekOptConverter{
+	opt := &deliver.SeekOptConverter{
 		GetChannelHeight: func(ctx context.Context, channel string) (uint64, error) {
 			return channelHeight, nil
 		},

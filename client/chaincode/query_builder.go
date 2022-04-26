@@ -9,28 +9,26 @@ import (
 	"github.com/hyperledger/fabric/msp"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/peer"
+	"github.com/s7techlab/hlf-sdk-go/client/tx"
 )
 
 type QueryBuilder struct {
-	cc            string
+	channel       string
+	chaincode     string
 	fn            string
-	argBytes      [][]byte
+	args          [][]byte
 	identity      msp.SigningIdentity
-	processor     api.PeerProcessor
 	peerPool      api.PeerPool
 	transientArgs api.TransArgs
 }
 
 func (q *QueryBuilder) WithIdentity(identity msp.SigningIdentity) api.ChaincodeQueryBuilder {
 	q.identity = identity
-
 	return q
 }
 
 func (q *QueryBuilder) WithArguments(argBytes [][]byte) api.ChaincodeQueryBuilder {
-	q.argBytes = argBytes
-
+	q.args = argBytes
 	return q
 }
 
@@ -55,12 +53,19 @@ func (q *QueryBuilder) AsJSON(ctx context.Context, out interface{}) error {
 }
 
 func (q *QueryBuilder) AsProposalResponse(ctx context.Context) (*fabricPeer.ProposalResponse, error) {
-	proposal, _, err := q.processor.CreateProposal(q.cc, q.identity, q.fn, q.argBytes, q.transientArgs)
+	proposal, _, err := tx.Endorsement{
+		Channel:      q.channel,
+		Chaincode:    q.chaincode,
+		Args:         tx.FnArgs(q.fn, q.args...),
+		Signer:       q.identity,
+		TransientMap: q.transientArgs,
+	}.SignedProposal()
+
 	if err != nil {
 		return nil, fmt.Errorf(`create peer proposal: %w`, err)
 	}
 
-	return q.peerPool.Process(ctx, q.identity.GetMSPIdentifier(), proposal)
+	return q.peerPool.EndorseOnMSP(ctx, q.identity.GetMSPIdentifier(), proposal)
 }
 
 // Do makes invoke with built arguments
@@ -81,11 +86,11 @@ func (q *QueryBuilder) Transient(args api.TransArgs) api.ChaincodeQueryBuilder {
 
 func NewQueryBuilder(ccCore *Core, identity msp.SigningIdentity, fn string, args ...string) api.ChaincodeQueryBuilder {
 	q := &QueryBuilder{
-		cc:        ccCore.name,
+		channel:   ccCore.channelName,
+		chaincode: ccCore.name,
 		fn:        fn,
-		argBytes:  argsToBytes(args...),
+		args:      tx.StringArgsBytes(args...),
 		identity:  identity,
-		processor: peer.NewProcessor(ccCore.channelName),
 		peerPool:  ccCore.peerPool,
 	}
 

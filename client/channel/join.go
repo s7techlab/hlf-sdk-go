@@ -25,7 +25,10 @@ func (c *Core) Join(ctx context.Context) error {
 		return fmt.Errorf(`no peeers for msp if=%s`, c.mspId)
 	}
 
-	cscc := system.NewCSCC(peers[0], proto.FabricVersionIsV2(c.fabricV2))
+	cscc := system.NewCSCC(
+		// use specified peer to process join (pool can contain more than one peer)
+		peers[0],
+		proto.FabricVersionIsV2(c.fabricV2))
 
 	_, err = cscc.JoinChain(ctx, &system.JoinChainRequest{
 		Channel:      c.chanName,

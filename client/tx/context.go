@@ -1,4 +1,4 @@
-package client
+package tx
 
 import (
 	"context"
@@ -12,16 +12,11 @@ var (
 	ErrSignerNotDefinedInContext = errors.New(`signer is not defined in context`)
 )
 
-type contextKey string
-
-func (c contextKey) String() string {
-	return string(c)
-}
-
 const (
-	CtxTransientKey = contextKey(`TransientMap`)
-	CtxSignerKey    = contextKey(`SigningIdentity`)
-	CtxTxWaiterKey  = contextKey(`TxWaiter`)
+	CtxTransientKey    = `TransientMap`
+	CtxSignerKey       = `SigningIdentity`
+	CtxTxWaiterKey     = `TxWaiter`
+	CtxEndorserMSPsKey = `EndorserMSPs`
 )
 
 func ContextWithTransientMap(ctx context.Context, transient map[string][]byte) context.Context {
@@ -37,32 +32,24 @@ func ContextWithTransientValue(ctx context.Context, key string, value []byte) co
 	return context.WithValue(ctx, CtxTransientKey, transient)
 }
 
-func TransientFromContext(ctx context.Context) (map[string][]byte, error) {
-	if transient, ok := ctx.Value(CtxTransientKey).(map[string][]byte); !ok {
-		return nil, nil
-	} else {
-		return transient, nil
+func TransientFromContext(ctx context.Context) map[string][]byte {
+	if transient, ok := ctx.Value(CtxTransientKey).(map[string][]byte); ok {
+		return transient
 	}
-}
 
-func ContextWithDefaultSigner(ctx context.Context, defaultSigner msp.SigningIdentity) context.Context {
-	if _, err := SignerFromContext(ctx); err != nil {
-		return ContextWithSigner(ctx, defaultSigner)
-	} else {
-		return ctx
-	}
+	return nil
 }
 
 func ContextWithSigner(ctx context.Context, signer msp.SigningIdentity) context.Context {
 	return context.WithValue(ctx, CtxSignerKey, signer)
 }
 
-func SignerFromContext(ctx context.Context) (msp.SigningIdentity, error) {
-	if signer, ok := ctx.Value(CtxSignerKey).(msp.SigningIdentity); !ok {
-		return nil, ErrSignerNotDefinedInContext
-	} else {
-		return signer, nil
+func SignerFromContext(ctx context.Context) msp.SigningIdentity {
+	if signer, ok := ctx.Value(CtxSignerKey).(msp.SigningIdentity); ok {
+		return signer
 	}
+
+	return nil
 }
 
 func ContextWithTxWaiter(ctx context.Context, txWaiterType string) context.Context {
@@ -77,4 +64,15 @@ func ContextWithTxWaiter(ctx context.Context, txWaiterType string) context.Conte
 func TxWaiterFromContext(ctx context.Context) string {
 	txWaiter, _ := ctx.Value(CtxTxWaiterKey).(string)
 	return txWaiter
+}
+
+func ContextWithEndorserMSPs(ctx context.Context, endorserMSPs []string) context.Context {
+	return context.WithValue(ctx, CtxEndorserMSPsKey, endorserMSPs)
+}
+
+func EndorserMSPsFromContext(ctx context.Context) []string {
+	if endorserMSPs, ok := ctx.Value(CtxEndorserMSPsKey).([]string); ok {
+		return endorserMSPs
+	}
+	return nil
 }

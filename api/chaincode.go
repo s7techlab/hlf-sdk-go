@@ -7,8 +7,6 @@ import (
 	"github.com/hyperledger/fabric/msp"
 )
 
-type ChaincodeTx string
-
 type TransArgs map[string][]byte
 
 // Chaincode describes common operations with chaincode
@@ -19,30 +17,20 @@ type Chaincode interface {
 	Invoke(fn string) ChaincodeInvokeBuilder
 	// Query returns query builder for presented function and arguments
 	Query(fn string, args ...string) ChaincodeQueryBuilder
-	// Deprecated: Install fetches chaincode from repository and installs it on local peer
-	Install(version string)
+
 	// Subscribe returns subscription on chaincode events
 	Subscribe(ctx context.Context) (EventCCSubscription, error)
 }
 
-type ChaincodePackage interface {
-	// Latest allows to get latest version of chaincode
-	Latest(ctx context.Context) (*peer.ChaincodeDeploymentSpec, error)
-	// Install chaincode using defined chaincode fetcher
-	Install(ctx context.Context, path, version string) error
-	// Instantiate chaincode on channel with presented params
-	Instantiate(ctx context.Context, channelName, path, version, policy string, args [][]byte, transArgs TransArgs) error
-}
-
 type ChaincodeInvokeResponse struct {
-	TxID    ChaincodeTx
+	TxID    string
 	Payload []byte
 	Err     error
 }
 
 // TxWaiter is interface for build your custom function for wait of result of tx after endorsement
 type TxWaiter interface {
-	Wait(ctx context.Context, channel string, txId ChaincodeTx) error
+	Wait(ctx context.Context, channel string, txId string) error
 }
 
 type DoOptions struct {
@@ -85,7 +73,7 @@ type ChaincodeInvokeBuilder interface {
 	// ArgString set slice of strings as arguments
 	ArgString(args ...string) ChaincodeInvokeBuilder
 	// Do makes invoke with built arguments
-	Do(ctx context.Context, opts ...DoOption) (*peer.Response, ChaincodeTx, error)
+	Do(ctx context.Context, opts ...DoOption) (response *peer.Response, txID string, err error)
 }
 
 // ChaincodeQueryBuilder describe possibilities how to get query results
@@ -104,8 +92,4 @@ type ChaincodeQueryBuilder interface {
 	AsProposalResponse(ctx context.Context) (*peer.ProposalResponse, error)
 	// Do makes query with built arguments
 	Do(ctx context.Context) (*peer.Response, error)
-}
-
-type CCFetcher interface {
-	Fetch(ctx context.Context, id *peer.ChaincodeID) (*peer.ChaincodeDeploymentSpec, error)
 }

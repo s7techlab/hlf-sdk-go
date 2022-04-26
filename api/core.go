@@ -22,12 +22,8 @@ type Core interface {
 	CurrentMspPeers() []Peer
 	// CryptoSuite returns current crypto suite implementation
 	CryptoSuite() CryptoSuite
-	// System allows access to system chaincodes
-	System() SystemCC
 	// PeerPool current peer pool
 	PeerPool() PeerPool
-	// Chaincode installation
-	Chaincode(name string) ChaincodePackage
 	// FabricV2 returns if core works in fabric v2 mode
 	FabricV2() bool
 
@@ -43,6 +39,5 @@ const (
 
 // SystemCC describes interface to access Fabric System Chaincodes
 type SystemCC interface {
-	LSCC() LSCC
 	Lifecycle() Lifecycle
 }

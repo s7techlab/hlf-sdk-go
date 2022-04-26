@@ -80,7 +80,7 @@ func WithPeerPool(pool api.PeerPool) CoreOpt {
 func WithPeers(mspID string, peers []config.ConnectionConfig) CoreOpt {
 	return func(c *core) error {
 		for _, p := range peers {
-			pp, err := peer.New(p, c.logger)
+			pp, err := peer.New(p, c.identity, c.logger)
 			if err != nil {
 				return fmt.Errorf("create peer: %w", err)
 			}
