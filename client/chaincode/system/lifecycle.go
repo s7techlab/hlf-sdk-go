@@ -127,7 +127,7 @@ func (l *LifecycleService) CheckCommitReadiness(ctx context.Context, сheckCommi
 }
 
 func (l *LifecycleService) CommitChaincodeDefinition(ctx context.Context, commitChaincodeDefinition *CommitChaincodeDefinitionRequest) (*lifecycleproto.CommitChaincodeDefinitionResult, error) {
-	res, err := tx.QueryProto(ctx,
+	res, err := tx.InvokeProto(ctx,
 		l.Invoker,
 		commitChaincodeDefinition.Channel, LifecycleName,
 		[]interface{}{lifecyclecc.CommitChaincodeDefinitionFuncName, commitChaincodeDefinition.Args},
@@ -151,7 +151,6 @@ func (l *LifecycleService) QueryChaincodeDefinition(ctx context.Context, queryCh
 }
 
 func (l *LifecycleService) QueryChaincodeDefinitions(ctx context.Context, queryChaincodeDefinitions *QueryChaincodeDefinitionsRequest) (*lifecycleproto.QueryChaincodeDefinitionsResult, error) {
-
 	res, err := tx.QueryProto(ctx,
 		l.Invoker,
 		queryChaincodeDefinitions.Channel, LifecycleName,

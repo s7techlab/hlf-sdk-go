@@ -71,7 +71,7 @@ func ContextWithEndorserMSPs(ctx context.Context, endorserMSPs []string) context
 }
 
 func EndorserMSPsFromContext(ctx context.Context) []string {
-	if endorserMSPs, ok := ctx.Value(CtxEndorserMSPsKey).([]string); !ok {
+	if endorserMSPs, ok := ctx.Value(CtxEndorserMSPsKey).([]string); ok {
 		return endorserMSPs
 	}
 	return nil
