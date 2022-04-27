@@ -1,6 +1,7 @@
 package tx
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/hyperledger/fabric-protos-go/common"
@@ -30,7 +31,9 @@ func NewSeekGenesisEnvelope(channel string, signer msp.SigningIdentity) (*common
 }
 
 func NewSeekBlockEnvelope(channel string, signer msp.SigningIdentity, start, stop *orderer.SeekPosition) (*common.Envelope, error) {
-
+	if signer == nil {
+		return nil, errors.New(`signer should be defined`)
+	}
 	signerSerialized, err := signer.Serialize()
 	if err != nil {
 		return nil, fmt.Errorf(`serialize signer: %w`, err)

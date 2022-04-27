@@ -22,59 +22,71 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
-// FnShowMaxLength limit to show fn name (args[0]) in debug and error messages
-const FnShowMaxLength = 100
+const (
+	// FnShowMaxLength limit to show fn name (args[0]) in debug and error messages
+	FnShowMaxLength = 100
+
+	DefaultDialTimeout    = 5 * time.Second
+	DefaultEndorseTimeout = 5 * time.Second
+)
 
 type peer struct {
 	conn     *grpc.ClientConn
-	timeout  time.Duration
 	client   fabricPeer.EndorserClient
 	identity msp.SigningIdentity
-	logger   *zap.Logger
+
+	endorseDefaultTimeout time.Duration
+
+	logger *zap.Logger
 }
 
-var (
-	defaultTimeout = 5 * time.Second
-)
-
 // New returns new peer instance based on peer config
-func New(c config.ConnectionConfig, identity msp.SigningIdentity, logger *zap.Logger) (api.Peer, error) {
+func New(dialCtx context.Context, c config.ConnectionConfig, identity msp.SigningIdentity, logger *zap.Logger) (api.Peer, error) {
 	opts, err := util.NewGRPCOptionsFromConfig(c, logger)
 	if err != nil {
 		return nil, fmt.Errorf(`grpc options from config: %w`, err)
 	}
 
-	timeout := c.Timeout.Duration
-	if timeout == 0 {
-		timeout = defaultTimeout
+	dialTimeout := c.Timeout.Duration
+	if dialTimeout == 0 {
+		dialTimeout = DefaultDialTimeout
 	}
 
-	//ctx, _ := context.WithTimeout(context.Background(), c.Timeout.Duration)
-	logger.Debug(`dial to peer`, zap.String(`host`, c.Host), zap.Duration(`timeout`, timeout))
+	// Dial shoould always has timeout
+	ctxDeadline, exists := dialCtx.Deadline()
+	if !exists {
+		var cancel context.CancelFunc
+		dialCtx, cancel = context.WithTimeout(dialCtx, dialTimeout)
+		defer cancel()
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	conn, err := grpc.DialContext(ctx, c.Host, opts...)
-	if err != nil {
-		return nil, fmt.Errorf(`grpc dial to host=%s: %w`, c.Host, err)
+		ctxDeadline, _ = dialCtx.Deadline()
 	}
 
-	return NewFromGRPC(conn, identity, logger, timeout)
+	logger.Debug(`dial to peer`, zap.String(`host`, c.Host), zap.Time(`context deadline`, ctxDeadline))
+	conn, dialErr := grpc.DialContext(dialCtx, c.Host, opts...)
+	if dialErr != nil {
+		return nil, fmt.Errorf(`grpc dial to peer endpoint=%s: %w`, c.Host, err)
+	}
+
+	return NewFromGRPC(conn, identity, logger, c.Timeout.Duration)
 }
 
 // NewFromGRPC allows initializing peer from existing GRPC connection
-func NewFromGRPC(conn *grpc.ClientConn, identity msp.SigningIdentity, logger *zap.Logger, timeout time.Duration) (api.Peer, error) {
+func NewFromGRPC(conn *grpc.ClientConn, identity msp.SigningIdentity, logger *zap.Logger, endorseDefaultTimeout time.Duration) (api.Peer, error) {
 	if conn == nil {
 		return nil, errors.New(`empty connection`)
 	}
 
+	if endorseDefaultTimeout == 0 {
+		endorseDefaultTimeout = DefaultEndorseTimeout
+	}
+
 	p := &peer{
-		conn:     conn,
-		client:   fabricPeer.NewEndorserClient(conn),
-		identity: identity,
-		logger:   logger.Named(`peer`),
-		timeout:  timeout,
+		conn:                  conn,
+		client:                fabricPeer.NewEndorserClient(conn),
+		identity:              identity,
+		endorseDefaultTimeout: endorseDefaultTimeout,
+		logger:                logger.Named(`peer`),
 	}
 
 	return p, nil
@@ -196,9 +208,9 @@ func (p *peer) GetChannels(ctx context.Context) (*fabricPeer.ChannelQueryRespons
 }
 
 func (p *peer) Endorse(ctx context.Context, proposal *fabricPeer.SignedProposal) (*fabricPeer.ProposalResponse, error) {
-	if _, ok := ctx.Deadline(); !ok && p.timeout != 0 {
+	if _, ok := ctx.Deadline(); !ok && p.endorseDefaultTimeout != 0 {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, p.timeout)
+		ctx, cancel = context.WithTimeout(ctx, p.endorseDefaultTimeout)
 		defer cancel()
 	}
 
@@ -217,6 +229,9 @@ func (p *peer) Endorse(ctx context.Context, proposal *fabricPeer.SignedProposal)
 }
 
 func (p *peer) DeliverClient(identity msp.SigningIdentity) (api.DeliverClient, error) {
+	if identity == nil {
+		identity = p.identity
+	}
 	return deliver.New(fabricPeer.NewDeliverClient(p.conn), identity), nil
 }
 
