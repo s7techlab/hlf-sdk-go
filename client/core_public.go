@@ -37,13 +37,11 @@ func (c *core) Invoke(
 		return nil, "", fmt.Errorf("invalid tx waiter type. got %v, available: '%v', '%v'", txWaiterType, api.TxWaiterSelfType, api.TxWaiterAllType)
 	}
 
-	if signer == nil {
-		signer = c.CurrentIdentity()
-	}
-
 	if endorserMSPs := tx.EndorserMSPsFromContext(ctx); len(endorserMSPs) > 0 {
 		doOpts = append(doOpts, api.WithEndorsingMpsIDs(endorserMSPs))
 	}
+
+	signer = tx.ChooseSigner(ctx, signer, c.CurrentIdentity())
 
 	ccAPI, err := c.Channel(channel).Chaincode(ctx, ccName)
 	if err != nil {
