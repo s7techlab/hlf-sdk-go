@@ -101,10 +101,7 @@ func (p *peer) Query(
 		}
 	}
 
-	if signer == nil && p.identity != nil {
-		signer = p.identity
-		zapFields = append(zapFields, zap.String(`use default identity`, p.identity.GetMSPIdentifier()))
-	}
+	signer = tx.ChooseSigner(ctx, signer, p.identity)
 
 	p.logger.Debug(`peer query`, zapFields...)
 

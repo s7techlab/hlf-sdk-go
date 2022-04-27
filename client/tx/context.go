@@ -52,6 +52,18 @@ func SignerFromContext(ctx context.Context) msp.SigningIdentity {
 	return nil
 }
 
+func ChooseSigner(ctx context.Context, signer, defaultSigner msp.SigningIdentity) msp.SigningIdentity {
+	if signer != nil {
+		return signer
+	}
+
+	if ctxSigner := SignerFromContext(ctx); ctxSigner != nil {
+		return ctxSigner
+	}
+
+	return defaultSigner
+}
+
 func ContextWithTxWaiter(ctx context.Context, txWaiterType string) context.Context {
 	return context.WithValue(ctx, CtxTxWaiterKey, txWaiterType)
 }
