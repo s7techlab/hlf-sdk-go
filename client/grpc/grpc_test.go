@@ -1,4 +1,4 @@
-package util
+package grpc
 
 import (
 	"context"
@@ -61,7 +61,7 @@ func TestNewGRPCOptionsFromConfig(t *testing.T) {
 		GRPC:    config.GRPCConfig{},
 		Timeout: config.Duration{},
 	}
-	opts, err := NewGRPCOptionsFromConfig(nonTlsConnConfig, log)
+	opts, err := OptionsFromConfig(nonTlsConnConfig, log)
 	assert.NotNil(t, opts)
 	assert.NoError(t, err)
 	conn, err := grpc.DialContext(ctx, nonTlsConnConfig.Host, opts...)
@@ -80,7 +80,7 @@ func TestNewGRPCOptionsFromConfig(t *testing.T) {
 			CertPath:   path.Join(curDir, `testdata`, `tls`, `server`, `cert.pem`),
 		},
 	}
-	opts, err = NewGRPCOptionsFromConfig(tlsConnConfig, log)
+	opts, err = OptionsFromConfig(tlsConnConfig, log)
 	assert.NotNil(t, opts)
 	assert.NoError(t, err)
 	conn, err = grpc.DialContext(ctx, tlsConnConfig.Host, opts...)
@@ -100,7 +100,7 @@ func TestNewGRPCOptionsFromConfig(t *testing.T) {
 			KeyPath:    path.Join(curDir, `testdata`, `tls`, `client`, `cert-key.pem`),
 		},
 	}
-	opts, err = NewGRPCOptionsFromConfig(mutualTlsConnConfig, log)
+	opts, err = OptionsFromConfig(mutualTlsConnConfig, log)
 	assert.NotNil(t, opts)
 	assert.NoError(t, err)
 	conn, err = grpc.DialContext(ctx, mutualTlsConnConfig.Host, opts...)

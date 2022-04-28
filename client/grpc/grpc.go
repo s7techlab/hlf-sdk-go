@@ -1,4 +1,4 @@
-package util
+package grpc
 
 import (
 	"context"
@@ -46,8 +46,8 @@ const (
 	maxSendMsgSize = 100 * 1024 * 1024
 )
 
-// NewGRPCOptionsFromConfig - adds tracing, TLS certs and connection limits
-func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grpc.DialOption, error) {
+// OptionsFromConfig - adds tracing, TLS certs and connection limits
+func OptionsFromConfig(c config.ConnectionConfig, logger *zap.Logger) ([]grpc.DialOption, error) {
 
 	// TODO: move to config or variable options
 	grpcOptions := []grpc.DialOption{
@@ -145,18 +145,18 @@ func NewGRPCOptionsFromConfig(c config.ConnectionConfig, log *zap.Logger) ([]grp
 		fields = append(fields, zap.Reflect(`retry`, c.Tls))
 	}
 
-	log.Debug(`grpc options for host`, fields...)
+	logger.Debug(`grpc options`, fields...)
 
 	return grpcOptions, nil
 }
 
-// NewGRPCConnectionFromConfigs - initializes grpc connection with pool of addresses with round-robin client balancer
-func NewGRPCConnectionFromConfigs(ctx context.Context, log *zap.Logger, conf ...config.ConnectionConfig) (*grpc.ClientConn, error) {
+// ConnectionFromConfigs - initializes grpc connection with pool of addresses with round-robin client balancer
+func ConnectionFromConfigs(ctx context.Context, logger *zap.Logger, conf ...config.ConnectionConfig) (*grpc.ClientConn, error) {
 	if len(conf) == 0 {
 		return nil, errors.New(`no GRPC options provided`)
 	}
 	// use options from first config
-	opts, err := NewGRPCOptionsFromConfig(conf[0], log)
+	opts, err := OptionsFromConfig(conf[0], logger)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to get GRPC options`)
 	}
@@ -179,7 +179,7 @@ func NewGRPCConnectionFromConfigs(ctx context.Context, log *zap.Logger, conf ...
 
 	opts = append(opts, grpc.WithBalancerName(roundrobin.Name))
 
-	log.Debug(`grpc dial to orderer`, zap.Strings(`hosts`, hosts))
+	logger.Debug(`grpc dial to orderer`, zap.Strings(`hosts`, hosts))
 
 	ctxConn, cancel := context.WithTimeout(ctx, time.Second*2)
 	defer cancel()

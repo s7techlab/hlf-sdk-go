@@ -1,4 +1,4 @@
-package channel
+package client
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric/msp"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
@@ -13,10 +14,12 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
-	"github.com/s7techlab/hlf-sdk-go/peer"
+	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
+	"github.com/s7techlab/hlf-sdk-go/client/tx"
+	"github.com/s7techlab/hlf-sdk-go/proto"
 )
 
-type Core struct {
+type Channel struct {
 	mspId        string
 	chanName     string
 	peerPool     api.PeerPool
@@ -29,11 +32,11 @@ type Core struct {
 	log          *zap.Logger
 }
 
-var _ api.Channel = (*Core)(nil)
+var _ api.Channel = (*Channel)(nil)
 
 // Chaincode - returns interface with actions over chaincode
 // ctx is necessary for service discovery
-func (c *Core) Chaincode(serviceDiscCtx context.Context, ccName string) (api.Chaincode, error) {
+func (c *Channel) Chaincode(serviceDiscCtx context.Context, ccName string) (api.Chaincode, error) {
 	c.chaincodesMx.Lock()
 	defer c.chaincodesMx.Unlock()
 
@@ -76,7 +79,7 @@ func (c *Core) Chaincode(serviceDiscCtx context.Context, ccName string) (api.Cha
 
 			errGr.Go(func() error {
 				var p api.Peer
-				p, err = peer.New(serviceDiscCtx, grpcCfg, c.identity, l)
+				p, err = NewPeer(serviceDiscCtx, grpcCfg, c.identity, l)
 				if err != nil {
 					return fmt.Errorf("initialize endorsers for MSP: %s: %w", mspID, err)
 				}
@@ -98,7 +101,7 @@ func (c *Core) Chaincode(serviceDiscCtx context.Context, ccName string) (api.Cha
 	return cc, nil
 }
 
-func NewCore(
+func NewChannel(
 	mspId, chanName string,
 	peerPool api.PeerPool,
 	orderer api.Orderer,
@@ -107,7 +110,7 @@ func NewCore(
 	fabricV2 bool,
 	log *zap.Logger,
 ) api.Channel {
-	return &Core{
+	return &Channel{
 		mspId:      mspId,
 		chanName:   chanName,
 		peerPool:   peerPool,
@@ -118,4 +121,38 @@ func NewCore(
 		fabricV2:   fabricV2,
 		log:        log,
 	}
+}
+
+func (c *Channel) Join(ctx context.Context) error {
+	channelGenesis, err := c.getGenesisBlockFromOrderer(ctx)
+	if err != nil {
+		return fmt.Errorf(`get genesis block from orderer: %w`, err)
+	}
+
+	// todo: refactor
+	peers := c.peerPool.GetMSPPeers(c.mspId)
+
+	if len(peers) == 0 {
+		return fmt.Errorf(`no peeers for msp if=%s`, c.mspId)
+	}
+
+	cscc := system.NewCSCC(
+		// use specified peer to process join (pool can contain more than one peer)
+		peers[0],
+		proto.FabricVersionIsV2(c.fabricV2))
+
+	_, err = cscc.JoinChain(ctx, &system.JoinChainRequest{
+		Channel:      c.chanName,
+		GenesisBlock: channelGenesis,
+	})
+
+	return err
+}
+
+func (c *Channel) getGenesisBlockFromOrderer(ctx context.Context) (*common.Block, error) {
+	requestBlockEnvelope, err := tx.NewSeekGenesisEnvelope(c.chanName, c.identity)
+	if err != nil {
+		return nil, fmt.Errorf(`request block envelope: %w`, err)
+	}
+	return c.orderer.Deliver(ctx, requestBlockEnvelope)
 }

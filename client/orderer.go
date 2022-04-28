@@ -1,10 +1,10 @@
-package orderer
+package client
 
 import (
 	"context"
 	"fmt"
 	"io"
-	"sync"
+	"time"
 
 	"github.com/hyperledger/fabric-protos-go/common"
 	fabricOrderer "github.com/hyperledger/fabric-protos-go/orderer"
@@ -15,8 +15,12 @@ import (
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
+	grpcclient "github.com/s7techlab/hlf-sdk-go/client/grpc"
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
-	"github.com/s7techlab/hlf-sdk-go/util"
+)
+
+const (
+	OrdererDefaultDialTimeout = 5 * time.Second
 )
 
 type ErrUnexpectedStatus struct {
@@ -31,45 +35,49 @@ func (e *ErrUnexpectedStatus) Error() string {
 type Orderer struct {
 	uri             string
 	conn            *grpc.ClientConn
-	ctx             context.Context
-	cancel          context.CancelFunc
-	connMx          sync.Mutex
 	broadcastClient fabricOrderer.AtomicBroadcastClient
-	grpcOptions     []grpc.DialOption
 }
 
-func New(c config.ConnectionConfig, log *zap.Logger) (*Orderer, error) {
-	l := log.Named(`New`)
-	opts, err := util.NewGRPCOptionsFromConfig(c, log)
+func NewOrderer(dialCtx context.Context, c config.ConnectionConfig, logger *zap.Logger) (*Orderer, error) {
+	opts, err := grpcclient.OptionsFromConfig(c, logger)
 	if err != nil {
-		l.Error(`Failed to get GRPC options`, zap.Error(err))
-		return nil, fmt.Errorf(`get GRPC options: %w`, err)
+		return nil, fmt.Errorf(`get orderer GRPC options: %w`, err)
 	}
 
-	ctx, _ := context.WithTimeout(context.Background(), c.Timeout.Duration)
-	conn, err := grpc.DialContext(ctx, c.Host, opts...)
-	if err != nil {
-		l.Error(`Failed to initialize GRPC connection`, zap.Error(err))
-		return nil, fmt.Errorf(`initialize GRPC connection: %w`, err)
+	// Dial shoould always has timeout
+	ctxDeadline, exists := dialCtx.Deadline()
+	if !exists {
+		dialTimeout := c.Timeout.Duration
+		if dialTimeout == 0 {
+			dialTimeout = OrdererDefaultDialTimeout
+		}
+
+		var cancel context.CancelFunc
+		dialCtx, cancel = context.WithTimeout(dialCtx, dialTimeout)
+		defer cancel()
+
+		ctxDeadline, _ = dialCtx.Deadline()
 	}
 
-	return NewFromGRPC(ctx, conn, opts...)
+	logger.Debug(`dial to orderer`,
+		zap.String(`host`, c.Host), zap.Time(`context deadline`, ctxDeadline))
+	conn, dialErr := grpc.DialContext(dialCtx, c.Host, opts...)
+	if dialErr != nil {
+		return nil, fmt.Errorf(`dial to orderer=: %w`, err)
+	}
+
+	return NewOrdererFromGRPC(conn)
 }
 
-// NewFromGRPC allows initializing orderer from existing GRPC connection
-func NewFromGRPC(ctx context.Context, conn *grpc.ClientConn, grpcOptions ...grpc.DialOption) (*Orderer, error) {
-	obj := &Orderer{
-		uri:         conn.Target(),
-		conn:        conn,
-		ctx:         ctx,
-		grpcOptions: grpcOptions,
+// NewOrdererFromGRPC allows initializing orderer from existing GRPC connection
+func NewOrdererFromGRPC(conn *grpc.ClientConn) (*Orderer, error) {
+	orderer := &Orderer{
+		uri:             conn.Target(),
+		conn:            conn,
+		broadcastClient: fabricOrderer.NewAtomicBroadcastClient(conn),
 	}
 
-	if err := obj.initBroadcastClient(); err != nil {
-		return nil, fmt.Errorf(`initialize BroadcastClient: %w`, err)
-	}
-
-	return obj, nil
+	return orderer, nil
 }
 
 func (o *Orderer) Broadcast(ctx context.Context, envelope *common.Envelope) (resp *fabricOrderer.BroadcastResponse, err error) {
@@ -112,10 +120,9 @@ func (o *Orderer) Broadcast(ctx context.Context, envelope *common.Envelope) (res
 }
 
 func (o *Orderer) Deliver(ctx context.Context, envelope *common.Envelope) (block *common.Block, err error) {
-	cli, err := o.broadcastClient.Deliver(ctx)
-	if err != nil {
-		err = fmt.Errorf(`initialize deliver client: %w`, err)
-		return
+	cli, deliverErr := o.broadcastClient.Deliver(ctx)
+	if deliverErr != nil {
+		return nil, fmt.Errorf(`initialize deliver client: %w`, err)
 	}
 
 	waitc := make(chan struct{}, 0)
@@ -156,21 +163,6 @@ func (o *Orderer) Deliver(ctx context.Context, envelope *common.Envelope) (block
 	err = cli.CloseSend()
 	<-waitc
 	return
-}
-
-func (o *Orderer) initBroadcastClient() error {
-	var err error
-	if o.conn == nil {
-		o.connMx.Lock()
-		defer o.connMx.Unlock()
-		if o.conn, err = grpc.DialContext(o.ctx, o.uri, o.grpcOptions...); err != nil {
-			return fmt.Errorf(`initialize grpc connection: %w`, err)
-		}
-	}
-
-	o.broadcastClient = fabricOrderer.NewAtomicBroadcastClient(o.conn)
-
-	return nil
 }
 
 // GetConfigBlock returns config block by channel name

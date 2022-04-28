@@ -1,4 +1,4 @@
-package peer
+package client
 
 import (
 	"context"
@@ -18,7 +18,7 @@ import (
 
 var ErrEndorsingMSPsRequired = errors.New(`endorsing MSPs required`)
 
-type peerPool struct {
+type PeerPool struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 	logger *zap.Logger
@@ -37,7 +37,18 @@ type endorseChannelResponse struct {
 	Error    error
 }
 
-func (p *peerPool) GetPeers() map[string][]api.Peer {
+func NewPeerPool(ctx context.Context, log *zap.Logger) *PeerPool {
+	ctx, cancel := context.WithCancel(ctx)
+
+	return &PeerPool{
+		mspPeers: make(map[string][]*peerPoolPeer),
+		logger:   log.Named(`peer-pool`),
+		ctx:      ctx,
+		cancel:   cancel,
+	}
+}
+
+func (p *PeerPool) GetPeers() map[string][]api.Peer {
 	m := make(map[string][]api.Peer, 0)
 
 	for mspId, peers := range p.mspPeers {
@@ -49,7 +60,7 @@ func (p *peerPool) GetPeers() map[string][]api.Peer {
 	return m
 }
 
-func (p *peerPool) GetMSPPeers(mspID string) []api.Peer {
+func (p *PeerPool) GetMSPPeers(mspID string) []api.Peer {
 	var peers []api.Peer
 	if mspPeers, ok := p.mspPeers[mspID]; ok {
 		for _, mspPeer := range mspPeers {
@@ -59,7 +70,7 @@ func (p *peerPool) GetMSPPeers(mspID string) []api.Peer {
 	return peers
 }
 
-func (p *peerPool) Add(mspId string, peer api.Peer, peerChecker api.PeerPoolCheckStrategy) error {
+func (p *PeerPool) Add(mspId string, peer api.Peer, peerChecker api.PeerPoolCheckStrategy) error {
 	p.logger.Debug(`add peer`,
 		zap.String(`msp_id`, mspId),
 		zap.String(`peerUri`, peer.Uri()))
@@ -77,7 +88,7 @@ func (p *peerPool) Add(mspId string, peer api.Peer, peerChecker api.PeerPoolChec
 	return nil
 }
 
-func (p *peerPool) addPeer(peer api.Peer, peerSet []*peerPoolPeer, peerChecker api.PeerPoolCheckStrategy) []*peerPoolPeer {
+func (p *PeerPool) addPeer(peer api.Peer, peerSet []*peerPoolPeer, peerChecker api.PeerPoolCheckStrategy) []*peerPoolPeer {
 	pp := &peerPoolPeer{peer: peer, ready: true}
 	aliveChan := make(chan bool)
 	go peerChecker(p.ctx, peer, aliveChan)
@@ -85,7 +96,7 @@ func (p *peerPool) addPeer(peer api.Peer, peerSet []*peerPoolPeer, peerChecker a
 	return append(peerSet, pp)
 }
 
-func (p *peerPool) isPeerInPool(peer api.Peer, peerSet []*peerPoolPeer) bool {
+func (p *PeerPool) isPeerInPool(peer api.Peer, peerSet []*peerPoolPeer) bool {
 	for _, pp := range peerSet {
 		if peer.Uri() == pp.peer.Uri() {
 			return true
@@ -95,7 +106,7 @@ func (p *peerPool) isPeerInPool(peer api.Peer, peerSet []*peerPoolPeer) bool {
 	return false
 }
 
-func (p *peerPool) poolChecker(ctx context.Context, aliveChan chan bool, peer *peerPoolPeer) {
+func (p *PeerPool) poolChecker(ctx context.Context, aliveChan chan bool, peer *peerPoolPeer) {
 	//log := p.log.Named(`poolChecker`)
 
 	for {
@@ -124,7 +135,7 @@ func (p *peerPool) poolChecker(ctx context.Context, aliveChan chan bool, peer *p
 // EndorseOnMSP finds first ready peer in pool for specified mspId , endorses proposal and returns proposal response
 // - no load balancing between msp peers
 // - no data is not sent to the orderer
-func (p *peerPool) EndorseOnMSP(ctx context.Context, mspID string, proposal *peerproto.SignedProposal) (*peerproto.ProposalResponse, error) {
+func (p *PeerPool) EndorseOnMSP(ctx context.Context, mspID string, proposal *peerproto.SignedProposal) (*peerproto.ProposalResponse, error) {
 	p.storeMx.RLock()
 	//check MspId exists
 	peers, exists := p.mspPeers[mspID]
@@ -192,7 +203,7 @@ func (p *peerPool) EndorseOnMSP(ctx context.Context, mspID string, proposal *pee
 	return nil, lastError
 }
 
-func (p *peerPool) EndorseOnMSPs(ctx context.Context, mspIDs []string, proposal *peerproto.SignedProposal) ([]*peerproto.ProposalResponse, error) {
+func (p *PeerPool) EndorseOnMSPs(ctx context.Context, mspIDs []string, proposal *peerproto.SignedProposal) ([]*peerproto.ProposalResponse, error) {
 	if len(mspIDs) == 0 {
 		return nil, ErrEndorsingMSPsRequired
 	}
@@ -229,7 +240,7 @@ func (p *peerPool) EndorseOnMSPs(ctx context.Context, mspIDs []string, proposal 
 	return respList, nil
 }
 
-func (p *peerPool) DeliverClient(mspId string, identity msp.SigningIdentity) (api.DeliverClient, error) {
+func (p *PeerPool) DeliverClient(mspId string, identity msp.SigningIdentity) (api.DeliverClient, error) {
 	poolPeer, err := p.FirstReadyPeer(mspId)
 	if err != nil {
 		return nil, err
@@ -237,7 +248,7 @@ func (p *peerPool) DeliverClient(mspId string, identity msp.SigningIdentity) (ap
 	return poolPeer.DeliverClient(identity)
 }
 
-func (p *peerPool) FirstReadyPeer(mspId string) (api.Peer, error) {
+func (p *PeerPool) FirstReadyPeer(mspId string) (api.Peer, error) {
 
 	p.storeMx.RLock()
 	peers, ok := p.mspPeers[mspId]
@@ -261,17 +272,6 @@ func (p *peerPool) FirstReadyPeer(mspId string) (api.Peer, error) {
 	return nil, api.ErrNoReadyPeers{MspId: mspId}
 }
 
-func (p *peerPool) Close() error {
+func (p *PeerPool) Close() error {
 	return nil
-}
-
-func NewPool(ctx context.Context, log *zap.Logger) api.PeerPool {
-	ctx, cancel := context.WithCancel(ctx)
-
-	return &peerPool{
-		mspPeers: make(map[string][]*peerPoolPeer),
-		logger:   log.Named(`peer-pool`),
-		ctx:      ctx,
-		cancel:   cancel,
-	}
 }

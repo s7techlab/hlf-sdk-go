@@ -13,7 +13,6 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/crypto"
-	"github.com/s7techlab/hlf-sdk-go/peer"
 )
 
 // CoreOpt describes opt which will be applied to coreOptions
@@ -80,7 +79,7 @@ func WithPeerPool(pool api.PeerPool) CoreOpt {
 func WithPeers(mspID string, peers []config.ConnectionConfig) CoreOpt {
 	return func(c *core) error {
 		for _, p := range peers {
-			pp, err := peer.New(c.ctx, p, c.identity, c.logger)
+			pp, err := NewPeer(c.ctx, p, c.identity, c.logger)
 			if err != nil {
 				return fmt.Errorf("create peer: %w", err)
 			}
