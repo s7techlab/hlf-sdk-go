@@ -17,9 +17,9 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
+	"github.com/s7techlab/hlf-sdk-go/client/deliver"
 	grpcclient "github.com/s7techlab/hlf-sdk-go/client/grpc"
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
-	"github.com/s7techlab/hlf-sdk-go/peer/deliver"
 )
 
 const (

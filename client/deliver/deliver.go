@@ -14,8 +14,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/client/deliver/subs"
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
-	"github.com/s7techlab/hlf-sdk-go/peer/deliver/subs"
 )
 
 func New(deliverCli peer.DeliverClient, identity msp.SigningIdentity) *deliverImpl {
