@@ -1,4 +1,4 @@
-package peer
+package client
 
 import (
 	"context"
@@ -17,17 +17,17 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
+	grpcclient "github.com/s7techlab/hlf-sdk-go/client/grpc"
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
 	"github.com/s7techlab/hlf-sdk-go/peer/deliver"
-	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
 const (
 	// FnShowMaxLength limit to show fn name (args[0]) in debug and error messages
 	FnShowMaxLength = 100
 
-	DefaultDialTimeout    = 5 * time.Second
-	DefaultEndorseTimeout = 5 * time.Second
+	PeerDefaultDialTimeout    = 5 * time.Second
+	PeerDefaultEndorseTimeout = 5 * time.Second
 )
 
 type peer struct {
@@ -40,16 +40,16 @@ type peer struct {
 	logger *zap.Logger
 }
 
-// New returns new peer instance based on peer config
-func New(dialCtx context.Context, c config.ConnectionConfig, identity msp.SigningIdentity, logger *zap.Logger) (api.Peer, error) {
-	opts, err := util.NewGRPCOptionsFromConfig(c, logger)
+// NewPeer returns new peer instance bassed on peer config
+func NewPeer(dialCtx context.Context, c config.ConnectionConfig, identity msp.SigningIdentity, logger *zap.Logger) (api.Peer, error) {
+	opts, err := grpcclient.OptionsFromConfig(c, logger)
 	if err != nil {
-		return nil, fmt.Errorf(`grpc options from config: %w`, err)
+		return nil, fmt.Errorf(`peer grpc options from config: %w`, err)
 	}
 
 	dialTimeout := c.Timeout.Duration
 	if dialTimeout == 0 {
-		dialTimeout = DefaultDialTimeout
+		dialTimeout = PeerDefaultDialTimeout
 	}
 
 	// Dial shoould always has timeout
@@ -62,7 +62,8 @@ func New(dialCtx context.Context, c config.ConnectionConfig, identity msp.Signin
 		ctxDeadline, _ = dialCtx.Deadline()
 	}
 
-	logger.Debug(`dial to peer`, zap.String(`host`, c.Host), zap.Time(`context deadline`, ctxDeadline))
+	logger.Debug(`dial to peer`,
+		zap.String(`host`, c.Host), zap.Time(`context deadline`, ctxDeadline))
 	conn, dialErr := grpc.DialContext(dialCtx, c.Host, opts...)
 	if dialErr != nil {
 		return nil, fmt.Errorf(`grpc dial to peer endpoint=%s: %w`, c.Host, err)
@@ -78,7 +79,7 @@ func NewFromGRPC(conn *grpc.ClientConn, identity msp.SigningIdentity, logger *za
 	}
 
 	if endorseDefaultTimeout == 0 {
-		endorseDefaultTimeout = DefaultEndorseTimeout
+		endorseDefaultTimeout = PeerDefaultEndorseTimeout
 	}
 
 	p := &peer{

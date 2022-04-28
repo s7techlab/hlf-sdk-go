@@ -12,13 +12,10 @@ import (
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/client/channel"
+	"github.com/s7techlab/hlf-sdk-go/client/grpc"
 	"github.com/s7techlab/hlf-sdk-go/crypto"
 	"github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
 	"github.com/s7techlab/hlf-sdk-go/discovery"
-	"github.com/s7techlab/hlf-sdk-go/orderer"
-	"github.com/s7techlab/hlf-sdk-go/peer"
-	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
 // implementation of api.Core interface
@@ -62,7 +59,7 @@ func (c *core) CurrentMspPeers() []api.Peer {
 }
 
 func (c *core) Channel(name string) api.Channel {
-	log := c.logger.Named(`channel`).With(zap.String(`channel`, name))
+	logger := c.logger.Named(`channel`).With(zap.String(`channel`, name))
 	c.channelMx.Lock()
 	defer c.channelMx.Unlock()
 
@@ -73,10 +70,10 @@ func (c *core) Channel(name string) api.Channel {
 
 	var ord api.Orderer
 
-	log.Debug(`Channel instance doesn't exist, initiating new`)
+	logger.Debug(`channel instance doesn't exist, initiating new`)
 	discChannel, err := c.discoveryProvider.Channel(c.ctx, name)
 	if err != nil {
-		log.Error(`Failed channel discovery. We'll use default orderer`, zap.Error(err))
+		logger.Error(`Failed channel discovery. We'll use default orderer`, zap.Error(err))
 	} else {
 		// if custom orderers are enabled
 		if len(discChannel.Orderers()) > 0 {
@@ -96,12 +93,12 @@ func (c *core) Channel(name string) api.Channel {
 				}
 			}
 			// we can have many orderers and here we establish connection with internal round-robin balancer
-			ordConn, err := util.NewGRPCConnectionFromConfigs(c.ctx, c.logger, grpcConnCfgs...)
+			ordConn, err := grpc.ConnectionFromConfigs(c.ctx, c.logger, grpcConnCfgs...)
 			if err != nil {
-				log.Error(`Failed to initialize custom GRPC connection for orderer`, zap.String(`channel`, name), zap.Error(err))
+				logger.Error(`Failed to initialize custom GRPC connection for orderer`, zap.String(`channel`, name), zap.Error(err))
 			}
-			if ord, err = orderer.NewFromGRPC(c.ctx, ordConn); err != nil {
-				log.Error(`Failed to construct orderer from GRPC connection`)
+			if ord, err = NewOrdererFromGRPC(ordConn); err != nil {
+				logger.Error(`Failed to construct orderer from GRPC connection`)
 			}
 		}
 	}
@@ -111,7 +108,7 @@ func (c *core) Channel(name string) api.Channel {
 		ord = c.orderer
 	}
 
-	ch = channel.NewCore(c.identity.GetMSPIdentifier(), name, c.peerPool, ord, c.discoveryProvider, c.identity, c.fabricV2, c.logger)
+	ch = NewChannel(c.identity.GetMSPIdentifier(), name, c.peerPool, ord, c.discoveryProvider, c.identity, c.fabricV2, c.logger)
 	c.channels[name] = ch
 	return ch
 }
@@ -165,11 +162,11 @@ func New(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 		if core.config == nil {
 			return nil, api.ErrEmptyConfig
 		}
-		core.peerPool = peer.NewPool(core.ctx, core.logger)
+		core.peerPool = NewPeerPool(core.ctx, core.logger)
 		for _, mspConfig := range core.config.MSP {
 			for _, peerConfig := range mspConfig.Endorsers {
 				var p api.Peer
-				p, err = peer.New(core.ctx, peerConfig, core.identity, core.logger)
+				p, err = NewPeer(core.ctx, peerConfig, core.identity, core.logger)
 				if err != nil {
 					return nil, fmt.Errorf("initialize endorsers for MSP: %s: %w", mspConfig.Name, err)
 				}
@@ -235,7 +232,7 @@ func New(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 						Host: lpAddresses.Address,
 						Tls:  lpAddresses.TLSSettings,
 					}
-					p, err := peer.New(core.ctx, peerCfg, core.identity, core.logger)
+					p, err := NewPeer(core.ctx, peerCfg, core.identity, core.logger)
 					if err != nil {
 						return nil, fmt.Errorf(`initialize endorsers for MSP: %s: %w`, mspID, err)
 					}
@@ -256,11 +253,11 @@ func New(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 	if core.orderer == nil && core.config != nil {
 		core.logger.Info("initializing orderer")
 		if len(core.config.Orderers) > 0 {
-			ordConn, err := util.NewGRPCConnectionFromConfigs(core.ctx, core.logger, core.config.Orderers...)
+			ordConn, err := grpc.ConnectionFromConfigs(core.ctx, core.logger, core.config.Orderers...)
 			if err != nil {
 				return nil, fmt.Errorf(`initialize orderer connection: %w`, err)
 			}
-			core.orderer, err = orderer.NewFromGRPC(core.ctx, ordConn)
+			core.orderer, err = NewOrdererFromGRPC(ordConn)
 			if err != nil {
 				return nil, fmt.Errorf(`initialize orderer: %w`, err)
 			}

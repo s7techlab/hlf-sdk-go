@@ -10,7 +10,7 @@ import (
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/util"
+	grpcclient "github.com/s7techlab/hlf-sdk-go/client/grpc"
 )
 
 // implementation of api.DiscoveryProvider interface
@@ -53,7 +53,7 @@ func newFabricDiscoveryClient(
 	log *zap.Logger,
 	identitySigner discClient.Signer,
 ) (*discClient.Client, error) {
-	opts, err := util.NewGRPCOptionsFromConfig(c, log)
+	opts, err := grpcclient.OptionsFromConfig(c, log)
 	if err != nil {
 		return nil, err
 	}
