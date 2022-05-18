@@ -56,7 +56,8 @@ func NewEndorsementSignedProposal(
 		txParams.Timestamp,
 		signerSerialized,
 		channel,
-		chaincode)
+		chaincode,
+		nil)
 	if err != nil {
 		return nil, ``, fmt.Errorf(`tx header: %w`, err)
 	}

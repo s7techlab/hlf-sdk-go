@@ -58,7 +58,7 @@ func newFabricDiscoveryClient(
 		return nil, err
 	}
 
-	conn, err := grpc.DialContext(ctx, c.Host, opts...)
+	conn, err := grpc.DialContext(ctx, c.Host, opts.Dial...)
 	if err != nil {
 		return nil, fmt.Errorf(`grpc dial to host=%s: %w`, c.Host, err)
 	}

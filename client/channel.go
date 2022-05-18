@@ -150,7 +150,7 @@ func (c *Channel) Join(ctx context.Context) error {
 }
 
 func (c *Channel) getGenesisBlockFromOrderer(ctx context.Context) (*common.Block, error) {
-	requestBlockEnvelope, err := tx.NewSeekGenesisEnvelope(c.chanName, c.identity)
+	requestBlockEnvelope, err := tx.NewSeekGenesisEnvelope(c.chanName, c.identity, nil)
 	if err != nil {
 		return nil, fmt.Errorf(`request block envelope: %w`, err)
 	}
