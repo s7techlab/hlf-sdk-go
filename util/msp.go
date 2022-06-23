@@ -3,7 +3,7 @@ package util
 import (
 	"crypto/x509"
 
-	"github.com/s7techlab/hlf-sdk-go/identity"
+	"github.com/atomyze-ru/hlf-sdk-go/identity"
 )
 
 // Deprecated: use identity.SignerFromMSPPath to create identity

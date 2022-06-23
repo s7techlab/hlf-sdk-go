@@ -13,7 +13,7 @@ import (
 	_ "github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/atomyze-ru/hlf-sdk-go/api"
 )
 
 type (

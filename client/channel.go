@@ -11,12 +11,12 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
-	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
-	"github.com/s7techlab/hlf-sdk-go/client/tx"
-	"github.com/s7techlab/hlf-sdk-go/proto"
+	"github.com/atomyze-ru/hlf-sdk-go/api"
+	"github.com/atomyze-ru/hlf-sdk-go/api/config"
+	"github.com/atomyze-ru/hlf-sdk-go/client/chaincode"
+	"github.com/atomyze-ru/hlf-sdk-go/client/chaincode/system"
+	"github.com/atomyze-ru/hlf-sdk-go/client/tx"
+	"github.com/atomyze-ru/hlf-sdk-go/proto"
 )
 
 type Channel struct {
@@ -150,7 +150,7 @@ func (c *Channel) Join(ctx context.Context) error {
 }
 
 func (c *Channel) getGenesisBlockFromOrderer(ctx context.Context) (*common.Block, error) {
-	requestBlockEnvelope, err := tx.NewSeekGenesisEnvelope(c.chanName, c.identity)
+	requestBlockEnvelope, err := tx.NewSeekGenesisEnvelope(c.chanName, c.identity, nil)
 	if err != nil {
 		return nil, fmt.Errorf(`request block envelope: %w`, err)
 	}

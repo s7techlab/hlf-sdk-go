@@ -6,7 +6,7 @@ import (
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/atomyze-ru/hlf-sdk-go/api"
 )
 
 // Self - default tx waiter and used on invoke flow

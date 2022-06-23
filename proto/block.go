@@ -9,7 +9,7 @@ import (
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/protoutil"
 
-	"github.com/s7techlab/hlf-sdk-go/util/txflags"
+	"github.com/atomyze-ru/hlf-sdk-go/util/txflags"
 )
 
 type Block struct {

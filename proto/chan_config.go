@@ -182,7 +182,7 @@ func ParseMSP(mspConfigGroup *common.ConfigGroup, groupName string) (*MSP, error
 func ParseOrderer(cfg common.Config) (map[string]*OrdererConfig, error) {
 	ordererGroup, exists := cfg.ChannelGroup.Groups[channelconfig.OrdererGroupKey]
 	if !exists {
-		return nil, fmt.Errorf("%v type group doesn't exists", channelconfig.OrdererGroupKey)
+		return nil, nil
 	}
 	orderersCfg := map[string]*OrdererConfig{}
 
@@ -193,13 +193,12 @@ func ParseOrderer(cfg common.Config) (map[string]*OrdererConfig, error) {
 		}
 
 		endpointsCV, ok := ordererGroup.Groups[groupName].Values[channelconfig.EndpointsKey]
-		if !ok {
-			return nil, fmt.Errorf("%v type group doesn't exists", channelconfig.EndpointsKey)
-		}
-
-		endpoints, err := ParseOrdererEndpoints(endpointsCV.Value)
-		if err != nil {
-			return nil, fmt.Errorf("parse endpoints: %w", err)
+		var endpoints []string
+		if ok {
+			endpoints, err = ParseOrdererEndpoints(endpointsCV.Value)
+			if err != nil {
+				return nil, fmt.Errorf("parse endpoints: %w", err)
+			}
 		}
 
 		orderersCfg[groupName] = &OrdererConfig{

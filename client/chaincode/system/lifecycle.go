@@ -8,8 +8,8 @@ import (
 	lifecycleproto "github.com/hyperledger/fabric-protos-go/peer/lifecycle"
 	lifecyclecc "github.com/hyperledger/fabric/core/chaincode/lifecycle"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/client/tx"
+	"github.com/atomyze-ru/hlf-sdk-go/api"
+	"github.com/atomyze-ru/hlf-sdk-go/client/tx"
 )
 
 //go:embed lifecycle.swagger.json

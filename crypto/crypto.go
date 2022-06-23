@@ -6,8 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/atomyze-ru/hlf-sdk-go/api"
+	"github.com/atomyze-ru/hlf-sdk-go/api/config"
 )
 
 var (

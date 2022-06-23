@@ -3,7 +3,7 @@ package api
 import (
 	"crypto/x509"
 
-	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/atomyze-ru/hlf-sdk-go/api/config"
 )
 
 // CryptoSuite describes common cryptographic operations

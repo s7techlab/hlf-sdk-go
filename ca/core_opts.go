@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 
-	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/atomyze-ru/hlf-sdk-go/api/config"
 )
 
 type opt func(c *core) error

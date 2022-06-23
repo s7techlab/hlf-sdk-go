@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/atomyze-ru/hlf-sdk-go/api"
 )
 
 // MSP - contains all parsed identities from msp folder
@@ -51,6 +51,7 @@ type (
 
 		userPaths []string
 
+		skipConfig        bool
 		validateCertChain bool
 		logger            *zap.Logger
 	}
@@ -97,10 +98,24 @@ func MSPFromConfig(fabricMspConfig *mspproto.FabricMSPConfig) (*MSPConfig, error
 	return mspConfig, nil
 }
 
+func WithSkipConfig() MSPOpt {
+	return func(mspOpts *MSPOpts) {
+		mspOpts.skipConfig = true
+	}
+}
 func WithAdminMSPPath(adminMSPPath string) MSPOpt {
 	return func(mspOpts *MSPOpts) {
 		mspOpts.adminMSPPath = adminMSPPath
 	}
+}
+
+func MustMSPFromPath(mspID, mspPath string, opts ...MSPOpt) *MSPConfig {
+	mspConfig, err := MSPFromPath(mspID, mspPath, opts...)
+	if err != nil {
+		panic(err)
+	}
+
+	return mspConfig
 }
 
 // MSPFromPath loads msp config from filesystem
@@ -167,8 +182,10 @@ func MSPFromPath(mspID, mspPath string, opts ...MSPOpt) (*MSPConfig, error) {
 		}
 	}
 
-	if mspConfig.mspConfig, err = FabricMSPConfigFromPath(mspID, mspOpts.mspPath); err != nil {
-		return nil, err
+	if !mspOpts.skipConfig {
+		if mspConfig.mspConfig, err = FabricMSPConfigFromPath(mspID, mspOpts.mspPath); err != nil {
+			return nil, err
+		}
 	}
 
 	if mspOpts.validateCertChain {

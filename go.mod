@@ -1,4 +1,4 @@
-module github.com/s7techlab/hlf-sdk-go
+module github.com/atomyze-ru/hlf-sdk-go
 
 go 1.16
 

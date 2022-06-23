@@ -17,13 +17,13 @@ package chaincode_test
 //	"github.com/pkg/errors"
 //	"google.golang.org/grpc"
 //
-//	"github.com/s7techlab/hlf-sdk-go/api"
-//	"github.com/s7techlab/hlf-sdk-go/client"
-//	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
-//	"github.com/s7techlab/hlf-sdk-go/client/chaincode/txwaiter"
-//	"github.com/s7techlab/hlf-sdk-go/identity"
-//	"github.com/s7techlab/hlf-sdk-go/logger"
-//	"github.com/s7techlab/hlf-sdk-go/peer/pool"
+//	"github.com/atomyze-ru/hlf-sdk-go/api"
+//	"github.com/atomyze-ru/hlf-sdk-go/client"
+//	"github.com/atomyze-ru/hlf-sdk-go/client/chaincode"
+//	"github.com/atomyze-ru/hlf-sdk-go/client/chaincode/txwaiter"
+//	"github.com/atomyze-ru/hlf-sdk-go/identity"
+//	"github.com/atomyze-ru/hlf-sdk-go/logger"
+//	"github.com/atomyze-ru/hlf-sdk-go/peer/pool"
 //)
 //
 //var (

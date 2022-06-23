@@ -19,7 +19,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	testpb "google.golang.org/grpc/test/grpc_testing"
 
-	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/atomyze-ru/hlf-sdk-go/api/config"
 )
 
 var (
@@ -64,7 +64,7 @@ func TestNewGRPCOptionsFromConfig(t *testing.T) {
 	opts, err := OptionsFromConfig(nonTlsConnConfig, log)
 	assert.NotNil(t, opts)
 	assert.NoError(t, err)
-	conn, err := grpc.DialContext(ctx, nonTlsConnConfig.Host, opts...)
+	conn, err := grpc.DialContext(ctx, nonTlsConnConfig.Host, opts.Dial...)
 	assert.NoError(t, err)
 	assert.NotNil(t, conn)
 	cli := testpb.NewTestServiceClient(conn)
@@ -83,7 +83,7 @@ func TestNewGRPCOptionsFromConfig(t *testing.T) {
 	opts, err = OptionsFromConfig(tlsConnConfig, log)
 	assert.NotNil(t, opts)
 	assert.NoError(t, err)
-	conn, err = grpc.DialContext(ctx, tlsConnConfig.Host, opts...)
+	conn, err = grpc.DialContext(ctx, tlsConnConfig.Host, opts.Dial...)
 	assert.NoError(t, err)
 	assert.NotNil(t, conn)
 	cli = testpb.NewTestServiceClient(conn)
@@ -103,7 +103,7 @@ func TestNewGRPCOptionsFromConfig(t *testing.T) {
 	opts, err = OptionsFromConfig(mutualTlsConnConfig, log)
 	assert.NotNil(t, opts)
 	assert.NoError(t, err)
-	conn, err = grpc.DialContext(ctx, mutualTlsConnConfig.Host, opts...)
+	conn, err = grpc.DialContext(ctx, mutualTlsConnConfig.Host, opts.Dial...)
 	assert.NoError(t, err)
 	assert.NotNil(t, conn)
 	cli = testpb.NewTestServiceClient(conn)

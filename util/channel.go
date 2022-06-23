@@ -11,9 +11,9 @@ import (
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/client/tx"
-	proto2 "github.com/s7techlab/hlf-sdk-go/proto"
+	"github.com/atomyze-ru/hlf-sdk-go/api"
+	"github.com/atomyze-ru/hlf-sdk-go/client/tx"
+	proto2 "github.com/atomyze-ru/hlf-sdk-go/proto"
 )
 
 var (
@@ -80,7 +80,15 @@ func ProceedChannelUpdate(
 		return errors.Wrap(err, `failed to marshal common.ConfigUpdateEnvelope`)
 	}
 
-	channelHeader, err := proto2.NewCommonHeader(common.HeaderType_CONFIG_UPDATE, txParams.ID, txParams.Nonce, txParams.Timestamp, serialized, channelName, ``)
+	channelHeader, err := proto2.NewCommonHeader(
+		common.HeaderType_CONFIG_UPDATE,
+		txParams.ID,
+		txParams.Nonce,
+		txParams.Timestamp,
+		serialized,
+		channelName,
+		``,
+		nil)
 	if err != nil {
 		return errors.Wrap(err, `failed to get channel header`)
 	}

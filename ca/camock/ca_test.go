@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/s7techlab/hlf-sdk-go/api/ca"
-	"github.com/s7techlab/hlf-sdk-go/ca/camock"
+	"github.com/atomyze-ru/hlf-sdk-go/api/ca"
+	"github.com/atomyze-ru/hlf-sdk-go/ca/camock"
 )
 
 var (

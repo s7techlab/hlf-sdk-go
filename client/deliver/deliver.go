@@ -13,25 +13,28 @@ import (
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/client/deliver/subs"
-	"github.com/s7techlab/hlf-sdk-go/client/tx"
+	"github.com/atomyze-ru/hlf-sdk-go/api"
+	"github.com/atomyze-ru/hlf-sdk-go/client/deliver/subs"
+	"github.com/atomyze-ru/hlf-sdk-go/client/tx"
 )
 
-func New(deliverCli peer.DeliverClient, identity msp.SigningIdentity) *deliverImpl {
-	return &deliverImpl{
-		cli:      deliverCli,
-		identity: identity,
+type Deliver struct {
+	Client   peer.DeliverClient
+	Identity msp.SigningIdentity
+	// TlsCertHash used when creating seek envelope with enabled tls
+	TLSCertHash []byte
+}
+
+func New(deliverClient peer.DeliverClient, identity msp.SigningIdentity, tlsCertHash []byte) *Deliver {
+	return &Deliver{
+		Client:      deliverClient,
+		Identity:    identity,
+		TLSCertHash: tlsCertHash,
 	}
 }
 
-type deliverImpl struct {
-	cli      peer.DeliverClient
-	identity msp.SigningIdentity
-}
-
 var (
-	_ api.DeliverClient = &deliverImpl{}
+	_ api.DeliverClient = &Deliver{}
 )
 
 type GetBlockerInfo interface {
@@ -86,7 +89,7 @@ func WithGetBlockByTx(seekOpts ...api.EventCCSeekOption) func(*subscribeEventOpt
 }
 
 // SubscribeEvents it is just once helper for save to api version today
-func (d *deliverImpl) SubscribeEvents(ctx context.Context, channelName string, ccName string, setOpts ...func(*subscribeEventOption) error) (api.EventCCSubscription, error) {
+func (d *Deliver) SubscribeEvents(ctx context.Context, channelName string, ccName string, setOpts ...func(*subscribeEventOption) error) (api.EventCCSubscription, error) {
 
 	options := newEventDefaultOptions()
 
@@ -117,7 +120,7 @@ func (d *deliverImpl) SubscribeEvents(ctx context.Context, channelName string, c
 	return events.Serve(sub, sub.readyForHandling), nil
 }
 
-func (d *deliverImpl) SubscribeCC(ctx context.Context, channelName string, ccName string, seekOpt ...api.EventCCSeekOption) (api.EventCCSubscription, error) {
+func (d *Deliver) SubscribeCC(ctx context.Context, channelName string, ccName string, seekOpt ...api.EventCCSeekOption) (api.EventCCSubscription, error) {
 	events := subs.NewEventSubscription(ccName, ``)
 
 	sub, err := d.handleSubscription(ctx, channelName, events.Handler, seekOpt...)
@@ -128,7 +131,7 @@ func (d *deliverImpl) SubscribeCC(ctx context.Context, channelName string, ccNam
 	return events.Serve(sub, sub.readyForHandling), nil
 }
 
-func (d *deliverImpl) SubscribeTx(ctx context.Context, channelName string, txID string, seekOpt ...api.EventCCSeekOption) (api.TxSubscription, error) {
+func (d *Deliver) SubscribeTx(ctx context.Context, channelName string, txID string, seekOpt ...api.EventCCSeekOption) (api.TxSubscription, error) {
 	txSub := subs.NewTxSubscription(txID)
 	sub, err := d.handleSubscription(ctx, channelName, txSub.Handler, seekOpt...)
 	if err != nil {
@@ -138,7 +141,7 @@ func (d *deliverImpl) SubscribeTx(ctx context.Context, channelName string, txID 
 	return txSub.Serve(sub, sub.readyForHandling), nil
 }
 
-func (d *deliverImpl) SubscribeBlock(ctx context.Context, channelName string, seekOpt ...api.EventCCSeekOption) (api.BlockSubscription, error) {
+func (d *Deliver) SubscribeBlock(ctx context.Context, channelName string, seekOpt ...api.EventCCSeekOption) (api.BlockSubscription, error) {
 	blocker := subs.NewBlockSubscription()
 
 	sub, err := d.handleSubscription(ctx, channelName, blocker.Handler, seekOpt...)
@@ -149,23 +152,22 @@ func (d *deliverImpl) SubscribeBlock(ctx context.Context, channelName string, se
 	return blocker.Serve(sub, sub.readyForHandling), nil
 }
 
-func (d *deliverImpl) handleSubscription(ctx context.Context, channel string, blockHandler subs.BlockHandler, seekOpt ...api.EventCCSeekOption) (*subscriptionImpl, error) {
+func (d *Deliver) handleSubscription(ctx context.Context, channel string, blockHandler subs.BlockHandler, seekOpt ...api.EventCCSeekOption) (*subscriptionImpl, error) {
 	var startPos, stopPos *orderer.SeekPosition
-
 	if len(seekOpt) > 0 {
 		startPos, stopPos = seekOpt[0]()
 	} else {
 		startPos, stopPos = api.SeekNewest()()
 	}
 
-	seekEnvelope, err := tx.NewSeekBlockEnvelope(channel, d.identity, startPos, stopPos)
+	seekEnvelope, err := tx.NewSeekBlockEnvelope(channel, d.Identity, startPos, stopPos, d.TLSCertHash)
 	if err != nil {
 		return nil, fmt.Errorf(`seek envelope: %w`, err)
 	}
 
 	subCtx, stopSub := context.WithCancel(ctx)
 
-	stream, err := d.cli.Deliver(subCtx)
+	stream, err := d.Client.Deliver(subCtx)
 	if err != nil {
 		stopSub()
 		return nil, errors.Wrap(err, `failed to open deliver stream`)

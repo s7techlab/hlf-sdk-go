@@ -8,9 +8,9 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/api/config"
-	grpcclient "github.com/s7techlab/hlf-sdk-go/client/grpc"
+	"github.com/atomyze-ru/hlf-sdk-go/api"
+	"github.com/atomyze-ru/hlf-sdk-go/api/config"
+	grpcclient "github.com/atomyze-ru/hlf-sdk-go/client/grpc"
 )
 
 // implementation of api.DiscoveryProvider interface
@@ -58,7 +58,7 @@ func newFabricDiscoveryClient(
 		return nil, err
 	}
 
-	conn, err := grpc.DialContext(ctx, c.Host, opts...)
+	conn, err := grpc.DialContext(ctx, c.Host, opts.Dial...)
 	if err != nil {
 		return nil, fmt.Errorf(`grpc dial to host=%s: %w`, c.Host, err)
 	}

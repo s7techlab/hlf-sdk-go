@@ -12,11 +12,11 @@ import (
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/api/ca"
-	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/crypto"
-	"github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
+	"github.com/atomyze-ru/hlf-sdk-go/api"
+	"github.com/atomyze-ru/hlf-sdk-go/api/ca"
+	"github.com/atomyze-ru/hlf-sdk-go/api/config"
+	"github.com/atomyze-ru/hlf-sdk-go/crypto"
+	"github.com/atomyze-ru/hlf-sdk-go/crypto/ecdsa"
 )
 
 type core struct {

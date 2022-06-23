@@ -15,7 +15,7 @@ import (
 	"sync"
 	"time"
 
-	caapi "github.com/s7techlab/hlf-sdk-go/api/ca"
+	caapi "github.com/atomyze-ru/hlf-sdk-go/api/ca"
 )
 
 type (

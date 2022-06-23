@@ -8,7 +8,7 @@ import (
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
 
-	"github.com/s7techlab/hlf-sdk-go/proto"
+	"github.com/atomyze-ru/hlf-sdk-go/proto"
 )
 
 var (
@@ -56,7 +56,8 @@ func NewEndorsementSignedProposal(
 		txParams.Timestamp,
 		signerSerialized,
 		channel,
-		chaincode)
+		chaincode,
+		nil)
 	if err != nil {
 		return nil, ``, fmt.Errorf(`tx header: %w`, err)
 	}

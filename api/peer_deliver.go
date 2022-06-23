@@ -11,7 +11,7 @@ import (
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"google.golang.org/grpc/codes"
 
-	"github.com/s7techlab/hlf-sdk-go/proto"
+	"github.com/atomyze-ru/hlf-sdk-go/proto"
 )
 
 var (

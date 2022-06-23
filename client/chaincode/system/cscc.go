@@ -9,9 +9,9 @@ import (
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/client/tx"
-	hlfproto "github.com/s7techlab/hlf-sdk-go/proto"
+	"github.com/atomyze-ru/hlf-sdk-go/api"
+	"github.com/atomyze-ru/hlf-sdk-go/client/tx"
+	hlfproto "github.com/atomyze-ru/hlf-sdk-go/proto"
 )
 
 //go:embed qscc.swagger.json

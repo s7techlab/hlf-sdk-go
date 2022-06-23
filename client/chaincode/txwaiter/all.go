@@ -6,7 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/atomyze-ru/hlf-sdk-go/api"
 )
 
 // All - need use on invoke flow for check transaction codes for each organization from endorsement policy

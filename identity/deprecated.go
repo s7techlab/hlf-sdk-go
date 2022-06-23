@@ -3,7 +3,7 @@ package identity
 import (
 	"crypto/x509"
 
-	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/atomyze-ru/hlf-sdk-go/api"
 )
 
 // Deprecated: use FromCertKeyPath
