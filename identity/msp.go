@@ -60,7 +60,6 @@ type (
 )
 
 func applyDefaultMSPPaths(mspOpts *MSPOpts) {
-
 	if mspOpts.adminCertsPath == `` {
 		mspOpts.adminCertsPath = AdminCertsPath(mspOpts.mspPath)
 	}
@@ -103,9 +102,22 @@ func WithSkipConfig() MSPOpt {
 		mspOpts.skipConfig = true
 	}
 }
+
 func WithAdminMSPPath(adminMSPPath string) MSPOpt {
 	return func(mspOpts *MSPOpts) {
 		mspOpts.adminMSPPath = adminMSPPath
+	}
+}
+
+func WithSignCertsPath(certPath string) MSPOpt {
+	return func(mspOpts *MSPOpts) {
+		mspOpts.signCertsPath = certPath
+	}
+}
+
+func WithKeystorePath(keyPath string) MSPOpt {
+	return func(mspOpts *MSPOpts) {
+		mspOpts.keystorePath = keyPath
 	}
 }
 
@@ -133,11 +145,21 @@ func MSPFromPath(mspID, mspPath string, opts ...MSPOpt) (*MSPConfig, error) {
 		logger = mspOpts.logger
 	}
 
+	mspConfig := &MSPConfig{}
+
+	if mspOpts.signCertsPath != `` && mspOpts.keystorePath != `` {
+		logger.Debug("load signer from cert and key path",
+			zap.String("cert path", mspOpts.signCertsPath), zap.String("key path", mspOpts.keystorePath))
+
+		mspConfig.signer, err = FromCertKeyPath(mspID, mspOpts.signCertsPath, mspOpts.keystorePath)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	applyDefaultMSPPaths(mspOpts)
 
 	logger.Debug(`load msp`, zap.Reflect(`config`, mspOpts))
-
-	mspConfig := &MSPConfig{}
 
 	// admin in separate msp path
 	if mspOpts.adminMSPPath != `` {
@@ -163,7 +185,8 @@ func MSPFromPath(mspID, mspPath string, opts ...MSPOpt) (*MSPConfig, error) {
 
 	if len(mspOpts.userPaths) > 0 {
 		for _, userPath := range mspOpts.userPaths {
-			users, err := ListFromPath(mspID, userPath, mspOpts.keystorePath)
+			var users []api.Identity
+			users, err = ListFromPath(mspID, userPath, mspOpts.keystorePath)
 			// usePaths set explicit, so if dir is not exists - error occurred
 			if err != nil {
 				return nil, fmt.Errorf(`read users identity from=%s: %w`, userPath, err)

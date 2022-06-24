@@ -111,9 +111,9 @@ func NewBlocksDelivererMock(rootPath string, closeWhenAllRead bool) (*BlocksDeli
 }
 
 func (m *BlocksDelivererMock) Blocks(
-	ctx context.Context,
+	_ context.Context,
 	channelName string,
-	identity msp.SigningIdentity,
+	_ msp.SigningIdentity,
 	blockRange ...int64,
 ) (blockChan <-chan *common.Block, closer func() error, err error) {
 	if _, ok := m.data[channelName]; !ok {

@@ -41,7 +41,7 @@ type peer struct {
 	logger *zap.Logger
 }
 
-// NewPeer returns new peer instance bassed on peer config
+// NewPeer returns new peer instance based on peer config
 func NewPeer(dialCtx context.Context, c config.ConnectionConfig, identity msp.SigningIdentity, logger *zap.Logger) (api.Peer, error) {
 	opts, err := grpcclient.OptionsFromConfig(c, logger)
 	if err != nil {
@@ -53,7 +53,7 @@ func NewPeer(dialCtx context.Context, c config.ConnectionConfig, identity msp.Si
 		dialTimeout = PeerDefaultDialTimeout
 	}
 
-	// Dial shoould always has timeout
+	// Dial should always have timeout
 	ctxDeadline, exists := dialCtx.Deadline()
 	if !exists {
 		var cancel context.CancelFunc
@@ -63,10 +63,9 @@ func NewPeer(dialCtx context.Context, c config.ConnectionConfig, identity msp.Si
 		ctxDeadline, _ = dialCtx.Deadline()
 	}
 
-	logger.Debug(`dial to peer`,
-		zap.String(`host`, c.Host), zap.Time(`context deadline`, ctxDeadline))
-	conn, dialErr := grpc.DialContext(dialCtx, c.Host, opts.Dial...)
-	if dialErr != nil {
+	logger.Debug(`dial to peer`, zap.String(`host`, c.Host), zap.Time(`context deadline`, ctxDeadline))
+	conn, err := grpc.DialContext(dialCtx, c.Host, opts.Dial...)
+	if err != nil {
 		return nil, fmt.Errorf(`grpc dial to peer endpoint=%s: %w`, c.Host, err)
 	}
 
