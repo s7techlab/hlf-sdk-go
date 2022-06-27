@@ -198,7 +198,7 @@ func MSPFromPath(mspID, mspPath string, opts ...MSPOpt) (*MSPConfig, error) {
 		logger.Debug(`user identities loaded`, zap.Int(`num`, len(mspConfig.users)))
 	}
 
-	if mspOpts.signCertsPath != `` && mspConfig.signer != nil {
+	if mspOpts.signCertsPath != `` && mspConfig.signer == nil {
 		mspConfig.signer, err = FirstFromPath(mspID, mspOpts.signCertsPath, mspOpts.keystorePath)
 		if err != nil {
 			return nil, fmt.Errorf(`read signer identity from=%s: %w`, mspOpts.signCertsPath, err)
