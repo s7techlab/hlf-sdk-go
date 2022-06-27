@@ -22,8 +22,11 @@ type (
 		ID   string `yaml:"id"`
 		Path string `yaml:"path"`
 
-		CertPath string `yaml:"cert_path"`
-		KeyPath  string `yaml:"key_path"`
+		CertKeyPaths struct {
+			Enabled  bool   `yaml:"enabled"`
+			CertPath string `yaml:"cert_path"`
+			KeyPath  string `yaml:"key_path"`
+		}
 	}
 )
 
@@ -55,21 +58,22 @@ func (m MSP) MSP(opts ...identity.MSPOpt) (identity.MSP, error) {
 		return nil, ErrMSPIDEmpty
 	}
 
-	if m.Path == `` && m.CertPath == `` && m.KeyPath == `` {
+	if m.CertKeyPaths.Enabled {
+		if m.CertKeyPaths.CertPath == `` {
+			return nil, ErrMSPCertPathEmpty
+		}
+
+		if m.CertKeyPaths.KeyPath == `` {
+			return nil, ErrMSPKeyPathEmpty
+		}
+
+		opts = append(opts, identity.WithSignCertsPath(m.CertKeyPaths.CertPath), identity.WithKeystorePath(m.CertKeyPaths.KeyPath))
+
+		return identity.MSPFromPath(m.ID, "", opts...)
+	}
+
+	if m.Path == `` {
 		return nil, ErrMSPPathEmpty
-	}
-
-	if m.Path == `` && m.CertPath == `` && m.KeyPath != `` {
-		return nil, ErrMSPCertPathEmpty
-	}
-
-	if m.Path == `` && m.CertPath != `` && m.KeyPath == `` {
-		return nil, ErrMSPKeyPathEmpty
-	}
-
-	if m.CertPath != `` && m.KeyPath != `` {
-		m.Path = ``
-		opts = append(opts, identity.WithSignCertsPath(m.CertPath), identity.WithKeystorePath(m.KeyPath))
 	}
 
 	return identity.MSPFromPath(m.ID, m.Path, opts...)
