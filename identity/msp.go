@@ -44,6 +44,9 @@ type (
 	MSPOpts struct {
 		mspPath string
 
+		signCertPath string
+		signKeyPath  string
+
 		signCertsPath  string
 		keystorePath   string
 		adminCertsPath string
@@ -111,13 +114,13 @@ func WithAdminMSPPath(adminMSPPath string) MSPOpt {
 
 func WithSignCertPath(signCertPath string) MSPOpt {
 	return func(mspOpts *MSPOpts) {
-		mspOpts.signCertsPath = signCertPath
+		mspOpts.signCertPath = signCertPath
 	}
 }
 
-func WithKeyPath(keyPath string) MSPOpt {
+func WithSignKeyPath(signKeyPath string) MSPOpt {
 	return func(mspOpts *MSPOpts) {
-		mspOpts.keystorePath = keyPath
+		mspOpts.signKeyPath = signKeyPath
 	}
 }
 
@@ -150,6 +153,13 @@ func MSPFromPath(mspID, mspPath string, opts ...MSPOpt) (*MSPConfig, error) {
 	logger.Debug(`load msp`, zap.Reflect(`config`, mspOpts))
 
 	mspConfig := &MSPConfig{}
+
+	if mspOpts.signCertPath != "" && mspOpts.signKeyPath != "" {
+		mspConfig.signer, err = FromCertKeyPath(mspID, mspOpts.signCertPath, mspOpts.signKeyPath)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	// admin in separate msp path
 	if mspOpts.adminMSPPath != `` {
@@ -188,7 +198,7 @@ func MSPFromPath(mspID, mspPath string, opts ...MSPOpt) (*MSPConfig, error) {
 		logger.Debug(`user identities loaded`, zap.Int(`num`, len(mspConfig.users)))
 	}
 
-	if mspOpts.signCertsPath != `` {
+	if mspOpts.signCertsPath != `` && mspConfig.signer != nil {
 		mspConfig.signer, err = FirstFromPath(mspID, mspOpts.signCertsPath, mspOpts.keystorePath)
 		if err != nil {
 			return nil, fmt.Errorf(`read signer identity from=%s: %w`, mspOpts.signCertsPath, err)
