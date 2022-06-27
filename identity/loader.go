@@ -86,7 +86,7 @@ func Certificate(certRaw []byte) (*x509.Certificate, error) {
 	return cert, nil
 }
 
-// Key parses raw key btes
+// Key parses raw key bytes
 func Key(keyRaw []byte) (interface{}, error) {
 	keyPEM, _ := pem.Decode(keyRaw)
 	if keyPEM == nil {

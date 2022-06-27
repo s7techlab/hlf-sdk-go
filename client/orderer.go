@@ -59,10 +59,9 @@ func NewOrderer(dialCtx context.Context, c config.ConnectionConfig, logger *zap.
 		ctxDeadline, _ = dialCtx.Deadline()
 	}
 
-	logger.Debug(`dial to orderer`,
-		zap.String(`host`, c.Host), zap.Time(`context deadline`, ctxDeadline))
-	conn, dialErr := grpc.DialContext(dialCtx, c.Host, opts.Dial...)
-	if dialErr != nil {
+	logger.Debug(`dial to orderer`, zap.String(`host`, c.Host), zap.Time(`context deadline`, ctxDeadline))
+	conn, err := grpc.DialContext(dialCtx, c.Host, opts.Dial...)
+	if err != nil {
 		return nil, fmt.Errorf(`dial to orderer=: %w`, err)
 	}
 
