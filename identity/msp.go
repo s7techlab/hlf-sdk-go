@@ -109,15 +109,15 @@ func WithAdminMSPPath(adminMSPPath string) MSPOpt {
 	}
 }
 
-func WithSignCertsPath(signCertPath string) MSPOpt {
+func WithSignCertPath(signCertPath string) MSPOpt {
 	return func(mspOpts *MSPOpts) {
 		mspOpts.signCertsPath = signCertPath
 	}
 }
 
-func WithKeystorePath(keystorePath string) MSPOpt {
+func WithKeyPath(keyPath string) MSPOpt {
 	return func(mspOpts *MSPOpts) {
-		mspOpts.keystorePath = keystorePath
+		mspOpts.keystorePath = keyPath
 	}
 }
 
