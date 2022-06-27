@@ -22,6 +22,7 @@ type (
 		ID   string `yaml:"id"`
 		Path string `yaml:"path"`
 
+		// if CertKeyPaths enabled, Path will not be used
 		CertKeyPaths struct {
 			Enabled  bool   `yaml:"enabled"`
 			CertPath string `yaml:"cert_path"`
