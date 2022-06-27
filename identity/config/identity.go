@@ -22,9 +22,9 @@ type (
 		ID   string `yaml:"id"`
 		Path string `yaml:"path"`
 
-		// CertPath and KeyPath take precedence over Path. If they are, Path will be ignored
-		CertPath string `yaml:"cert_path"`
-		KeyPath  string `yaml:"key_path"`
+		// SignCertPath and KeystorePath take precedence over Path. If they are, Path will be ignored
+		SignCertPath string `yaml:"signcert_path"`
+		KeystorePath string `yaml:"keystore_path"`
 	}
 )
 
@@ -57,16 +57,16 @@ func (m MSP) MSP(opts ...identity.MSPOpt) (identity.MSP, error) {
 	}
 
 	// Cert and key paths take precedence over Path
-	if m.CertPath != `` || m.KeyPath != `` {
-		if m.CertPath == `` {
+	if m.SignCertPath != `` || m.KeystorePath != `` {
+		if m.SignCertPath == `` {
 			return nil, ErrMSPCertPathEmpty
 		}
 
-		if m.KeyPath == `` {
+		if m.KeystorePath == `` {
 			return nil, ErrMSPKeyPathEmpty
 		}
 
-		opts = append(opts, identity.WithSignCertsPath(m.CertPath), identity.WithKeystorePath(m.KeyPath))
+		opts = append(opts, identity.WithSignCertsPath(m.SignCertPath), identity.WithKeystorePath(m.KeystorePath))
 
 		return identity.MSPFromPath(m.ID, "", opts...)
 	}
