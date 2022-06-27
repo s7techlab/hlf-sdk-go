@@ -24,7 +24,7 @@ type (
 
 		// SignCertPath and KeyPath take precedence over Path. If they are, Path will be ignored
 		SignCertPath string `yaml:"signcert_path"`
-		KeyPath      string `yaml:"keystore_path"`
+		KeyPath      string `yaml:"key_path"`
 	}
 )
 
