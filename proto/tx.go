@@ -21,7 +21,7 @@ type (
 func ParseTransaction(payload *common.Payload, transactionType common.HeaderType) (*Transaction, error) {
 	sigHeader, err := protoutil.UnmarshalSignatureHeader(payload.Header.SignatureHeader)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get signature header: %w", err)
+		return nil, fmt.Errorf("get signature header: %w", err)
 	}
 
 	si, err := protoutil.UnmarshalSerializedIdentity(sigHeader.Creator)

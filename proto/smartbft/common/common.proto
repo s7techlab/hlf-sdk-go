@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option go_package = "hlfsdk/proto/smartbft/common";
+
+package common;
+
+// Metadata is a common structure to be used to encode block metadata
+message BFTMetadata {
+    bytes value = 1;
+    repeated BFTMetadataSignature signatures = 2;
+}
+
+message BFTMetadataSignature {
+    bytes signature_header = 1; // An encoded SignatureHeader
+    bytes signature = 2;       // The signature over the concatenation of the Metadata value bytes, signatureHeader, and block header
+    uint64 signer_id = 3;
+    bytes nonce = 4;
+}
