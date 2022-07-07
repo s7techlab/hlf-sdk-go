@@ -2,6 +2,7 @@ package proto
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
@@ -17,16 +18,22 @@ import (
 
 type channelName string
 
-var configBlocks map[channelName]*common.Block
+var (
+	configBlocks map[channelName]*common.Block
+	mu           sync.Mutex
+)
 
 func init() {
+	mu.Lock()
 	configBlocks = make(map[channelName]*common.Block)
+	mu.Unlock()
 }
 
 type Block struct {
 	Header            *common.BlockHeader       `json:"header"`
 	Envelopes         []*Envelope               `json:"envelopes"`
 	OrdererIdentities []*msp.SerializedIdentity `json:"orderer_identities"`
+	BFTSignatures     [][]byte
 }
 
 func ParseBlock(block *common.Block) (*Block, error) {
@@ -45,21 +52,38 @@ func ParseBlock(block *common.Block) (*Block, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parsing orderer identity from block: %w", err)
 	}
-	if raftOrdererIdentity != nil {
+	if raftOrdererIdentity != nil && raftOrdererIdentity.IdBytes != nil {
 		parsedBlock.OrdererIdentities = append(parsedBlock.OrdererIdentities, raftOrdererIdentity)
 	}
 
 	// parse BFT orderer identities
 	if block.Header.Number == 0 {
+		mu.Lock()
 		configBlocks[channelName(parsedBlock.Envelopes[0].ChannelHeader.ChannelId)] = block
+		mu.Unlock()
 	} else {
+		mu.Lock()
+		configBlock := configBlocks[channelName(parsedBlock.Envelopes[0].ChannelHeader.ChannelId)]
+		mu.Unlock()
+
 		var bftOrdererIdentities []*msp.SerializedIdentity
-		bftOrdererIdentities, err = ParseBTFOrderersIdentities(block, configBlocks[channelName(parsedBlock.Envelopes[0].ChannelHeader.ChannelId)])
+		bftOrdererIdentities, err = ParseBTFOrderersIdentities(block, configBlock)
 		if err != nil {
 			return nil, fmt.Errorf("parsing bft orderers identities: %w", err)
 		}
 
 		parsedBlock.OrdererIdentities = append(parsedBlock.OrdererIdentities, bftOrdererIdentities...)
+		if len(bftOrdererIdentities) > 0 {
+			var meta *common.Metadata
+			meta, err = protoutil.GetMetadataFromBlock(block, common.BlockMetadataIndex_SIGNATURES)
+			if err != nil {
+				return nil, fmt.Errorf("get metadata from block: %w", err)
+			}
+
+			for _, signature := range meta.Signatures {
+				parsedBlock.BFTSignatures = append(parsedBlock.BFTSignatures, signature.Signature)
+			}
+		}
 	}
 
 	return parsedBlock, nil
@@ -92,45 +116,45 @@ func ParseOrdererIdentity(cb *common.Block) (*msp.SerializedIdentity, error) {
 }
 
 func ParseBTFOrderersIdentities(block *common.Block, configBlock *common.Block) ([]*msp.SerializedIdentity, error) {
-	md := new(bftcommon.BFTMetadata)
-	if err := proto.Unmarshal(block.Metadata.Metadata[common.BlockMetadataIndex_SIGNATURES], md); err != nil {
+	bftMeta := &bftcommon.BFTMetadata{}
+	if err := proto.Unmarshal(block.Metadata.Metadata[common.BlockMetadataIndex_SIGNATURES], bftMeta); err != nil {
 		return nil, fmt.Errorf("unmarshaling bft block metadata from metadata: %w", err)
 	}
 
-	lc := common.LastConfig{}
-	err := proto.Unmarshal(md.Value, &lc)
+	lastConfig := common.LastConfig{}
+	err := proto.Unmarshal(bftMeta.Value, &lastConfig)
 	if err != nil {
-		return nil, nil
+		return nil, nil // it should't return error
 	}
 
 	configEnvelope, err := createConfigEnvelope(configBlock.Data.Data[0])
 	if err != nil {
-		return nil, nil
+		return nil, nil // it should't return error
 	}
 
-	consensusType := configEnvelope.Config.ChannelGroup.Groups["Orderer"].Values["ConsensusType"].Value
+	ct := configEnvelope.Config.ChannelGroup.Groups["Orderer"].Values["ConsensusType"].Value
 
-	ct := &orderer.ConsensusType{}
-	err = proto.Unmarshal(consensusType, ct)
+	consensusType := &orderer.ConsensusType{}
+	err = proto.Unmarshal(ct, consensusType)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshaling consensus type from config envelope concensus type: %w", err)
 	}
 
-	m := &bft.ConfigMetadata{}
-	err = proto.Unmarshal(ct.Metadata, m)
+	configMetadata := &bft.ConfigMetadata{}
+	err = proto.Unmarshal(consensusType.Metadata, configMetadata)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshaling bft config metadata from concensus type metadata: %w", err)
 	}
 
 	var identities []*msp.SerializedIdentity
-	identity := msp.SerializedIdentity{}
-	for _, consenter := range m.Consenters {
+	for _, consenter := range configMetadata.Consenters {
+		var identity msp.SerializedIdentity
 		if err = proto.Unmarshal(consenter.Identity, &identity); err != nil {
 			return nil, err
 		}
 
 		// among all channel orderers, find those that signed this block
-		for _, signature := range md.Signatures {
+		for _, signature := range bftMeta.Signatures {
 			if signature.SignerId == consenter.ConsenterId {
 				identities = append(identities, &identity)
 			}
