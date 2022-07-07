@@ -33,7 +33,7 @@ type Block struct {
 	Header            *common.BlockHeader       `json:"header"`
 	Envelopes         []*Envelope               `json:"envelopes"`
 	OrdererIdentities []*msp.SerializedIdentity `json:"orderer_identities"`
-	BFTSignatures     [][]byte
+	BFTSignatures     [][]byte                  `json:"bft_signatures"`
 }
 
 func ParseBlock(block *common.Block) (*Block, error) {
@@ -124,12 +124,12 @@ func ParseBTFOrderersIdentities(block *common.Block, configBlock *common.Block) 
 	lastConfig := common.LastConfig{}
 	err := proto.Unmarshal(bftMeta.Value, &lastConfig)
 	if err != nil {
-		return nil, nil // it should't return error
+		return nil, nil // it shouldn't return error
 	}
 
 	configEnvelope, err := createConfigEnvelope(configBlock.Data.Data[0])
 	if err != nil {
-		return nil, nil // it should't return error
+		return nil, nil // it shouldn't return error
 	}
 
 	ct := configEnvelope.Config.ChannelGroup.Groups["Orderer"].Values["ConsensusType"].Value
