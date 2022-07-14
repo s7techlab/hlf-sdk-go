@@ -47,6 +47,9 @@ type (
 		signCertPath string
 		signKeyPath  string
 
+		signCertContent []byte
+		signKeyContent  []byte
+
 		signCertsPath  string
 		keystorePath   string
 		adminCertsPath string
@@ -124,6 +127,18 @@ func WithSignKeyPath(signKeyPath string) MSPOpt {
 	}
 }
 
+func WithSignCertContent(signCertContent []byte) MSPOpt {
+	return func(mspOpts *MSPOpts) {
+		mspOpts.signCertContent = signCertContent
+	}
+}
+
+func WithSignKeyContent(signKeyContent []byte) MSPOpt {
+	return func(mspOpts *MSPOpts) {
+		mspOpts.signKeyContent = signKeyContent
+	}
+}
+
 func MustMSPFromPath(mspID, mspPath string, opts ...MSPOpt) *MSPConfig {
 	mspConfig, err := MSPFromPath(mspID, mspPath, opts...)
 	if err != nil {
@@ -154,7 +169,12 @@ func MSPFromPath(mspID, mspPath string, opts ...MSPOpt) (*MSPConfig, error) {
 
 	mspConfig := &MSPConfig{}
 
-	if mspOpts.signCertPath != "" && mspOpts.signKeyPath != "" {
+	if len(mspOpts.signCertContent) != 0 && len(mspOpts.signKeyContent) != 0 {
+		mspConfig.signer, err = FromBytes(mspID, mspOpts.signCertContent, mspOpts.signKeyContent)
+		if err != nil {
+			return nil, err
+		}
+	} else if mspOpts.signCertPath != "" && mspOpts.signKeyPath != "" {
 		mspConfig.signer, err = FromCertKeyPath(mspID, mspOpts.signCertPath, mspOpts.signKeyPath)
 		if err != nil {
 			return nil, err

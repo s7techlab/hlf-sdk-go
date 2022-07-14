@@ -38,7 +38,7 @@ func main() {
 		log.Fatalln(`KEY_PATH env must be defined`)
 	}
 
-	id, err := identity.NewMSPIdentity(mspId, certPath, keyPath)
+	id, err := identity.FromCertKeyPath(mspId, certPath, keyPath)
 	if err != nil {
 		log.Fatalln(`failed to load identity:`, err)
 	}
