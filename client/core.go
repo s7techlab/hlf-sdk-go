@@ -117,11 +117,6 @@ func (c *core) FabricV2() bool {
 	return c.fabricV2
 }
 
-// Deprecated: use New
-func NewCore(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
-	return New(identity, opts...)
-}
-
 func New(identity api.Identity, opts ...CoreOpt) (api.Core, error) {
 
 	if identity == nil {

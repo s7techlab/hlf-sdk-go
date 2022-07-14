@@ -42,7 +42,7 @@ msp:
       retry:
         max: 5
         timeout: 2s
-- name: S7MSP
+- name: ATOMYZEMSP
   endorsers:
   - host: localhost:17051
 - name: BANKMSP

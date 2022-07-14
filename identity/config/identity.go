@@ -29,9 +29,9 @@ type (
 		SignCertPath string `yaml:"signcert_path"`
 		SignKeyPath  string `yaml:"signkey_path"`
 
-		// if SignCertContent and SignKeyContent are present, Path, SignCertPath and SignKeyPath will be ignored
-		SignCertContent []byte `yaml:"signcert_content"`
-		SignKeyContent  []byte `yaml:"signkey_content"`
+		// if SignCert and SignKey are present, Path, SignCertPath and SignKeyPath will be ignored
+		SignCert []byte `yaml:"signcert"`
+		SignKey  []byte `yaml:"signkey"`
 	}
 )
 
@@ -64,16 +64,16 @@ func (m MSP) MSP(opts ...identity.MSPOpt) (identity.MSP, error) {
 	}
 
 	// cert and key contents take precedence over Path and cert and key paths
-	if len(m.SignCertContent) != 0 || len(m.SignKeyContent) != 0 {
-		if len(m.SignCertContent) == 0 {
+	if len(m.SignCert) != 0 || len(m.SignKey) != 0 {
+		if len(m.SignCert) == 0 {
 			return nil, ErrMSPSignCertContentEmpty
 		}
 
-		if len(m.SignKeyContent) == 0 {
+		if len(m.SignKey) == 0 {
 			return nil, ErrMSPSignKeyContentEmpty
 		}
 
-		opts = append(opts, identity.WithSignCertContent(m.SignCertContent), identity.WithSignKeyContent(m.SignKeyContent))
+		opts = append(opts, identity.WithSignCert(m.SignCert), identity.WithSignKey(m.SignKey))
 
 		return identity.MSPFromPath(m.ID, "", opts...)
 	}

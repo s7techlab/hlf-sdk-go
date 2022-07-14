@@ -44,9 +44,9 @@ type (
 	MSPOpts struct {
 		mspPath string
 
-		// signCertContent and signKeyContent take precedence over signCertPath and signKeyPath
-		signCertContent []byte
-		signKeyContent  []byte
+		// signCert and signKey take precedence over signCertPath and signKeyPath
+		signCert []byte
+		signKey  []byte
 
 		signCertPath string
 		signKeyPath  string
@@ -128,15 +128,15 @@ func WithSignKeyPath(signKeyPath string) MSPOpt {
 	}
 }
 
-func WithSignCertContent(signCertContent []byte) MSPOpt {
+func WithSignCert(signCert []byte) MSPOpt {
 	return func(mspOpts *MSPOpts) {
-		mspOpts.signCertContent = signCertContent
+		mspOpts.signCert = signCert
 	}
 }
 
-func WithSignKeyContent(signKeyContent []byte) MSPOpt {
+func WithSignKey(signKey []byte) MSPOpt {
 	return func(mspOpts *MSPOpts) {
-		mspOpts.signKeyContent = signKeyContent
+		mspOpts.signKey = signKey
 	}
 }
 
@@ -170,8 +170,8 @@ func MSPFromPath(mspID, mspPath string, opts ...MSPOpt) (*MSPConfig, error) {
 
 	mspConfig := &MSPConfig{}
 
-	if len(mspOpts.signCertContent) != 0 && len(mspOpts.signKeyContent) != 0 {
-		mspConfig.signer, err = FromBytes(mspID, mspOpts.signCertContent, mspOpts.signKeyContent)
+	if len(mspOpts.signCert) != 0 && len(mspOpts.signKey) != 0 {
+		mspConfig.signer, err = FromBytes(mspID, mspOpts.signCert, mspOpts.signKey)
 		if err != nil {
 			return nil, err
 		}

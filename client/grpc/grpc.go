@@ -73,10 +73,10 @@ func OptionsFromConfig(c config.ConnectionConfig, logger *zap.Logger) (*Opts, er
 		tlsCfg.InsecureSkipVerify = c.Tls.SkipVerify
 
 		// if custom CA certificate is presented, use it
-		if len(c.Tls.CACertContent) != 0 || c.Tls.CACertPath != `` {
+		if len(c.Tls.CACert) != 0 || c.Tls.CACertPath != `` {
 			var caCert []byte
-			if len(c.Tls.CACertContent) != 0 {
-				caCert = c.Tls.CACertContent
+			if len(c.Tls.CACert) != 0 {
+				caCert = c.Tls.CACert
 			} else {
 				caCert, err = ioutil.ReadFile(c.Tls.CACertPath)
 				if err != nil {
@@ -97,10 +97,10 @@ func OptionsFromConfig(c config.ConnectionConfig, logger *zap.Logger) (*Opts, er
 		}
 
 		// use mutual tls if certificate and pk is presented
-		if len(c.Tls.CertContent) != 0 && c.Tls.CertPath != `` {
+		if len(c.Tls.Cert) != 0 && c.Tls.CertPath != `` {
 			var cert tls.Certificate
-			if len(c.Tls.KeyContent) != 0 {
-				cert, err = tls.X509KeyPair(c.Tls.CertContent, c.Tls.KeyContent)
+			if len(c.Tls.Key) != 0 {
+				cert, err = tls.X509KeyPair(c.Tls.Cert, c.Tls.Key)
 				if err != nil {
 					return nil, fmt.Errorf(`TLS client certificate by contents: %w`, err)
 				}
