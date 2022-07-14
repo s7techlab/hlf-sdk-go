@@ -14,8 +14,8 @@ var (
 	ErrMSPSignCertPathEmpty = errors.New(`MSP signcert path is empty`)
 	ErrMSPSignKeyPathEmpty  = errors.New(`MSP signkey path is empty`)
 
-	ErrMSPSignCertContentEmpty = errors.New(`MSP signcert content is empty`)
-	ErrMSPSignKeyContentEmpty  = errors.New(`MSP signkey content is empty`)
+	ErrMSPSignCertEmpty = errors.New(`MSP signcert is empty`)
+	ErrMSPSignKeyEmpty  = errors.New(`MSP signkey is empty`)
 
 	ErrSignerNotFound = errors.New(`signer not found`)
 )
@@ -66,11 +66,11 @@ func (m MSP) MSP(opts ...identity.MSPOpt) (identity.MSP, error) {
 	// cert and key contents take precedence over Path and cert and key paths
 	if len(m.SignCert) != 0 || len(m.SignKey) != 0 {
 		if len(m.SignCert) == 0 {
-			return nil, ErrMSPSignCertContentEmpty
+			return nil, ErrMSPSignCertEmpty
 		}
 
 		if len(m.SignKey) == 0 {
-			return nil, ErrMSPSignKeyContentEmpty
+			return nil, ErrMSPSignKeyEmpty
 		}
 
 		opts = append(opts, identity.WithSignCert(m.SignCert), identity.WithSignKey(m.SignKey))

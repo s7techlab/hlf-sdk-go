@@ -9,7 +9,6 @@ discovery:
         cert_path: github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/signcerts/cert.pem
         key_path: github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/keystore/76d679929878afc06711d3c611af1c84dcac5be7cd6563d8338a7500b79109d9_sk
 
-
 tls_certs_map:
   - address: orderer.example.com:7050
     tls_config:
@@ -29,4 +28,3 @@ tls_certs_map:
       ca_cert_path: github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/tlscacerts/tls-localhost-7054-ca-org1.pem
       cert_path: github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/signcerts/cert.pem
       key_path: github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/keystore/76d679929878afc06711d3c611af1c84dcac5be7cd6563d8338a7500b79109d9_sk
-      
