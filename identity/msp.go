@@ -44,11 +44,12 @@ type (
 	MSPOpts struct {
 		mspPath string
 
-		signCertPath string
-		signKeyPath  string
-
+		// signCertContent and signKeyContent take precedence over signCertPath and signKeyPath
 		signCertContent []byte
 		signKeyContent  []byte
+
+		signCertPath string
+		signKeyPath  string
 
 		signCertsPath  string
 		keystorePath   string
