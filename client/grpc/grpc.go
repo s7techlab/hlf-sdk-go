@@ -97,7 +97,7 @@ func OptionsFromConfig(c config.ConnectionConfig, logger *zap.Logger) (*Opts, er
 		}
 
 		// use mutual tls if certificate and pk is presented
-		if len(c.Tls.Cert) != 0 && c.Tls.CertPath != `` {
+		if len(c.Tls.Cert) != 0 || c.Tls.CertPath != `` {
 			var cert tls.Certificate
 			if len(c.Tls.Key) != 0 {
 				cert, err = tls.X509KeyPair(c.Tls.Cert, c.Tls.Key)
