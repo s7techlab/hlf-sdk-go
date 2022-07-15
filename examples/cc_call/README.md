@@ -1,6 +1,6 @@
 ### Blockchain Info
 
-Example allows to get infomation about joined channels and channel's ledger.
+Example allows to get information about joined channels and channel's ledger.
 
 #### Required environment variables
 - **MSP_ID** - MSP identifier

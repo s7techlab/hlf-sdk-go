@@ -14,6 +14,9 @@ var (
 	ErrMSPSignCertPathEmpty = errors.New(`MSP signcert path is empty`)
 	ErrMSPSignKeyPathEmpty  = errors.New(`MSP signkey path is empty`)
 
+	ErrMSPSignCertEmpty = errors.New(`MSP signcert is empty`)
+	ErrMSPSignKeyEmpty  = errors.New(`MSP signkey is empty`)
+
 	ErrSignerNotFound = errors.New(`signer not found`)
 )
 
@@ -22,9 +25,13 @@ type (
 		ID   string `yaml:"id"`
 		Path string `yaml:"path"`
 
-		// SignCertPath and SignKeyPath take precedence over Path. If they are, Path will be ignored
+		// SignCertPath and SignKeyPath take precedence over Path. If they are present, Path will be ignored
 		SignCertPath string `yaml:"signcert_path"`
 		SignKeyPath  string `yaml:"signkey_path"`
+
+		// if SignCert and SignKey are present, Path, SignCertPath and SignKeyPath will be ignored
+		SignCert []byte `yaml:"signcert"`
+		SignKey  []byte `yaml:"signkey"`
 	}
 )
 
@@ -56,7 +63,22 @@ func (m MSP) MSP(opts ...identity.MSPOpt) (identity.MSP, error) {
 		return nil, ErrMSPIDEmpty
 	}
 
-	// Cert and key paths take precedence over Path
+	// cert and key contents take precedence over Path and cert and key paths
+	if len(m.SignCert) != 0 || len(m.SignKey) != 0 {
+		if len(m.SignCert) == 0 {
+			return nil, ErrMSPSignCertEmpty
+		}
+
+		if len(m.SignKey) == 0 {
+			return nil, ErrMSPSignKeyEmpty
+		}
+
+		opts = append(opts, identity.WithSignCert(m.SignCert), identity.WithSignKey(m.SignKey))
+
+		return identity.MSPFromPath(m.ID, "", opts...)
+	}
+
+	// cert and key paths take precedence over Path
 	if m.SignCertPath != `` || m.SignKeyPath != `` {
 		if m.SignCertPath == `` {
 			return nil, ErrMSPSignCertPathEmpty

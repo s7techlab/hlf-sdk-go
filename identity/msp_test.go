@@ -79,7 +79,7 @@ var _ = Describe(`Cert`, func() {
 			})
 		})
 
-		Context(`Peer from FabricMSPCofig`, func() {
+		Context(`Peer from FabricMSPConfig`, func() {
 
 			It(`allow to create msp from FabricMSPConfig`, func() {
 				msp, err := identity.MSPFromConfig(Org1MSPPeer.FabricMSPConfig())

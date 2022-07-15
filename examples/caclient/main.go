@@ -38,7 +38,7 @@ func main() {
 		log.Fatalln(`KEY_PATH env must be defined`)
 	}
 
-	id, err := identity.NewMSPIdentity(mspId, certPath, keyPath)
+	id, err := identity.FromCertKeyPath(mspId, certPath, keyPath)
 	if err != nil {
 		log.Fatalln(`failed to load identity:`, err)
 	}
@@ -66,7 +66,7 @@ func main() {
 			SerialNumber, CommonName                  string
 			Names                                     []pkix.AttributeTypeAndValue
 			ExtraNames                                []pkix.AttributeTypeAndValue
-		}{Country: []string{`RU`}, Organization: []string{`S7`}, OrganizationalUnit: []string{`ORG`}, Locality: []string{`Moscow`}, Province: []string{`Moscow`}, StreetAddress: []string{`Пушкина 7`}, PostalCode: []string{`100001`}, CommonName: name},
+		}{Country: []string{`RU`}, Organization: []string{`Atomyze`}, OrganizationalUnit: []string{`ORG`}, Locality: []string{`Moscow`}, Province: []string{`Moscow`}, StreetAddress: []string{`Пушкина 7`}, PostalCode: []string{`100001`}, CommonName: name},
 		SignatureAlgorithm: x509.ECDSAWithSHA512},
 	))
 }

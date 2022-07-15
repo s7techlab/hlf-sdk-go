@@ -62,9 +62,18 @@ type TlsConfig struct {
 	Enabled      bool   `yaml:"enabled"`
 	SkipVerify   bool   `yaml:"skip_verify"`
 	HostOverride string `yaml:"host_override"`
-	CertPath     string `yaml:"cert_path"`
-	KeyPath      string `yaml:"key_path"`
-	CACertPath   string `yaml:"ca_cert_path"`
+
+	// Cert take precedence over CertPath
+	Cert     []byte `yaml:"cert"`
+	CertPath string `yaml:"cert_path"`
+
+	// Key take precedence over KeyPath
+	Key     []byte `yaml:"key"`
+	KeyPath string `yaml:"key_path"`
+
+	// CACert take precedence over CACertPath
+	CACert     []byte `yaml:"ca_cert"`
+	CACertPath string `yaml:"ca_cert_path"`
 }
 
 type DiscoveryConfig struct {

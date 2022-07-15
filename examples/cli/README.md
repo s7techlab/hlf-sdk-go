@@ -8,7 +8,7 @@ Required flags:
 - configPath - path to SDK config ([example](../caclient/config.yaml))
 - channel - channel name for instantiated chaincode
 - cc - chaincode name
-- ccPath - path to chaincode realtively `$GOPATH`
+- ccPath - path to chaincode relatively `$GOPATH`
 - ccVersion - chaincode version
 - ccPolicy - instantiation policy
 - ccArgs - chaincode instantiation arguments

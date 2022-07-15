@@ -66,17 +66,24 @@ func OptionsFromConfig(c config.ConnectionConfig, logger *zap.Logger) (*Opts, er
 
 	if c.Tls.Enabled {
 		var (
-			err    error
 			tlsCfg tls.Config
+			err    error
 		)
 
 		tlsCfg.InsecureSkipVerify = c.Tls.SkipVerify
+
 		// if custom CA certificate is presented, use it
-		if c.Tls.CACertPath != `` {
-			caCert, err := ioutil.ReadFile(c.Tls.CACertPath)
-			if err != nil {
-				return nil, errors.Wrap(err, `failed to read CA certificate`)
+		if len(c.Tls.CACert) != 0 || c.Tls.CACertPath != `` {
+			var caCert []byte
+			if len(c.Tls.CACert) != 0 {
+				caCert = c.Tls.CACert
+			} else {
+				caCert, err = ioutil.ReadFile(c.Tls.CACertPath)
+				if err != nil {
+					return nil, fmt.Errorf(`read CA certificate: %w`, err)
+				}
 			}
+
 			certPool := x509.NewCertPool()
 			if ok := certPool.AppendCertsFromPEM(caCert); !ok {
 				return nil, errors.New(`failed to append CA certificate to chain`)
@@ -88,18 +95,26 @@ func OptionsFromConfig(c config.ConnectionConfig, logger *zap.Logger) (*Opts, er
 				return nil, fmt.Errorf(`get system cert pool: %w`, err)
 			}
 		}
-		if c.Tls.CertPath != `` {
-			// use mutual tls if certificate and pk is presented
-			if c.Tls.KeyPath != `` {
-				cert, err := tls.LoadX509KeyPair(c.Tls.CertPath, c.Tls.KeyPath)
-				if err != nil {
-					return nil, fmt.Errorf(`TLS client certificate: %w`, err)
-				}
-				tlsCfg.Certificates = append(tlsCfg.Certificates, cert)
 
-				if len(cert.Certificate) > 0 {
-					opts.TLSCertHash = TLSCertHash(cert.Certificate[0])
+		// use mutual tls if certificate and pk is presented
+		if len(c.Tls.Cert) != 0 && c.Tls.CertPath != `` {
+			var cert tls.Certificate
+			if len(c.Tls.Key) != 0 {
+				cert, err = tls.X509KeyPair(c.Tls.Cert, c.Tls.Key)
+				if err != nil {
+					return nil, fmt.Errorf(`TLS client certificate by contents: %w`, err)
 				}
+			} else if c.Tls.KeyPath != `` {
+				cert, err = tls.LoadX509KeyPair(c.Tls.CertPath, c.Tls.KeyPath)
+				if err != nil {
+					return nil, fmt.Errorf(`TLS client certificate by paths: %w`, err)
+				}
+			}
+
+			tlsCfg.Certificates = append(tlsCfg.Certificates, cert)
+
+			if len(cert.Certificate) > 0 {
+				opts.TLSCertHash = TLSCertHash(cert.Certificate[0])
 			}
 		}
 
@@ -171,7 +186,7 @@ func ConnectionFromConfigs(ctx context.Context, logger *zap.Logger, conf ...conf
 	// use options from first config
 	opts, err := OptionsFromConfig(conf[0], logger)
 	if err != nil {
-		return nil, errors.Wrap(err, `failed to get GRPC options`)
+		return nil, fmt.Errorf(`get GRPC options: %w`, err)
 	}
 	// name is necessary for grpc balancer and address verification in tls certs
 	dnsResolverName, _, err := net.SplitHostPort(conf[0].Host)
@@ -197,9 +212,10 @@ func ConnectionFromConfigs(ctx context.Context, logger *zap.Logger, conf ...conf
 	ctxConn, cancel := context.WithTimeout(ctx, time.Second*2)
 	defer cancel()
 
-	conn, err := grpc.DialContext(ctxConn, fmt.Sprintf("%s:///%s", r.Scheme(), dnsResolverName), opts.Dial...)
+	host := fmt.Sprintf("%s:///%s", r.Scheme(), dnsResolverName)
+	conn, err := grpc.DialContext(ctxConn, host, opts.Dial...)
 	if err != nil {
-		return nil, errors.Wrap(err, `grpc dial`)
+		return nil, fmt.Errorf(`grpc dial to host=%s: %w`, host, err)
 	}
 
 	return conn, nil

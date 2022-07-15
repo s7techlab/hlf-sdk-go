@@ -16,18 +16,17 @@ import (
 )
 
 func main() {
-
 	mspId := "Org1MSP"
 	configPath := "./cfg.yaml"
 
 	id, err := identity.FromCertKeyPath(
 		mspId,
-		// PROVIDE YOUR OWN PATHS
-		"../../../../github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/cert.pem",
-		"../../../../github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/02a48982a93c9a1fbf7e9702f82d14578aef9662362346ecfe8b3cde50da6799_sk",
+		// change paths to YOUR OWN
+		"github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/cert.pem",
+		"github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/02a48982a93c9a1fbf7e9702f82d14578aef9662362346ecfe8b3cde50da6799_sk",
 	)
 
-	core, err := client.NewCore(id, client.WithConfigYaml(configPath))
+	core, err := client.New(id, client.WithConfigYaml(configPath))
 	if err != nil {
 		log.Fatalln(`unable to initialize core:`, err)
 	}

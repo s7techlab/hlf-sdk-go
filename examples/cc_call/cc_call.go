@@ -10,7 +10,7 @@ import (
 
 func main() {
 	mspId := "Org1MSP"
-	id, err := identity.NewMSPIdentity(
+	id, err := identity.FromCertKeyPath(
 		mspId,
 		// PROVIDE YOUR OWN PATHS
 		"../../../../github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/cert.pem",
@@ -20,7 +20,7 @@ func main() {
 		log.Fatalf("connection.invoke: %v", err)
 	}
 
-	core, err := client.NewCore(id, client.WithConfigYaml("./cfg.yaml"))
+	core, err := client.New(id, client.WithConfigYaml("./cfg.yaml"))
 	if err != nil {
 		log.Fatalf("create client core: %v", err)
 	}
