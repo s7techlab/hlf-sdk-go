@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	discClient "github.com/hyperledger/fabric/discovery/client"
+	discoveryclient "github.com/hyperledger/fabric/discovery/client"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
@@ -18,29 +18,29 @@ var _ api.DiscoveryProvider = (*GossipDiscoveryProvider)(nil)
 
 type GossipDiscoveryProvider struct {
 	sd        *gossipServiceDiscovery
-	tlsMapper tlsConfigMapper
+	tlsMapper connectionMapper
 }
 
 // return tls config for peers found via gossip
-type tlsConfigMapper interface {
-	TlsConfigForAddress(address string) *config.TlsConfig
+type connectionMapper interface {
+	MapConnection(address string) *api.Endpoint
 }
 
 func NewGossipDiscoveryProvider(
 	ctx context.Context,
 	connCfg config.ConnectionConfig,
 	log *zap.Logger,
-	identitySigner discClient.Signer,
+	identitySigner discoveryclient.Signer,
 	clientIdentity []byte,
-	tlsMapper tlsConfigMapper,
+	tlsMapper connectionMapper,
 ) (*GossipDiscoveryProvider, error) {
-	discClient, err := newFabricDiscoveryClient(ctx, connCfg, log, identitySigner)
+	discoveryClient, err := newFabricDiscoveryClient(ctx, connCfg, log, identitySigner)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO probably we need to make a test call(ping) here to make sure user provided valid identity
-	sd := newGossipServiceDiscovery(discClient, clientIdentity)
+	// TODO: probably we need to make a test call(ping) here to make sure user provided valid identity
+	sd := newGossipServiceDiscovery(discoveryClient, clientIdentity)
 
 	return &GossipDiscoveryProvider{sd: sd, tlsMapper: tlsMapper}, nil
 }
@@ -51,19 +51,19 @@ func newFabricDiscoveryClient(
 	ctx context.Context,
 	c config.ConnectionConfig,
 	log *zap.Logger,
-	identitySigner discClient.Signer,
-) (*discClient.Client, error) {
-	opts, err := grpcclient.OptionsFromConfig(c, log)
+	identitySigner discoveryclient.Signer,
+) (*discoveryclient.Client, error) {
+	dialOpts, err := grpcclient.OptionsFromConfig(c, log)
 	if err != nil {
 		return nil, err
 	}
 
-	conn, err := grpc.DialContext(ctx, c.Host, opts.Dial...)
+	conn, err := grpc.DialContext(ctx, c.Host, dialOpts.Dial...)
 	if err != nil {
 		return nil, fmt.Errorf(`grpc dial to host=%s: %w`, c.Host, err)
 	}
 
-	discClient := discClient.NewClient(
+	discoveryClient := discoveryclient.NewClient(
 		func() (*grpc.ClientConn, error) {
 			return conn, nil
 		},
@@ -71,7 +71,7 @@ func newFabricDiscoveryClient(
 		10,
 	)
 
-	return discClient, nil
+	return discoveryClient, nil
 }
 
 func (d *GossipDiscoveryProvider) Chaincode(ctx context.Context, channelName string, ccName string) (api.ChaincodeDiscoverer, error) {

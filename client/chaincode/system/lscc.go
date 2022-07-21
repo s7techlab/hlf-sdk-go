@@ -63,6 +63,7 @@ func (l *LSCCService) GetInstalledChaincodes(ctx context.Context, _ *empty.Empty
 	}
 	return res.(*peer.ChaincodeQueryResponse), nil
 }
+
 func (l *LSCCService) GetChaincodes(ctx context.Context, getChaincodes *GetChaincodesRequest) (*peer.ChaincodeQueryResponse, error) {
 	res, err := tx.QueryStringsProto(ctx,
 		l.Invoker,
@@ -86,6 +87,7 @@ func (l *LSCCService) GetDeploymentSpec(ctx context.Context, getDeploymentSpec *
 	}
 	return res.(*peer.ChaincodeDeploymentSpec), nil
 }
+
 func (l *LSCCService) Install(ctx context.Context, spec *peer.ChaincodeDeploymentSpec) (*empty.Empty, error) {
 	_, err := tx.QueryProto(ctx,
 		l.Invoker,
@@ -95,6 +97,7 @@ func (l *LSCCService) Install(ctx context.Context, spec *peer.ChaincodeDeploymen
 
 	return nil, err
 }
+
 func (l *LSCCService) Deploy(ctx context.Context, deploy *DeployRequest) (response *peer.Response, err error) {
 
 	// Find chaincode instantiated or not

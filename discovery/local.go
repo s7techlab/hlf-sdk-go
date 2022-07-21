@@ -18,17 +18,17 @@ import (
 var _ api.DiscoveryProvider = (*LocalConfigProvider)(nil)
 
 type LocalConfigProvider struct {
-	tlsMapper tlsConfigMapper
+	tlsMapper connectionMapper
 	channels  []config.DiscoveryChannel `yaml:"channels"`
 }
 type opts struct {
 	Channels []config.DiscoveryChannel `yaml:"channels"`
 }
 
-func NewLocalConfigProvider(options config.DiscoveryConfigOpts, tlsMapper tlsConfigMapper) (api.DiscoveryProvider, error) {
+func NewLocalConfigProvider(options config.DiscoveryConfigOpts, tlsMapper connectionMapper) (api.DiscoveryProvider, error) {
 	var opts opts
 	if err := mapstructure.Decode(options, &opts); err != nil {
-		return nil, errors.Wrap(err, `failed to decode params`)
+		return nil, fmt.Errorf(`decode params: %w`, err)
 	}
 
 	return &LocalConfigProvider{channels: opts.Channels, tlsMapper: tlsMapper}, nil

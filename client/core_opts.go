@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"time"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -83,7 +82,8 @@ func WithPeers(mspID string, peers []config.ConnectionConfig) CoreOpt {
 			if err != nil {
 				return fmt.Errorf("create peer: %w", err)
 			}
-			err = c.peerPool.Add(mspID, pp, api.StrategyGRPC(5*time.Second))
+
+			err = c.peerPool.Add(mspID, pp, api.StrategyGRPC(api.DefaultGrpcCheckPeriod))
 			if err != nil {
 				return fmt.Errorf("add peer to pool: %w", err)
 			}

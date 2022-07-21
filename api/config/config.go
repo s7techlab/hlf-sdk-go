@@ -14,7 +14,7 @@ type Config struct {
 	MSP  []MSPConfig `yaml:"msp"`
 	Pool PoolConfig  `yaml:"pool"`
 	// if tls is enabled maps TLS certs to discovered peers
-	TLSCertsMap []TLSCertsMapperConfig `yaml:"tls_certs_map"`
+	EndpointsMap []Endpoint `yaml:"endpoints_map"`
 }
 
 type ConnectionConfig struct {
@@ -59,9 +59,8 @@ type GRPCKeepAliveConfig struct {
 }
 
 type TlsConfig struct {
-	Enabled      bool   `yaml:"enabled"`
-	SkipVerify   bool   `yaml:"skip_verify"`
-	HostOverride string `yaml:"host_override"`
+	Enabled    bool `yaml:"enabled"`
+	SkipVerify bool `yaml:"skip_verify"`
 
 	// Cert take precedence over CertPath
 	Cert     []byte `yaml:"cert"`
@@ -111,9 +110,10 @@ type Duration struct {
 	time.Duration
 }
 
-type TLSCertsMapperConfig struct {
-	Address   string    `yaml:"address"`
-	TlsConfig TlsConfig `yaml:"tls"`
+type Endpoint struct {
+	Host         string    `yaml:"host"`
+	HostOverride string    `yaml:"host_override"`
+	TlsConfig    TlsConfig `yaml:"tls"`
 }
 
 func (d *Duration) UnmarshalYAML(unmarshal func(interface{}) error) error {
