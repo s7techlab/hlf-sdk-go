@@ -4,18 +4,17 @@ package hlfsdk.proto;
 
 option go_package = "hlfsdk/proto";
 
-import "msp/msp_config.proto";
-import "orderer/configuration.proto";
 import "common/configuration.proto";
 import "common/policies.proto";
+import "msp/msp_config.proto";
+import "orderer/configuration.proto";
 import "peer/configuration.proto";
 
-
-message ChannelConfig{
+message ChannelConfig {
     map<string,ApplicationConfig> applications = 1;
     map<string,OrdererConfig> orderers = 2;
 
-    orderer.BatchSize orderer_batch_size= 3;
+    orderer.BatchSize orderer_batch_size = 3;
     string orderer_batch_timeout = 4;
     orderer.ConsensusType orderer_consensus_type = 5; 
 
@@ -27,40 +26,40 @@ message ChannelConfig{
     map<string,Policy> policy = 10; 
 }
 
-enum PolicyKey {
-    Undefined = 0;
-    Readers = 1;
-    Writers = 2;
-    LifecycleEndporsement = 3;
-    Endporsement = 4;
-}
-
-message MSP{
+message MSP {
     string name = 1;
     msp.FabricMSPConfig config = 2;
     map<string,Policy> policy = 3; 
 }
 
-message ApplicationConfig{
+message ApplicationConfig {
     string name = 1;
     MSP msp = 2;
     repeated protos.AnchorPeer anchor_peers = 3;
 }
 
-message OrdererConfig{
+message OrdererConfig {
     string name = 1;
     MSP msp = 2;
     repeated string endpoints = 3;
 }
 
-message Policy{
+message Policy {
     oneof policy {
         common.ImplicitMetaPolicy implicit = 1;
         common.SignaturePolicyEnvelope signature_policy = 2;
     }
 }
 
-message Certificate{
+enum PolicyKey {
+    Undefined = 0;
+    Readers = 1;
+    Writers = 2;
+    LifecycleEndorsement = 3;
+    Endorsement = 4;
+}
+
+message Certificate {
     // sha256 hash
     bytes fingerprint = 1;
     bytes data = 2;
@@ -69,7 +68,7 @@ message Certificate{
     string msp_name = 5;
 }
 
-enum CertType{
+enum CertType {
     undefined = 0;
     ca = 1;
     intermediate = 2;

@@ -35,12 +35,12 @@ func FabricVersionIsV2(isV2 bool) FabricVersion {
 	return FabricV1
 }
 
-func (c *ChannelConfig) ToJSON() ([]byte, error) {
+func (x *ChannelConfig) ToJSON() ([]byte, error) {
 	opt := protojson.MarshalOptions{
 		UseProtoNames: true,
 	}
 
-	return opt.Marshal(c)
+	return opt.Marshal(x)
 }
 
 func UnmarshalChannelConfig(b []byte) (*ChannelConfig, error) {
@@ -80,7 +80,7 @@ func ParseChannelConfig(cc common.Config) (*ChannelConfig, error) {
 	}
 	chanCfg.OrdererBatchTimeout = batchTimeout
 
-	consensusType, err := ParseOrdererConsesusType(cc)
+	consensusType, err := ParseOrdererConsensusType(cc)
 	if err != nil {
 		return nil, fmt.Errorf("parse consensus type: %w", err)
 	}
@@ -166,8 +166,8 @@ func ParseMSP(mspConfigGroup *common.ConfigGroup, groupName string) (*MSP, error
 		return nil, fmt.Errorf("unmarshal MSPConfig: %w", err)
 	}
 
-	fmspCfg := &msp.FabricMSPConfig{}
-	if err := proto.Unmarshal(mspCfg.Config, fmspCfg); err != nil {
+	fabricMSPCfg := &msp.FabricMSPConfig{}
+	if err := proto.Unmarshal(mspCfg.Config, fabricMSPCfg); err != nil {
 		return nil, fmt.Errorf("unmarshal FabricMSPConfig: %w", err)
 	}
 
@@ -176,7 +176,7 @@ func ParseMSP(mspConfigGroup *common.ConfigGroup, groupName string) (*MSP, error
 		return nil, fmt.Errorf("parse policy: %w", err)
 	}
 
-	return &MSP{Config: fmspCfg, Policy: policy, Name: groupName}, nil
+	return &MSP{Config: fabricMSPCfg, Policy: policy, Name: groupName}, nil
 }
 
 func ParseOrderer(cfg common.Config) (map[string]*OrdererConfig, error) {
@@ -280,7 +280,7 @@ func ParseOrdererBatchTimeoutFromBytes(b []byte) (string, error) {
 	return bt.Timeout, nil
 }
 
-func ParseOrdererConsesusType(cfg common.Config) (*orderer.ConsensusType, error) {
+func ParseOrdererConsensusType(cfg common.Config) (*orderer.ConsensusType, error) {
 	ordererGroup, exists := cfg.ChannelGroup.Groups[channelconfig.OrdererGroupKey]
 	if !exists {
 		return nil, fmt.Errorf("%v type group doesn't exists", channelconfig.OrdererGroupKey)
@@ -291,10 +291,10 @@ func ParseOrdererConsesusType(cfg common.Config) (*orderer.ConsensusType, error)
 		return nil, fmt.Errorf("%v type group doesn't exists", channelconfig.ConsensusTypeKey)
 	}
 
-	return ParseOrdererConsesusTypeFromBytes(consensusType.Value)
+	return ParseOrdererConsensusTypeFromBytes(consensusType.Value)
 }
 
-func ParseOrdererConsesusTypeFromBytes(b []byte) (*orderer.ConsensusType, error) {
+func ParseOrdererConsensusTypeFromBytes(b []byte) (*orderer.ConsensusType, error) {
 	ct := &orderer.ConsensusType{}
 	if err := proto.Unmarshal(b, ct); err != nil {
 		return nil, fmt.Errorf("unmarshal ConsensusType: %w", err)
@@ -418,20 +418,21 @@ func ParsePolicy(policiesCfg map[string]*common.ConfigPolicy) (map[string]*Polic
 }
 
 /* structs methods */
-// GetAllCertificates - returns all(root, intermediate, admins) certificates from all MSP's
-func (c *ChannelConfig) GetAllCertificates() ([]*Certificate, error) {
+
+// GetAllCertificates - returns all(root, intermediate, admins) certificates from all MSPs'
+func (x *ChannelConfig) GetAllCertificates() ([]*Certificate, error) {
 	var certs []*Certificate
 
-	for mspID := range c.Applications {
-		cs, err := c.Applications[mspID].Msp.GetAllCertificates()
+	for mspID := range x.Applications {
+		cs, err := x.Applications[mspID].Msp.GetAllCertificates()
 		if err != nil {
 			return nil, fmt.Errorf("get all msps certificates: %w", err)
 		}
 		certs = append(certs, cs...)
 	}
 
-	for mspID := range c.Orderers {
-		cs, err := c.Orderers[mspID].Msp.GetAllCertificates()
+	for mspID := range x.Orderers {
+		cs, err := x.Orderers[mspID].Msp.GetAllCertificates()
 		if err != nil {
 			return nil, fmt.Errorf("get all orderers certificates: %w", err)
 		}
@@ -441,9 +442,9 @@ func (c *ChannelConfig) GetAllCertificates() ([]*Certificate, error) {
 	return certs, nil
 }
 
-func (c *ChannelConfig) FabricVersion() FabricVersion {
-	if c.Capabilities != nil {
-		_, isFabricV2 := c.Capabilities.Capabilities["V2_0"]
+func (x *ChannelConfig) FabricVersion() FabricVersion {
+	if x.Capabilities != nil {
+		_, isFabricV2 := x.Capabilities.Capabilities["V2_0"]
 		if isFabricV2 {
 			return FabricV2
 		}
@@ -453,27 +454,27 @@ func (c *ChannelConfig) FabricVersion() FabricVersion {
 }
 
 // GetAllCertificates - returns all certificates from MSP
-func (c *MSP) GetAllCertificates() ([]*Certificate, error) {
+func (x *MSP) GetAllCertificates() ([]*Certificate, error) {
 	var certs []*Certificate
 
-	for i := range c.Config.RootCerts {
-		cert, err := NewCertificate(c.Config.RootCerts[i], CertType_ca, c.Config.Name, c.Name)
+	for i := range x.Config.RootCerts {
+		cert, err := NewCertificate(x.Config.RootCerts[i], CertType_ca, x.Config.Name, x.Name)
 		if err != nil {
 			return nil, err
 		}
 		certs = append(certs, cert)
 	}
 
-	for i := range c.Config.IntermediateCerts {
-		cert, err := NewCertificate(c.Config.IntermediateCerts[i], CertType_intermediate, c.Config.Name, c.Name)
+	for i := range x.Config.IntermediateCerts {
+		cert, err := NewCertificate(x.Config.IntermediateCerts[i], CertType_intermediate, x.Config.Name, x.Name)
 		if err != nil {
 			return nil, err
 		}
 		certs = append(certs, cert)
 	}
 
-	for i := range c.Config.Admins {
-		cert, err := NewCertificate(c.Config.Admins[i], CertType_admin, c.Config.Name, c.Name)
+	for i := range x.Config.Admins {
+		cert, err := NewCertificate(x.Config.Admins[i], CertType_admin, x.Config.Name, x.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -500,9 +501,9 @@ func NewCertificate(cert []byte, t CertType, mspID, mspName string) (*Certificat
 	return c, nil
 }
 
-func (c *Certificate) setCertificateSHA256(b *pem.Block) {
+func (x *Certificate) setCertificateSHA256(b *pem.Block) {
 	f := CalcCertificateSHA256(b)
-	c.Fingerprint = f[:]
+	x.Fingerprint = f[:]
 }
 
 func CalcCertificateSHA256(b *pem.Block) []byte {

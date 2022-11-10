@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package hlfsdk.proto;
+
+option go_package = "hlfsdk/proto";
+
+import "chan_config.proto";
+
+import "common/common.proto";
+import "ledger/rwset/kvrwset/kv_rwset.proto";
+import "msp/identities.proto";
+import "peer/chaincode.proto";
+import "peer/chaincode_event.proto";
+import "peer/transaction.proto";
+
+message Block {
+  common.BlockHeader header = 1;
+  repeated Envelope envelopes = 2;
+  repeated OrdererSignature orderer_signatures = 3;
+}
+
+message Envelope {
+  bytes signature = 1;
+  common.ChannelHeader channel_header = 2;
+  protos.TxValidationCode validation_code = 3;
+  Transaction transaction = 4;
+  hlfsdk.proto.ChannelConfig channel_config = 5;
+}
+
+message Transaction {
+  repeated TransactionAction actions = 1;
+  msp.SerializedIdentity creator_identity = 2;
+}
+
+message TransactionAction {
+  protos.ChaincodeEvent event = 1;
+  repeated msp.SerializedIdentity endorsers = 2;
+  repeated kvrwset.KVRWSet read_write_sets = 3;
+  protos.ChaincodeInvocationSpec chaincode_invocation_spec = 4;
+  msp.SerializedIdentity creator_identity = 5;
+}
+
+message OrdererSignature {
+  msp.SerializedIdentity identity = 1;
+  bytes signature = 2;
+}

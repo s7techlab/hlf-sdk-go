@@ -29,17 +29,6 @@ func init() {
 	mu.Unlock()
 }
 
-type Block struct {
-	Header            *common.BlockHeader  `json:"header"`
-	Envelopes         []*Envelope          `json:"envelopes"`
-	OrdererSignatures []*OrdererSignatures `json:"orderer_signatures"`
-}
-
-type OrdererSignatures struct {
-	Identity  *msp.SerializedIdentity
-	Signature []byte
-}
-
 func ParseBlock(block *common.Block) (*Block, error) {
 	var err error
 	parsedBlock := &Block{
@@ -57,7 +46,7 @@ func ParseBlock(block *common.Block) (*Block, error) {
 		return nil, fmt.Errorf("parsing orderer identity from block: %w", err)
 	}
 	if raftOrdererIdentity != nil && raftOrdererIdentity.IdBytes != nil {
-		parsedBlock.OrdererSignatures = append(parsedBlock.OrdererSignatures, &OrdererSignatures{Identity: raftOrdererIdentity})
+		parsedBlock.OrdererSignatures = append(parsedBlock.OrdererSignatures, &OrdererSignature{Identity: raftOrdererIdentity})
 	}
 
 	// parse BFT orderer identities
@@ -70,7 +59,7 @@ func ParseBlock(block *common.Block) (*Block, error) {
 		configBlock := configBlocks[channelName(parsedBlock.Envelopes[0].ChannelHeader.ChannelId)]
 		mu.Unlock()
 
-		var bftOrdererIdentities []*OrdererSignatures
+		var bftOrdererIdentities []*OrdererSignature
 		bftOrdererIdentities, err = ParseBTFOrderersIdentities(block, configBlock)
 		if err != nil {
 			return nil, fmt.Errorf("parsing bft orderers identities: %w", err)
@@ -108,7 +97,7 @@ func ParseOrdererIdentity(cb *common.Block) (*msp.SerializedIdentity, error) {
 	return serializedIdentity, nil
 }
 
-func ParseBTFOrderersIdentities(block *common.Block, configBlock *common.Block) ([]*OrdererSignatures, error) {
+func ParseBTFOrderersIdentities(block *common.Block, configBlock *common.Block) ([]*OrdererSignature, error) {
 	bftMeta := &bftcommon.BFTMetadata{}
 	if err := proto.Unmarshal(block.Metadata.Metadata[common.BlockMetadataIndex_SIGNATURES], bftMeta); err != nil {
 		return nil, fmt.Errorf("unmarshaling bft block metadata from metadata: %w", err)
@@ -139,7 +128,7 @@ func ParseBTFOrderersIdentities(block *common.Block, configBlock *common.Block) 
 		return nil, fmt.Errorf("unmarshaling bft config metadata from concensus type metadata: %w", err)
 	}
 
-	var ordererSignatures []*OrdererSignatures
+	var ordererSignatures []*OrdererSignature
 	for _, consenter := range configMetadata.Consenters {
 		var identity msp.SerializedIdentity
 		if err = proto.Unmarshal(consenter.Identity, &identity); err != nil {
@@ -149,7 +138,7 @@ func ParseBTFOrderersIdentities(block *common.Block, configBlock *common.Block) 
 		// among all channel orderers, find those that signed this block
 		for _, signature := range bftMeta.Signatures {
 			if signature.SignerId == consenter.ConsenterId {
-				ordererSignatures = append(ordererSignatures, &OrdererSignatures{
+				ordererSignatures = append(ordererSignatures, &OrdererSignature{
 					Identity:  &identity,
 					Signature: signature.Signature,
 				})
@@ -189,9 +178,9 @@ func createConfigEnvelope(data []byte) (*common.ConfigEnvelope, error) {
 	return configEnvelope, nil
 }
 
-func (b *Block) ValidEnvelopes() Envelopes {
-	var envs Envelopes
-	for _, e := range b.Envelopes {
+func (x *Block) ValidEnvelopes() []*Envelope {
+	var envs []*Envelope
+	for _, e := range x.Envelopes {
 		if e.ValidationCode != peer.TxValidationCode_VALID {
 			continue
 		}

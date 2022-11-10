@@ -73,12 +73,15 @@ func NewBlocksDelivererMock(rootPath string, closeWhenAllRead bool) (*BlocksDeli
 			if !ok {
 				return nil
 			}
-			blockID, err := strconv.Atoi(strings.TrimSuffix(paths[1], `.pb`))
+
+			var blockID int
+			blockID, err = strconv.Atoi(strings.TrimSuffix(paths[1], `.pb`))
 			if err != nil {
 				return err
 			}
 
-			block, err := ioutil.ReadFile(path)
+			var block []byte
+			block, err = ioutil.ReadFile(path)
 			if err != nil {
 				return err
 			}
@@ -97,12 +100,14 @@ func NewBlocksDelivererMock(rootPath string, closeWhenAllRead bool) (*BlocksDeli
 		channelBlocks := make([]*common.Block, len(data))
 		for blockID, blockData := range data {
 			block := &common.Block{}
-			err := proto.Unmarshal(blockData, block)
+			err = proto.Unmarshal(blockData, block)
 			if err != nil {
 				return nil, err
 			}
+
 			channelBlocks[blockID] = block
 		}
+
 		dc.data[channelID] = channelBlocks
 		println("fill channel '"+channelID+"' blocks from", 0, "...", len(channelBlocks)-1)
 	}

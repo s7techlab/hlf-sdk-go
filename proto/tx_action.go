@@ -11,18 +11,6 @@ import (
 	"github.com/hyperledger/fabric/protoutil"
 )
 
-type (
-	TransactionAction struct {
-		Event                   *peer.ChaincodeEvent          `json:"event"`
-		Endorsers               []*msp.SerializedIdentity     `json:"endorsers"`
-		ReadWriteSets           []*kvrwset.KVRWSet            `json:"rw_sets"`
-		ChaincodeInvocationSpec *peer.ChaincodeInvocationSpec `json:"cc_invocation_spec"`
-		CreatorIdentity         msp.SerializedIdentity        `json:"creator_identity"`
-	}
-
-	TransactionsActions []*TransactionAction
-)
-
 func ParseTxActions(txActions []*peer.TransactionAction) ([]*TransactionAction, error) {
 	var parsedTxActions []*TransactionAction
 
@@ -81,7 +69,7 @@ func ParseTxAction(txAction *peer.TransactionAction) (*TransactionAction, error)
 		Endorsers:               endorsers,
 		ReadWriteSets:           rwSets,
 		ChaincodeInvocationSpec: chaincodeInvocationSpec,
-		CreatorIdentity:         *creator,
+		CreatorIdentity:         creator,
 	}
 
 	return parsedTxAction, nil
@@ -125,7 +113,7 @@ func ParseTransactionActionEndorsers(txAction *peer.TransactionAction) ([]*msp.S
 	for _, en := range ccActionPayload.Action.Endorsements {
 		endorser := &msp.SerializedIdentity{}
 
-		if err := proto.Unmarshal(en.Endorser, endorser); err != nil {
+		if err = proto.Unmarshal(en.Endorser, endorser); err != nil {
 			return nil, fmt.Errorf("get endorser: %w", err)
 		}
 
