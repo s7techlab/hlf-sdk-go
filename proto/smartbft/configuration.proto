@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "hlfsdk/proto/smartbft";
+option go_package = "github.com/atomyze-ru/hlf-sdk-go/proto/smartbft";
 
 package smartbft;
 

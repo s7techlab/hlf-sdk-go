@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package hlfsdk.proto;
 
-option go_package = "hlfsdk/proto";
+option go_package = "github.com/atomyze-ru/hlf-sdk-go/proto";
 
 import "common/configuration.proto";
 import "common/policies.proto";
