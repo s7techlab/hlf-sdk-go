@@ -2,7 +2,6 @@ package proto
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
@@ -16,20 +15,26 @@ import (
 	"github.com/atomyze-ru/hlf-sdk-go/util/txflags"
 )
 
-type channelName string
+type (
+	parseBlockOpts struct {
+		configBlock *common.Block
+	}
 
-var (
-	configBlocks map[channelName]*common.Block
-	mu           sync.Mutex
+	ParseBlockOpt func(*parseBlockOpts)
 )
 
-func init() {
-	mu.Lock()
-	configBlocks = make(map[channelName]*common.Block)
-	mu.Unlock()
+func WithConfigBlock(configBlock *common.Block) ParseBlockOpt {
+	return func(opts *parseBlockOpts) {
+		opts.configBlock = configBlock
+	}
 }
 
-func ParseBlock(block *common.Block) (*Block, error) {
+func ParseBlock(block *common.Block, opts ...ParseBlockOpt) (*Block, error) {
+	var parsingOpts parseBlockOpts
+	for _, opt := range opts {
+		opt(&parsingOpts)
+	}
+
 	var err error
 	parsedBlock := &Block{
 		Header: block.Header,
@@ -49,18 +54,10 @@ func ParseBlock(block *common.Block) (*Block, error) {
 		parsedBlock.OrdererSignatures = append(parsedBlock.OrdererSignatures, &OrdererSignature{Identity: raftOrdererIdentity})
 	}
 
-	// parse BFT orderer identities
-	if block.Header.Number == 0 {
-		mu.Lock()
-		configBlocks[channelName(parsedBlock.Envelopes[0].ChannelHeader.ChannelId)] = block
-		mu.Unlock()
-	} else {
-		mu.Lock()
-		configBlock := configBlocks[channelName(parsedBlock.Envelopes[0].ChannelHeader.ChannelId)]
-		mu.Unlock()
-
+	// parse BFT orderer identities, if there is at least one config block was sent
+	if parsingOpts.configBlock != nil {
 		var bftOrdererIdentities []*OrdererSignature
-		bftOrdererIdentities, err = ParseBTFOrderersIdentities(block, configBlock)
+		bftOrdererIdentities, err = ParseBTFOrderersIdentities(block, parsingOpts.configBlock)
 		if err != nil {
 			return nil, fmt.Errorf("parsing bft orderers identities: %w", err)
 		}
