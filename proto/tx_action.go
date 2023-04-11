@@ -62,7 +62,16 @@ func ParseTxAction(txAction *peer.TransactionAction) (*TransactionAction, error)
 	}
 
 	// because there is no cc version in peer.ChaincodeInvocationSpec
-	chaincodeInvocationSpec.ChaincodeSpec.ChaincodeId.Version = ccAction.ChaincodeId.Version
+	if chaincodeInvocationSpec.ChaincodeSpec == nil {
+		chaincodeInvocationSpec.ChaincodeSpec = &peer.ChaincodeSpec{}
+	}
+
+	if chaincodeInvocationSpec.ChaincodeSpec.ChaincodeId == nil {
+		chaincodeInvocationSpec.ChaincodeSpec.ChaincodeId = &peer.ChaincodeID{}
+	}
+	if ccAction.ChaincodeId != nil {
+		chaincodeInvocationSpec.ChaincodeSpec.ChaincodeId.Version = ccAction.ChaincodeId.Version
+	}
 
 	parsedTxAction := &TransactionAction{
 		Event:                   ccEvent,
