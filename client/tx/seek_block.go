@@ -20,17 +20,18 @@ type SeekBlock struct {
 }
 
 func (sb SeekBlock) CreateEnvelope() (*common.Envelope, error) {
-	return NewSeekBlockEnvelope(sb.Channel, sb.Signer, sb.Start, sb.Stop)
+	return NewSeekBlockEnvelope(sb.Channel, sb.Signer, sb.Start, sb.Stop, nil)
 }
 
-func NewSeekGenesisEnvelope(channel string, signer msp.SigningIdentity) (*common.Envelope, error) {
+func NewSeekGenesisEnvelope(channel string, signer msp.SigningIdentity, tlsCertHash []byte) (*common.Envelope, error) {
 	start := proto.NewSeekSpecified(0)
 	stop := proto.NewSeekSpecified(0)
 
-	return NewSeekBlockEnvelope(channel, signer, start, stop)
+	return NewSeekBlockEnvelope(channel, signer, start, stop, tlsCertHash)
 }
 
-func NewSeekBlockEnvelope(channel string, signer msp.SigningIdentity, start, stop *orderer.SeekPosition) (*common.Envelope, error) {
+func NewSeekBlockEnvelope(channel string, signer msp.SigningIdentity, start, stop *orderer.SeekPosition, tlsCertHash []byte) (
+	*common.Envelope, error) {
 	if signer == nil {
 		return nil, errors.New(`signer should be defined`)
 	}
@@ -49,7 +50,14 @@ func NewSeekBlockEnvelope(channel string, signer msp.SigningIdentity, start, sto
 		return nil, fmt.Errorf(`seekInfo: %w`, err)
 	}
 
-	header, err := proto.NewCommonHeader(common.HeaderType_DELIVER_SEEK_INFO, txParams.ID, txParams.Nonce, txParams.Timestamp, signerSerialized, channel, ``)
+	header, err := proto.NewCommonHeader(
+		common.HeaderType_DELIVER_SEEK_INFO,
+		txParams.ID,
+		txParams.Nonce,
+		txParams.Timestamp,
+		signerSerialized,
+		channel, ``,
+		tlsCertHash)
 	if err != nil {
 		return nil, fmt.Errorf(`payload header: %w`, err)
 	}

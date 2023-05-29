@@ -114,11 +114,12 @@ func (l *LifecycleService) QueryApprovedChaincodeDefinition(ctx context.Context,
 	return res.(*lifecycleproto.QueryApprovedChaincodeDefinitionResult), nil
 }
 
-func (l *LifecycleService) CheckCommitReadiness(ctx context.Context, сheckCommitReadiness *CheckCommitReadinessRequest) (*lifecycleproto.CheckCommitReadinessResult, error) {
+func (l *LifecycleService) CheckCommitReadiness(ctx context.Context, checkCommitReadiness *CheckCommitReadinessRequest) (
+	*lifecycleproto.CheckCommitReadinessResult, error) {
 	res, err := tx.QueryProto(ctx,
 		l.Invoker,
-		сheckCommitReadiness.Channel, LifecycleName,
-		[]interface{}{lifecyclecc.CheckCommitReadinessFuncName, сheckCommitReadiness.Args},
+		checkCommitReadiness.Channel, LifecycleName,
+		[]interface{}{lifecyclecc.CheckCommitReadinessFuncName, checkCommitReadiness.Args},
 		&lifecycleproto.CheckCommitReadinessResult{})
 	if err != nil {
 		return nil, err

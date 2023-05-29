@@ -40,7 +40,6 @@ type (
 
 func New(privateKey, cert []byte, opts ...Opt) (*CA, error) {
 	var err error
-
 	c := &CA{
 		Enrolled: make(map[string][]*x509.Certificate),
 	}
@@ -51,7 +50,7 @@ func New(privateKey, cert []byte, opts ...Opt) (*CA, error) {
 			return nil, errors.New(`failed to decode PEM pk`)
 		}
 
-		if c.PK, err = x509.ParsePKCS8PrivateKey(pkb.Bytes); err != nil {
+		if c.PK, err = x509.ParseECPrivateKey(pkb.Bytes); err != nil {
 			return nil, fmt.Errorf(`parse private key: %w`, err)
 		}
 	}

@@ -80,7 +80,15 @@ func ProceedChannelUpdate(
 		return errors.Wrap(err, `failed to marshal common.ConfigUpdateEnvelope`)
 	}
 
-	channelHeader, err := proto2.NewCommonHeader(common.HeaderType_CONFIG_UPDATE, txParams.ID, txParams.Nonce, txParams.Timestamp, serialized, channelName, ``)
+	channelHeader, err := proto2.NewCommonHeader(
+		common.HeaderType_CONFIG_UPDATE,
+		txParams.ID,
+		txParams.Nonce,
+		txParams.Timestamp,
+		serialized,
+		channelName,
+		``,
+		nil)
 	if err != nil {
 		return errors.Wrap(err, `failed to get channel header`)
 	}

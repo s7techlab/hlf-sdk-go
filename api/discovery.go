@@ -35,10 +35,10 @@ type LocalPeersDiscoverer interface {
 type HostEndpoint struct {
 	MspID string
 	// each host could have own tls settings
-	HostAddresses []*HostAddress
+	HostAddresses []*Endpoint
 }
 
-type HostAddress struct {
-	Address     string
-	TLSSettings config.TlsConfig
+type Endpoint struct {
+	Host      string
+	TlsConfig config.TlsConfig
 }

@@ -59,10 +59,9 @@ func NewOrderer(dialCtx context.Context, c config.ConnectionConfig, logger *zap.
 		ctxDeadline, _ = dialCtx.Deadline()
 	}
 
-	logger.Debug(`dial to orderer`,
-		zap.String(`host`, c.Host), zap.Time(`context deadline`, ctxDeadline))
-	conn, dialErr := grpc.DialContext(dialCtx, c.Host, opts...)
-	if dialErr != nil {
+	logger.Debug(`dial to orderer`, zap.String(`host`, c.Host), zap.Time(`context deadline`, ctxDeadline))
+	conn, err := grpc.DialContext(dialCtx, c.Host, opts.Dial...)
+	if err != nil {
 		return nil, fmt.Errorf(`dial to orderer=: %w`, err)
 	}
 
@@ -169,7 +168,7 @@ func (o *Orderer) Deliver(ctx context.Context, envelope *common.Envelope) (block
 func (o *Orderer) GetConfigBlock(ctx context.Context, signer msp.SigningIdentity, channelName string) (*common.Block, error) {
 	startPos, endPos := api.SeekNewest()()
 
-	seekEnvelope, err := tx.NewSeekBlockEnvelope(channelName, signer, startPos, endPos)
+	seekEnvelope, err := tx.NewSeekBlockEnvelope(channelName, signer, startPos, endPos, nil)
 	if err != nil {
 		return nil, fmt.Errorf(`create seek envelope: %w`, err)
 	}
@@ -186,7 +185,7 @@ func (o *Orderer) GetConfigBlock(ctx context.Context, signer msp.SigningIdentity
 
 	startPos, endPos = api.SeekSingle(blockId)()
 
-	seekEnvelope, err = tx.NewSeekBlockEnvelope(channelName, signer, startPos, endPos)
+	seekEnvelope, err = tx.NewSeekBlockEnvelope(channelName, signer, startPos, endPos, nil)
 	if err != nil {
 		return nil, fmt.Errorf(`create seek envelope for last config block: %w`, err)
 	}

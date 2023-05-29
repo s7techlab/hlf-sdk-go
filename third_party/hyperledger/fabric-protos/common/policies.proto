@@ -9,7 +9,7 @@ option java_package = "org.hyperledger.fabric.protos.common";
 
 package common;
 
-import "msp/msp_principal.proto";
+import "hyperledger/fabric-protos/msp/msp_principal.proto";
 
 // Policy expresses a policy which the orderer can evaluate, because there has been some desire expressed to support
 // multiple policy engines, this is typed as a oneof for now
