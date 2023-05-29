@@ -1,6 +1,7 @@
 package proto_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/hyperledger/fabric-protos-go/common"
@@ -42,7 +43,7 @@ var _ = BeforeSuite(func(done Done) {
 
 var _ = Describe("Block parse test", func() {
 	It("", func() {
-		blocks, closer, err := blockDelivererMock.Blocks(nil, channelName, nil)
+		blocks, closer, err := blockDelivererMock.Blocks(context.Background(), channelName, nil)
 		Expect(err).ShouldNot(HaveOccurred())
 
 		blockNum := 0
