@@ -1,0 +1,19 @@
+{
+  "CN": "HLF-SDK-GO",
+  "key": {
+    "algo": "ecdsa",
+    "size": 384
+  },
+  "names": [
+    {
+      "C": "C",
+      "L": "L",
+      "O": "HLF Services",
+      "OU": "",
+      "ST": ""
+    }
+  ],
+  "ca": {
+    "expiry": "42720h"
+  }
+}

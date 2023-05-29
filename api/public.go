@@ -45,7 +45,7 @@ type BlocksDeliverer interface {
 
 type Querier interface {
 	CurrentIdentity
-	// Query - shortcut for querying chanincodes
+	// Query - shortcut for querying chaincodes
 	// if provided 'identity' is 'nil' default one will be set
 	Query(
 		ctx context.Context,
