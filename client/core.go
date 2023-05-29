@@ -30,7 +30,6 @@ type core struct {
 	discoveryProvider api.DiscoveryProvider
 	channels          map[string]api.Channel
 	channelMx         sync.Mutex
-	chaincodeMx       sync.Mutex
 	cs                api.CryptoSuite
 	fabricV2          bool
 }

@@ -124,7 +124,7 @@ func (o *Orderer) Deliver(ctx context.Context, envelope *common.Envelope) (block
 		return nil, fmt.Errorf(`initialize deliver client: %w`, err)
 	}
 
-	waitc := make(chan struct{}, 0)
+	waitc := make(chan struct{})
 
 	go func() {
 		defer close(waitc)

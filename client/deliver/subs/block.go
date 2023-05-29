@@ -19,7 +19,7 @@ type (
 
 func NewBlockSubscription() *BlockSubscription {
 	return &BlockSubscription{
-		blocks: make(chan *common.Block, 0),
+		blocks: make(chan *common.Block),
 	}
 }
 
