@@ -50,7 +50,7 @@ func main() {
 
 	l, _ := zap.NewProduction()
 
-	core, err := client.NewCore(id, client.WithConfigYaml(configPath), client.WithLogger(l))
+	core, err := client.New(id, client.WithConfigYaml(configPath), client.WithLogger(l))
 	if err != nil {
 		log.Fatalln(`unable to initialize core:`, err)
 	}

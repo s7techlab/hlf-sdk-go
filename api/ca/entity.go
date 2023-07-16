@@ -12,7 +12,7 @@ type (
 	IdentityAttribute struct {
 		Name  string `json:"name"`
 		Value string `json:"value"`
-		Ecert bool   `json:"ecert"`
+		ECert bool   `json:"ecert"`
 	}
 
 	RevokedCert struct {

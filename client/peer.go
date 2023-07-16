@@ -31,16 +31,17 @@ const (
 )
 
 type peer struct {
-	conn     *grpc.ClientConn
-	client   fabricPeer.EndorserClient
-	identity msp.SigningIdentity
+	conn        *grpc.ClientConn
+	client      fabricPeer.EndorserClient
+	identity    msp.SigningIdentity
+	tlsCertHash []byte
 
 	endorseDefaultTimeout time.Duration
 
 	logger *zap.Logger
 }
 
-// NewPeer returns new peer instance bassed on peer config
+// NewPeer returns new peer instance based on peer config
 func NewPeer(dialCtx context.Context, c config.ConnectionConfig, identity msp.SigningIdentity, logger *zap.Logger) (api.Peer, error) {
 	opts, err := grpcclient.OptionsFromConfig(c, logger)
 	if err != nil {
@@ -52,7 +53,7 @@ func NewPeer(dialCtx context.Context, c config.ConnectionConfig, identity msp.Si
 		dialTimeout = PeerDefaultDialTimeout
 	}
 
-	// Dial shoould always has timeout
+	// Dial should always have timeout
 	ctxDeadline, exists := dialCtx.Deadline()
 	if !exists {
 		var cancel context.CancelFunc
@@ -62,18 +63,17 @@ func NewPeer(dialCtx context.Context, c config.ConnectionConfig, identity msp.Si
 		ctxDeadline, _ = dialCtx.Deadline()
 	}
 
-	logger.Debug(`dial to peer`,
-		zap.String(`host`, c.Host), zap.Time(`context deadline`, ctxDeadline))
-	conn, dialErr := grpc.DialContext(dialCtx, c.Host, opts...)
-	if dialErr != nil {
+	logger.Debug(`dial to peer`, zap.String(`host`, c.Host), zap.Time(`context deadline`, ctxDeadline))
+	conn, err := grpc.DialContext(dialCtx, c.Host, opts.Dial...)
+	if err != nil {
 		return nil, fmt.Errorf(`grpc dial to peer endpoint=%s: %w`, c.Host, err)
 	}
 
-	return NewFromGRPC(conn, identity, logger, c.Timeout.Duration)
+	return NewFromGRPC(conn, identity, opts.TLSCertHash, logger, c.Timeout.Duration)
 }
 
 // NewFromGRPC allows initializing peer from existing GRPC connection
-func NewFromGRPC(conn *grpc.ClientConn, identity msp.SigningIdentity, logger *zap.Logger, endorseDefaultTimeout time.Duration) (api.Peer, error) {
+func NewFromGRPC(conn *grpc.ClientConn, identity msp.SigningIdentity, tlsCertHash []byte, logger *zap.Logger, endorseDefaultTimeout time.Duration) (api.Peer, error) {
 	if conn == nil {
 		return nil, errors.New(`empty connection`)
 	}
@@ -86,6 +86,7 @@ func NewFromGRPC(conn *grpc.ClientConn, identity msp.SigningIdentity, logger *za
 		conn:                  conn,
 		client:                fabricPeer.NewEndorserClient(conn),
 		identity:              identity,
+		tlsCertHash:           tlsCertHash,
 		endorseDefaultTimeout: endorseDefaultTimeout,
 		logger:                logger.Named(`peer`),
 	}
@@ -233,7 +234,7 @@ func (p *peer) DeliverClient(identity msp.SigningIdentity) (api.DeliverClient, e
 	if identity == nil {
 		identity = p.identity
 	}
-	return deliver.New(fabricPeer.NewDeliverClient(p.conn), identity), nil
+	return deliver.New(fabricPeer.NewDeliverClient(p.conn), identity, p.tlsCertHash), nil
 }
 
 // CurrentIdentity identity returns current signing identity used by core

@@ -36,8 +36,3 @@ const (
 	TxWaiterSelfType string = "self"
 	TxWaiterAllType  string = "all"
 )
-
-// SystemCC describes interface to access Fabric System Chaincodes
-type SystemCC interface {
-	Lifecycle() Lifecycle
-}

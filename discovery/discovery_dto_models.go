@@ -38,17 +38,21 @@ func (d *chaincodeDTO) Endorsers() []*api.HostEndpoint {
 	defer d.lock.RUnlock()
 	return mapToArray(d.endorsers)
 }
+
 func (d *chaincodeDTO) Orderers() []*api.HostEndpoint {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	return mapToArray(d.orderers)
 }
+
 func (d *chaincodeDTO) ChaincodeName() string {
 	return d.chaincodeName
 }
+
 func (d *chaincodeDTO) ChaincodeVersion() string {
 	return d.chaincodeVersion
 }
+
 func (d *chaincodeDTO) ChannelName() string {
 	return d.channelName
 }
@@ -79,12 +83,12 @@ func mapToArray(hosts map[string][]string) []*api.HostEndpoint {
 
 		he := &api.HostEndpoint{
 			MspID:         k,
-			HostAddresses: make([]*api.HostAddress, len(endpoints)),
+			HostAddresses: make([]*api.Endpoint, len(endpoints)),
 		}
 
 		for i := range endpoints {
-			he.HostAddresses[i] = &api.HostAddress{
-				Address: endpoints[i],
+			he.HostAddresses[i] = &api.Endpoint{
+				Host: endpoints[i],
 			}
 		}
 		res = append(res, he)

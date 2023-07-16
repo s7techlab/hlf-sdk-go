@@ -10,8 +10,8 @@ option java_outer_classname = "TransactionPackage";
 
 package protos;
 
-import "peer/proposal_response.proto";
-import "common/common.proto";
+import "hyperledger/fabric-protos/peer/proposal_response.proto";
+import "hyperledger/fabric-protos/common/common.proto";
 
 // ProcessedTransaction wraps an Envelope that includes a transaction along with an indication
 // of whether the transaction was validated or invalidated by committing peer.
