@@ -44,6 +44,13 @@ type (
 	MSPOpts struct {
 		mspPath string
 
+		// signCert and signKey take precedence over signCertPath and signKeyPath
+		signCert []byte
+		signKey  []byte
+
+		signCertPath string
+		signKeyPath  string
+
 		signCertsPath  string
 		keystorePath   string
 		adminCertsPath string
@@ -51,6 +58,7 @@ type (
 
 		userPaths []string
 
+		skipConfig        bool
 		validateCertChain bool
 		logger            *zap.Logger
 	}
@@ -59,7 +67,6 @@ type (
 )
 
 func applyDefaultMSPPaths(mspOpts *MSPOpts) {
-
 	if mspOpts.adminCertsPath == `` {
 		mspOpts.adminCertsPath = AdminCertsPath(mspOpts.mspPath)
 	}
@@ -97,10 +104,49 @@ func MSPFromConfig(fabricMspConfig *mspproto.FabricMSPConfig) (*MSPConfig, error
 	return mspConfig, nil
 }
 
+func WithSkipConfig() MSPOpt {
+	return func(mspOpts *MSPOpts) {
+		mspOpts.skipConfig = true
+	}
+}
+
 func WithAdminMSPPath(adminMSPPath string) MSPOpt {
 	return func(mspOpts *MSPOpts) {
 		mspOpts.adminMSPPath = adminMSPPath
 	}
+}
+
+func WithSignCertPath(signCertPath string) MSPOpt {
+	return func(mspOpts *MSPOpts) {
+		mspOpts.signCertPath = signCertPath
+	}
+}
+
+func WithSignKeyPath(signKeyPath string) MSPOpt {
+	return func(mspOpts *MSPOpts) {
+		mspOpts.signKeyPath = signKeyPath
+	}
+}
+
+func WithSignCert(signCert []byte) MSPOpt {
+	return func(mspOpts *MSPOpts) {
+		mspOpts.signCert = signCert
+	}
+}
+
+func WithSignKey(signKey []byte) MSPOpt {
+	return func(mspOpts *MSPOpts) {
+		mspOpts.signKey = signKey
+	}
+}
+
+func MustMSPFromPath(mspID, mspPath string, opts ...MSPOpt) *MSPConfig {
+	mspConfig, err := MSPFromPath(mspID, mspPath, opts...)
+	if err != nil {
+		panic(err)
+	}
+
+	return mspConfig
 }
 
 // MSPFromPath loads msp config from filesystem
@@ -123,6 +169,18 @@ func MSPFromPath(mspID, mspPath string, opts ...MSPOpt) (*MSPConfig, error) {
 	logger.Debug(`load msp`, zap.Reflect(`config`, mspOpts))
 
 	mspConfig := &MSPConfig{}
+
+	if len(mspOpts.signCert) != 0 && len(mspOpts.signKey) != 0 {
+		mspConfig.signer, err = FromBytes(mspID, mspOpts.signCert, mspOpts.signKey)
+		if err != nil {
+			return nil, err
+		}
+	} else if mspOpts.signCertPath != "" && mspOpts.signKeyPath != "" {
+		mspConfig.signer, err = FromCertKeyPath(mspID, mspOpts.signCertPath, mspOpts.signKeyPath)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	// admin in separate msp path
 	if mspOpts.adminMSPPath != `` {
@@ -148,7 +206,8 @@ func MSPFromPath(mspID, mspPath string, opts ...MSPOpt) (*MSPConfig, error) {
 
 	if len(mspOpts.userPaths) > 0 {
 		for _, userPath := range mspOpts.userPaths {
-			users, err := ListFromPath(mspID, userPath, mspOpts.keystorePath)
+			var users []api.Identity
+			users, err = ListFromPath(mspID, userPath, mspOpts.keystorePath)
 			// usePaths set explicit, so if dir is not exists - error occurred
 			if err != nil {
 				return nil, fmt.Errorf(`read users identity from=%s: %w`, userPath, err)
@@ -160,15 +219,17 @@ func MSPFromPath(mspID, mspPath string, opts ...MSPOpt) (*MSPConfig, error) {
 		logger.Debug(`user identities loaded`, zap.Int(`num`, len(mspConfig.users)))
 	}
 
-	if mspOpts.signCertsPath != `` {
+	if mspOpts.signCertsPath != `` && mspConfig.signer == nil {
 		mspConfig.signer, err = FirstFromPath(mspID, mspOpts.signCertsPath, mspOpts.keystorePath)
 		if err != nil {
 			return nil, fmt.Errorf(`read signer identity from=%s: %w`, mspOpts.signCertsPath, err)
 		}
 	}
 
-	if mspConfig.mspConfig, err = FabricMSPConfigFromPath(mspID, mspOpts.mspPath); err != nil {
-		return nil, err
+	if !mspOpts.skipConfig {
+		if mspConfig.mspConfig, err = FabricMSPConfigFromPath(mspID, mspOpts.mspPath); err != nil {
+			return nil, err
+		}
 	}
 
 	if mspOpts.validateCertChain {
