@@ -4,6 +4,7 @@ package hlfsdkgo.proto;
 
 option go_package = "github.com/s7techlab/hlf-sdk-go/proto";
 
+import "chan_config.proto";
 import "smartbft/configuration.proto";
 import "hyperledger/fabric-protos/common/common.proto";
 import "hyperledger/fabric-protos/common/policies.proto";
@@ -28,7 +29,7 @@ message Envelope {
   common.ChannelHeader channel_header = 2;
   protos.TxValidationCode validation_code = 3;
   Transaction transaction = 4;
-  ChannelConfig channel_config = 5;
+  hlfsdkgo.proto.ChannelConfig channel_config = 5;
 }
 
 message Transaction {
@@ -42,140 +43,10 @@ message TransactionAction {
   repeated kvrwset.KVRWSet read_write_sets = 3;
   protos.ChaincodeInvocationSpec chaincode_invocation_spec = 4;
   msp.SerializedIdentity creator_identity = 5;
+  bytes payload = 6;
 }
 
 message OrdererSignature {
   msp.SerializedIdentity identity = 1;
   bytes signature = 2;
 }
-
-
-message ChannelConfig {
-  map<string,ApplicationConfig> applications = 1;
-  map<string,OrdererConfig> orderers = 2;
-
-  orderer.BatchSize orderer_batch_size = 3;
-  string orderer_batch_timeout = 4;
-  orderer.ConsensusType orderer_consensus_type = 5;
-
-  string consortium = 6;
-  string hashing_algorithm = 7;
-  common.BlockDataHashingStructure block_data_hashing_structure = 8;
-  common.Capabilities capabilities = 9;
-
-  map<string,Policy> policy = 10;
-}
-
-message MSP {
-  string name = 1;
-  msp.FabricMSPConfig config = 2;
-  map<string,Policy> policy = 3;
-}
-
-message ApplicationConfig {
-  string name = 1;
-  MSP msp = 2;
-  repeated protos.AnchorPeer anchor_peers = 3;
-}
-
-message OrdererConfig {
-  string name = 1;
-  MSP msp = 2;
-  repeated string endpoints = 3;
-}
-
-message Policy {
-  oneof policy {
-    common.ImplicitMetaPolicy implicit = 1;
-    common.SignaturePolicyEnvelope signature_policy = 2;
-  }
-}
-
-enum PolicyKey {
-  Undefined = 0;
-  Readers = 1;
-  Writers = 2;
-  LifecycleEndorsement = 3;
-  Endorsement = 4;
-}
-
-message Certificate {
-  // sha256 hash
-  bytes fingerprint = 1;
-  bytes data = 2;
-  CertType type = 3;
-  string msp_id = 4;
-  string msp_name = 5;
-}
-
-enum CertType {
-  undefined = 0;
-  ca = 1;
-  intermediate = 2;
-  admin = 3;
-}
-
-//message ChannelConfig{
-//  map<string,ApplicationConfig> applications = 1;
-//  map<string,OrdererConfig> orderers = 2;
-//
-//  orderer.BatchSize orderer_batch_size= 3;
-//  string orderer_batch_timeout = 4;
-//  orderer.ConsensusType orderer_consensus_type = 5;
-//
-//  string consortium = 6;
-//  string hashing_algorithm = 7;
-//  common.BlockDataHashingStructure block_data_hashing_structure = 8;
-//  common.Capabilities capabilities = 9;
-//
-//  map<string,Policy> policy = 10;
-//}
-
-//enum PolicyKey {
-//  Undefined = 0;
-//  Readers = 1;
-//  Writers = 2;
-//  LifecycleEndporsement = 3;
-//  Endporsement = 4;
-//}
-//
-//message MSP{
-//  string name = 1;
-//  msp.FabricMSPConfig config = 2;
-//  map<string,Policy> policy = 3;
-//}
-//
-//message ApplicationConfig{
-//  string name = 1;
-//  MSP msp = 2;
-//  repeated protos.AnchorPeer anchor_peers = 3;
-//}
-//
-//message OrdererConfig{
-//  string name = 1;
-//  MSP msp = 2;
-//  repeated string endpoints = 3;
-//}
-//
-//message Policy{
-//  oneof policy {
-//    common.ImplicitMetaPolicy implicit = 1;
-//    common.SignaturePolicyEnvelope signature_policy = 2;
-//  }
-//}
-//
-//message Certificate{
-//  // sha256 hash
-//  bytes fingerprint = 1;
-//  bytes data = 2;
-//  CertType type = 3;
-//  string msp_id = 4;
-//  string msp_name = 5;
-//}
-//
-//enum CertType{
-//  undefined = 0;
-//  ca = 1;
-//  intermediate = 2;
-//  admin = 3;
-//}
