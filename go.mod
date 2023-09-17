@@ -17,6 +17,7 @@ require (
 	github.com/hyperledger/fabric-protos-go v0.0.0-20201028172056-a3136dde2354
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/mitchellh/mapstructure v1.2.2
+	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.9.0
 	github.com/pelletier/go-toml v1.4.0 // indirect
