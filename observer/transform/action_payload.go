@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
+
 	hlfproto "github.com/s7techlab/hlf-sdk-go/proto"
 )
 
@@ -45,7 +46,10 @@ func ActionPayloadMatchNil(txAction *hlfproto.TransactionAction) bool {
 
 func ActionPayloadMutateProto(target proto.Message) ActionPayloadMutate {
 	return func(txAction *hlfproto.TransactionAction) error {
-		payloadJSON, _ := Proto2JSON(txAction.Payload, target)
+		payloadJSON, err := Proto2JSON(txAction.Payload, target)
+		if err != nil {
+			return err
+		}
 		txAction.Payload = payloadJSON
 		return nil
 	}

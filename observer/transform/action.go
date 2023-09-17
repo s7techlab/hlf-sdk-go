@@ -126,7 +126,9 @@ func (s *Action) Transform(block *observer.Block) error {
 				}
 
 				for _, actionPayloadTransform := range s.actionPayloadTransformers {
-					actionPayloadTransform.Transform(txAction)
+					if err := actionPayloadTransform.Transform(txAction); err != nil {
+						return fmt.Errorf(`acitio payload transform: %w`, err)
+					}
 				}
 			}
 		}

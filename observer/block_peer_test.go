@@ -1,21 +1,15 @@
 package observer_test
 
-import (
-	"context"
-
-	"github.com/s7techlab/hlf-sdk-go/observer"
-)
-
-var (
-	ctx = context.Background()
-
-	channelPeerMock *observer.ChannelPeerMock
-	blockPeer       *observer.BlockPeer
-
-	channelPeerMockConcurrently *observer.ChannelPeerMock
-	blockPeerConcurrently       *observer.BlockPeer
-	blocksByChannels            *observer.BlocksByChannels
-)
+//var (
+//	ctx = context.Background()
+//
+//	channelPeerMock *observer.ChannelPeerMock
+//	blockPeer       *observer.BlockPeer
+//
+//	channelPeerMockConcurrently *observer.ChannelPeerMock
+//	blockPeerConcurrently       *observer.BlockPeer
+//	blocksByChannels            *observer.BlocksByChannels
+//)
 
 //var _ = BeforeSuite(func() {
 //	const closeChannelWhenAllRead = true
