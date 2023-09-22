@@ -1,6 +1,24 @@
 package blocks
 
-//
+const (
+	Path = "testdata/blocks/fixtures"
+
+	SampleChannel              = "sample-channel"
+	SampleChannelHeight uint64 = 9
+	FabcarChannel              = "fabcar-channel"
+	FabcarChannelHeight uint64 = 11
+
+	SampleChaincode = "sample"
+	FabcarChaincode = "fabcar"
+)
+
+var (
+	Channels        = []string{SampleChannel, FabcarChannel}
+	ChannelsHeights = map[string]uint64{SampleChannel: SampleChannelHeight, FabcarChannel: FabcarChannelHeight}
+
+	Chaincodes = []string{SampleChaincode, FabcarChaincode}
+)
+
 //import (
 //	"reflect"
 //	"sort"

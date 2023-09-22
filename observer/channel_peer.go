@@ -108,7 +108,7 @@ func (cp *ChannelPeer) Observe(ctx context.Context) {
 		return
 	}
 
-	// ctxObserve using for nested controll process without stopped primary context
+	// ctxObserve using for nested control process without stopped primary context
 	ctxObserve, cancel := context.WithCancel(context.Background())
 	cp.cancelObserve = cancel
 
