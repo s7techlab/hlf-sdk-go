@@ -14,6 +14,7 @@ type (
 		BlockOriginal *hlfproto.Block // here is original block before transformation if it is, otherwise it's nil
 		Channel       string
 		Error         error
+		CommonBlock *common.Block
 	}
 
 	CreateBlockStream func(context.Context) (<-chan *common.Block, error)

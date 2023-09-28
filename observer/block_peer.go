@@ -29,6 +29,8 @@ type (
 
 		blocks           chan *Block
 		blocksByChannels map[string]chan *Block
+		// turn off parsing common block to hlfproto block
+		disableParsing bool
 
 		isWork        bool
 		cancelObserve context.CancelFunc
@@ -40,9 +42,11 @@ type (
 	}
 
 	BlockPeerOpts struct {
-		transformers       []BlockTransformer
-		seekFrom           map[string]uint64
-		configBlocks       map[string]*common.Block
+		transformers []BlockTransformer
+		seekFrom     map[string]uint64
+		configBlocks map[string]*common.Block
+		// turn off parsing common block to hlfproto block
+		disableParsing     bool
 		observePeriod      time.Duration
 		stopRecreateStream bool
 		logger             *zap.Logger
@@ -94,6 +98,14 @@ func WithBlockPeerObservePeriod(observePeriod time.Duration) BlockPeerOpt {
 	}
 }
 
+func WithBlockPeerDisableParsing(disableParsing bool) BlockPeerOpt {
+	return func(opts *BlockPeerOpts) {
+		if disableParsing {
+			opts.disableParsing = disableParsing
+		}
+	}
+}
+
 func WithBlockStopRecreateStream(stop bool) BlockPeerOpt {
 	return func(opts *BlockPeerOpts) {
 		opts.stopRecreateStream = stop
@@ -115,6 +127,7 @@ func NewBlockPeer(peerChannels PeerChannels, blockDeliverer api.BlocksDeliverer,
 		transformers:       blockPeerOpts.transformers,
 		seekFrom:           blockPeerOpts.seekFrom,
 		configBlocks:       blockPeerOpts.configBlocks,
+		disableParsing:     blockPeerOpts.disableParsing,
 		observePeriod:      blockPeerOpts.observePeriod,
 		stopRecreateStream: blockPeerOpts.stopRecreateStream,
 		logger:             blockPeerOpts.logger,
@@ -212,6 +225,7 @@ func (bp *BlockPeer) peerChannel(ctx context.Context, channel string) *blockPeer
 		ChannelSeekFrom(seekFrom),
 		WithChannelBlockTransformers(bp.transformers),
 		WithChannelConfigBlock(configBlock),
+		WithChannelBlockDisableParsing(bp.disableParsing),
 		WithChannelBlockLogger(bp.logger),
 		WithChannelStopRecreateStream(bp.stopRecreateStream))
 

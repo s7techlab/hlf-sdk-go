@@ -21,6 +21,8 @@ type (
 		configBlock           *common.Block
 
 		blocks chan *Block
+		// turn off parsing common block to hlfproto block
+		disableParsing bool
 
 		isWork        bool
 		cancelObserve context.CancelFunc
@@ -33,6 +35,9 @@ type (
 		// chain of transformers that will be applied to the response
 		transformers []BlockTransformer
 		configBlock  *common.Block
+
+		// turn off parsing common block to hlfproto block
+		disableParsing bool
 
 		// don't recreate stream if it has not any blocks
 		stopRecreateStream bool
@@ -65,6 +70,12 @@ func WithChannelStopRecreateStream(stop bool) BlockChannelOpt {
 	}
 }
 
+func WithChannelBlockDisableParsing(disableParsing bool) BlockChannelOpt {
+	return func(opts *BlockChannelOpts) {
+		opts.disableParsing = disableParsing
+	}
+}
+
 var DefaultBlockChannelOpts = &BlockChannelOpts{
 	createStreamWithRetry: CreateBlockStreamWithRetryDelay(DefaultConnectRetryDelay),
 	transformers:          nil, // no transformers
@@ -89,6 +100,7 @@ func NewBlockChannel(channel string, blocksDeliver api.BlocksDeliverer, seekFrom
 		createStreamWithRetry: blockChannelOpts.createStreamWithRetry,
 		transformers:          blockChannelOpts.transformers,
 		stopRecreateStream:    blockChannelOpts.stopRecreateStream,
+		disableParsing:        blockChannelOpts.disableParsing,
 	}
 
 	return observer
@@ -102,7 +114,7 @@ func (c *BlockChannel) Observe(ctx context.Context) (<-chan *Block, error) {
 		return c.blocks, nil
 	}
 
-	// ctxObserve using for nested controll process without stopped primary context
+	// ctxObserve using for nested control process without stopped primary context
 	ctxObserve, cancel := context.WithCancel(ctx)
 	c.cancelObserve = cancel
 
@@ -148,13 +160,17 @@ func (c *BlockChannel) Observe(ctx context.Context) (<-chan *Block, error) {
 				}
 
 				block := &Block{
-					Channel: c.channel,
+					Channel:     c.channel,
+					CommonBlock: incomingBlock,
 				}
-				block.Block, block.Error = hlfproto.ParseBlock(incomingBlock, hlfproto.WithConfigBlock(c.configBlock))
 
-				for pos, transformer := range c.transformers {
-					if err = transformer.Transform(block); err != nil {
-						c.logger.Warn(`transformer`, zap.Int(`pos`, pos), zap.Error(err))
+				if c.disableParsing {
+					block.Block, block.Error = hlfproto.ParseBlock(incomingBlock, hlfproto.WithConfigBlock(c.configBlock))
+
+					for pos, transformer := range c.transformers {
+						if err = transformer.Transform(block); err != nil {
+							c.logger.Warn(`transformer`, zap.Int(`pos`, pos), zap.Error(err))
+						}
 					}
 				}
 
