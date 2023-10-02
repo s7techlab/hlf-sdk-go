@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hyperledger/fabric-protos-go/common"
 	"go.uber.org/zap"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
@@ -25,8 +24,8 @@ type (
 		stopRecreateStream bool
 		logger             *zap.Logger
 
-		blocks           chan *common.Block
-		blocksByChannels map[string]chan *common.Block
+		blocks           chan *Block
+		blocksByChannels map[string]chan *Block
 
 		isWork        bool
 		cancelObserve context.CancelFunc
@@ -93,8 +92,8 @@ func NewBlockPeer(peerChannels PeerChannels, blockDeliverer api.BlocksDeliverer,
 		peerChannels:       peerChannels,
 		blockDeliverer:     blockDeliverer,
 		channelObservers:   make(map[string]*blockPeerChannel),
-		blocks:             make(chan *common.Block),
-		blocksByChannels:   make(map[string]chan *common.Block),
+		blocks:             make(chan *Block),
+		blocksByChannels:   make(map[string]chan *Block),
 		seekFrom:           blockPeerOpts.seekFrom,
 		observePeriod:      blockPeerOpts.observePeriod,
 		stopRecreateStream: blockPeerOpts.stopRecreateStream,
@@ -116,7 +115,7 @@ func (bp *BlockPeer) ChannelObservers() map[string]*blockPeerChannel {
 	return copyChannelObservers
 }
 
-func (bp *BlockPeer) Observe(ctx context.Context) (<-chan *common.Block, error) {
+func (bp *BlockPeer) Observe(ctx context.Context) (<-chan *Block, error) {
 	if bp.isWork {
 		return bp.blocks, nil
 	}

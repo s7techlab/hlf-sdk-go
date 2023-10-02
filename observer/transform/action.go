@@ -68,7 +68,7 @@ func NewAction(actionMach TxActionMatch, opts ...ActionOpt) *Action {
 	return a
 }
 
-func (s *Action) Transform(block *observer.Block) error {
+func (s *Action) Transform(block *observer.ParsedBlock) error {
 	if block.Block == nil {
 		return nil
 	}

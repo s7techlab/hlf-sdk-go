@@ -4,13 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/hyperledger/fabric-protos-go/common"
 	"go.uber.org/zap"
 )
 
 type ChannelCommonBlocks struct {
 	Name   string
-	Blocks <-chan *common.Block
+	Blocks <-chan *Block
 }
 
 type BlocksByChannels struct {
@@ -83,7 +82,7 @@ func (bp *BlockPeer) peerChannelConcurrently(ctx context.Context, channel string
 		bp.logger.Warn(`init channel observer`, zap.Error(peerChannel.err))
 	}
 
-	blocks := make(chan *common.Block)
+	blocks := make(chan *Block)
 	bp.blocksByChannels[channel] = blocks
 
 	go func() {

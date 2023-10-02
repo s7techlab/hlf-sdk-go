@@ -17,8 +17,8 @@ type (
 		transformers []BlockTransformer
 		configBlocks map[string]*common.Block
 
-		blocks           chan *Block
-		blocksByChannels map[string]chan *Block
+		blocks           chan *ParsedBlock
+		blocksByChannels map[string]chan *ParsedBlock
 
 		parsedChannelObservers map[string]*parsedBlockPeerChannel
 
@@ -59,7 +59,7 @@ func NewParsedBlockPeer(blocksPeer *BlockPeer, opts ...ParsedBlockPeerOpt) *Pars
 	return parsedBlockPeer
 }
 
-func (pbp *ParsedBlockPeer) Observe(ctx context.Context) (<-chan *Block, error) {
+func (pbp *ParsedBlockPeer) Observe(ctx context.Context) (<-chan *ParsedBlock, error) {
 	if pbp.isWork {
 		return pbp.blocks, nil
 	}

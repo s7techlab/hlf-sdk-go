@@ -18,7 +18,7 @@ type (
 		transformers []BlockTransformer
 		configBlock  *common.Block
 
-		blocks        chan *Block
+		blocks        chan *ParsedBlock
 		isWork        bool
 		cancelObserve context.CancelFunc
 		mutex         sync.Mutex
@@ -51,7 +51,7 @@ func NewParsedBlockChannel(blockChannel *BlockChannel, opts ...ParsedBlockChanne
 	return parsedBlockChannel
 }
 
-func (p *ParsedBlockChannel) Observe(ctx context.Context) (<-chan *Block, error) {
+func (p *ParsedBlockChannel) Observe(ctx context.Context) (<-chan *ParsedBlock, error) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
@@ -63,7 +63,7 @@ func (p *ParsedBlockChannel) Observe(ctx context.Context) (<-chan *Block, error)
 	ctxObserve, cancel := context.WithCancel(ctx)
 	p.cancelObserve = cancel
 
-	commonBlocks, err := p.blockChannel.Observe(ctxObserve)
+	incomingBlocks, err := p.blockChannel.Observe(ctxObserve)
 	if err != nil {
 		return nil, fmt.Errorf("observe common blocks: %w", err)
 	}
@@ -73,19 +73,19 @@ func (p *ParsedBlockChannel) Observe(ctx context.Context) (<-chan *Block, error)
 
 		for {
 			select {
-			case commonBlock, hasMore := <-commonBlocks:
+			case incomingBlock, hasMore := <-incomingBlocks:
 				if !hasMore {
 					continue
 				}
 
-				if commonBlock == nil {
+				if incomingBlock == nil {
 					continue
 				}
 
-				block := &Block{
+				block := &ParsedBlock{
 					Channel: p.blockChannel.channel,
 				}
-				block.Block, block.Error = hlfproto.ParseBlock(commonBlock, hlfproto.WithConfigBlock(p.configBlock))
+				block.Block, block.Error = hlfproto.ParseBlock(incomingBlock.Block, hlfproto.WithConfigBlock(p.configBlock))
 
 				for pos, transformer := range p.transformers {
 					if err = transformer.Transform(block); err != nil {

@@ -9,7 +9,7 @@ import (
 
 type ChannelParsedBlocks struct {
 	Name   string
-	Blocks <-chan *Block
+	Blocks <-chan *ParsedBlock
 }
 
 type ParsedBlocksByChannels struct {
@@ -78,7 +78,7 @@ func (pbp *ParsedBlockPeer) peerParsedChannelConcurrently(ctx context.Context, c
 		pbp.blockPeer.logger.Warn(`init parsed channel observer`, zap.Error(peerParsedChannel.err))
 	}
 
-	blocks := make(chan *Block)
+	blocks := make(chan *ParsedBlock)
 	pbp.blocksByChannels[channel] = blocks
 
 	go func() {

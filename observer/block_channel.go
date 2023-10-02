@@ -17,7 +17,7 @@ type (
 		createStreamWithRetry CreateBlockStreamWithRetry
 		stopRecreateStream    bool
 
-		blocks chan *common.Block
+		blocks chan *Block
 
 		isWork        bool
 		cancelObserve context.CancelFunc
@@ -74,7 +74,7 @@ func NewBlockChannel(channel string, blocksDeliver api.BlocksDeliverer, seekFrom
 	return observer
 }
 
-func (c *BlockChannel) Observe(ctx context.Context) (<-chan *common.Block, error) {
+func (c *BlockChannel) Observe(ctx context.Context) (<-chan *Block, error) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -95,7 +95,7 @@ func (c *BlockChannel) Observe(ctx context.Context) (<-chan *common.Block, error
 		return nil, err
 	}
 
-	c.blocks = make(chan *common.Block)
+	c.blocks = make(chan *Block)
 
 	go func() {
 		c.isWork = true
@@ -127,7 +127,10 @@ func (c *BlockChannel) Observe(ctx context.Context) (<-chan *common.Block, error
 					continue
 				}
 
-				c.blocks <- incomingBlock
+				c.blocks <- &Block{
+					Block:   incomingBlock,
+					Channel: c.channel,
+				}
 
 			case <-ctxObserve.Done():
 				if err := c.Stop(); err != nil {
