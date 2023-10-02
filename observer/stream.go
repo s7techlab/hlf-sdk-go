@@ -30,7 +30,7 @@ func (b *BlocksStream) Observe(ctx context.Context, blocks <-chan *Block) {
 		return
 	}
 
-	// ctxObserve using for nested controll process without stopped primary context
+	// ctxObserve using for nested control process without stopped primary context
 	ctxObserve, cancel := context.WithCancel(ctx)
 	b.cancelObserve = cancel
 

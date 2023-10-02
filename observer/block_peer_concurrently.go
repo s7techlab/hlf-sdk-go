@@ -4,19 +4,20 @@ import (
 	"context"
 	"time"
 
+	"github.com/hyperledger/fabric-protos-go/common"
 	"go.uber.org/zap"
 )
 
-type ChannelBlocks struct {
+type ChannelCommonBlocks struct {
 	Name   string
-	Blocks <-chan *Block
+	Blocks <-chan *common.Block
 }
 
 type BlocksByChannels struct {
-	channels chan *ChannelBlocks
+	channels chan *ChannelCommonBlocks
 }
 
-func (b *BlocksByChannels) Observe() chan *ChannelBlocks {
+func (b *BlocksByChannels) Observe() chan *ChannelCommonBlocks {
 	return b.channels
 }
 
@@ -25,7 +26,7 @@ func (bp *BlockPeer) ObserveByChannels(ctx context.Context) (*BlocksByChannels, 
 	defer bp.mu.Unlock()
 
 	blocksByChannels := &BlocksByChannels{
-		channels: make(chan *ChannelBlocks),
+		channels: make(chan *ChannelCommonBlocks),
 	}
 
 	bp.initChannelsConcurrently(ctx, blocksByChannels)
@@ -56,7 +57,7 @@ func (bp *BlockPeer) ObserveByChannels(ctx context.Context) (*BlocksByChannels, 
 func (bp *BlockPeer) initChannelsConcurrently(ctx context.Context, blocksByChannels *BlocksByChannels) {
 	for channel := range bp.peerChannels.Channels() {
 		if _, ok := bp.channelObservers[channel]; !ok {
-			bp.logger.Info(`add channel observer`, zap.String(`channel`, channel))
+			bp.logger.Info(`add channel observer concurrently`, zap.String(`channel`, channel))
 
 			bp.channelObservers[channel] = bp.peerChannelConcurrently(ctx, channel, blocksByChannels)
 		}
@@ -69,15 +70,11 @@ func (bp *BlockPeer) peerChannelConcurrently(ctx context.Context, channel string
 		seekFrom--
 	}
 
-	configBlock := bp.configBlocks[channel]
-
 	peerChannel := &blockPeerChannel{}
 	peerChannel.observer = NewBlockChannel(
 		channel,
 		bp.blockDeliverer,
 		ChannelSeekFrom(seekFrom),
-		WithChannelBlockTransformers(bp.transformers),
-		WithChannelConfigBlock(configBlock),
 		WithChannelBlockLogger(bp.logger),
 		WithChannelStopRecreateStream(bp.stopRecreateStream))
 
@@ -86,11 +83,11 @@ func (bp *BlockPeer) peerChannelConcurrently(ctx context.Context, channel string
 		bp.logger.Warn(`init channel observer`, zap.Error(peerChannel.err))
 	}
 
-	blocks := make(chan *Block)
+	blocks := make(chan *common.Block)
 	bp.blocksByChannels[channel] = blocks
 
 	go func() {
-		blocksByChannels.channels <- &ChannelBlocks{Name: channel, Blocks: blocks}
+		blocksByChannels.channels <- &ChannelCommonBlocks{Name: channel, Blocks: blocks}
 	}()
 
 	// channel merger

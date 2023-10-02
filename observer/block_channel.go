@@ -8,7 +8,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
-	hlfproto "github.com/s7techlab/hlf-sdk-go/proto"
 )
 
 type (
@@ -16,11 +15,9 @@ type (
 		*Channel
 		blocksDeliverer       api.BlocksDeliverer
 		createStreamWithRetry CreateBlockStreamWithRetry
-		transformers          []BlockTransformer
 		stopRecreateStream    bool
-		configBlock           *common.Block
 
-		blocks chan *Block
+		blocks chan *common.Block
 
 		isWork        bool
 		cancelObserve context.CancelFunc
@@ -30,9 +27,6 @@ type (
 		*Opts
 
 		createStreamWithRetry CreateBlockStreamWithRetry
-		// chain of transformers that will be applied to the response
-		transformers []BlockTransformer
-		configBlock  *common.Block
 
 		// don't recreate stream if it has not any blocks
 		stopRecreateStream bool
@@ -47,18 +41,6 @@ func WithChannelBlockLogger(logger *zap.Logger) BlockChannelOpt {
 	}
 }
 
-func WithChannelBlockTransformers(transformers []BlockTransformer) BlockChannelOpt {
-	return func(opts *BlockChannelOpts) {
-		opts.transformers = transformers
-	}
-}
-
-func WithChannelConfigBlock(configBlock *common.Block) BlockChannelOpt {
-	return func(opts *BlockChannelOpts) {
-		opts.configBlock = configBlock
-	}
-}
-
 func WithChannelStopRecreateStream(stop bool) BlockChannelOpt {
 	return func(opts *BlockChannelOpts) {
 		opts.stopRecreateStream = stop
@@ -67,7 +49,6 @@ func WithChannelStopRecreateStream(stop bool) BlockChannelOpt {
 
 var DefaultBlockChannelOpts = &BlockChannelOpts{
 	createStreamWithRetry: CreateBlockStreamWithRetryDelay(DefaultConnectRetryDelay),
-	transformers:          nil, // no transformers
 	Opts:                  DefaultOpts,
 }
 
@@ -87,14 +68,13 @@ func NewBlockChannel(channel string, blocksDeliver api.BlocksDeliverer, seekFrom
 
 		blocksDeliverer:       blocksDeliver,
 		createStreamWithRetry: blockChannelOpts.createStreamWithRetry,
-		transformers:          blockChannelOpts.transformers,
 		stopRecreateStream:    blockChannelOpts.stopRecreateStream,
 	}
 
 	return observer
 }
 
-func (c *BlockChannel) Observe(ctx context.Context) (<-chan *Block, error) {
+func (c *BlockChannel) Observe(ctx context.Context) (<-chan *common.Block, error) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -102,7 +82,7 @@ func (c *BlockChannel) Observe(ctx context.Context) (<-chan *Block, error) {
 		return c.blocks, nil
 	}
 
-	// ctxObserve using for nested controll process without stopped primary context
+	// ctxObserve using for nested control process without stopped primary context
 	ctxObserve, cancel := context.WithCancel(ctx)
 	c.cancelObserve = cancel
 
@@ -115,7 +95,7 @@ func (c *BlockChannel) Observe(ctx context.Context) (<-chan *Block, error) {
 		return nil, err
 	}
 
-	c.blocks = make(chan *Block)
+	c.blocks = make(chan *common.Block)
 
 	go func() {
 		c.isWork = true
@@ -147,18 +127,7 @@ func (c *BlockChannel) Observe(ctx context.Context) (<-chan *Block, error) {
 					continue
 				}
 
-				block := &Block{
-					Channel: c.channel,
-				}
-				block.Block, block.Error = hlfproto.ParseBlock(incomingBlock, hlfproto.WithConfigBlock(c.configBlock))
-
-				for pos, transformer := range c.transformers {
-					if err = transformer.Transform(block); err != nil {
-						c.logger.Warn(`transformer`, zap.Int(`pos`, pos), zap.Error(err))
-					}
-				}
-
-				c.blocks <- block
+				c.blocks <- incomingBlock
 
 			case <-ctxObserve.Done():
 				if err := c.Stop(); err != nil {
