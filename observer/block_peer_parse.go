@@ -49,7 +49,10 @@ func WithConfigBlocks(configBlocks map[string]*common.Block) ParsedBlockPeerOpt 
 
 func NewParsedBlockPeer(blocksPeer *BlockPeer, opts ...ParsedBlockPeerOpt) *ParsedBlockPeer {
 	parsedBlockPeer := &ParsedBlockPeer{
-		blockPeer: blocksPeer,
+		blockPeer:              blocksPeer,
+		parsedChannelObservers: make(map[string]*parsedBlockPeerChannel),
+		blocks:                 make(chan *ParsedBlock),
+		blocksByChannels:       make(map[string]chan *ParsedBlock),
 	}
 
 	for _, opt := range opts {

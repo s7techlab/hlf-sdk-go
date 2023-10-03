@@ -68,6 +68,8 @@ func (p *ParsedBlockChannel) Observe(ctx context.Context) (<-chan *ParsedBlock, 
 		return nil, fmt.Errorf("observe common blocks: %w", err)
 	}
 
+	p.blocks = make(chan *ParsedBlock)
+
 	go func() {
 		p.isWork = true
 
