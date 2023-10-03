@@ -18,7 +18,7 @@ func NewChannelPeerFetcherMock(channels map[string]uint64) *ChannelPeerFetcherMo
 	}
 }
 
-func (c *ChannelPeerFetcherMock) GetChannels(ctx context.Context) (*peer.ChannelQueryResponse, error) {
+func (c *ChannelPeerFetcherMock) GetChannels(context.Context) (*peer.ChannelQueryResponse, error) {
 	var channels []*peer.ChannelInfo
 	for channelName := range c.channels {
 		channels = append(channels, &peer.ChannelInfo{ChannelId: channelName})
@@ -29,7 +29,7 @@ func (c *ChannelPeerFetcherMock) GetChannels(ctx context.Context) (*peer.Channel
 	}, nil
 }
 
-func (c *ChannelPeerFetcherMock) GetChainInfo(ctx context.Context, channel string) (*common.BlockchainInfo, error) {
+func (c *ChannelPeerFetcherMock) GetChainInfo(_ context.Context, channel string) (*common.BlockchainInfo, error) {
 	chHeight, exists := c.channels[channel]
 	if !exists {
 		return nil, fmt.Errorf("channel '%s' does not exist", channel)

@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hyperledger/fabric-protos-go/common"
 	"go.uber.org/zap"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
@@ -20,9 +19,7 @@ type (
 		peerChannels       PeerChannels
 		blockDeliverer     api.BlocksDeliverer
 		channelObservers   map[string]*blockPeerChannel
-		transformers       []BlockTransformer
 		seekFrom           map[string]uint64
-		configBlocks       map[string]*common.Block
 		observePeriod      time.Duration
 		stopRecreateStream bool
 		logger             *zap.Logger
@@ -40,9 +37,7 @@ type (
 	}
 
 	BlockPeerOpts struct {
-		transformers       []BlockTransformer
 		seekFrom           map[string]uint64
-		configBlocks       map[string]*common.Block
 		observePeriod      time.Duration
 		stopRecreateStream bool
 		logger             *zap.Logger
@@ -67,22 +62,9 @@ func WithBlockPeerLogger(logger *zap.Logger) BlockPeerOpt {
 	}
 }
 
-func WithBlockPeerTransformer(transformers ...BlockTransformer) BlockPeerOpt {
-	return func(opts *BlockPeerOpts) {
-		opts.transformers = transformers
-	}
-}
-
 func WithSeekFrom(seekFrom map[string]uint64) BlockPeerOpt {
 	return func(opts *BlockPeerOpts) {
 		opts.seekFrom = seekFrom
-	}
-}
-
-// WithConfigBlocks just for correct parsing of BFT at hlfproto.ParseBlock
-func WithConfigBlocks(configBlocks map[string]*common.Block) BlockPeerOpt {
-	return func(opts *BlockPeerOpts) {
-		opts.configBlocks = configBlocks
 	}
 }
 
@@ -112,9 +94,7 @@ func NewBlockPeer(peerChannels PeerChannels, blockDeliverer api.BlocksDeliverer,
 		channelObservers:   make(map[string]*blockPeerChannel),
 		blocks:             make(chan *Block),
 		blocksByChannels:   make(map[string]chan *Block),
-		transformers:       blockPeerOpts.transformers,
 		seekFrom:           blockPeerOpts.seekFrom,
-		configBlocks:       blockPeerOpts.configBlocks,
 		observePeriod:      blockPeerOpts.observePeriod,
 		stopRecreateStream: blockPeerOpts.stopRecreateStream,
 		logger:             blockPeerOpts.logger,
@@ -140,7 +120,7 @@ func (bp *BlockPeer) Observe(ctx context.Context) (<-chan *Block, error) {
 		return bp.blocks, nil
 	}
 
-	// ctxObserve using for nested controll process without stopped primary context
+	// ctxObserve using for nested control process without stopped primary context
 	ctxObserve, cancel := context.WithCancel(ctx)
 	bp.cancelObserve = cancel
 
@@ -203,15 +183,11 @@ func (bp *BlockPeer) peerChannel(ctx context.Context, channel string) *blockPeer
 		seekFrom--
 	}
 
-	configBlock := bp.configBlocks[channel]
-
 	peerChannel := &blockPeerChannel{}
 	peerChannel.observer = NewBlockChannel(
 		channel,
 		bp.blockDeliverer,
 		ChannelSeekFrom(seekFrom),
-		WithChannelBlockTransformers(bp.transformers),
-		WithChannelConfigBlock(configBlock),
 		WithChannelBlockLogger(bp.logger),
 		WithChannelStopRecreateStream(bp.stopRecreateStream))
 
@@ -226,7 +202,7 @@ func (bp *BlockPeer) peerChannel(ctx context.Context, channel string) *blockPeer
 			bp.blocks <- b
 		}
 
-		// after all reads peerChannel.observer.blocks close channels
+		// after all reads peerParsedChannel.observer.blocks close channels
 		close(bp.blocks)
 		for _, blocks := range bp.blocksByChannels {
 			close(blocks)
