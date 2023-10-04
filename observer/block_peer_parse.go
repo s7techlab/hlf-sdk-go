@@ -67,6 +67,9 @@ func (pbp *ParsedBlockPeer) Observe(ctx context.Context) (<-chan *ParsedBlock, e
 		return pbp.blocks, nil
 	}
 
+	// need to start default block peer observing
+	_, _ = pbp.blockPeer.Observe(ctx)
+
 	// ctxObserve using for nested control process without stopped primary context
 	ctxObserve, cancel := context.WithCancel(ctx)
 	pbp.cancelObserve = cancel
