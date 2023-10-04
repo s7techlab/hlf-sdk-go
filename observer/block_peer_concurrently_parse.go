@@ -24,6 +24,9 @@ func (pbp *ParsedBlockPeer) ObserveByChannels(ctx context.Context) (*ParsedBlock
 	pbp.mu.Lock()
 	defer pbp.mu.Unlock()
 
+	// need to start default block peer observing
+	_, _ = pbp.blockPeer.ObserveByChannels(ctx)
+
 	blocksByChannels := &ParsedBlocksByChannels{
 		channels: make(chan *ChannelParsedBlocks),
 	}
