@@ -5,18 +5,76 @@ package hlfsdkgo.proto;
 option go_package = "github.com/s7techlab/hlf-sdk-go/proto";
 
 import "chan_config.proto";
+
 import "smartbft/configuration.proto";
+
 import "hyperledger/fabric-protos/common/common.proto";
-import "hyperledger/fabric-protos/common/policies.proto";
 import "hyperledger/fabric-protos/common/configuration.proto";
+import "hyperledger/fabric-protos/common/policies.proto";
 import "hyperledger/fabric-protos/ledger/rwset/kvrwset/kv_rwset.proto";
-import "hyperledger/fabric-protos/msp/msp_config.proto";
 import "hyperledger/fabric-protos/msp/identities.proto";
+import "hyperledger/fabric-protos/msp/msp_config.proto";
 import "hyperledger/fabric-protos/orderer/configuration.proto";
-import "hyperledger/fabric-protos/peer/configuration.proto";
-import "hyperledger/fabric-protos/peer/transaction.proto";
-import "hyperledger/fabric-protos/peer/chaincode_event.proto";
 import "hyperledger/fabric-protos/peer/chaincode.proto";
+import "hyperledger/fabric-protos/peer/chaincode_event.proto";
+import "hyperledger/fabric-protos/peer/configuration.proto";
+import "hyperledger/fabric-protos/peer/proposal_response.proto";
+import "hyperledger/fabric-protos/peer/transaction.proto";
+
+message Block1 {
+  common.BlockHeader header = 1;
+  BlockData data = 2;
+  BlockMetadata metadata = 3;
+}
+
+message BlockData {
+  repeated Envelope1 envelopes = 1;
+}
+
+message Envelope1 {
+  EnvelopePayload payload = 1;
+  bytes signature = 2;
+}
+
+message EnvelopePayload {
+  Header header = 1;
+  Transaction1 data = 2;
+}
+
+message Header {
+  common.ChannelHeader channel_header = 1;
+  SignatureHeader signature_header = 2;
+}
+
+message SignatureHeader {
+  msp.SerializedIdentity creator = 1;
+  bytes nonce = 2;
+}
+
+message Transaction1 {
+  repeated TransactionAction1 actions = 1;
+//  protos.TxValidationCode validation_code = 3;
+//  Transaction transaction = 4;
+//  hlfsdkgo.proto.ChannelConfig channel_config = 5;
+//  msp.SerializedIdentity creator_identity = 2;
+}
+
+message TransactionAction1 {
+  SignatureHeader header = 1;
+  TransactionAction1Data payload = 2;
+}
+
+message TransactionAction1Data {
+  bytes proposal_hash = 1;
+  ChaincodeAction extension = 2;
+}
+
+message ChaincodeAction {
+  protos.Response response = 1;
+  protos.ChaincodeID chaincode_id = 2;
+}
+
+message BlockMetadata {}
 
 message Block {
   common.BlockHeader header = 1;

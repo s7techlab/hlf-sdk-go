@@ -3,7 +3,7 @@ version: v1
 plugins:
 
   - name: go
-    path: .generator/bin/protoc-gen-go
+    path: .generators/bin/protoc-gen-go
     out: .
     opt:
       - paths=source_relative

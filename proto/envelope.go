@@ -63,7 +63,7 @@ func ParseEnvelope(envelopeData []byte, validationCode peer.TxValidationCode) (*
 		}
 	case common.HeaderType_CONFIG:
 		ce := &common.ConfigEnvelope{}
-		if err := proto.Unmarshal(payload.Data, ce); err != nil {
+		if err = proto.Unmarshal(payload.Data, ce); err != nil {
 			return nil, err
 		}
 
