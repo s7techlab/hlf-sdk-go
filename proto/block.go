@@ -37,11 +37,13 @@ func ParseBlock(block *common.Block, opts ...ParseBlockOpt) (*Block, error) {
 
 	var err error
 	parsedBlock := &Block{
-		Header: block.Header,
+		Header:   block.Header,
+		Data:     &BlockData{},
+		Metadata: &BlockMetadata{},
 	}
 
 	txFilter := txflags.ValidationFlags(block.Metadata.Metadata[common.BlockMetadataIndex_TRANSACTIONS_FILTER])
-	if parsedBlock.Envelopes, err = ParseEnvelopes(block.GetData().GetData(), txFilter); err != nil {
+	if parsedBlock.Data, err = ParseBlockData(block.GetData().GetData(), txFilter); err != nil {
 		return nil, fmt.Errorf("parsing envelopes: %w", err)
 	}
 
@@ -50,8 +52,9 @@ func ParseBlock(block *common.Block, opts ...ParseBlockOpt) (*Block, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parsing orderer identity from block: %w", err)
 	}
+
 	if raftOrdererIdentity != nil && raftOrdererIdentity.IdBytes != nil {
-		parsedBlock.OrdererSignatures = append(parsedBlock.OrdererSignatures, &OrdererSignature{Identity: raftOrdererIdentity})
+		parsedBlock.Metadata.OrdererSignatures = append(parsedBlock.Metadata.OrdererSignatures, &OrdererSignature{Identity: raftOrdererIdentity})
 	}
 
 	// parse BFT orderer identities, if there is at least one config block was sent
@@ -62,7 +65,7 @@ func ParseBlock(block *common.Block, opts ...ParseBlockOpt) (*Block, error) {
 			return nil, fmt.Errorf("parsing bft orderers identities: %w", err)
 		}
 
-		parsedBlock.OrdererSignatures = append(parsedBlock.OrdererSignatures, bftOrdererIdentities...)
+		parsedBlock.Metadata.OrdererSignatures = append(parsedBlock.Metadata.OrdererSignatures, bftOrdererIdentities...)
 	}
 
 	return parsedBlock, nil
@@ -177,7 +180,7 @@ func createConfigEnvelope(data []byte) (*common.ConfigEnvelope, error) {
 
 func (x *Block) ValidEnvelopes() []*Envelope {
 	var envs []*Envelope
-	for _, e := range x.Envelopes {
+	for _, e := range x.Data.Envelopes {
 		if e.ValidationCode != peer.TxValidationCode_VALID {
 			continue
 		}

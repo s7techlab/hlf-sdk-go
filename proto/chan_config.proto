@@ -52,11 +52,11 @@ message Policy {
 }
 
 enum PolicyKey {
-    Undefined = 0;
-    Readers = 1;
-    Writers = 2;
-    LifecycleEndorsement = 3;
-    Endorsement = 4;
+    POLICY_KEY_UNDEFINED = 0;
+    POLICY_KEY_READERS = 1;
+    POLICY_KEY_WRITERS = 2;
+    POLICY_KEY_LIFECYCLE_ENDORSEMENT = 3;
+    POLICY_KEY_ENDORSEMENT = 4;
 }
 
 message Certificate {
@@ -69,8 +69,8 @@ message Certificate {
 }
 
 enum CertType {
-    undefined = 0;
-    ca = 1;
-    intermediate = 2;
-    admin = 3; 
+    CERT_TYPE_UNDEFINED = 0;
+    CERT_TYPE_CA = 1;
+    CERT_TYPE_INTERMEDIATE = 2;
+    CERT_TYPE_ADMIN = 3;
 }

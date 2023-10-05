@@ -46,11 +46,11 @@ func ActionPayloadMatchNil(txAction *hlfproto.TransactionAction) bool {
 
 func ActionPayloadMutateProto(target proto.Message) ActionPayloadMutate {
 	return func(txAction *hlfproto.TransactionAction) error {
-		payloadJSON, err := Proto2JSON(txAction.Payload, target)
+		payloadJSON, err := Proto2JSON(txAction.BytesPayload, target)
 		if err != nil {
 			return err
 		}
-		txAction.Payload = payloadJSON
+		txAction.BytesPayload = payloadJSON
 		return nil
 	}
 }
