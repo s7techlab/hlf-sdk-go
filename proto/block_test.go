@@ -94,20 +94,20 @@ var _ = Describe("Block parse test", func() {
 					Expect(endorser.Endorser.IdBytes).ShouldNot(BeEmpty())
 				}
 
-				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].Payload.Action.ProposalResponsePayload.Extension.Results.NsRwset).Should(HaveLen(2))
-				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].Payload.Action.ProposalResponsePayload.Extension.Results.NsRwset[0].Rwset.Reads).ShouldNot(HaveLen(0))
-				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].Payload.Action.ProposalResponsePayload.Extension.Results.NsRwset[1].Rwset.Reads).ShouldNot(HaveLen(0))
+				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].NsReadWriteSet()).Should(HaveLen(2))
+				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].NsReadWriteSet()[0].Rwset.Reads).ShouldNot(HaveLen(0))
+				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].NsReadWriteSet()[1].Rwset.Reads).ShouldNot(HaveLen(0))
 
-				for _, read := range parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].Payload.Action.ProposalResponsePayload.Extension.Results.NsRwset[0].Rwset.Reads {
+				for _, read := range parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].NsReadWriteSet()[0].Rwset.Reads {
 					Expect(read.Key).Should(ContainSubstring(namespaces))
 					Expect(read.Key).Should(ContainSubstring(chaincodeName))
 				}
 
 				if blockNum == 6 {
-					Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].Payload.Action.ProposalResponsePayload.Extension.Results.NsRwset[0].Rwset.Writes).Should(HaveLen(5))
+					Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].NsReadWriteSet()[0].Rwset.Writes).Should(HaveLen(5))
 				}
 
-				for _, read := range parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].Payload.Action.ProposalResponsePayload.Extension.Results.NsRwset[1].Rwset.Reads {
+				for _, read := range parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].NsReadWriteSet()[1].Rwset.Reads {
 					Expect(read.Key).ShouldNot(ContainSubstring(namespaces))
 					if blockNum < 7 {
 						Expect(read.Key).Should(ContainSubstring(chaincodeName))
@@ -117,9 +117,9 @@ var _ = Describe("Block parse test", func() {
 				}
 
 				if blockNum == 7 {
-					Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].Payload.Action.ProposalResponsePayload.Extension.Results.NsRwset[1].Rwset.Writes).Should(HaveLen(11))
+					Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].NsReadWriteSet()[1].Rwset.Writes).Should(HaveLen(11))
 				} else if blockNum > 7 {
-					Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].Payload.Action.ProposalResponsePayload.Extension.Results.NsRwset[1].Rwset.Writes).Should(HaveLen(1))
+					Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].NsReadWriteSet()[1].Rwset.Writes).Should(HaveLen(1))
 				}
 			}
 
