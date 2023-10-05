@@ -1,4 +1,4 @@
 .idea
 vendor
-../bin
+.generators/bin
 .generators/dist
