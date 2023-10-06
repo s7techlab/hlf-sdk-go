@@ -55,10 +55,9 @@ message Transaction {
 }
 
 message TransactionAction {
-  bytes header = 1;
-  SignatureHeader creator_identity = 2;
-  ChaincodeActionPayload payload = 3;
-  bytes bytes_payload = 4;
+  SignatureHeader header = 1;
+  ChaincodeActionPayload payload = 2;
+  bytes bytes_payload = 3;
 }
 
 message ChaincodeActionPayload {
