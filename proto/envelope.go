@@ -30,7 +30,7 @@ func ParseBlockData(blockData [][]byte, txFilter txflags.ValidationFlags) (*Bloc
 func ParseEnvelope(envelopeData []byte, validationCode peer.TxValidationCode) (*Envelope, error) {
 	envelope, err := protoutil.GetEnvelopeFromBlock(envelopeData)
 	if err != nil {
-		return nil, fmt.Errorf("get envelope from block: %w", err)
+		return nil, fmt.Errorf("get envelope from block data: %w", err)
 	}
 
 	payload, err := protoutil.UnmarshalPayload(envelope.Payload)
