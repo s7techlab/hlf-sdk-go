@@ -87,11 +87,11 @@ func (e *EventSubscription) Handler(block *common.Block) bool {
 
 	for _, envelope := range parsedBlock.ValidEnvelopes() {
 
-		if envelope.Transaction == nil {
+		if envelope.Payload.Transaction == nil {
 			continue
 		}
 
-		for _, ev := range envelope.Transaction.Events() {
+		for _, ev := range envelope.Payload.Transaction.Events() {
 
 			if ev.GetChaincodeId() != e.chaincodeID {
 				continue
@@ -111,7 +111,7 @@ func (e *EventSubscription) Handler(block *common.Block) bool {
 			case e.events <- &ChaincodeEventWithBlock{
 				event:       ev,
 				block:       block.Header.Number,
-				txTimestamp: envelope.ChannelHeader.Timestamp,
+				txTimestamp: envelope.Payload.Header.ChannelHeader.Timestamp,
 			}:
 			case <-e.ErrorCloser.Done():
 				return true

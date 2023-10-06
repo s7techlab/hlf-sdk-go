@@ -13,7 +13,7 @@ import (
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
-	proto2 "github.com/s7techlab/hlf-sdk-go/proto"
+	hlfproto "github.com/s7techlab/hlf-sdk-go/proto"
 )
 
 var (
@@ -80,7 +80,7 @@ func ProceedChannelUpdate(
 		return errors.Wrap(err, `failed to marshal common.ConfigUpdateEnvelope`)
 	}
 
-	channelHeader, err := proto2.NewCommonHeader(
+	channelHeader, err := hlfproto.NewCommonHeader(
 		common.HeaderType_CONFIG_UPDATE,
 		txParams.ID,
 		txParams.Nonce,
@@ -93,7 +93,7 @@ func ProceedChannelUpdate(
 		return errors.Wrap(err, `failed to get channel header`)
 	}
 
-	payload, err := proto2.NewMarshalledCommonPayload(channelHeader, confUpdEnvBytes)
+	payload, err := hlfproto.NewMarshalledCommonPayload(channelHeader, confUpdEnvBytes)
 	if err != nil {
 		return errors.Wrap(err, `failed to get payload`)
 	}
@@ -120,7 +120,7 @@ func signConfig(id msp.SigningIdentity, configUpdateBytes, nonce []byte) (*commo
 	if err != nil {
 		return nil, err
 	}
-	signatureHeader, err := proto2.NewMarshalledSignatureHeader(serialized, nonce)
+	signatureHeader, err := hlfproto.NewMarshalledSignatureHeader(serialized, nonce)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to get signature header`)
 	}

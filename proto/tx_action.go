@@ -6,10 +6,21 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/ledger/rwset"
 	"github.com/hyperledger/fabric-protos-go/ledger/rwset/kvrwset"
-	"github.com/hyperledger/fabric-protos-go/msp"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/protoutil"
 )
+
+func (x *TransactionAction) Event() *peer.ChaincodeEvent {
+	return x.Payload.Action.ProposalResponsePayload.Extension.Events
+}
+
+func (x *TransactionAction) NsReadWriteSet() []*NsReadWriteSet {
+	return x.Payload.Action.ProposalResponsePayload.Extension.Results.NsRwset
+}
+
+func (x *TransactionAction) ChaincodeSpec() *peer.ChaincodeSpec {
+	return x.Payload.ChaincodeProposalPayload.Input.ChaincodeSpec
+}
 
 func ParseTxActions(txActions []*peer.TransactionAction) ([]*TransactionAction, error) {
 	var parsedTxActions []*TransactionAction
@@ -17,7 +28,7 @@ func ParseTxActions(txActions []*peer.TransactionAction) ([]*TransactionAction, 
 	for _, action := range txActions {
 		txAction, err := ParseTxAction(action)
 		if err != nil {
-			return nil, fmt.Errorf(`tx action: %w`, err)
+			return nil, fmt.Errorf("parse transaction action: %w", err)
 		}
 		parsedTxActions = append(parsedTxActions, txAction)
 	}
@@ -28,162 +39,160 @@ func ParseTxActions(txActions []*peer.TransactionAction) ([]*TransactionAction, 
 func ParseTxAction(txAction *peer.TransactionAction) (*TransactionAction, error) {
 	sigHeader, err := protoutil.UnmarshalSignatureHeader(txAction.Header)
 	if err != nil {
-		return nil, fmt.Errorf("get signature header: %w", err)
+		return nil, fmt.Errorf("unmarshal signature header: %w", err)
 	}
 
 	creator, err := protoutil.UnmarshalSerializedIdentity(sigHeader.Creator)
 	if err != nil {
-		return nil, fmt.Errorf("parse transaction creator: %w", err)
+		return nil, fmt.Errorf("unmarshal transaction creator: %w", err)
 	}
 
-	ccAction, err := ParseChaincodeAction(txAction)
+	actionPayload, err := protoutil.UnmarshalChaincodeActionPayload(txAction.Payload)
 	if err != nil {
-		return nil, fmt.Errorf("parse transaction chaincode action: %w", err)
+		return nil, fmt.Errorf("unmarshal chaincode action from action payload: %w", err)
 	}
 
-	ccEvent, err := ParseTransactionActionEvents(ccAction)
+	ccEndorserAction, err := ParseChaincodeEndorsedAction(actionPayload)
 	if err != nil {
-		return nil, fmt.Errorf("parse transaction events: %w", err)
+		return nil, fmt.Errorf("parse chaincode endorsed action: %w", err)
 	}
 
-	endorsers, err := ParseTransactionActionEndorsers(txAction)
+	chaincodeProposalPayload, err := ParseChaincodeProposalPayload(actionPayload)
 	if err != nil {
-		return nil, fmt.Errorf("parse transaction endorsers: %w", err)
-	}
-
-	rwSets, err := ParseTransactionActionReadWriteSet(ccAction)
-	if err != nil {
-		return nil, fmt.Errorf("parse transaction read/write sets: %w", err)
-	}
-
-	chaincodeInvocationSpec, err := ParseTransactionActionChaincode(txAction)
-	if err != nil {
-		return nil, fmt.Errorf("parse transaction chaincode invocation spec: %w", err)
-	}
-
-	payload, err := ParseTxPayload(txAction)
-	if err != nil {
-		return nil, fmt.Errorf("parse transaction payload: %w", err)
+		return nil, fmt.Errorf("parse chaincode proposal payload: %w", err)
 	}
 
 	// because there is no cc version in peer.ChaincodeInvocationSpec
-	if chaincodeInvocationSpec.ChaincodeSpec == nil {
-		chaincodeInvocationSpec.ChaincodeSpec = &peer.ChaincodeSpec{}
+	if chaincodeProposalPayload.Input.ChaincodeSpec == nil {
+		chaincodeProposalPayload.Input.ChaincodeSpec = &peer.ChaincodeSpec{}
 	}
 
-	if chaincodeInvocationSpec.ChaincodeSpec.ChaincodeId == nil {
-		chaincodeInvocationSpec.ChaincodeSpec.ChaincodeId = &peer.ChaincodeID{}
+	if chaincodeProposalPayload.Input.ChaincodeSpec.ChaincodeId == nil {
+		chaincodeProposalPayload.Input.ChaincodeSpec.ChaincodeId = &peer.ChaincodeID{}
 	}
-	if ccAction.ChaincodeId != nil {
-		chaincodeInvocationSpec.ChaincodeSpec.ChaincodeId.Version = ccAction.ChaincodeId.Version
-	}
-
-	parsedTxAction := &TransactionAction{
-		Event:                   ccEvent,
-		Endorsers:               endorsers,
-		ReadWriteSets:           rwSets,
-		ChaincodeInvocationSpec: chaincodeInvocationSpec,
-		CreatorIdentity:         creator,
-		Payload:                 payload,
+	if ccEndorserAction.ProposalResponsePayload.Extension.ChaincodeId != nil {
+		chaincodeProposalPayload.Input.ChaincodeSpec.ChaincodeId.Version = ccEndorserAction.ProposalResponsePayload.Extension.ChaincodeId.Version
 	}
 
-	return parsedTxAction, nil
+	var bytesPayload []byte
+	if actionPayload.GetAction() != nil {
+		bytesPayload = actionPayload.GetAction().GetProposalResponsePayload()
+	}
+
+	return &TransactionAction{
+		Header: &SignatureHeader{
+			Creator: creator,
+			Nonce:   sigHeader.Nonce,
+		},
+		Payload: &ChaincodeActionPayload{
+			ChaincodeProposalPayload: chaincodeProposalPayload,
+			Action:                   ccEndorserAction,
+		},
+		BytesPayload: bytesPayload,
+	}, nil
 }
 
-func ParseTxPayload(txAction *peer.TransactionAction) ([]byte, error) {
-	payload, _, err := protoutil.GetPayloads(txAction)
+func ParseChaincodeProposalPayload(actionPayload *peer.ChaincodeActionPayload) (*ChaincodeProposalPayload, error) {
+	chaincodeProposalPayload, err := protoutil.UnmarshalChaincodeProposalPayload(actionPayload.ChaincodeProposalPayload)
 	if err != nil {
-		return nil, fmt.Errorf(`get payload from tx`)
+		return nil, fmt.Errorf("unmarshal chaincode proposal from action payload: %w", err)
 	}
 
-	if payload.GetAction() == nil {
-		return nil, nil
+	input, err := protoutil.UnmarshalChaincodeInvocationSpec(chaincodeProposalPayload.Input)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal chaincode invocation spec from action payload: %w", err)
 	}
 
-	return payload.GetAction().GetProposalResponsePayload(), nil
+	return &ChaincodeProposalPayload{
+		Input:        input,
+		TransientMap: chaincodeProposalPayload.TransientMap,
+	}, nil
 }
 
-func ParseChaincodeAction(txAction *peer.TransactionAction) (*peer.ChaincodeAction, error) {
-	ccActionPayload, err := protoutil.UnmarshalChaincodeActionPayload(txAction.Payload)
+func ParseChaincodeEndorsedAction(actionPayload *peer.ChaincodeActionPayload) (*ChaincodeEndorsedAction, error) {
+	proposalResponsePayload, err := protoutil.UnmarshalProposalResponsePayload(actionPayload.Action.ProposalResponsePayload)
 	if err != nil {
-		return nil, fmt.Errorf(`chaincode action payload: %w`, err)
-	}
-
-	proposalResponsePayload, err := protoutil.UnmarshalProposalResponsePayload(
-		ccActionPayload.Action.ProposalResponsePayload)
-	if err != nil {
-		return nil, fmt.Errorf(`proposal response payload:  %w`, err)
+		return nil, fmt.Errorf("unmarshal chaincode proposal response proposal: %w", err)
 	}
 
 	chaincodeAction, err := protoutil.UnmarshalChaincodeAction(proposalResponsePayload.Extension)
 	if err != nil {
-		return nil, fmt.Errorf(`chaincode action from proposal response: %w`, err)
+		return nil, fmt.Errorf("unmarshal chaincode action from proposal extention: %w", err)
 	}
 
-	return chaincodeAction, nil
-}
-
-func ParseTransactionActionEvents(chaincodeAction *peer.ChaincodeAction) (*peer.ChaincodeEvent, error) {
-	ccEvent, err := protoutil.UnmarshalChaincodeEvents(chaincodeAction.Events)
+	txReadWriteSet, err := ParseTxReadWriteSet(chaincodeAction)
 	if err != nil {
-		return nil, fmt.Errorf(`event from chaincode action: %w`, err)
+		return nil, fmt.Errorf("parse tx read write set from chaincode action: %w", err)
 	}
-	return ccEvent, nil
-}
 
-func ParseTransactionActionEndorsers(txAction *peer.TransactionAction) ([]*msp.SerializedIdentity, error) {
-	ccActionPayload, err := protoutil.UnmarshalChaincodeActionPayload(txAction.Payload)
+	events, err := protoutil.UnmarshalChaincodeEvents(chaincodeAction.Events)
 	if err != nil {
-		return nil, fmt.Errorf(`chaincode action payload: %w`, err)
+		return nil, fmt.Errorf("unmarshal cc event from chaincode action: %w", err)
 	}
 
-	endorsers := make([]*msp.SerializedIdentity, 0)
-	for _, en := range ccActionPayload.Action.Endorsements {
-		endorser := &msp.SerializedIdentity{}
-
-		if err = proto.Unmarshal(en.Endorser, endorser); err != nil {
-			return nil, fmt.Errorf("get endorser: %w", err)
+	var endorsements []*Endorsement
+	for _, endorsement := range actionPayload.Action.Endorsements {
+		endorser, err := protoutil.UnmarshalSerializedIdentity(endorsement.Endorser)
+		if err != nil {
+			return nil, fmt.Errorf("unmarshal transaction endorser: %w", err)
 		}
 
-		endorsers = append(endorsers, endorser)
+		endorsements = append(endorsements, &Endorsement{
+			Endorser:  endorser,
+			Signature: endorsement.Signature,
+		})
 	}
 
-	return endorsers, nil
+	return &ChaincodeEndorsedAction{
+		ProposalResponsePayload: &ProposalResponsePayload{
+			ProposalHash: proposalResponsePayload.ProposalHash,
+			Extension: &ChaincodeAction{
+				Results:     txReadWriteSet,
+				Events:      events,
+				Response:    chaincodeAction.Response,
+				ChaincodeId: chaincodeAction.ChaincodeId,
+			},
+		},
+		Endorsement: endorsements,
+	}, nil
 }
 
-func ParseTransactionActionReadWriteSet(chaincodeAction *peer.ChaincodeAction) ([]*kvrwset.KVRWSet, error) {
+func ParseTxReadWriteSet(chaincodeAction *peer.ChaincodeAction) (*TxReadWriteSet, error) {
 	txReadWriteSet := &rwset.TxReadWriteSet{}
 	if err := proto.Unmarshal(chaincodeAction.Results, txReadWriteSet); err != nil {
-		return nil, fmt.Errorf("get txReadWriteSet: %w", err)
+		return nil, fmt.Errorf("unmarshal txReadWriteSet from cc action result: %w", err)
 	}
 
-	kvReadWriteSets := make([]*kvrwset.KVRWSet, 0)
-	for _, rw := range txReadWriteSet.NsRwset {
-		kvReadWriteSet := &kvrwset.KVRWSet{}
-		if err := proto.Unmarshal(rw.Rwset, kvReadWriteSet); err != nil {
-			return nil, fmt.Errorf("get kvReadWriteSet: %w", err)
+	var nsReadWriteSets []*NsReadWriteSet
+	for _, nsRWset := range txReadWriteSet.NsRwset {
+		kvRWSet := &kvrwset.KVRWSet{}
+		if err := proto.Unmarshal(nsRWset.Rwset, kvRWSet); err != nil {
+			return nil, fmt.Errorf("unmarshal kvReadWriteSet from nsRWSet: %w", err)
 		}
-		kvReadWriteSets = append(kvReadWriteSets, kvReadWriteSet)
+
+		var collectionHashedRwset []*CollectionHashedReadWriteSet
+		for _, hashedRwsetItem := range nsRWset.CollectionHashedRwset {
+			hashedRwset := &kvrwset.HashedRWSet{}
+			if err := proto.Unmarshal(hashedRwsetItem.HashedRwset, hashedRwset); err != nil {
+				return nil, fmt.Errorf("unmarshal HashedRWset from collection hashedRWSet: %w", err)
+			}
+
+			collectionHashedRwset = append(collectionHashedRwset, &CollectionHashedReadWriteSet{
+				CollectionName: hashedRwsetItem.CollectionName,
+				HashedRwset:    hashedRwset,
+				PvtRwsetHash:   hashedRwsetItem.PvtRwsetHash,
+			})
+		}
+
+		nsReadWriteSets = append(nsReadWriteSets, &NsReadWriteSet{
+			Namespace:             nsRWset.Namespace,
+			Rwset:                 kvRWSet,
+			CollectionHashedRwset: collectionHashedRwset,
+		})
 	}
 
-	return kvReadWriteSets, nil
-}
-
-func ParseTransactionActionChaincode(txAction *peer.TransactionAction) (*peer.ChaincodeInvocationSpec, error) {
-	actionPayload, err := protoutil.UnmarshalChaincodeActionPayload(txAction.Payload)
-	if err != nil {
-		return nil, fmt.Errorf("get chaincode action from action payload: %w", err)
-	}
-
-	chaincodeProposalPayload, err := protoutil.UnmarshalChaincodeProposalPayload(actionPayload.ChaincodeProposalPayload)
-	if err != nil {
-		return nil, fmt.Errorf("get chaincode proposal from action payload: %w", err)
-	}
-	// todo transient map could be fetched here
-	chaincodeInvocationSpec, err := protoutil.UnmarshalChaincodeInvocationSpec(chaincodeProposalPayload.Input)
-	if err != nil {
-		return nil, fmt.Errorf("get chaincode invocation spec from action payload: %w", err)
-	}
-
-	return chaincodeInvocationSpec, nil
+	return &TxReadWriteSet{
+		DataModel: txReadWriteSet.DataModel.String(),
+		NsRwset:   nsReadWriteSets,
+	}, nil
 }

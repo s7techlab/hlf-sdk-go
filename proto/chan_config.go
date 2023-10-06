@@ -458,7 +458,7 @@ func (x *MSP) GetAllCertificates() ([]*Certificate, error) {
 	var certs []*Certificate
 
 	for i := range x.Config.RootCerts {
-		cert, err := NewCertificate(x.Config.RootCerts[i], CertType_ca, x.Config.Name, x.Name)
+		cert, err := NewCertificate(x.Config.RootCerts[i], CertType_CERT_TYPE_CA, x.Config.Name, x.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -466,7 +466,7 @@ func (x *MSP) GetAllCertificates() ([]*Certificate, error) {
 	}
 
 	for i := range x.Config.IntermediateCerts {
-		cert, err := NewCertificate(x.Config.IntermediateCerts[i], CertType_intermediate, x.Config.Name, x.Name)
+		cert, err := NewCertificate(x.Config.IntermediateCerts[i], CertType_CERT_TYPE_INTERMEDIATE, x.Config.Name, x.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -474,7 +474,7 @@ func (x *MSP) GetAllCertificates() ([]*Certificate, error) {
 	}
 
 	for i := range x.Config.Admins {
-		cert, err := NewCertificate(x.Config.Admins[i], CertType_admin, x.Config.Name, x.Name)
+		cert, err := NewCertificate(x.Config.Admins[i], CertType_CERT_TYPE_ADMIN, x.Config.Name, x.Name)
 		if err != nil {
 			return nil, err
 		}
