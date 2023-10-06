@@ -44,13 +44,13 @@ func ParseBlock(block *common.Block, opts ...ParseBlockOpt) (*Block, error) {
 
 	txFilter := txflags.ValidationFlags(block.Metadata.Metadata[common.BlockMetadataIndex_TRANSACTIONS_FILTER])
 	if parsedBlock.Data, err = ParseBlockData(block.GetData().GetData(), txFilter); err != nil {
-		return nil, fmt.Errorf("parsing envelopes: %w", err)
+		return nil, fmt.Errorf("parse block data: %w", err)
 	}
 
 	// parse Raft orderer identity
 	raftOrdererIdentity, err := ParseOrdererIdentity(block)
 	if err != nil {
-		return nil, fmt.Errorf("parsing orderer identity from block: %w", err)
+		return nil, fmt.Errorf("parse orderer identity from block: %w", err)
 	}
 
 	if raftOrdererIdentity != nil && raftOrdererIdentity.IdBytes != nil {
@@ -62,7 +62,7 @@ func ParseBlock(block *common.Block, opts ...ParseBlockOpt) (*Block, error) {
 		var bftOrdererIdentities []*OrdererSignature
 		bftOrdererIdentities, err = ParseBTFOrderersIdentities(block, parsingOpts.configBlock)
 		if err != nil {
-			return nil, fmt.Errorf("parsing bft orderers identities: %w", err)
+			return nil, fmt.Errorf("parse bft orderers identities: %w", err)
 		}
 
 		parsedBlock.Metadata.OrdererSignatures = append(parsedBlock.Metadata.OrdererSignatures, bftOrdererIdentities...)
@@ -88,8 +88,7 @@ func ParseOrdererIdentity(cb *common.Block) (*msp.SerializedIdentity, error) {
 		return nil, fmt.Errorf("unmarshaling signature header from metadata signature header: %w", err)
 	}
 
-	serializedIdentity := &msp.SerializedIdentity{}
-	err = proto.Unmarshal(signatureHeader.Creator, serializedIdentity)
+	serializedIdentity, err := protoutil.UnmarshalSerializedIdentity(signatureHeader.Creator)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshaling serialized indentity from signature header: %w", err)
 	}

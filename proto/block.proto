@@ -47,9 +47,10 @@ message SignatureHeader {
   bytes nonce = 2;
 }
 
+// field numbers correspond to HeaderType https://github.com/hyperledger/fabric-protos/blob/main/common/common.proto#L27
 message Transaction {
-  repeated TransactionAction actions = 1;
-  hlfsdkgo.proto.ChannelConfig channel_config = 2;
+  hlfsdkgo.proto.ChannelConfig channel_config = 1;
+  repeated TransactionAction actions = 3;
 }
 
 message TransactionAction {

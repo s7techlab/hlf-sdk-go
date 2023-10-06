@@ -28,7 +28,7 @@ func ParseTxActions(txActions []*peer.TransactionAction) ([]*TransactionAction, 
 	for _, action := range txActions {
 		txAction, err := ParseTxAction(action)
 		if err != nil {
-			return nil, fmt.Errorf(`tx action: %w`, err)
+			return nil, fmt.Errorf("parse transaction action: %w", err)
 		}
 		parsedTxActions = append(parsedTxActions, txAction)
 	}
@@ -39,17 +39,17 @@ func ParseTxActions(txActions []*peer.TransactionAction) ([]*TransactionAction, 
 func ParseTxAction(txAction *peer.TransactionAction) (*TransactionAction, error) {
 	sigHeader, err := protoutil.UnmarshalSignatureHeader(txAction.Header)
 	if err != nil {
-		return nil, fmt.Errorf("get signature header: %w", err)
+		return nil, fmt.Errorf("unmarshal signature header: %w", err)
 	}
 
 	creator, err := protoutil.UnmarshalSerializedIdentity(sigHeader.Creator)
 	if err != nil {
-		return nil, fmt.Errorf("parse transaction creator: %w", err)
+		return nil, fmt.Errorf("unmarshal transaction creator: %w", err)
 	}
 
 	actionPayload, err := protoutil.UnmarshalChaincodeActionPayload(txAction.Payload)
 	if err != nil {
-		return nil, fmt.Errorf("get chaincode action from action payload: %w", err)
+		return nil, fmt.Errorf("unmarshal chaincode action from action payload: %w", err)
 	}
 
 	ccEndorserAction, err := ParseChaincodeEndorsedAction(actionPayload)
@@ -95,12 +95,12 @@ func ParseTxAction(txAction *peer.TransactionAction) (*TransactionAction, error)
 func ParseChaincodeProposalPayload(actionPayload *peer.ChaincodeActionPayload) (*ChaincodeProposalPayload, error) {
 	chaincodeProposalPayload, err := protoutil.UnmarshalChaincodeProposalPayload(actionPayload.ChaincodeProposalPayload)
 	if err != nil {
-		return nil, fmt.Errorf("get chaincode proposal from action payload: %w", err)
+		return nil, fmt.Errorf("unmarshal chaincode proposal from action payload: %w", err)
 	}
 
 	input, err := protoutil.UnmarshalChaincodeInvocationSpec(chaincodeProposalPayload.Input)
 	if err != nil {
-		return nil, fmt.Errorf("get chaincode invocation spec from action payload: %w", err)
+		return nil, fmt.Errorf("unmarshal chaincode invocation spec from action payload: %w", err)
 	}
 
 	return &ChaincodeProposalPayload{
@@ -117,7 +117,7 @@ func ParseChaincodeEndorsedAction(actionPayload *peer.ChaincodeActionPayload) (*
 
 	chaincodeAction, err := protoutil.UnmarshalChaincodeAction(proposalResponsePayload.Extension)
 	if err != nil {
-		return nil, fmt.Errorf(`chaincode action from proposal response: %w`, err)
+		return nil, fmt.Errorf("unmarshal chaincode action from proposal extention: %w", err)
 	}
 
 	txReadWriteSet, err := ParseTxReadWriteSet(chaincodeAction)
@@ -127,14 +127,14 @@ func ParseChaincodeEndorsedAction(actionPayload *peer.ChaincodeActionPayload) (*
 
 	events, err := protoutil.UnmarshalChaincodeEvents(chaincodeAction.Events)
 	if err != nil {
-		return nil, fmt.Errorf(`event from chaincode action: %w`, err)
+		return nil, fmt.Errorf("unmarshal cc event from chaincode action: %w", err)
 	}
 
 	var endorsements []*Endorsement
 	for _, endorsement := range actionPayload.Action.Endorsements {
 		endorser, err := protoutil.UnmarshalSerializedIdentity(endorsement.Endorser)
 		if err != nil {
-			return nil, fmt.Errorf("parse transaction endorser: %w", err)
+			return nil, fmt.Errorf("unmarshal transaction endorser: %w", err)
 		}
 
 		endorsements = append(endorsements, &Endorsement{
@@ -160,21 +160,21 @@ func ParseChaincodeEndorsedAction(actionPayload *peer.ChaincodeActionPayload) (*
 func ParseTxReadWriteSet(chaincodeAction *peer.ChaincodeAction) (*TxReadWriteSet, error) {
 	txReadWriteSet := &rwset.TxReadWriteSet{}
 	if err := proto.Unmarshal(chaincodeAction.Results, txReadWriteSet); err != nil {
-		return nil, fmt.Errorf("get txReadWriteSet: %w", err)
+		return nil, fmt.Errorf("unmarshal txReadWriteSet from cc action result: %w", err)
 	}
 
 	var nsReadWriteSets []*NsReadWriteSet
 	for _, nsRWset := range txReadWriteSet.NsRwset {
 		kvRWSet := &kvrwset.KVRWSet{}
 		if err := proto.Unmarshal(nsRWset.Rwset, kvRWSet); err != nil {
-			return nil, fmt.Errorf("get kvReadWriteSet: %w", err)
+			return nil, fmt.Errorf("unmarshal kvReadWriteSet from nsRWSet: %w", err)
 		}
 
 		var collectionHashedRwset []*CollectionHashedReadWriteSet
 		for _, hashedRwsetItem := range nsRWset.CollectionHashedRwset {
 			hashedRwset := &kvrwset.HashedRWSet{}
 			if err := proto.Unmarshal(hashedRwsetItem.HashedRwset, hashedRwset); err != nil {
-				return nil, fmt.Errorf("get HashedRwset: %w", err)
+				return nil, fmt.Errorf("unmarshal HashedRWset from collection hashedRWSet: %w", err)
 			}
 
 			collectionHashedRwset = append(collectionHashedRwset, &CollectionHashedReadWriteSet{

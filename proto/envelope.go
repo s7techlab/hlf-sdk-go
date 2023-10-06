@@ -30,27 +30,27 @@ func ParseBlockData(blockData [][]byte, txFilter txflags.ValidationFlags) (*Bloc
 func ParseEnvelope(envelopeData []byte, validationCode peer.TxValidationCode) (*Envelope, error) {
 	envelope, err := protoutil.GetEnvelopeFromBlock(envelopeData)
 	if err != nil {
-		return nil, fmt.Errorf(`envelope from block data: %w`, err)
+		return nil, fmt.Errorf("get envelope from block: %w", err)
 	}
 
 	payload, err := protoutil.UnmarshalPayload(envelope.Payload)
 	if err != nil {
-		return nil, fmt.Errorf(`payload from envelope: %w`, err)
+		return nil, fmt.Errorf("unmarshal payload from envelope: %w", err)
 	}
 
 	channelHeader, err := protoutil.UnmarshalChannelHeader(payload.Header.ChannelHeader)
 	if err != nil {
-		return nil, fmt.Errorf(`channel header from envelope payload: %w`, err)
+		return nil, fmt.Errorf("unmarshal channel header from envelope payload: %w", err)
 	}
 
 	signatureHeader := &SignatureHeader{}
 	sigHeader, err := protoutil.UnmarshalSignatureHeader(payload.Header.SignatureHeader)
 	if err != nil {
-		return nil, fmt.Errorf("signature header: %w", err)
+		return nil, fmt.Errorf("unmarshal signature header: %w", err)
 	}
 	creator, err := protoutil.UnmarshalSerializedIdentity(sigHeader.Creator)
 	if err != nil {
-		return nil, fmt.Errorf("parse transaction creator: %w", err)
+		return nil, fmt.Errorf("unmarshal envelope creator: %w", err)
 	}
 	signatureHeader.Creator = creator
 	signatureHeader.Nonce = sigHeader.Nonce
@@ -59,27 +59,22 @@ func ParseEnvelope(envelopeData []byte, validationCode peer.TxValidationCode) (*
 		protoutil.SetTxID(channelHeader, sigHeader)
 	}
 
-	var tx *Transaction
+	tx := &Transaction{}
 	switch common.HeaderType(channelHeader.Type) {
-	case common.HeaderType_ENDORSER_TRANSACTION:
-		tx, err = ParseTransaction(payload, common.HeaderType(channelHeader.Type))
-		if err != nil {
-			return nil, fmt.Errorf(`endorser transaction from envelope: %w`, err)
-		}
 	case common.HeaderType_CONFIG:
-		tx, err = ParseTransaction(payload, common.HeaderType(channelHeader.Type))
-		if err != nil {
-			return nil, fmt.Errorf(`endorser transaction from envelope: %w`, err)
-		}
-
 		ce := &common.ConfigEnvelope{}
 		if err = proto.Unmarshal(payload.Data, ce); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("unmarshal payload data to config envelope: %w", err)
 		}
 
 		tx.ChannelConfig, err = ParseChannelConfig(*ce.Config)
 		if err != nil {
-			return nil, fmt.Errorf(`parse channel config: %w`, err)
+			return nil, fmt.Errorf("parse channel config: %w", err)
+		}
+	case common.HeaderType_ENDORSER_TRANSACTION:
+		tx, err = ParseEndorserTransaction(payload)
+		if err != nil {
+			return nil, fmt.Errorf("parse endorser transaction: %w", err)
 		}
 	}
 

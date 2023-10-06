@@ -1,6 +1,8 @@
 package proto
 
 import (
+	"fmt"
+
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/protoutil"
@@ -16,18 +18,16 @@ func (x *Transaction) Events() []*peer.ChaincodeEvent {
 	return events
 }
 
-func ParseTransaction(payload *common.Payload, transactionType common.HeaderType) (*Transaction, error) {
+func ParseEndorserTransaction(payload *common.Payload) (*Transaction, error) {
 	var actions []*TransactionAction
-	if transactionType == common.HeaderType_ENDORSER_TRANSACTION {
-		tx, err := protoutil.UnmarshalTransaction(payload.Data)
-		if err != nil {
-			return nil, err
-		}
+	tx, err := protoutil.UnmarshalTransaction(payload.Data)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal transaction from payload data: %w", err)
+	}
 
-		actions, err = ParseTxActions(tx.Actions)
-		if err != nil {
-			return nil, err
-		}
+	actions, err = ParseTxActions(tx.Actions)
+	if err != nil {
+		return nil, fmt.Errorf("parse transaction actions: %w", err)
 	}
 
 	return &Transaction{
