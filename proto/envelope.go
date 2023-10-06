@@ -60,6 +60,7 @@ func ParseEnvelope(envelopeData []byte, validationCode peer.TxValidationCode) (*
 	}
 
 	tx := &Transaction{}
+	var rawUnparsedTransaction []byte
 	switch common.HeaderType(channelHeader.Type) {
 	case common.HeaderType_CONFIG:
 		ce := &common.ConfigEnvelope{}
@@ -76,6 +77,9 @@ func ParseEnvelope(envelopeData []byte, validationCode peer.TxValidationCode) (*
 		if err != nil {
 			return nil, fmt.Errorf("parse endorser transaction: %w", err)
 		}
+
+	default:
+		rawUnparsedTransaction = payload.Data
 	}
 
 	return &Envelope{
@@ -84,7 +88,8 @@ func ParseEnvelope(envelopeData []byte, validationCode peer.TxValidationCode) (*
 				ChannelHeader:   channelHeader,
 				SignatureHeader: signatureHeader,
 			},
-			Transaction: tx,
+			Transaction:            tx,
+			RawUnparsedTransaction: rawUnparsedTransaction,
 		},
 		Signature:      envelope.Signature,
 		ValidationCode: validationCode,

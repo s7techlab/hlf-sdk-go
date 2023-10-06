@@ -80,7 +80,8 @@ func ParseTxAction(txAction *peer.TransactionAction) (*TransactionAction, error)
 	}
 
 	return &TransactionAction{
-		Header: &SignatureHeader{
+		Header: txAction.Header,
+		CreatorIdentity: &SignatureHeader{
 			Creator: creator,
 			Nonce:   sigHeader.Nonce,
 		},

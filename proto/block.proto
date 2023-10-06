@@ -35,6 +35,7 @@ message Envelope {
 message Payload {
   Header header = 1;
   Transaction transaction = 2;
+  bytes raw_unparsed_transaction = 3;
 }
 
 message Header {
@@ -54,9 +55,10 @@ message Transaction {
 }
 
 message TransactionAction {
-  SignatureHeader header = 1;
-  ChaincodeActionPayload payload = 2;
-  bytes bytesPayload = 3;
+  bytes header = 1;
+  SignatureHeader creator_identity = 2;
+  ChaincodeActionPayload payload = 3;
+  bytes bytes_payload = 4;
 }
 
 message ChaincodeActionPayload {

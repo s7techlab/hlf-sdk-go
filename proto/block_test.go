@@ -83,9 +83,9 @@ var _ = Describe("Block parse test", func() {
 				Expect(parsedBlock.Data.Envelopes[0].Payload.Header.SignatureHeader.Creator.Mspid).Should(ContainSubstring(msp))
 
 				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions).Should(HaveLen(1))
-				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].Header.Creator.Mspid).Should(ContainSubstring(org))
-				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].Header.Creator.Mspid).Should(ContainSubstring(msp))
-				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].Header.Creator.IdBytes).ShouldNot(BeEmpty())
+				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].CreatorIdentity.Creator.Mspid).Should(ContainSubstring(org))
+				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].CreatorIdentity.Creator.Mspid).Should(ContainSubstring(msp))
+				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].CreatorIdentity.Creator.IdBytes).ShouldNot(BeEmpty())
 				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].Payload.Action.Endorsement).ShouldNot(HaveLen(0))
 
 				for _, endorser := range parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].Payload.Action.Endorsement {
