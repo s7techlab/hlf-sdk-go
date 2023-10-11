@@ -12,16 +12,16 @@ import (
 const (
 	LifecycleChaincodeName = "_lifecycle"
 
-	// MetadataPrefix - это префикс ключа стейта, который хранит информацию о ключах
-	// в соответствующем неймспейсе. У каждого закомиченного чейнкода в канале есть такой стейт
+	// MetadataPrefix - this is the prefix of the state key, which stores information about the keys
+	// in the corresponding namespace. Each committed chaincode in the channel has this state
 	MetadataPrefix = "namespaces/metadata"
 
-	// FieldsPrefix - префикс ключа стейтов, которые хранят параметры
-	// закомиченного чейнкода в канале
+	// FieldsPrefix - prefix of the state key, which stores the parameters
+	// of the committed chaincode in the channel
 	FieldsPrefix = "namespaces/fields"
 
-	// CollectionField ValidationInfoField EndorsementInfoField SequenceField - суффиксы ключей стейтов,
-	// которые хранят параметры закомиченного чейнкода в канале
+	// CollectionField ValidationInfoField EndorsementInfoField SequenceField - state key suffixes
+	// that store the parameters of the committed chaincode in the channel
 	CollectionField      = "Collections"
 	ValidationInfoField  = "ValidationInfo"
 	EndorsementInfoField = "EndorsementInfo"

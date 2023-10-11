@@ -62,13 +62,22 @@ func NewParsedBlockPeer(blocksPeer *BlockPeer, opts ...ParsedBlockPeerOpt) *Pars
 	return parsedBlockPeer
 }
 
-func (pbp *ParsedBlockPeer) Observe(ctx context.Context) (<-chan *ParsedBlock, error) {
-	if pbp.isWork {
-		return pbp.blocks, nil
+func (pbp *ParsedBlockPeer) ChannelObservers() map[string]*parsedBlockPeerChannel {
+	pbp.mu.RLock()
+	defer pbp.mu.RUnlock()
+
+	var copyChannelObservers = make(map[string]*parsedBlockPeerChannel, len(pbp.parsedChannelObservers))
+	for key, value := range pbp.parsedChannelObservers {
+		copyChannelObservers[key] = value
 	}
 
-	// need to start default block peer observing
-	_, _ = pbp.blockPeer.Observe(ctx)
+	return copyChannelObservers
+}
+
+func (pbp *ParsedBlockPeer) Observe(ctx context.Context) <-chan *ParsedBlock {
+	if pbp.isWork {
+		return pbp.blocks
+	}
 
 	// ctxObserve using for nested control process without stopped primary context
 	ctxObserve, cancel := context.WithCancel(ctx)
@@ -80,7 +89,9 @@ func (pbp *ParsedBlockPeer) Observe(ctx context.Context) (<-chan *ParsedBlock, e
 	go func() {
 		pbp.isWork = true
 
-		ticker := time.NewTicker(pbp.blockPeer.observePeriod + time.Second)
+		time.Sleep(time.Second)
+
+		ticker := time.NewTicker(pbp.blockPeer.observePeriod)
 		for {
 			select {
 			case <-ctxObserve.Done():
@@ -93,15 +104,19 @@ func (pbp *ParsedBlockPeer) Observe(ctx context.Context) (<-chan *ParsedBlock, e
 		}
 	}()
 
-	return pbp.blocks, nil
+	return pbp.blocks
 }
 
 func (pbp *ParsedBlockPeer) Stop() {
 	pbp.mu.Lock()
 	defer pbp.mu.Unlock()
 
+	pbp.blockPeer.Stop()
+
 	for _, c := range pbp.parsedChannelObservers {
-		c.observer.Stop()
+		if err := c.observer.Stop(); err != nil {
+			zap.Error(err)
+		}
 	}
 
 	pbp.parsedChannelObservers = make(map[string]*parsedBlockPeerChannel)
@@ -109,6 +124,12 @@ func (pbp *ParsedBlockPeer) Stop() {
 	if pbp.cancelObserve != nil {
 		pbp.cancelObserve()
 	}
+
+	close(pbp.blocks)
+	for _, blocksByChannel := range pbp.blocksByChannels {
+		close(blocksByChannel)
+	}
+
 	pbp.isWork = false
 }
 
@@ -116,17 +137,26 @@ func (pbp *ParsedBlockPeer) initParsedChannels(ctx context.Context) {
 	pbp.mu.RLock()
 	defer pbp.mu.RUnlock()
 
-	for _, commonBlockChannelObserver := range pbp.blockPeer.ChannelObservers() {
-		channel := commonBlockChannelObserver.observer.channel
+	for channel := range pbp.blockPeer.peerChannels.Channels() {
 		if _, ok := pbp.parsedChannelObservers[channel]; !ok {
 			pbp.blockPeer.logger.Info(`add parsed channel observer`, zap.String(`channel`, channel))
 
-			pbp.parsedChannelObservers[channel] = pbp.peerParsedChannel(ctx, channel, commonBlockChannelObserver.observer)
+			pbp.parsedChannelObservers[channel] = pbp.peerParsedChannel(ctx, channel)
 		}
 	}
 }
 
-func (pbp *ParsedBlockPeer) peerParsedChannel(ctx context.Context, channel string, commonBlockChannel *BlockChannel) *parsedBlockPeerChannel {
+func (pbp *ParsedBlockPeer) peerParsedChannel(ctx context.Context, channel string) *parsedBlockPeerChannel {
+	seekFrom := pbp.blockPeer.seekFrom[channel]
+	if seekFrom > 0 {
+		// it must be -1, because start position here is excluded from array
+		// https://github.com/s7techlab/hlf-sdk-go/blob/master/proto/seek.go#L15
+		seekFrom--
+	}
+
+	commonBlockChannel := NewBlockChannel(channel, pbp.blockPeer.blockDeliverer, ChannelSeekFrom(seekFrom),
+		WithChannelBlockLogger(pbp.blockPeer.logger), WithChannelStopRecreateStream(pbp.blockPeer.stopRecreateStream))
+
 	configBlock := pbp.configBlocks[channel]
 
 	peerParsedChannel := &parsedBlockPeerChannel{}

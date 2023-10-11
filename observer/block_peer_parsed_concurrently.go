@@ -20,13 +20,7 @@ func (p *ParsedBlocksByChannels) Observe() chan *ChannelParsedBlocks {
 	return p.channels
 }
 
-func (pbp *ParsedBlockPeer) ObserveByChannels(ctx context.Context) (*ParsedBlocksByChannels, error) {
-	pbp.mu.Lock()
-	defer pbp.mu.Unlock()
-
-	// need to start default block peer observing
-	_, _ = pbp.blockPeer.ObserveByChannels(ctx)
-
+func (pbp *ParsedBlockPeer) ObserveByChannels(ctx context.Context) *ParsedBlocksByChannels {
 	blocksByChannels := &ParsedBlocksByChannels{
 		channels: make(chan *ChannelParsedBlocks),
 	}
@@ -35,6 +29,8 @@ func (pbp *ParsedBlockPeer) ObserveByChannels(ctx context.Context) (*ParsedBlock
 
 	// init new channels if they are fetched
 	go func() {
+		pbp.isWork = true
+
 		ticker := time.NewTicker(pbp.blockPeer.observePeriod)
 		for {
 			select {
@@ -53,21 +49,33 @@ func (pbp *ParsedBlockPeer) ObserveByChannels(ctx context.Context) (*ParsedBlock
 		pbp.Stop()
 	}()
 
-	return blocksByChannels, nil
+	return blocksByChannels
 }
 
 func (pbp *ParsedBlockPeer) initParsedChannelsConcurrently(ctx context.Context, blocksByChannels *ParsedBlocksByChannels) {
-	for _, commonBlockChannelObserver := range pbp.blockPeer.ChannelObservers() {
-		channel := commonBlockChannelObserver.observer.channel
+	pbp.mu.Lock()
+	defer pbp.mu.Unlock()
+
+	for channel := range pbp.blockPeer.peerChannels.Channels() {
 		if _, ok := pbp.parsedChannelObservers[channel]; !ok {
 			pbp.blockPeer.logger.Info(`add parsed channel observer concurrently`, zap.String(`channel`, channel))
 
-			pbp.parsedChannelObservers[channel] = pbp.peerParsedChannelConcurrently(ctx, channel, blocksByChannels, commonBlockChannelObserver.observer)
+			pbp.parsedChannelObservers[channel] = pbp.peerParsedChannelConcurrently(ctx, channel, blocksByChannels)
 		}
 	}
 }
 
-func (pbp *ParsedBlockPeer) peerParsedChannelConcurrently(ctx context.Context, channel string, blocksByChannels *ParsedBlocksByChannels, commonBlockChannel *BlockChannel) *parsedBlockPeerChannel {
+func (pbp *ParsedBlockPeer) peerParsedChannelConcurrently(ctx context.Context, channel string, blocksByChannels *ParsedBlocksByChannels) *parsedBlockPeerChannel {
+	seekFrom := pbp.blockPeer.seekFrom[channel]
+	if seekFrom > 0 {
+		// it must be -1, because start position here is excluded from array
+		// https://github.com/s7techlab/hlf-sdk-go/blob/master/proto/seek.go#L15
+		seekFrom--
+	}
+
+	commonBlockChannel := NewBlockChannel(channel, pbp.blockPeer.blockDeliverer, ChannelSeekFrom(seekFrom),
+		WithChannelBlockLogger(pbp.blockPeer.logger), WithChannelStopRecreateStream(pbp.blockPeer.stopRecreateStream))
+
 	configBlock := pbp.configBlocks[channel]
 
 	peerParsedChannel := &parsedBlockPeerChannel{}

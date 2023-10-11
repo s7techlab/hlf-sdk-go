@@ -20,10 +20,7 @@ func (b *BlocksByChannels) Observe() chan *ChannelCommonBlocks {
 	return b.channels
 }
 
-func (bp *BlockPeer) ObserveByChannels(ctx context.Context) (*BlocksByChannels, error) {
-	bp.mu.Lock()
-	defer bp.mu.Unlock()
-
+func (bp *BlockPeer) ObserveByChannels(ctx context.Context) *BlocksByChannels {
 	blocksByChannels := &BlocksByChannels{
 		channels: make(chan *ChannelCommonBlocks),
 	}
@@ -50,10 +47,13 @@ func (bp *BlockPeer) ObserveByChannels(ctx context.Context) (*BlocksByChannels, 
 		bp.Stop()
 	}()
 
-	return blocksByChannels, nil
+	return blocksByChannels
 }
 
 func (bp *BlockPeer) initChannelsConcurrently(ctx context.Context, blocksByChannels *BlocksByChannels) {
+	bp.mu.Lock()
+	defer bp.mu.Unlock()
+
 	for channel := range bp.peerChannels.Channels() {
 		if _, ok := bp.channelObservers[channel]; !ok {
 			bp.logger.Info(`add channel observer concurrently`, zap.String(`channel`, channel))
@@ -66,6 +66,8 @@ func (bp *BlockPeer) initChannelsConcurrently(ctx context.Context, blocksByChann
 func (bp *BlockPeer) peerChannelConcurrently(ctx context.Context, channel string, blocksByChannels *BlocksByChannels) *blockPeerChannel {
 	seekFrom := bp.seekFrom[channel]
 	if seekFrom > 0 {
+		// it must be -1, because start position here is excluded from array
+		// https://github.com/s7techlab/hlf-sdk-go/blob/master/proto/seek.go#L15
 		seekFrom--
 	}
 

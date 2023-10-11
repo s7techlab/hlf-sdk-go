@@ -75,8 +75,8 @@ func NewBlockChannel(channel string, blocksDeliver api.BlocksDeliverer, seekFrom
 }
 
 func (c *BlockChannel) Observe(ctx context.Context) (<-chan *Block, error) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	if c.isWork {
 		return c.blocks, nil
@@ -145,14 +145,17 @@ func (c *BlockChannel) Observe(ctx context.Context) (<-chan *Block, error) {
 }
 
 func (c *BlockChannel) Stop() error {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	err := c.Channel.stop()
 
 	// If primary context is done then cancel ctxObserver
 	if c.cancelObserve != nil {
 		c.cancelObserve()
 	}
+
+	close(c.blocks)
 
 	c.isWork = false
 	return err

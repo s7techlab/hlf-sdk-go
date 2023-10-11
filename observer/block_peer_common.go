@@ -115,9 +115,9 @@ func (bp *BlockPeer) ChannelObservers() map[string]*blockPeerChannel {
 	return copyChannelObservers
 }
 
-func (bp *BlockPeer) Observe(ctx context.Context) (<-chan *Block, error) {
+func (bp *BlockPeer) Observe(ctx context.Context) <-chan *Block {
 	if bp.isWork {
-		return bp.blocks, nil
+		return bp.blocks
 	}
 
 	// ctxObserve using for nested control process without stopped primary context
@@ -143,7 +143,7 @@ func (bp *BlockPeer) Observe(ctx context.Context) (<-chan *Block, error) {
 		}
 	}()
 
-	return bp.blocks, nil
+	return bp.blocks
 }
 
 func (bp *BlockPeer) Stop() {
@@ -161,6 +161,12 @@ func (bp *BlockPeer) Stop() {
 	if bp.cancelObserve != nil {
 		bp.cancelObserve()
 	}
+
+	close(bp.blocks)
+	for _, blocksByChannel := range bp.blocksByChannels {
+		close(blocksByChannel)
+	}
+
 	bp.isWork = false
 }
 
@@ -180,6 +186,8 @@ func (bp *BlockPeer) initChannels(ctx context.Context) {
 func (bp *BlockPeer) peerChannel(ctx context.Context, channel string) *blockPeerChannel {
 	seekFrom := bp.seekFrom[channel]
 	if seekFrom > 0 {
+		// it must be -1, because start position here is excluded from array
+		// https://github.com/s7techlab/hlf-sdk-go/blob/master/proto/seek.go#L15
 		seekFrom--
 	}
 

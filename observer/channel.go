@@ -51,7 +51,7 @@ type (
 
 		logger *zap.Logger
 
-		mutex sync.Mutex
+		mu sync.Mutex
 	}
 
 	ChannelObserverStatus int
