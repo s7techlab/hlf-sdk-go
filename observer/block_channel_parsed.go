@@ -101,7 +101,6 @@ func (p *ParsedBlockChannel) Observe(ctx context.Context) (<-chan *ParsedBlock, 
 				if err = p.Stop(); err != nil {
 					p.blockChannel.lastError = err
 				}
-				_ = p.Stop()
 				return
 			}
 		}
