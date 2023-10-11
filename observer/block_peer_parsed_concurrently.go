@@ -68,6 +68,8 @@ func (pbp *ParsedBlockPeer) initParsedChannelsConcurrently(ctx context.Context, 
 func (pbp *ParsedBlockPeer) peerParsedChannelConcurrently(ctx context.Context, channel string, blocksByChannels *ParsedBlocksByChannels) *parsedBlockPeerChannel {
 	seekFrom := pbp.blockPeer.seekFrom[channel]
 	if seekFrom > 0 {
+		// it must be -1, because start position here is excluded from array
+		// https://github.com/s7techlab/hlf-sdk-go/blob/master/proto/seek.go#L15
 		seekFrom--
 	}
 

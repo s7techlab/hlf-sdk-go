@@ -66,6 +66,8 @@ func (bp *BlockPeer) initChannelsConcurrently(ctx context.Context, blocksByChann
 func (bp *BlockPeer) peerChannelConcurrently(ctx context.Context, channel string, blocksByChannels *BlocksByChannels) *blockPeerChannel {
 	seekFrom := bp.seekFrom[channel]
 	if seekFrom > 0 {
+		// it must be -1, because start position here is excluded from array
+		// https://github.com/s7techlab/hlf-sdk-go/blob/master/proto/seek.go#L15
 		seekFrom--
 	}
 
