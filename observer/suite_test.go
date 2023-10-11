@@ -11,3 +11,8 @@ func TestObservers(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Observers Suite")
 }
+
+var _ = BeforeSuite(func() {
+	blockPeerCommonTestBeforeSuit()
+	blockPeerParsedTestBeforeSuit()
+})

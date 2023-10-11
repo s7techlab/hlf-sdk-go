@@ -20,10 +20,7 @@ func (b *BlocksByChannels) Observe() chan *ChannelCommonBlocks {
 	return b.channels
 }
 
-func (bp *BlockPeer) ObserveByChannels(ctx context.Context) (*BlocksByChannels, error) {
-	bp.mu.Lock()
-	defer bp.mu.Unlock()
-
+func (bp *BlockPeer) ObserveByChannels(ctx context.Context) *BlocksByChannels {
 	blocksByChannels := &BlocksByChannels{
 		channels: make(chan *ChannelCommonBlocks),
 	}
@@ -50,10 +47,13 @@ func (bp *BlockPeer) ObserveByChannels(ctx context.Context) (*BlocksByChannels, 
 		bp.Stop()
 	}()
 
-	return blocksByChannels, nil
+	return blocksByChannels
 }
 
 func (bp *BlockPeer) initChannelsConcurrently(ctx context.Context, blocksByChannels *BlocksByChannels) {
+	bp.mu.Lock()
+	defer bp.mu.Unlock()
+
 	for channel := range bp.peerChannels.Channels() {
 		if _, ok := bp.channelObservers[channel]; !ok {
 			bp.logger.Info(`add channel observer concurrently`, zap.String(`channel`, channel))

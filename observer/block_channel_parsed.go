@@ -21,7 +21,7 @@ type (
 		blocks        chan *ParsedBlock
 		isWork        bool
 		cancelObserve context.CancelFunc
-		mutex         sync.Mutex
+		mu            sync.Mutex
 	}
 
 	ParsedBlockChannelOpt func(*ParsedBlockChannel)
@@ -52,8 +52,8 @@ func NewParsedBlockChannel(blockChannel *BlockChannel, opts ...ParsedBlockChanne
 }
 
 func (p *ParsedBlockChannel) Observe(ctx context.Context) (<-chan *ParsedBlock, error) {
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	if p.isWork {
 		return p.blocks, nil
@@ -98,7 +98,10 @@ func (p *ParsedBlockChannel) Observe(ctx context.Context) (<-chan *ParsedBlock, 
 				p.blocks <- block
 
 			case <-ctxObserve.Done():
-				p.Stop()
+				if err = p.Stop(); err != nil {
+					p.blockChannel.lastError = err
+				}
+				_ = p.Stop()
 				return
 			}
 		}
@@ -107,14 +110,19 @@ func (p *ParsedBlockChannel) Observe(ctx context.Context) (<-chan *ParsedBlock, 
 	return p.blocks, nil
 }
 
-func (p *ParsedBlockChannel) Stop() {
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
+func (p *ParsedBlockChannel) Stop() error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	err := p.blockChannel.Stop()
 
 	// If primary context is done then cancel ctxObserver
 	if p.cancelObserve != nil {
 		p.cancelObserve()
 	}
 
+	close(p.blocks)
+
 	p.isWork = false
+	return err
 }
