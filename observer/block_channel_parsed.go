@@ -113,14 +113,14 @@ func (p *ParsedBlockChannel) Stop() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
+	// p.blocks mustn't be closed here, because it is closed elsewhere
+
 	err := p.blockChannel.Stop()
 
 	// If primary context is done then cancel ctxObserver
 	if p.cancelObserve != nil {
 		p.cancelObserve()
 	}
-
-	close(p.blocks)
 
 	p.isWork = false
 	return err

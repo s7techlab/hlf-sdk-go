@@ -150,6 +150,8 @@ func (bp *BlockPeer) Stop() {
 	bp.mu.Lock()
 	defer bp.mu.Unlock()
 
+	// bp.blocks and bp.blocksByChannels mustn't be closed here, because they are closed elsewhere
+
 	for _, c := range bp.channelObservers {
 		if err := c.observer.Stop(); err != nil {
 			zap.Error(err)
@@ -160,11 +162,6 @@ func (bp *BlockPeer) Stop() {
 
 	if bp.cancelObserve != nil {
 		bp.cancelObserve()
-	}
-
-	close(bp.blocks)
-	for _, blocksByChannel := range bp.blocksByChannels {
-		close(blocksByChannel)
 	}
 
 	bp.isWork = false
