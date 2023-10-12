@@ -111,6 +111,8 @@ func (pbp *ParsedBlockPeer) Stop() {
 	pbp.mu.Lock()
 	defer pbp.mu.Unlock()
 
+	// pbp.blocks and pbp.blocksByChannels mustn't be closed here, because they are closed elsewhere
+
 	pbp.blockPeer.Stop()
 
 	for _, c := range pbp.parsedChannelObservers {
@@ -123,11 +125,6 @@ func (pbp *ParsedBlockPeer) Stop() {
 
 	if pbp.cancelObserve != nil {
 		pbp.cancelObserve()
-	}
-
-	close(pbp.blocks)
-	for _, blocksByChannel := range pbp.blocksByChannels {
-		close(blocksByChannel)
 	}
 
 	pbp.isWork = false
