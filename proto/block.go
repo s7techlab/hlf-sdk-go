@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/msp"
 	"github.com/hyperledger/fabric-protos-go/orderer"
@@ -188,4 +189,16 @@ func (x *Block) ValidEnvelopes() []*Envelope {
 	}
 
 	return envs
+}
+
+func (x *Block) BlockDate() *timestamp.Timestamp {
+	var max *timestamp.Timestamp
+	for _, envelope := range x.ValidEnvelopes() {
+		ts := envelope.GetPayload().GetHeader().GetChannelHeader().GetTimestamp()
+
+		if ts.AsTime().After(max.AsTime()) {
+			max = ts
+		}
+	}
+	return max
 }
