@@ -5,8 +5,6 @@ import (
 
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/hyperledger/fabric-protos-go/peer"
-
-	"github.com/s7techlab/hlf-sdk-go/util"
 )
 
 func (x *Block) ValidEnvelopes() []*Envelope {
@@ -52,7 +50,7 @@ func (x *Block) Writes() []*Write {
 						Timestamp:        e.ChannelHeader().GetTimestamp(),
 					}
 
-					blockWrite.KeyObjectType, blockWrite.KeyAttrs = util.SplitCompositeKey(write.Key)
+					blockWrite.KeyObjectType, blockWrite.KeyAttrs = SplitCompositeKey(write.Key)
 					// Normalized key without null byte
 					blockWrite.Key = strings.Join(append([]string{blockWrite.KeyObjectType}, blockWrite.KeyAttrs...), "_")
 

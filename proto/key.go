@@ -1,4 +1,4 @@
-package util
+package proto
 
 import (
 	"unicode/utf8"
