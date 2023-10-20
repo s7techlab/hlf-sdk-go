@@ -63,51 +63,51 @@ var _ = Describe("Block parse test", func() {
 			Expect(parsedBlock.Header.DataHash).ShouldNot(BeEmpty())
 
 			Expect(parsedBlock.Data.Envelopes).Should(HaveLen(1))
-			Expect(parsedBlock.Data.Envelopes[0].Payload.Header.ChannelHeader.ChannelId).Should(Equal(channelName))
+			Expect(parsedBlock.Data.Envelopes[0].ChannelHeader().ChannelId).Should(Equal(channelName))
 			Expect(parsedBlock.Data.Envelopes[0].Signature).ShouldNot(BeEmpty())
-			Expect(parsedBlock.Data.Envelopes[0].Payload.Header.ChannelHeader.TxId).ShouldNot(BeEmpty())
+			Expect(parsedBlock.Data.Envelopes[0].ChannelHeader().TxId).ShouldNot(BeEmpty())
 			Expect(parsedBlock.Data.Envelopes[0].ValidationCode).Should(Equal(peer.TxValidationCode_VALID))
-			Expect(parsedBlock.Data.Envelopes[0].Payload.Header.SignatureHeader.Creator.IdBytes).ShouldNot(BeEmpty())
+			Expect(parsedBlock.Data.Envelopes[0].SignatureHeader().Creator.IdBytes).ShouldNot(BeEmpty())
 
 			if blockNum < 4 {
-				Expect(common.HeaderType(parsedBlock.Data.Envelopes[0].Payload.Header.ChannelHeader.Type)).Should(Equal(common.HeaderType_CONFIG))
+				Expect(common.HeaderType(parsedBlock.Data.Envelopes[0].ChannelHeader().Type)).Should(Equal(common.HeaderType_CONFIG))
 				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.ChannelConfig).ShouldNot(BeZero())
 
-				Expect(parsedBlock.Data.Envelopes[0].Payload.Header.SignatureHeader.Creator.Mspid).Should(Equal(ordererMSP))
-				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions).Should(HaveLen(0))
+				Expect(parsedBlock.Data.Envelopes[0].SignatureHeader().Creator.Mspid).Should(Equal(ordererMSP))
+				Expect(parsedBlock.Data.Envelopes[0].TxActions()).Should(HaveLen(0))
 			} else {
 				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.ChannelConfig).Should(BeZero())
-				Expect(common.HeaderType(parsedBlock.Data.Envelopes[0].Payload.Header.ChannelHeader.Type)).Should(Equal(common.HeaderType_ENDORSER_TRANSACTION))
+				Expect(common.HeaderType(parsedBlock.Data.Envelopes[0].ChannelHeader().Type)).Should(Equal(common.HeaderType_ENDORSER_TRANSACTION))
 
-				Expect(parsedBlock.Data.Envelopes[0].Payload.Header.SignatureHeader.Creator.Mspid).Should(ContainSubstring(org))
-				Expect(parsedBlock.Data.Envelopes[0].Payload.Header.SignatureHeader.Creator.Mspid).Should(ContainSubstring(msp))
+				Expect(parsedBlock.Data.Envelopes[0].SignatureHeader().Creator.Mspid).Should(ContainSubstring(org))
+				Expect(parsedBlock.Data.Envelopes[0].SignatureHeader().Creator.Mspid).Should(ContainSubstring(msp))
 
-				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions).Should(HaveLen(1))
-				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].Header.Creator.Mspid).Should(ContainSubstring(org))
-				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].Header.Creator.Mspid).Should(ContainSubstring(msp))
-				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].Header.Creator.IdBytes).ShouldNot(BeEmpty())
-				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].Payload.Action.Endorsement).ShouldNot(HaveLen(0))
+				Expect(parsedBlock.Data.Envelopes[0].TxActions()).Should(HaveLen(1))
+				Expect(parsedBlock.Data.Envelopes[0].TxActions()[0].Header.Creator.Mspid).Should(ContainSubstring(org))
+				Expect(parsedBlock.Data.Envelopes[0].TxActions()[0].Header.Creator.Mspid).Should(ContainSubstring(msp))
+				Expect(parsedBlock.Data.Envelopes[0].TxActions()[0].Header.Creator.IdBytes).ShouldNot(BeEmpty())
+				Expect(parsedBlock.Data.Envelopes[0].TxActions()[0].Endorsements()).ShouldNot(HaveLen(0))
 
-				for _, endorser := range parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].Payload.Action.Endorsement {
+				for _, endorser := range parsedBlock.Data.Envelopes[0].TxActions()[0].Endorsements() {
 					Expect(endorser.Endorser.Mspid).Should(ContainSubstring(org))
 					Expect(endorser.Endorser.Mspid).Should(ContainSubstring(msp))
 					Expect(endorser.Endorser.IdBytes).ShouldNot(BeEmpty())
 				}
 
-				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].NsReadWriteSet()).Should(HaveLen(2))
-				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].NsReadWriteSet()[0].Rwset.Reads).ShouldNot(HaveLen(0))
-				Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].NsReadWriteSet()[1].Rwset.Reads).ShouldNot(HaveLen(0))
+				Expect(parsedBlock.Data.Envelopes[0].TxActions()[0].NsReadWriteSet()).Should(HaveLen(2))
+				Expect(parsedBlock.Data.Envelopes[0].TxActions()[0].NsReadWriteSet()[0].Rwset.Reads).ShouldNot(HaveLen(0))
+				Expect(parsedBlock.Data.Envelopes[0].TxActions()[0].NsReadWriteSet()[1].Rwset.Reads).ShouldNot(HaveLen(0))
 
-				for _, read := range parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].NsReadWriteSet()[0].Rwset.Reads {
+				for _, read := range parsedBlock.Data.Envelopes[0].TxActions()[0].NsReadWriteSet()[0].Rwset.Reads {
 					Expect(read.Key).Should(ContainSubstring(namespaces))
 					Expect(read.Key).Should(ContainSubstring(chaincodeName))
 				}
 
 				if blockNum == 6 {
-					Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].NsReadWriteSet()[0].Rwset.Writes).Should(HaveLen(5))
+					Expect(parsedBlock.Data.Envelopes[0].TxActions()[0].NsReadWriteSet()[0].Rwset.Writes).Should(HaveLen(5))
 				}
 
-				for _, read := range parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].NsReadWriteSet()[1].Rwset.Reads {
+				for _, read := range parsedBlock.Data.Envelopes[0].TxActions()[0].NsReadWriteSet()[1].Rwset.Reads {
 					Expect(read.Key).ShouldNot(ContainSubstring(namespaces))
 					if blockNum < 7 {
 						Expect(read.Key).Should(ContainSubstring(chaincodeName))
@@ -117,9 +117,9 @@ var _ = Describe("Block parse test", func() {
 				}
 
 				if blockNum == 7 {
-					Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].NsReadWriteSet()[1].Rwset.Writes).Should(HaveLen(11))
+					Expect(parsedBlock.Data.Envelopes[0].TxActions()[0].NsReadWriteSet()[1].Rwset.Writes).Should(HaveLen(11))
 				} else if blockNum > 7 {
-					Expect(parsedBlock.Data.Envelopes[0].Payload.Transaction.Actions[0].NsReadWriteSet()[1].Rwset.Writes).Should(HaveLen(1))
+					Expect(parsedBlock.Data.Envelopes[0].TxActions()[0].NsReadWriteSet()[1].Rwset.Writes).Should(HaveLen(1))
 				}
 			}
 

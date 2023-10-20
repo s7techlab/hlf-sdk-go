@@ -11,6 +11,18 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/util/txflags"
 )
 
+func (x *Envelope) ChannelHeader() *common.ChannelHeader {
+	return x.GetPayload().GetHeader().GetChannelHeader()
+}
+
+func (x *Envelope) SignatureHeader() *SignatureHeader {
+	return x.GetPayload().GetHeader().GetSignatureHeader()
+}
+
+func (x *Envelope) TxActions() []*TransactionAction {
+	return x.GetPayload().GetTransaction().GetActions()
+}
+
 func ParseBlockData(blockData [][]byte, txFilter txflags.ValidationFlags) (*BlockData, error) {
 	var envelopes []*Envelope
 	for i, envelope := range blockData {

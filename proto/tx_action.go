@@ -11,15 +11,19 @@ import (
 )
 
 func (x *TransactionAction) Event() *peer.ChaincodeEvent {
-	return x.Payload.Action.ProposalResponsePayload.Extension.Events
+	return x.GetPayload().GetAction().GetProposalResponsePayload().GetExtension().GetEvents()
 }
 
 func (x *TransactionAction) NsReadWriteSet() []*NsReadWriteSet {
-	return x.Payload.Action.ProposalResponsePayload.Extension.Results.NsRwset
+	return x.GetPayload().GetAction().GetProposalResponsePayload().GetExtension().GetResults().GetNsRwset()
 }
 
 func (x *TransactionAction) ChaincodeSpec() *peer.ChaincodeSpec {
-	return x.Payload.ChaincodeProposalPayload.Input.ChaincodeSpec
+	return x.GetPayload().GetChaincodeProposalPayload().GetInput().GetChaincodeSpec()
+}
+
+func (x *TransactionAction) Endorsements() []*Endorsement {
+	return x.GetPayload().GetAction().GetEndorsement()
 }
 
 func ParseTxActions(txActions []*peer.TransactionAction) ([]*TransactionAction, error) {

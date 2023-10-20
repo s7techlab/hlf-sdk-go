@@ -11,7 +11,7 @@ import (
 func (x *Transaction) Events() []*peer.ChaincodeEvent {
 	var events []*peer.ChaincodeEvent
 	for _, a := range x.Actions {
-		if a.Payload.Action.ProposalResponsePayload.Extension.Events != nil {
+		if a.GetPayload().GetAction().GetProposalResponsePayload().GetExtension().GetEvents() != nil {
 			events = append(events, a.Payload.Action.ProposalResponsePayload.Extension.Events)
 		}
 	}
