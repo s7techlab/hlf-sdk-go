@@ -8,6 +8,7 @@ import (
 	"github.com/hyperledger/fabric-protos-go/orderer"
 	"github.com/hyperledger/fabric/msp"
 
+	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/proto"
 )
 
@@ -24,8 +25,8 @@ func (sb SeekBlock) CreateEnvelope() (*common.Envelope, error) {
 }
 
 func NewSeekGenesisEnvelope(channel string, signer msp.SigningIdentity, tlsCertHash []byte) (*common.Envelope, error) {
-	start := proto.NewSeekSpecified(0)
-	stop := proto.NewSeekSpecified(0)
+	start := api.NewSeekSpecified(0)
+	stop := api.NewSeekSpecified(0)
 
 	return NewSeekBlockEnvelope(channel, signer, start, stop, tlsCertHash)
 }
@@ -45,7 +46,7 @@ func NewSeekBlockEnvelope(channel string, signer msp.SigningIdentity, start, sto
 		return nil, fmt.Errorf(`tx id: %w`, err)
 	}
 
-	seekInfo, err := proto.NewMarshalledSeekInfo(start, stop)
+	seekInfo, err := api.NewMarshalledSeekInfo(start, stop)
 	if err != nil {
 		return nil, fmt.Errorf(`seekInfo: %w`, err)
 	}
