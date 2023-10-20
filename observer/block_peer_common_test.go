@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	sdkmocks "github.com/s7techlab/hlf-sdk-go/api/mocks"
+	sdkmocks "github.com/s7techlab/hlf-sdk-go/api/mock"
 	"github.com/s7techlab/hlf-sdk-go/observer"
 	testdata "github.com/s7techlab/hlf-sdk-go/testdata/blocks"
 )
