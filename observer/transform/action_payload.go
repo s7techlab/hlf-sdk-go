@@ -2,6 +2,7 @@ package transform
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/golang/protobuf/proto"
 
@@ -12,7 +13,7 @@ type (
 	ActionPayloadTransformer interface {
 		Transform(*hlfproto.TransactionAction) error
 	}
-	ActionPayloadMatch  func(*hlfproto.TransactionAction) bool
+	ActionPayloadMatch  func(string) bool
 	ActionPayloadMutate func(*hlfproto.TransactionAction) error
 
 	ActionPayload struct {
@@ -29,35 +30,51 @@ func NewActionPayload(match ActionPayloadMatch, mutators ...ActionPayloadMutate)
 }
 
 func (action *ActionPayload) Transform(txAction *hlfproto.TransactionAction) error {
-	if !action.match(txAction) {
+	args := txAction.ChaincodeSpec().GetInput().GetArgs()
+	if len(args) == 0 {
 		return nil
 	}
-	for _, mutate := range action.mutators {
-		if err := mutate(txAction); err != nil {
-			return fmt.Errorf(`kv write mutate: %w`, err)
+
+	// args[0] save name method
+	if action.match(string(args[0])) {
+		for _, mutate := range action.mutators {
+			if err := mutate(txAction); err != nil {
+				return fmt.Errorf(`Action payload mutate: %w`, err)
+			}
 		}
 	}
 	return nil
 }
 
-func ActionPayloadMatchNil(txAction *hlfproto.TransactionAction) bool {
-	return txAction != nil
+func ActionPayloadMatchFunc(str string) ActionPayloadMatch {
+	return func(methodName string) bool {
+		return methodName == str
+	}
 }
 
 func ActionPayloadMutateProto(target proto.Message) ActionPayloadMutate {
 	return func(txAction *hlfproto.TransactionAction) error {
-		payloadJSON, err := Proto2JSON(txAction.BytesPayload, target)
-		if err != nil {
-			return err
+		if len(txAction.GetBytesPayload()) == 0 {
+			return nil
 		}
-		txAction.BytesPayload = payloadJSON
+
+		if string(txAction.GetBytesPayload())[:1] == "{" {
+			return nil
+		}
+
+		payloadJSON, err := Proto2JSON(txAction.GetBytesPayload(), target)
+		if err != nil {
+			log.Printf("%s", err)
+		}
+
+		txAction.BytesPayload = ReplaceBytesU0000ToNullBytes(payloadJSON)
 		return nil
 	}
 }
 
-func ActionPayloadProto(txAction proto.Message) *ActionPayload {
+func ActionPayloadProto(methodName string, txAction proto.Message) *ActionPayload {
 	return NewActionPayload(
-		ActionPayloadMatchNil,
+		ActionPayloadMatchFunc(methodName),
 		ActionPayloadMutateProto(txAction),
 	)
 }

@@ -127,7 +127,7 @@ func (s *Action) Transform(block *observer.ParsedBlock) error {
 
 				for _, actionPayloadTransform := range s.actionPayloadTransformers {
 					if err := actionPayloadTransform.Transform(txAction); err != nil {
-						return fmt.Errorf(`action payload transform: %w`, err)
+						return fmt.Errorf(`action payload transformer: %w`, err)
 					}
 				}
 			}
