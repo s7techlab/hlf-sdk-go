@@ -4,10 +4,13 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"path"
+
+	"github.com/pkg/errors"
+
+	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
 var (
@@ -15,7 +18,7 @@ var (
 	ErrKeyNotFound  = errors.New("key not found")
 )
 
-func FirstSigningFromPath(mspID string, certDir, keyDir string) (*SigningIdentity, error) {
+func FirstFromPath(mspID string, certDir, keyDir string) (*identity, error) {
 	certFile, err := readFirstFile(certDir)
 	if err != nil {
 		return nil, err
@@ -26,11 +29,11 @@ func FirstSigningFromPath(mspID string, certDir, keyDir string) (*SigningIdentit
 		return nil, err
 	}
 
-	return NewSigning(mspID, cert, key), nil
+	return New(mspID, cert, key), nil
 }
 
-func ListSigningFromPath(mspID string, certDir, keyDir string) ([]*SigningIdentity, error) {
-	var identities []*SigningIdentity
+func ListFromPath(mspID string, certDir, keyDir string) ([]api.Identity, error) {
+	var identities []api.Identity
 
 	certFiles, err := readFiles(certDir)
 	if err != nil {
@@ -43,7 +46,7 @@ func ListSigningFromPath(mspID string, certDir, keyDir string) ([]*SigningIdenti
 			return nil, err
 		}
 
-		identities = append(identities, NewSigning(mspID, cert, key))
+		identities = append(identities, New(mspID, cert, key))
 	}
 
 	return identities, nil
@@ -83,7 +86,7 @@ func Certificate(certRaw []byte) (*x509.Certificate, error) {
 	return cert, nil
 }
 
-// Key parses raw key btes
+// Key parses raw key bytes
 func Key(keyRaw []byte) (interface{}, error) {
 	keyPEM, _ := pem.Decode(keyRaw)
 	if keyPEM == nil {

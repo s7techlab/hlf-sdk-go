@@ -1,46 +1,23 @@
 package crypto
 
 import (
-	"github.com/pkg/errors"
+	"crypto/x509"
 
-	"github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
+	"github.com/s7techlab/hlf-sdk-go/api/config"
 )
 
-type Config struct {
-	Type    string            `yaml:"type"`
-	Options map[string]string `yaml:"options"`
-}
-
-var (
-	ErrUnknown      = errors.New(`unknown`)
-	ErrTypeRequired = errors.New(`type required`)
-
-	DefaultConfig = &Config{
-		Type:    ecdsa.Module,
-		Options: ecdsa.DefaultOpts,
-	}
-
-	DefaultSuite, _ = NewSuiteByConfig(DefaultConfig, false)
-)
-
-func NewSuite(name string, opts map[string]string) (Suite, error) {
-	switch name {
-	case ecdsa.Module:
-		return ecdsa.New(opts)
-
-	default:
-		return nil, ErrUnknown
-	}
-}
-
-func NewSuiteByConfig(config *Config, useDefault bool) (Suite, error) {
-	if useDefault && config == nil {
-		config = DefaultConfig
-	}
-
-	if config.Type == `` {
-		return nil, ErrTypeRequired
-	}
-
-	return NewSuite(config.Type, config.Options)
+// CryptoSuite describes common cryptographic operations
+type CryptoSuite interface {
+	// Sign is used for signing message by presented private key
+	Sign(msg []byte, key interface{}) ([]byte, error)
+	// Verify is used for verifying signature for presented message and public key
+	Verify(publicKey interface{}, msg, sig []byte) error
+	// Hash is used for hashing presented data
+	Hash(data []byte) []byte
+	// NewPrivateKey generates new private key
+	NewPrivateKey() (interface{}, error)
+	// GetSignatureAlgorithm returns signature algorithm
+	GetSignatureAlgorithm() x509.SignatureAlgorithm
+	// Initialize is used for suite instantiation using presented options
+	Initialize(opts config.CryptoSuiteOpts) (CryptoSuite, error)
 }

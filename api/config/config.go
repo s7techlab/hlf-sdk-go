@@ -4,12 +4,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/s7techlab/hlf-sdk-go/crypto"
 )
 
 type Config struct {
-	Crypto    *crypto.Config     `yaml:"crypto"`
+	Crypto    CryptoConfig       `yaml:"crypto"`
 	Orderers  []ConnectionConfig `yaml:"orderers"`
 	Discovery DiscoveryConfig    `yaml:"discovery"`
 	// peer pool for local configuration without gossip discovery
@@ -27,9 +25,9 @@ type ConnectionConfig struct {
 }
 
 type CAConfig struct {
-	Crypto *crypto.Config `yaml:"crypto"`
-	Host   string         `yaml:"host"`
-	Tls    TlsConfig      `yaml:"tls"`
+	Crypto CryptoConfig `yaml:"crypto"`
+	Host   string       `yaml:"host"`
+	Tls    TlsConfig    `yaml:"tls"`
 }
 
 type PoolConfig struct {
@@ -100,6 +98,13 @@ type DiscoveryChaincode struct {
 	Version string `json:"version"`
 	Policy  string `json:"policy"`
 }
+
+type CryptoConfig struct {
+	Type    string          `yaml:"type"`
+	Options CryptoSuiteOpts `yaml:"options"`
+}
+
+type CryptoSuiteOpts map[string]interface{}
 
 type Duration struct {
 	time.Duration

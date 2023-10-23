@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 
+	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/identity"
 )
 
@@ -34,7 +35,7 @@ type (
 	}
 )
 
-func (m MSP) MustSigner() *identity.SigningIdentity {
+func (m MSP) MustSigner() api.Identity {
 	signer, err := m.Signer()
 	if err != nil {
 		panic(err)
@@ -43,7 +44,7 @@ func (m MSP) MustSigner() *identity.SigningIdentity {
 	return signer
 }
 
-func (m MSP) Signer() (*identity.SigningIdentity, error) {
+func (m MSP) Signer() (api.Identity, error) {
 	mspConfig, err := m.MSP(identity.WithSkipConfig())
 	if err != nil {
 		return nil, err
@@ -57,7 +58,7 @@ func (m MSP) Signer() (*identity.SigningIdentity, error) {
 	return signer, nil
 }
 
-func (m MSP) MSP(opts ...identity.MSPOpt) (*identity.MSP, error) {
+func (m MSP) MSP(opts ...identity.MSPOpt) (identity.MSP, error) {
 	if m.ID == `` {
 		return nil, ErrMSPIDEmpty
 	}

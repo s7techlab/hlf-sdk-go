@@ -10,34 +10,36 @@ import (
 	"github.com/hyperledger/fabric/msp"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
+
+	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
 // MSP - contains all parsed identities from msp folder
 // Should be used instead of single `api.Identity` which contains ONLY msp identity
 
 type (
-	MSP struct {
+	MSPConfig struct {
 		// identity from 'signcerts'
-		signer *SigningIdentity
+		signer api.Identity
 		// identities from 'admincerts'
-		admins []*SigningIdentity
+		admins []api.Identity
 		// identities from 'users'
-		users []*SigningIdentity
+		users []api.Identity
 
-		config *mspproto.FabricMSPConfig
+		mspConfig *mspproto.FabricMSPConfig
 	}
 
 	MSPFiles map[string][]byte
 
-	//MSP interface {
-	//	GetMSPIdentifier() string
-	//	MSPConfig() *mspproto.FabricMSPConfig
-	//
-	//	Signer() *SigningIdentity
-	//	Admins() []*SigningIdentity
-	//	Users() []*SigningIdentity
-	//	AdminOrSigner() *SigningIdentity
-	//}
+	MSP interface {
+		GetMSPIdentifier() string
+		MSPConfig() *mspproto.FabricMSPConfig
+
+		Signer() api.Identity
+		Admins() []api.Identity
+		Users() []api.Identity
+		AdminOrSigner() api.Identity
+	}
 
 	MSPOpts struct {
 		mspPath string
@@ -92,18 +94,63 @@ func FabricMSPConfigFromPath(mspID, mspDir string) (*mspproto.FabricMSPConfig, e
 }
 
 // MSPFromConfig created  msp config from msp.FabricMSPConfig
-func MSPFromConfig(fabricMspConfig *mspproto.FabricMSPConfig) (*MSP, error) {
-	mspInstance := &MSP{
-		admins: nil,
-		signer: nil, // no signer when creating from FabricMSPConfig
-		users:  nil,
-		config: fabricMspConfig,
+func MSPFromConfig(fabricMspConfig *mspproto.FabricMSPConfig) (*MSPConfig, error) {
+	mspConfig := &MSPConfig{
+		admins:    nil,
+		signer:    nil, // no signer when creating from FabricMSPConfig
+		users:     nil,
+		mspConfig: fabricMspConfig,
 	}
-	return mspInstance, nil
+	return mspConfig, nil
+}
+
+func WithSkipConfig() MSPOpt {
+	return func(mspOpts *MSPOpts) {
+		mspOpts.skipConfig = true
+	}
+}
+
+func WithAdminMSPPath(adminMSPPath string) MSPOpt {
+	return func(mspOpts *MSPOpts) {
+		mspOpts.adminMSPPath = adminMSPPath
+	}
+}
+
+func WithSignCertPath(signCertPath string) MSPOpt {
+	return func(mspOpts *MSPOpts) {
+		mspOpts.signCertPath = signCertPath
+	}
+}
+
+func WithSignKeyPath(signKeyPath string) MSPOpt {
+	return func(mspOpts *MSPOpts) {
+		mspOpts.signKeyPath = signKeyPath
+	}
+}
+
+func WithSignCert(signCert []byte) MSPOpt {
+	return func(mspOpts *MSPOpts) {
+		mspOpts.signCert = signCert
+	}
+}
+
+func WithSignKey(signKey []byte) MSPOpt {
+	return func(mspOpts *MSPOpts) {
+		mspOpts.signKey = signKey
+	}
+}
+
+func MustMSPFromPath(mspID, mspPath string, opts ...MSPOpt) *MSPConfig {
+	mspConfig, err := MSPFromPath(mspID, mspPath, opts...)
+	if err != nil {
+		panic(err)
+	}
+
+	return mspConfig
 }
 
 // MSPFromPath loads msp config from filesystem
-func MSPFromPath(mspID, mspPath string, opts ...MSPOpt) (*MSP, error) {
+func MSPFromPath(mspID, mspPath string, opts ...MSPOpt) (*MSPConfig, error) {
 	var err error
 	mspOpts := &MSPOpts{
 		mspPath: mspPath,
@@ -116,10 +163,24 @@ func MSPFromPath(mspID, mspPath string, opts ...MSPOpt) (*MSP, error) {
 	if mspOpts.logger != nil {
 		logger = mspOpts.logger
 	}
+
 	applyDefaultMSPPaths(mspOpts)
+
 	logger.Debug(`load msp`, zap.Reflect(`config`, mspOpts))
 
-	mspInstance := &MSP{}
+	mspConfig := &MSPConfig{}
+
+	if len(mspOpts.signCert) != 0 && len(mspOpts.signKey) != 0 {
+		mspConfig.signer, err = FromBytes(mspID, mspOpts.signCert, mspOpts.signKey)
+		if err != nil {
+			return nil, err
+		}
+	} else if mspOpts.signCertPath != "" && mspOpts.signKeyPath != "" {
+		mspConfig.signer, err = FromCertKeyPath(mspID, mspOpts.signCertPath, mspOpts.signKeyPath)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	// admin in separate msp path
 	if mspOpts.adminMSPPath != `` {
@@ -127,13 +188,13 @@ func MSPFromPath(mspID, mspPath string, opts ...MSPOpt) (*MSP, error) {
 			zap.String(`admin msp path`, mspOpts.adminMSPPath),
 			zap.String(`keystore path`, KeystorePath(mspOpts.adminMSPPath)))
 
-		mspInstance.admins, err = ListSigningFromPath(mspID, SignCertsPath(mspOpts.adminMSPPath), KeystorePath(mspOpts.adminMSPPath))
+		mspConfig.admins, err = ListFromPath(mspID, SignCertsPath(mspOpts.adminMSPPath), KeystorePath(mspOpts.adminMSPPath))
 
 		if err != nil {
 			return nil, fmt.Errorf(`read admin identity from=%s: %w`, mspOpts.adminMSPPath, err)
 		}
 	} else if mspOpts.adminCertsPath != `` {
-		mspInstance.admins, err = ListSigningFromPath(mspID, mspOpts.adminCertsPath, mspOpts.keystorePath)
+		mspConfig.admins, err = ListFromPath(mspID, mspOpts.adminCertsPath, mspOpts.keystorePath)
 	}
 	if err != nil {
 		if !os.IsNotExist(err) {
@@ -141,60 +202,63 @@ func MSPFromPath(mspID, mspPath string, opts ...MSPOpt) (*MSP, error) {
 		}
 	}
 
-	logger.Debug(`admin identities loaded`, zap.Int(`num`, len(mspInstance.admins)))
+	logger.Debug(`admin identities loaded`, zap.Int(`num`, len(mspConfig.admins)))
 
 	if len(mspOpts.userPaths) > 0 {
 		for _, userPath := range mspOpts.userPaths {
-			users, err := ListSigningFromPath(mspID, userPath, mspOpts.keystorePath)
+			var users []api.Identity
+			users, err = ListFromPath(mspID, userPath, mspOpts.keystorePath)
 			// usePaths set explicit, so if dir is not exists - error occurred
 			if err != nil {
 				return nil, fmt.Errorf(`read users identity from=%s: %w`, userPath, err)
 			}
 
-			mspInstance.users = append(mspInstance.users, users...)
+			mspConfig.users = append(mspConfig.users, users...)
 		}
 
-		logger.Debug(`user identities loaded`, zap.Int(`num`, len(mspInstance.users)))
+		logger.Debug(`user identities loaded`, zap.Int(`num`, len(mspConfig.users)))
 	}
 
-	if mspOpts.signCertsPath != `` {
-		mspInstance.signer, err = FirstSigningFromPath(mspID, mspOpts.signCertsPath, mspOpts.keystorePath)
+	if mspOpts.signCertsPath != `` && mspConfig.signer == nil {
+		mspConfig.signer, err = FirstFromPath(mspID, mspOpts.signCertsPath, mspOpts.keystorePath)
 		if err != nil {
 			return nil, fmt.Errorf(`read signer identity from=%s: %w`, mspOpts.signCertsPath, err)
 		}
 	}
 
-	if mspInstance.config, err = FabricMSPConfigFromPath(mspID, mspOpts.mspPath); err != nil {
-		return nil, err
+	if !mspOpts.skipConfig {
+		if mspConfig.mspConfig, err = FabricMSPConfigFromPath(mspID, mspOpts.mspPath); err != nil {
+			return nil, err
+		}
 	}
 
 	if mspOpts.validateCertChain {
 		// todo: validate
 	}
 
-	return mspInstance, nil
+	return mspConfig, nil
 }
 
-func (m *MSP) Identifier() string {
-	return m.config.GetName()
+func (m *MSPConfig) GetMSPIdentifier() string {
+	return m.mspConfig.GetName()
 }
 
-func (m *MSP) Signer() *SigningIdentity {
+func (m *MSPConfig) Signer() api.Identity {
 	return m.signer
 }
 
-func (m *MSP) Admins() []*SigningIdentity {
+func (m *MSPConfig) Admins() []api.Identity {
 	return m.admins
 }
 
-func (m *MSP) Users() []*SigningIdentity {
+func (m *MSPConfig) Users() []api.Identity {
 	return m.users
 }
 
 // AdminOrSigner - returns admin identity if exists, in another case return msp.
 // installation, fetching  cc list should happen from admin identity
 // if there is admin identity, use it. in another case - try with msp identity
-func (m *MSP) AdminOrSigner() *SigningIdentity {
+func (m *MSPConfig) AdminOrSigner() api.Identity {
 	if len(m.admins) != 0 {
 		return m.admins[0]
 	}
@@ -202,12 +266,12 @@ func (m *MSP) AdminOrSigner() *SigningIdentity {
 	return m.signer
 }
 
-func (m *MSP) Config() *mspproto.FabricMSPConfig {
-	return m.config
+func (m *MSPConfig) MSPConfig() *mspproto.FabricMSPConfig {
+	return m.mspConfig
 }
 
-func (m *MSP) Serialize() (MSPFiles, error) {
-	return SerializeMSP(m.config)
+func (m *MSPConfig) Serialize() (MSPFiles, error) {
+	return SerializeMSP(m.mspConfig)
 }
 
 func (mc MSPFiles) Add(path string, file []byte) {

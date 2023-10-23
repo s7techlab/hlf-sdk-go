@@ -15,6 +15,8 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/sha3"
+
+	"github.com/s7techlab/hlf-sdk-go/api/config"
 )
 
 const (
@@ -34,7 +36,7 @@ const (
 )
 
 var (
-	DefaultOpts = map[string]string{`curve`: `P256`, `signatureAlgorithm`: `SHA256`, `hash`: `SHA2-256`}
+	DefaultOpts = config.CryptoSuiteOpts{`curve`: `P256`, `signatureAlgorithm`: `SHA256`, `hash`: `SHA2-256`}
 
 	// precomputed curves half order values for efficiency
 	ecCurveHalfOrders = map[elliptic.Curve]*big.Int{
@@ -85,6 +87,7 @@ type Suite struct {
 	hasher       func() hash.Hash
 	sigAlgorithm x509.SignatureAlgorithm
 }
+
 type ecdsaSignature struct {
 	R, S *big.Int
 }
