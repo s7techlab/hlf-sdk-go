@@ -7,7 +7,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/ledger/rwset/kvrwset"
 
-	"github.com/s7techlab/hlf-sdk-go/util"
+	hlfproto "github.com/s7techlab/hlf-sdk-go/proto"
 )
 
 type (
@@ -45,7 +45,7 @@ func (kvread *KVRead) Transform(w *kvrwset.KVRead) error {
 
 func KVReadMatchKeyPrefix(prefixes ...string) KVReadMatch {
 	return func(read *kvrwset.KVRead) bool {
-		keyPrefix, _ := util.SplitCompositeKey(read.Key)
+		keyPrefix, _ := hlfproto.SplitCompositeKey(read.Key)
 		for _, prefix := range prefixes {
 			if keyPrefix == prefix {
 				return true
@@ -78,9 +78,9 @@ func KVReadKeyObjectTypeReplaceByMap(mapping map[string]string, additionalMutato
 
 func KVReadKeyReplacer(mapping map[string]string) KVReadMutate {
 	return func(read *kvrwset.KVRead) error {
-		prefix, attributes := util.SplitCompositeKey(read.Key)
+		prefix, attributes := hlfproto.SplitCompositeKey(read.Key)
 		if mappedPrefix, ok := mapping[prefix]; ok {
-			mappedKey, err := util.CreateCompositeKey(mappedPrefix, attributes)
+			mappedKey, err := hlfproto.CreateCompositeKey(mappedPrefix, attributes)
 			if err != nil {
 				return fmt.Errorf(`create mapped composite key: %w`, err)
 			}

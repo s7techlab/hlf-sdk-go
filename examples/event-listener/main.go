@@ -42,7 +42,7 @@ func main() {
 		log.Fatalln(`CHAINCODE env must be defined`)
 	}
 
-	id, err := identity.SignerFromMSPPath(mspId, mspPath)
+	signer, err := identity.NewSigningFromMSPPath(mspId, mspPath)
 
 	if err != nil {
 		log.Fatalln(`Failed to load identity:`, err)
@@ -50,7 +50,8 @@ func main() {
 
 	l, _ := zap.NewProduction()
 
-	core, err := client.New(id, client.WithConfigYaml(configPath), client.WithLogger(l))
+	core, err := client.New(context.Background(),
+		client.WithDefaultSigner(signer), client.WithConfigYaml(configPath), client.WithLogger(l))
 	if err != nil {
 		log.Fatalln(`unable to initialize core:`, err)
 	}

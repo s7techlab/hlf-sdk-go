@@ -9,10 +9,11 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 
 	"github.com/s7techlab/hlf-sdk-go/client"
-	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
 	_ "github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
 	"github.com/s7techlab/hlf-sdk-go/identity"
 	"github.com/s7techlab/hlf-sdk-go/proto"
+	"github.com/s7techlab/hlf-sdk-go/service/systemcc/cscc"
+	"github.com/s7techlab/hlf-sdk-go/service/systemcc/qscc"
 )
 
 func main() {
@@ -20,14 +21,15 @@ func main() {
 	mspId := "Org1MSP"
 	configPath := "./cfg.yaml"
 
-	id, err := identity.FromCertKeyPath(
+	signer, err := identity.NewSigningFromFile(
 		mspId,
 		// PROVIDE YOUR OWN PATHS
 		"../../../../github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/cert.pem",
 		"../../../../github.com/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/02a48982a93c9a1fbf7e9702f82d14578aef9662362346ecfe8b3cde50da6799_sk",
 	)
 
-	core, err := client.New(id, client.WithConfigYaml(configPath))
+	core, err := client.New(context.Background(),
+		client.WithDefaultSigner(signer), client.WithConfigYaml(configPath))
 	if err != nil {
 		log.Fatalln(`unable to initialize core:`, err)
 	}
@@ -35,7 +37,7 @@ func main() {
 	ctx := context.Background()
 
 	// get chainInfo for all joined channels
-	chInfo, err := system.NewCSCC(core, proto.FabricV2).GetChannels(ctx, &empty.Empty{})
+	chInfo, err := cscc.NewCSCC(core, proto.FabricV2).GetChannels(ctx, &empty.Empty{})
 	if err != nil {
 		log.Fatalln(`failed to fetch channel list:`, err)
 	}
@@ -43,7 +45,7 @@ func main() {
 		fmt.Printf("Fetching info about channel: %s\n", ch.ChannelId)
 		// get blockchain info about channel
 
-		blockchainInfo, err := system.NewQSCC(core).GetChainInfo(ctx, &system.GetChainInfoRequest{ChannelName: ch.ChannelId})
+		blockchainInfo, err := qscc.NewQSCC(core).GetChainInfo(ctx, &qscc.GetChainInfoRequest{ChannelName: ch.ChannelId})
 		if err != nil {
 			fmt.Println(`Failed to fetch info about channel:`, err)
 			continue

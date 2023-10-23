@@ -15,7 +15,7 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
 )
 
-func (c *core) Invoke(
+func (c *Client) Invoke(
 	ctx context.Context,
 	channel string,
 	ccName string,
@@ -60,7 +60,7 @@ func (c *core) Invoke(
 	return res, txID, nil
 }
 
-func (c *core) Query(
+func (c *Client) Query(
 	ctx context.Context,
 	channel string,
 	chaincode string,
@@ -80,7 +80,7 @@ func (c *core) Query(
 	return peer.Query(ctx, channel, chaincode, args, identity, transient)
 }
 
-func (c *core) Events(
+func (c *Client) Events(
 	ctx context.Context,
 	channel string,
 	chaincode string,
@@ -103,7 +103,7 @@ func (c *core) Events(
 	return peer.Events(ctx, channel, chaincode, identity, blockRange...)
 }
 
-func (c *core) Blocks(
+func (c *Client) Blocks(
 	ctx context.Context,
 	channel string,
 	identity msp.SigningIdentity,

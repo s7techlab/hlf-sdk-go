@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric/msp"
@@ -14,9 +13,10 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
-	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
+	"github.com/s7techlab/hlf-sdk-go/client/grpc"
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
 	"github.com/s7techlab/hlf-sdk-go/proto"
+	"github.com/s7techlab/hlf-sdk-go/service/systemcc/cscc"
 )
 
 type Channel struct {
@@ -83,7 +83,7 @@ func (c *Channel) Chaincode(serviceDiscCtx context.Context, ccName string) (api.
 				if err != nil {
 					return fmt.Errorf("initialize endorsers for MSP: %s: %w", mspID, err)
 				}
-				if err = c.peerPool.Add(mspID, p, api.StrategyGRPC(5*time.Second)); err != nil {
+				if err = c.peerPool.Add(mspID, p, StrategyGRPC(grpc.DefaultGrpcCheckPeriod)); err != nil {
 					return fmt.Errorf("add endorser peer to pool: %s:%w", mspID, err)
 				}
 				return nil
@@ -136,12 +136,12 @@ func (c *Channel) Join(ctx context.Context) error {
 		return fmt.Errorf(`no peeers for msp if=%s`, c.mspId)
 	}
 
-	cscc := system.NewCSCC(
+	csccSvc := cscc.NewCSCC(
 		// use specified peer to process join (pool can contain more than one peer)
 		peers[0],
 		proto.FabricVersionIsV2(c.fabricV2))
 
-	_, err = cscc.JoinChain(ctx, &system.JoinChainRequest{
+	_, err = csccSvc.JoinChain(ctx, &cscc.JoinChainRequest{
 		Channel:      c.chanName,
 		GenesisBlock: channelGenesis,
 	})

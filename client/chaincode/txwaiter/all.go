@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
+	clienterr "github.com/s7techlab/hlf-sdk-go/client/errors"
 )
 
 // All - need use on invoke flow for check transaction codes for each organization from endorsement policy
@@ -17,7 +18,7 @@ func All(cfg *api.DoOptions) (api.TxWaiter, error) {
 	}
 
 	// make delivers for each mspID
-	errD := new(api.MultiError)
+	errD := new(clienterr.MultiError)
 	for i := range cfg.EndorsingMspIDs {
 		peerDeliver, err := cfg.Pool.DeliverClient(cfg.EndorsingMspIDs[i], cfg.Identity)
 		if err != nil {
@@ -66,7 +67,7 @@ func (w *allMspWaiter) Wait(ctx context.Context, channel string, txId string) er
 	close(errS)
 
 	if w.hasErr {
-		mErr := &api.MultiError{}
+		mErr := &clienterr.MultiError{}
 		for e := range errS {
 			if e != nil {
 				mErr.Errors = append(mErr.Errors, e)

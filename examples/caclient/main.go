@@ -11,8 +11,9 @@ import (
 	"os"
 	"time"
 
-	apiCa "github.com/s7techlab/hlf-sdk-go/api/ca"
-	"github.com/s7techlab/hlf-sdk-go/ca"
+	"github.com/s7techlab/hlf-sdk-go/client/ca"
+	"github.com/s7techlab/hlf-sdk-go/client/ca/http"
+
 	_ "github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
 	"github.com/s7techlab/hlf-sdk-go/identity"
 )
@@ -38,27 +39,26 @@ func main() {
 		log.Fatalln(`KEY_PATH env must be defined`)
 	}
 
-	id, err := identity.NewMSPIdentity(mspId, certPath, keyPath)
+	signer, err := identity.NewSigningFromFile(mspId, certPath, keyPath)
 	if err != nil {
 		log.Fatalln(`failed to load identity:`, err)
 	}
 
-	core, err := ca.NewCore(mspId, id, ca.WithYamlConfig(configPath))
+	caClient, err := http.New(signer, http.WithYamlConfig(configPath))
 	if err != nil {
 		log.Fatalln(`failed to load CA core:`, err)
 	}
 
-	log.Println(core.CertificateList(context.Background(), apiCa.WithEnrollId(`admin`)))
-	log.Println(core.AffiliationList(context.Background()))
+	log.Println(caClient.CertificateList(context.Background(), ca.WithEnrollId(`admin`)))
+	log.Println(caClient.AffiliationList(context.Background()))
 	//log.Println(core.AffiliationCreate(context.Background(), `test`))
-	log.Fatalln(``)
 
 	name := `yarrrr` + RandomString(2)
 	ctx := context.Background()
 
-	log.Println(core.Register(ctx, apiCa.RegistrationRequest{Name: name, Secret: `123321`}))
+	log.Println(caClient.Register(ctx, ca.RegistrationRequest{Name: name, Secret: `123321`}))
 
-	log.Println(core.Enroll(ctx, name, `123321`, &x509.CertificateRequest{
+	log.Println(caClient.Enroll(ctx, name, `123321`, &x509.CertificateRequest{
 		Subject: struct {
 			Country, Organization, OrganizationalUnit []string
 			Locality, Province                        []string

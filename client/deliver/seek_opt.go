@@ -17,7 +17,7 @@ type SeekOptConverter struct {
 	Logger           *zap.Logger
 }
 
-func NewSeekOptConverter(channelInfo api.ChannelInfo, logger *zap.Logger) *SeekOptConverter {
+func NewSeekOptConverter(channelInfo api.ChainInfoGetter, logger *zap.Logger) *SeekOptConverter {
 	return &SeekOptConverter{
 		GetChannelHeight: func(ctx context.Context, channel string) (uint64, error) {
 			channelInfo, err := channelInfo.GetChainInfo(ctx, channel)
