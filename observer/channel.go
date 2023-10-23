@@ -90,6 +90,10 @@ func (c *Channel) GetStatus() ChannelObserverStatus {
 	return c.status
 }
 
+func (c *Channel) GetLastError() error {
+	return c.lastError
+}
+
 func (c *Channel) setStatus(status ChannelObserverStatus) {
 	c.status = status
 }
