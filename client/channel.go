@@ -16,7 +16,7 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/client/grpc"
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
 	"github.com/s7techlab/hlf-sdk-go/proto"
-	cscc2 "github.com/s7techlab/hlf-sdk-go/service/systemcc/cscc"
+	"github.com/s7techlab/hlf-sdk-go/service/systemcc/cscc"
 )
 
 type Channel struct {
@@ -136,12 +136,12 @@ func (c *Channel) Join(ctx context.Context) error {
 		return fmt.Errorf(`no peeers for msp if=%s`, c.mspId)
 	}
 
-	cscc := cscc2.NewCSCC(
+	csccSvc := cscc.NewCSCC(
 		// use specified peer to process join (pool can contain more than one peer)
 		peers[0],
 		proto.FabricVersionIsV2(c.fabricV2))
 
-	_, err = cscc.JoinChain(ctx, &cscc2.JoinChainRequest{
+	_, err = csccSvc.JoinChain(ctx, &cscc.JoinChainRequest{
 		Channel:      c.chanName,
 		GenesisBlock: channelGenesis,
 	})
