@@ -48,12 +48,12 @@ var _ = Describe("Block parse test", func() {
 
 		blockNum := 0
 		for {
-			block, ok := <-blocks
+			commonBlock, ok := <-blocks
 			if !ok {
 				break
 			}
 
-			parsedBlock, err := block.ParseBlock(block)
+			parsedBlock, err := block.ParseBlock(commonBlock)
 			Expect(err).ShouldNot(HaveOccurred())
 
 			Expect(parsedBlock.Header.Number).Should(BeNumerically("==", blockNum))

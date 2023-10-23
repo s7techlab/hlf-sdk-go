@@ -74,13 +74,13 @@ func (e *EventSubscription) EventsExtended() chan interface {
 	return e.events
 }
 
-func (e *EventSubscription) Handler(block *common.Block) bool {
-	if block == nil {
+func (e *EventSubscription) Handler(commonBlock *common.Block) bool {
+	if commonBlock == nil {
 		close(e.events)
 		return false
 	}
 
-	parsedBlock, err := block.ParseBlock(block)
+	parsedBlock, err := block.ParseBlock(commonBlock)
 	if err != nil {
 		return true
 	}
@@ -110,7 +110,7 @@ func (e *EventSubscription) Handler(block *common.Block) bool {
 			select {
 			case e.events <- &ChaincodeEventWithBlock{
 				event:       ev,
-				block:       block.Header.Number,
+				block:       commonBlock.Header.Number,
 				txTimestamp: envelope.Payload.Header.ChannelHeader.Timestamp,
 			}:
 			case <-e.ErrorCloser.Done():
