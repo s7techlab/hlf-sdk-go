@@ -29,6 +29,13 @@ require (
 	gopkg.in/yaml.v2 v2.3.0
 )
 
+replace (
+	github.com/golang/protobuf => github.com/golang/protobuf v1.4.1
+	github.com/hyperledger/fabric => github.com/hyperledger/fabric v1.4.0-rc1.0.20210909064358-99553020d277
+	go.etcd.io/etcd => go.etcd.io/etcd v0.5.0-alpha.5.0.20211015134708-72d3e382e73c
+	google.golang.org/grpc => google.golang.org/grpc v1.29.0
+)
+
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
 	github.com/BurntSushi/toml v0.3.1 // indirect
@@ -185,11 +192,4 @@ require (
 	mvdan.cc/unparam v0.0.0-20190209190245-fbb59629db34 // indirect
 	sigs.k8s.io/yaml v1.1.0 // indirect
 	sourcegraph.com/sqs/pbtypes v0.0.0-20180604144634-d3ebe8f20ae4 // indirect
-)
-
-replace (
-	github.com/golang/protobuf => github.com/golang/protobuf v1.4.1
-	github.com/hyperledger/fabric => github.com/hyperledger/fabric v1.4.0-rc1.0.20210909064358-99553020d277
-	go.etcd.io/etcd => go.etcd.io/etcd v0.5.0-alpha.5.0.20211015134708-72d3e382e73c
-	google.golang.org/grpc => google.golang.org/grpc v1.29.0
 )

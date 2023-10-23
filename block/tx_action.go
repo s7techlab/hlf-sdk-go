@@ -79,8 +79,8 @@ func ParseTxAction(txAction *peer.TransactionAction) (*TransactionAction, error)
 	}
 
 	var bytesPayload []byte
-	if actionPayload.GetAction() != nil {
-		bytesPayload = actionPayload.GetAction().GetProposalResponsePayload()
+	if ccEndorserAction.GetProposalResponsePayload().GetExtension().GetResponse() != nil {
+		bytesPayload = ccEndorserAction.GetProposalResponsePayload().GetExtension().GetResponse().GetPayload()
 	}
 
 	return &TransactionAction{
