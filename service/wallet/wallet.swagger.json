@@ -1,0 +1,379 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Wallet - identity",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/wallet/identities": {
+      "get": {
+        "summary": "Список identity",
+        "operationId": "WalletService_IdentityList",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/walletIdentityLabels"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "WalletService"
+        ]
+      },
+      "put": {
+        "summary": "Записать identity",
+        "operationId": "WalletService_IdentitySet",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/walletIdentityInWallet"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/walletIdentity"
+            }
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/wallet/identities/withpassword": {
+      "post": {
+        "summary": "Получить identity из зашифрованного вида",
+        "operationId": "WalletService_IdentityGetWithPassword",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/walletIdentityInWallet"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/walletIdentityPassword"
+            }
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      },
+      "put": {
+        "summary": "Записать identity в зашифрованном виде",
+        "operationId": "WalletService_IdentitySetWithPassword",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/walletIdentityInWallet"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/walletIdentityWithPassword"
+            }
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/wallet/identities/{label}": {
+      "get": {
+        "summary": "Получить identity",
+        "operationId": "WalletService_IdentityGet",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/walletIdentityInWallet"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "label",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      },
+      "delete": {
+        "summary": "Удалить identity",
+        "operationId": "WalletService_IdentityDelete",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/walletIdentityInWallet"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "label",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    },
+    "/wallet/identities/{label}/text": {
+      "get": {
+        "summary": "Получить identity в виде текста",
+        "operationId": "WalletService_IdentityGetText",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/walletIdentityInWalletText"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "label",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WalletService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "runtimeError": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "walletIdentity": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "msp_id": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "cert": {
+          "type": "string",
+          "format": "byte"
+        },
+        "key": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "walletIdentityInWallet": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "msp_id": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "cert": {
+          "type": "string",
+          "format": "byte"
+        },
+        "key": {
+          "type": "string",
+          "format": "byte"
+        },
+        "with_password": {
+          "type": "boolean"
+        }
+      }
+    },
+    "walletIdentityInWalletText": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "msp_id": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "cert": {
+          "type": "string"
+        },
+        "cert_content": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        },
+        "with_password": {
+          "type": "boolean"
+        }
+      }
+    },
+    "walletIdentityLabels": {
+      "type": "object",
+      "properties": {
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "walletIdentityPassword": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "walletIdentityWithPassword": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "msp_id": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "cert": {
+          "type": "string",
+          "format": "byte"
+        },
+        "key": {
+          "type": "string",
+          "format": "byte"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

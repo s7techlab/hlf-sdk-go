@@ -6,4 +6,12 @@ plugins:
     path: .generators/bin/protoc-gen-go
     out: .
     opt:
+      - plugins=grpc
       - paths=source_relative
+
+  - name: go-validate
+    path: .generators/bin/protoc-gen-validate
+    out: .
+    opt:
+      - paths=source_relative
+      - lang=go

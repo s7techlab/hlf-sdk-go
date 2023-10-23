@@ -6,7 +6,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	hlfproto "github.com/s7techlab/hlf-sdk-go/proto"
+	hlfproto "github.com/s7techlab/hlf-sdk-go/block"
 )
 
 type (

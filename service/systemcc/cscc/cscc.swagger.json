@@ -1,0 +1,346 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "systemcc/cscc/cscc.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/systemcc/cscc/chains": {
+      "get": {
+        "operationId": "CSCCService_GetChannels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protosChannelQueryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "CSCCService"
+        ]
+      }
+    },
+    "/systemcc/cscc/chains/{channel}": {
+      "get": {
+        "summary": "GetConfigBlock returns genesis block of channel",
+        "operationId": "CSCCService_GetConfigBlock",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/commonBlock"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "channel",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CSCCService"
+        ]
+      }
+    },
+    "/systemcc/cscc/chains/{channel}/config": {
+      "get": {
+        "summary": "GetChannelConfig returns channel configuration",
+        "operationId": "CSCCService_GetChannelConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/commonConfig"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "channel",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CSCCService"
+        ]
+      }
+    },
+    "/systemcc/cscc/joinchain": {
+      "post": {
+        "summary": "GetChainInfo allows joining channel using presented genesis block",
+        "operationId": "CSCCService_JoinChain",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/csccJoinChainRequest"
+            }
+          }
+        ],
+        "tags": [
+          "CSCCService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "commonBlock": {
+      "type": "object",
+      "properties": {
+        "header": {
+          "$ref": "#/definitions/commonBlockHeader"
+        },
+        "data": {
+          "$ref": "#/definitions/commonBlockData"
+        },
+        "metadata": {
+          "$ref": "#/definitions/commonBlockMetadata"
+        }
+      },
+      "description": "This is finalized block structure to be shared among the orderer and peer\nNote that the BlockHeader chains to the previous BlockHeader, and the BlockData hash is embedded\nin the BlockHeader.  This makes it natural and obvious that the Data is included in the hash, but\nthe Metadata is not."
+    },
+    "commonBlockData": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "byte"
+          }
+        }
+      }
+    },
+    "commonBlockHeader": {
+      "type": "object",
+      "properties": {
+        "number": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "previous_hash": {
+          "type": "string",
+          "format": "byte"
+        },
+        "data_hash": {
+          "type": "string",
+          "format": "byte"
+        }
+      },
+      "title": "BlockHeader is the element of the block which forms the block chain\nThe block header is hashed using the configured chain hashing algorithm\nover the ASN.1 encoding of the BlockHeader"
+    },
+    "commonBlockMetadata": {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "byte"
+          }
+        }
+      }
+    },
+    "commonConfig": {
+      "type": "object",
+      "properties": {
+        "sequence": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "channel_group": {
+          "$ref": "#/definitions/commonConfigGroup"
+        }
+      },
+      "title": "Config represents the config for a particular channel"
+    },
+    "commonConfigGroup": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "groups": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/commonConfigGroup"
+          }
+        },
+        "values": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/commonConfigValue"
+          }
+        },
+        "policies": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/commonConfigPolicy"
+          }
+        },
+        "mod_policy": {
+          "type": "string"
+        }
+      },
+      "title": "ConfigGroup is the hierarchical data structure for holding config"
+    },
+    "commonConfigPolicy": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "policy": {
+          "$ref": "#/definitions/commonPolicy"
+        },
+        "mod_policy": {
+          "type": "string"
+        }
+      }
+    },
+    "commonConfigValue": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        },
+        "mod_policy": {
+          "type": "string"
+        }
+      },
+      "title": "ConfigValue represents an individual piece of config data"
+    },
+    "commonPolicy": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      },
+      "title": "Policy expresses a policy which the orderer can evaluate, because there has been some desire expressed to support\nmultiple policy engines, this is typed as a oneof for now"
+    },
+    "csccJoinChainRequest": {
+      "type": "object",
+      "properties": {
+        "channel": {
+          "type": "string"
+        },
+        "genesis_block": {
+          "$ref": "#/definitions/commonBlock"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "protosChannelInfo": {
+      "type": "object",
+      "properties": {
+        "channel_id": {
+          "type": "string"
+        }
+      },
+      "title": "ChannelInfo contains general information about channels"
+    },
+    "protosChannelQueryResponse": {
+      "type": "object",
+      "properties": {
+        "channels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protosChannelInfo"
+          }
+        }
+      },
+      "title": "ChannelQueryResponse returns information about each channel that pertains\nto a query in lscc.go, such as GetChannels (returns all channels for a\ngiven peer)"
+    },
+    "runtimeError": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

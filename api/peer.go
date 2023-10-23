@@ -15,11 +15,11 @@ type Endorser interface {
 	Endorse(ctx context.Context, proposal *peer.SignedProposal) (*peer.ProposalResponse, error)
 }
 
-type ChannelsFetcher interface {
+type ChannelListGetter interface {
 	GetChannels(ctx context.Context) (*peer.ChannelQueryResponse, error)
 }
 
-type ChannelInfo interface {
+type ChainInfoGetter interface {
 	GetChainInfo(ctx context.Context, channel string) (*common.BlockchainInfo, error)
 }
 
@@ -29,9 +29,9 @@ type Peer interface {
 
 	Endorser
 
-	ChannelInfo
+	ChannelListGetter
 
-	ChannelsFetcher
+	ChainInfoGetter
 
 	BlocksDeliverer
 

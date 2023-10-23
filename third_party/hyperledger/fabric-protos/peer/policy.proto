@@ -9,7 +9,7 @@ option java_package = "org.hyperledger.fabric.protos.peer";
 
 package protos;
 
-import "common/policies.proto";
+import "hyperledger/fabric-protos/common/policies.proto";
 
 // ApplicationPolicy captures the diffenrent policy types that
 // are set and evaluted at the application level.

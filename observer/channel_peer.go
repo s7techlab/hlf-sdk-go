@@ -26,8 +26,9 @@ type (
 
 	// ChannelPeer observes for peer channels
 	ChannelPeer struct {
-		peerChannelsFetcher PeerChannelsFetcher
-		channelsMatcher     *ChannelsMatcher
+		channelFetcher PeerChannelsFetcher
+
+		channelsMatcher *ChannelsMatcher
 
 		channels      map[string]*ChannelInfo
 		observePeriod time.Duration
@@ -41,8 +42,8 @@ type (
 	}
 
 	PeerChannelsFetcher interface {
-		api.ChannelsFetcher
-		api.ChannelInfo
+		api.ChannelListGetter
+		api.ChainInfoGetter
 	}
 
 	PeerChannels interface {
@@ -88,11 +89,11 @@ func NewChannelPeer(peerChannelsFetcher PeerChannelsFetcher, opts ...ChannelPeer
 	}
 
 	channelPeer := &ChannelPeer{
-		peerChannelsFetcher: peerChannelsFetcher,
-		channelsMatcher:     channelsMatcher,
-		channels:            make(map[string]*ChannelInfo),
-		observePeriod:       channelPeerOpts.observePeriod,
-		logger:              channelPeerOpts.logger,
+		channelFetcher:  peerChannelsFetcher,
+		channelsMatcher: channelsMatcher,
+		channels:        make(map[string]*ChannelInfo),
+		observePeriod:   channelPeerOpts.observePeriod,
+		logger:          channelPeerOpts.logger,
 	}
 
 	return channelPeer, nil
@@ -148,7 +149,7 @@ func (cp *ChannelPeer) Channels() map[string]*ChannelInfo {
 
 func (cp *ChannelPeer) updateChannels(ctx context.Context) {
 	cp.logger.Debug(`fetching channels`)
-	channelsInfo, err := cp.peerChannelsFetcher.GetChannels(ctx)
+	channelsInfo, err := cp.channelFetcher.GetChannels(ctx)
 	if err != nil {
 		cp.logger.Warn(`error while fetching channels`, zap.Error(err))
 		cp.lastError = err
@@ -170,7 +171,7 @@ func (cp *ChannelPeer) updateChannels(ctx context.Context) {
 
 	for _, channel := range channelsMatched {
 		var channelInfo *common.BlockchainInfo
-		channelInfo, err = cp.peerChannelsFetcher.GetChainInfo(ctx, channel.Name)
+		channelInfo, err = cp.channelFetcher.GetChainInfo(ctx, channel.Name)
 		if err != nil {
 			cp.lastError = err
 			continue

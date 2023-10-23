@@ -6,8 +6,8 @@ import (
 
 	"github.com/mohae/deepcopy"
 
+	hlfproto "github.com/s7techlab/hlf-sdk-go/block"
 	"github.com/s7techlab/hlf-sdk-go/observer"
-	hlfproto "github.com/s7techlab/hlf-sdk-go/proto"
 )
 
 type (

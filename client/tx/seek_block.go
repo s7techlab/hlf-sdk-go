@@ -9,7 +9,7 @@ import (
 	"github.com/hyperledger/fabric/msp"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/proto"
+	"github.com/s7techlab/hlf-sdk-go/block"
 )
 
 type SeekBlock struct {
@@ -51,7 +51,7 @@ func NewSeekBlockEnvelope(channel string, signer msp.SigningIdentity, start, sto
 		return nil, fmt.Errorf(`seekInfo: %w`, err)
 	}
 
-	header, err := proto.NewCommonHeader(
+	header, err := block.NewCommonHeader(
 		common.HeaderType_DELIVER_SEEK_INFO,
 		txParams.ID,
 		txParams.Nonce,
@@ -63,10 +63,10 @@ func NewSeekBlockEnvelope(channel string, signer msp.SigningIdentity, start, sto
 		return nil, fmt.Errorf(`payload header: %w`, err)
 	}
 
-	payload, err := proto.NewMarshalledCommonPayload(header, seekInfo)
+	payload, err := block.NewMarshalledCommonPayload(header, seekInfo)
 	if err != nil {
 		return nil, fmt.Errorf(`common payload: %w`, err)
 	}
 
-	return proto.NewCommonEnvelope(payload, signer)
+	return block.NewCommonEnvelope(payload, signer)
 }

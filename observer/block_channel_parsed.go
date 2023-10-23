@@ -8,7 +8,7 @@ import (
 	"github.com/hyperledger/fabric-protos-go/common"
 	"go.uber.org/zap"
 
-	hlfproto "github.com/s7techlab/hlf-sdk-go/proto"
+	hlfproto "github.com/s7techlab/hlf-sdk-go/block"
 )
 
 type (

@@ -9,7 +9,7 @@ option java_package = "org.hyperledger.fabric.protos.common";
 
 package common;
 
-import "common/policies.proto";
+import "hyperledger/fabric-protos/common/policies.proto";
 
 // CollectionConfigPackage represents an array of CollectionConfig
 // messages; the extra struct is required because repeated oneof is
