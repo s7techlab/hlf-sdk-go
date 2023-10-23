@@ -20,14 +20,14 @@ type (
 		blocks           chan *ParsedBlock
 		blocksByChannels map[string]chan *ParsedBlock
 
-		parsedChannelObservers map[string]*parsedBlockPeerChannel
+		parsedChannelObservers map[string]*ParsedBlockPeerChannel
 
 		isWork        bool
 		cancelObserve context.CancelFunc
 	}
 
-	parsedBlockPeerChannel struct {
-		observer *ParsedBlockChannel
+	ParsedBlockPeerChannel struct {
+		Observer *ParsedBlockChannel
 		err      error
 	}
 
@@ -50,7 +50,7 @@ func WithConfigBlocks(configBlocks map[string]*common.Block) ParsedBlockPeerOpt 
 func NewParsedBlockPeer(blocksPeer *BlockPeer, opts ...ParsedBlockPeerOpt) *ParsedBlockPeer {
 	parsedBlockPeer := &ParsedBlockPeer{
 		blockPeer:              blocksPeer,
-		parsedChannelObservers: make(map[string]*parsedBlockPeerChannel),
+		parsedChannelObservers: make(map[string]*ParsedBlockPeerChannel),
 		blocks:                 make(chan *ParsedBlock),
 		blocksByChannels:       make(map[string]chan *ParsedBlock),
 	}
@@ -62,11 +62,11 @@ func NewParsedBlockPeer(blocksPeer *BlockPeer, opts ...ParsedBlockPeerOpt) *Pars
 	return parsedBlockPeer
 }
 
-func (pbp *ParsedBlockPeer) ChannelObservers() map[string]*parsedBlockPeerChannel {
+func (pbp *ParsedBlockPeer) ChannelObservers() map[string]*ParsedBlockPeerChannel {
 	pbp.mu.RLock()
 	defer pbp.mu.RUnlock()
 
-	var copyChannelObservers = make(map[string]*parsedBlockPeerChannel, len(pbp.parsedChannelObservers))
+	var copyChannelObservers = make(map[string]*ParsedBlockPeerChannel, len(pbp.parsedChannelObservers))
 	for key, value := range pbp.parsedChannelObservers {
 		copyChannelObservers[key] = value
 	}
@@ -116,12 +116,12 @@ func (pbp *ParsedBlockPeer) Stop() {
 	pbp.blockPeer.Stop()
 
 	for _, c := range pbp.parsedChannelObservers {
-		if err := c.observer.Stop(); err != nil {
+		if err := c.Observer.Stop(); err != nil {
 			zap.Error(err)
 		}
 	}
 
-	pbp.parsedChannelObservers = make(map[string]*parsedBlockPeerChannel)
+	pbp.parsedChannelObservers = make(map[string]*ParsedBlockPeerChannel)
 
 	if pbp.cancelObserve != nil {
 		pbp.cancelObserve()
@@ -136,14 +136,14 @@ func (pbp *ParsedBlockPeer) initParsedChannels(ctx context.Context) {
 
 	for channel := range pbp.blockPeer.peerChannels.Channels() {
 		if _, ok := pbp.parsedChannelObservers[channel]; !ok {
-			pbp.blockPeer.logger.Info(`add parsed channel observer`, zap.String(`channel`, channel))
+			pbp.blockPeer.logger.Info(`add parsed channel Observer`, zap.String(`channel`, channel))
 
 			pbp.parsedChannelObservers[channel] = pbp.peerParsedChannel(ctx, channel)
 		}
 	}
 }
 
-func (pbp *ParsedBlockPeer) peerParsedChannel(ctx context.Context, channel string) *parsedBlockPeerChannel {
+func (pbp *ParsedBlockPeer) peerParsedChannel(ctx context.Context, channel string) *ParsedBlockPeerChannel {
 	seekFrom := pbp.blockPeer.seekFrom[channel]
 	if seekFrom > 0 {
 		// it must be -1, because start position here is excluded from array
@@ -156,24 +156,24 @@ func (pbp *ParsedBlockPeer) peerParsedChannel(ctx context.Context, channel strin
 
 	configBlock := pbp.configBlocks[channel]
 
-	peerParsedChannel := &parsedBlockPeerChannel{}
-	peerParsedChannel.observer = NewParsedBlockChannel(
+	peerParsedChannel := &ParsedBlockPeerChannel{}
+	peerParsedChannel.Observer = NewParsedBlockChannel(
 		commonBlockChannel,
 		WithParsedChannelBlockTransformers(pbp.transformers),
 		WithParsedChannelConfigBlock(configBlock))
 
-	_, peerParsedChannel.err = peerParsedChannel.observer.Observe(ctx)
+	_, peerParsedChannel.err = peerParsedChannel.Observer.Observe(ctx)
 	if peerParsedChannel.err != nil {
-		pbp.blockPeer.logger.Warn(`init parsed channel observer`, zap.Error(peerParsedChannel.err))
+		pbp.blockPeer.logger.Warn(`init parsed channel Observer`, zap.Error(peerParsedChannel.err))
 	}
 
 	// channel merger
 	go func() {
-		for b := range peerParsedChannel.observer.blocks {
+		for b := range peerParsedChannel.Observer.blocks {
 			pbp.blocks <- b
 		}
 
-		// after all reads peerParsedChannel.observer.blocks close channels
+		// after all reads peerParsedChannel.Observer.blocks close channels
 		close(pbp.blocks)
 		for _, blocks := range pbp.blocksByChannels {
 			close(blocks)

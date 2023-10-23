@@ -47,7 +47,7 @@ package observer
 //	}
 //}
 //
-//// WithChannels - specify channels and from which observer you want to get blocks from channel
+//// WithChannels - specify channels and from which Observer you want to get blocks from channel
 //// sets channels 'name'/'seekFromBlock' settings
 //// Name could be regex pattern and MUST begin and end with '/'. Example '/channel.*/'
 // func WithChannels(subscribedChannels ...ChannelSetting) ObserverOpt {

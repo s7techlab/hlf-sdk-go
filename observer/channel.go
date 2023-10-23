@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var ErrChannelObserverAlreadyStarted = errors.New(`channel observer already started`)
+var ErrChannelObserverAlreadyStarted = errors.New(`channel Observer already started`)
 
 type (
 	SeekFromFetcher func(ctx context.Context, channel string) (uint64, error)
@@ -43,7 +43,7 @@ type (
 		// when we subscribed to channel
 		connectedAt time.Time
 
-		// number of last fetched observer
+		// number of last fetched Observer
 		// lastFetchedBlock uint64
 
 		// last errors we got
@@ -84,6 +84,10 @@ func ChannelSeekFrom(seekFrom uint64) SeekFromFetcher {
 
 func ChannelSeekOldest() SeekFromFetcher {
 	return ChannelSeekFrom(0)
+}
+
+func (c *Channel) GetStatus() ChannelObserverStatus {
+	return c.status
 }
 
 func (c *Channel) setStatus(status ChannelObserverStatus) {
