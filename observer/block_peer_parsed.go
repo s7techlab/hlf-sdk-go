@@ -136,7 +136,7 @@ func (pbp *ParsedBlockPeer) initParsedChannels(ctx context.Context) {
 
 	for channel := range pbp.blockPeer.peerChannels.Channels() {
 		if _, ok := pbp.parsedChannelObservers[channel]; !ok {
-			pbp.blockPeer.logger.Info(`add parsed channel Observer`, zap.String(`channel`, channel))
+			pbp.blockPeer.logger.Info(`add parsed channel observer`, zap.String(`channel`, channel))
 
 			pbp.parsedChannelObservers[channel] = pbp.peerParsedChannel(ctx, channel)
 		}
@@ -164,7 +164,7 @@ func (pbp *ParsedBlockPeer) peerParsedChannel(ctx context.Context, channel strin
 
 	_, peerParsedChannel.err = peerParsedChannel.Observer.Observe(ctx)
 	if peerParsedChannel.err != nil {
-		pbp.blockPeer.logger.Warn(`init parsed channel Observer`, zap.Error(peerParsedChannel.err))
+		pbp.blockPeer.logger.Warn(`init parsed channel observer`, zap.Error(peerParsedChannel.err))
 	}
 
 	// channel merger
@@ -173,7 +173,7 @@ func (pbp *ParsedBlockPeer) peerParsedChannel(ctx context.Context, channel strin
 			pbp.blocks <- b
 		}
 
-		// after all reads peerParsedChannel.Observer.blocks close channels
+		// after all reads peerParsedChannel.observer.blocks close channels
 		close(pbp.blocks)
 		for _, blocks := range pbp.blocksByChannels {
 			close(blocks)

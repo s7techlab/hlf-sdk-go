@@ -56,7 +56,7 @@ func (bp *BlockPeer) initChannelsConcurrently(ctx context.Context, blocksByChann
 
 	for channel := range bp.peerChannels.Channels() {
 		if _, ok := bp.channelObservers[channel]; !ok {
-			bp.logger.Info(`add channel Observer concurrently`, zap.String(`channel`, channel))
+			bp.logger.Info(`add channel observer concurrently`, zap.String(`channel`, channel))
 
 			bp.channelObservers[channel] = bp.peerChannelConcurrently(ctx, channel, blocksByChannels)
 		}
@@ -81,7 +81,7 @@ func (bp *BlockPeer) peerChannelConcurrently(ctx context.Context, channel string
 
 	_, peerChannel.err = peerChannel.Observer.Observe(ctx)
 	if peerChannel.err != nil {
-		bp.logger.Warn(`init channel Observer`, zap.Error(peerChannel.err))
+		bp.logger.Warn(`init channel observer`, zap.Error(peerChannel.err))
 	}
 
 	blocks := make(chan *Block)

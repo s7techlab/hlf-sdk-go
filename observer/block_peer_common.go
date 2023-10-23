@@ -173,7 +173,7 @@ func (bp *BlockPeer) initChannels(ctx context.Context) {
 
 	for channel := range bp.peerChannels.Channels() {
 		if _, ok := bp.channelObservers[channel]; !ok {
-			bp.logger.Info(`add channel Observer`, zap.String(`channel`, channel))
+			bp.logger.Info(`add channel observer`, zap.String(`channel`, channel))
 
 			bp.channelObservers[channel] = bp.peerChannel(ctx, channel)
 		}
@@ -198,7 +198,7 @@ func (bp *BlockPeer) peerChannel(ctx context.Context, channel string) *BlockPeer
 
 	_, peerChannel.err = peerChannel.Observer.Observe(ctx)
 	if peerChannel.err != nil {
-		bp.logger.Warn(`init channel Observer`, zap.Error(peerChannel.err))
+		bp.logger.Warn(`init channel observer`, zap.Error(peerChannel.err))
 	}
 
 	// channel merger
@@ -207,7 +207,7 @@ func (bp *BlockPeer) peerChannel(ctx context.Context, channel string) *BlockPeer
 			bp.blocks <- b
 		}
 
-		// after all reads peerParsedChannel.Observer.blocks close channels
+		// after all reads peerParsedChannel.observer.blocks close channels
 		close(bp.blocks)
 		for _, blocks := range bp.blocksByChannels {
 			close(blocks)

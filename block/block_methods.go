@@ -9,7 +9,7 @@ import (
 
 func (x *Block) ValidEnvelopes() []*Envelope {
 	var envs []*Envelope
-	for _, e := range x.Data.Envelopes {
+	for _, e := range x.GetData().GetEnvelopes() {
 		if e.ValidationCode != peer.TxValidationCode_VALID {
 			continue
 		}
@@ -39,7 +39,7 @@ func (x *Block) Writes() []*Write {
 	for _, e := range x.ValidEnvelopes() {
 		for _, a := range e.TxActions() {
 			for _, rwSet := range a.NsReadWriteSet() {
-				for _, write := range rwSet.Rwset.Writes {
+				for _, write := range rwSet.GetRwset().GetWrites() {
 					blockWrite := &Write{
 						KWWrite: write,
 

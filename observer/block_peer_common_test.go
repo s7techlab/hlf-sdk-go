@@ -65,7 +65,7 @@ var _ = Describe("Block Peer", func() {
 				channelPeerMockForCommon.UpdateChannelInfo(&observer.ChannelInfo{Channel: channel})
 			}
 
-			// wait to commonBlockPeer Observer
+			// wait to commonBlockPeer observer
 			time.Sleep(time.Millisecond * 10)
 
 			channelObservers := commonBlockPeer.ChannelObservers()
@@ -147,7 +147,7 @@ var _ = Describe("Block Peer", func() {
 				channelPeerMockConcurrentlyForCommon.UpdateChannelInfo(&observer.ChannelInfo{Channel: channel})
 			}
 
-			// wait to commonBlockPeer Observer
+			// wait to commonBlockPeer observer
 			time.Sleep(time.Millisecond * 200)
 
 			channelObservers := commonBlockPeerConcurrently.ChannelObservers()

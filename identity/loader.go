@@ -4,11 +4,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"path"
-
-	"github.com/pkg/errors"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 )

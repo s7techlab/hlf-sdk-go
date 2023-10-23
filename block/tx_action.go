@@ -78,10 +78,7 @@ func ParseTxAction(txAction *peer.TransactionAction) (*TransactionAction, error)
 		chaincodeProposalPayload.Input.ChaincodeSpec.ChaincodeId.Version = ccEndorserAction.ProposalResponsePayload.Extension.ChaincodeId.Version
 	}
 
-	var responsePayload []byte
-	if ccEndorserAction.GetProposalResponsePayload().GetExtension().GetResponse() != nil {
-		responsePayload = ccEndorserAction.GetProposalResponsePayload().GetExtension().GetResponse().GetPayload()
-	}
+	responsePayload := ccEndorserAction.GetProposalResponsePayload().GetExtension().GetResponse().GetPayload()
 
 	return &TransactionAction{
 		Header: &SignatureHeader{
