@@ -13,7 +13,7 @@ import (
 
 	bft "github.com/s7techlab/hlf-sdk-go/proto/smartbft"
 	bftcommon "github.com/s7techlab/hlf-sdk-go/proto/smartbft/common"
-	"github.com/s7techlab/hlf-sdk-go/util/txflags"
+	"github.com/s7techlab/hlf-sdk-go/proto/txflags"
 )
 
 type (

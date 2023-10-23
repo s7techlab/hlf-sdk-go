@@ -23,10 +23,12 @@ import (
 	"google.golang.org/grpc/resolver/manual"
 
 	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/opencensus/hlf"
+	"github.com/s7techlab/hlf-sdk-go/client/grpc/opencensus/hlf"
 )
 
 var (
+	DefaultGrpcCheckPeriod = 5 * time.Second
+
 	DefaultGRPCRetryConfig = &config.GRPCRetryConfig{
 		Max:     10,
 		Timeout: config.Duration{Duration: 10 * time.Second},

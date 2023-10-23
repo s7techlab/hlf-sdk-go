@@ -9,7 +9,7 @@ option go_package = "github.com/hyperledger/fabric-protos-go/peer/lifecycle";
 
 package lifecycle;
 
-import "peer/collection.proto";
+import "hyperledger/fabric-protos/peer/collection.proto";
 
 // InstallChaincodeArgs is the message used as the argument to
 // '_lifecycle.InstallChaincode'.

@@ -23,7 +23,7 @@ var _ = Describe(`Cert`, func() {
 		Context(`Peer from path`, func() {
 
 			var (
-				msp *identity.MSPConfig
+				msp *identity.MSP
 				err error
 			)
 
@@ -33,14 +33,14 @@ var _ = Describe(`Cert`, func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(msp).NotTo(BeNil())
 
-				Expect(msp.GetMSPIdentifier()).To(Equal(Org1MSPPeer.ID))
+				Expect(msp.Identifier()).To(Equal(Org1MSPPeer.ID))
 
 				Expect(msp.Admins()).To(HaveLen(0))
 
 				Expect(msp.Signer()).NotTo(BeNil())
 				Expect(msp.Signer().GetPEM()).To(Equal(Org1MSPPeer.SignCert))
 
-				mspConfig := msp.MSPConfig()
+				mspConfig := msp.Config()
 				Expect(mspConfig).NotTo(BeNil())
 
 				Expect(mspConfig.RootCerts).To(HaveLen(1))
@@ -79,7 +79,7 @@ var _ = Describe(`Cert`, func() {
 			})
 		})
 
-		Context(`Peer from FabricMSPConfig`, func() {
+		Context(`Peer from FabricMSPCofig`, func() {
 
 			It(`allow to create msp from FabricMSPConfig`, func() {
 				msp, err := identity.MSPFromConfig(Org1MSPPeer.FabricMSPConfig())

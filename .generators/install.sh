@@ -34,7 +34,8 @@ pwd
 for genpkg in `go list -f '{{ join .Imports "\n" }}' deps.go`
 do
     echo "building $genpkg..."
-    go build -mod=vendor -o ${GENERATOR_DIR}/bin/`basename $genpkg` -trimpath ${genpkg}
+    go get ${genpkg}
+    go build -mod=readonly -o ${GENERATOR_DIR}/bin/`basename $genpkg` -trimpath ${genpkg}
     echo "installed $genpkg"
 done
 

@@ -16,10 +16,11 @@ import (
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/client/chaincode/system"
+	"github.com/s7techlab/hlf-sdk-go/client/channel"
 	"github.com/s7techlab/hlf-sdk-go/client/deliver"
 	grpcclient "github.com/s7techlab/hlf-sdk-go/client/grpc"
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
+	"github.com/s7techlab/hlf-sdk-go/service/systemcc/qscc"
 )
 
 const (
@@ -202,11 +203,11 @@ func (p *peer) Events(ctx context.Context, channel string, chaincode string, ide
 }
 
 func (p *peer) GetChainInfo(ctx context.Context, channel string) (*common.BlockchainInfo, error) {
-	return system.NewQSCC(p).GetChainInfo(ctx, &system.GetChainInfoRequest{ChannelName: channel})
+	return qscc.NewQSCC(p).GetChainInfo(ctx, &qscc.GetChainInfoRequest{ChannelName: channel})
 }
 
 func (p *peer) GetChannels(ctx context.Context) (*fabricPeer.ChannelQueryResponse, error) {
-	return system.NewCSCCChannelsFetcher(p).GetChannels(ctx)
+	return channel.NewCSCCListGetter(p).GetChannels(ctx)
 }
 
 func (p *peer) Endorse(ctx context.Context, proposal *fabricPeer.SignedProposal) (*fabricPeer.ProposalResponse, error) {
@@ -237,7 +238,7 @@ func (p *peer) DeliverClient(identity msp.SigningIdentity) (api.DeliverClient, e
 	return deliver.New(fabricPeer.NewDeliverClient(p.conn), identity, p.tlsCertHash), nil
 }
 
-// CurrentIdentity identity returns current signing identity used by core
+// CurrentIdentity defaultSigner returns current signing defaultSigner used by Client
 func (p *peer) CurrentIdentity() msp.SigningIdentity {
 	return p.identity
 }

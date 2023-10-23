@@ -1,0 +1,30 @@
+version: v1
+
+plugins:
+
+  - name: go
+    path: .generators/bin/protoc-gen-go
+    out: .
+    opt:
+      - plugins=grpc
+      - paths=source_relative
+
+  - name: go-validate
+    path: .generators/bin/protoc-gen-validate
+    out: .
+    opt:
+      - paths=source_relative
+      - lang=go
+
+  - name: swagger
+    path: .generators/bin/protoc-gen-swagger
+    out: .
+    opt:
+      - logtostderr=true
+
+  - name: grpc-gateway
+    path: .generators/bin/protoc-gen-grpc-gateway
+    out: .
+    opt:
+      - logtostderr=true
+      - paths=source_relative

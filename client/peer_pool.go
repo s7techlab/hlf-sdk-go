@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/cloudflare/cfssl/log"
 	peerproto "github.com/hyperledger/fabric-protos-go/peer"
@@ -11,9 +12,11 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/status"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
+	clienterrors "github.com/s7techlab/hlf-sdk-go/client/errors"
 )
 
 var ErrEndorsingMSPsRequired = errors.New(`endorsing MSPs required`)
@@ -142,19 +145,19 @@ func (p *PeerPool) EndorseOnMSP(ctx context.Context, mspID string, proposal *pee
 	p.storeMx.RUnlock()
 
 	if !exists {
-		return nil, fmt.Errorf(`msp_id=%s: %w`, mspID, api.ErrMSPNotFound)
+		return nil, fmt.Errorf(`msp_id=%s: %w`, mspID, ErrMSPNotFound)
 	}
 
 	//check peers for MspId exists
 	if len(peers) == 0 {
-		return nil, fmt.Errorf(`msp_id=%s: %w`, mspID, api.ErrNoPeersForMSP)
+		return nil, fmt.Errorf(`msp_id=%s: %w`, mspID, ErrNoPeersForMSP)
 	}
 
 	var lastError error
 
 	for pos, poolPeer := range peers {
 		if !poolPeer.ready {
-			p.logger.Debug(api.ErrPeerNotReady.Error(), zap.String(`uri`, poolPeer.peer.Uri()))
+			p.logger.Debug(ErrPeerNotReady.Error(), zap.String(`uri`, poolPeer.peer.Uri()))
 			continue
 		}
 
@@ -197,7 +200,7 @@ func (p *PeerPool) EndorseOnMSP(ctx context.Context, mspID string, proposal *pee
 
 	if lastError == nil {
 		// all peers were not ready
-		return nil, api.ErrNoReadyPeers{MspId: mspID}
+		return nil, clienterrors.ErrNoReadyPeers{MspId: mspID}
 	}
 
 	return nil, lastError
@@ -221,7 +224,7 @@ func (p *PeerPool) EndorseOnMSPs(ctx context.Context, mspIDs []string, proposal 
 
 	var errOccurred bool
 
-	mErr := new(api.MultiError)
+	mErr := new(clienterrors.MultiError)
 
 	// collecting peer responses
 	for i := 0; i < len(mspIDs); i++ {
@@ -255,12 +258,12 @@ func (p *PeerPool) FirstReadyPeer(mspId string) (api.Peer, error) {
 	p.storeMx.RUnlock()
 
 	if !ok {
-		return nil, api.ErrMSPNotFound
+		return nil, ErrMSPNotFound
 	}
 
 	//check peers for MspId exists
 	if len(peers) == 0 {
-		log.Error(api.ErrNoPeersForMSP.Error(), zap.String(`mspId`, mspId))
+		log.Error(ErrNoPeersForMSP.Error(), zap.String(`mspId`, mspId))
 	}
 
 	for _, poolPeer := range peers {
@@ -269,9 +272,27 @@ func (p *PeerPool) FirstReadyPeer(mspId string) (api.Peer, error) {
 		}
 	}
 
-	return nil, api.ErrNoReadyPeers{MspId: mspId}
+	return nil, clienterrors.ErrNoReadyPeers{MspId: mspId}
 }
 
 func (p *PeerPool) Close() error {
 	return nil
+}
+
+func StrategyGRPC(d time.Duration) api.PeerPoolCheckStrategy {
+	return func(ctx context.Context, peer api.Peer, alive chan bool) {
+		t := time.NewTicker(d)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+				if peer.Conn().GetState() == connectivity.Ready {
+					alive <- true
+				} else {
+					alive <- false
+				}
+			}
+		}
+	}
 }
