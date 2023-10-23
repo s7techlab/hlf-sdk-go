@@ -1,6 +1,6 @@
 GOFLAGS ?= -mod=vendor
 
-PROTO_PACKAGES_GO := proto
+PROTO_PACKAGES_GO := block
 PROTO_PACKAGES_SVC := service
 
 test:
