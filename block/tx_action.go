@@ -78,9 +78,9 @@ func ParseTxAction(txAction *peer.TransactionAction) (*TransactionAction, error)
 		chaincodeProposalPayload.Input.ChaincodeSpec.ChaincodeId.Version = ccEndorserAction.ProposalResponsePayload.Extension.ChaincodeId.Version
 	}
 
-	var bytesPayload []byte
+	var responsePayload []byte
 	if ccEndorserAction.GetProposalResponsePayload().GetExtension().GetResponse() != nil {
-		bytesPayload = ccEndorserAction.GetProposalResponsePayload().GetExtension().GetResponse().GetPayload()
+		responsePayload = ccEndorserAction.GetProposalResponsePayload().GetExtension().GetResponse().GetPayload()
 	}
 
 	return &TransactionAction{
@@ -92,7 +92,7 @@ func ParseTxAction(txAction *peer.TransactionAction) (*TransactionAction, error)
 			ChaincodeProposalPayload: chaincodeProposalPayload,
 			Action:                   ccEndorserAction,
 		},
-		BytesPayload: bytesPayload,
+		ResponsePayload: responsePayload,
 	}, nil
 }
 

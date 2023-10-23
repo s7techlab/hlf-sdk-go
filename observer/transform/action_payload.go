@@ -54,20 +54,22 @@ func ActionPayloadMatchFunc(str string) ActionPayloadMatch {
 
 func ActionPayloadMutateProto(target proto.Message) ActionPayloadMutate {
 	return func(txAction *hlfproto.TransactionAction) error {
-		if len(txAction.GetBytesPayload()) == 0 {
+		responsePayload := txAction.GetResponsePayload()
+
+		if len(responsePayload) == 0 {
 			return nil
 		}
 
-		if string(txAction.GetBytesPayload())[:1] == "{" {
+		if string(responsePayload)[:1] == "{" {
 			return nil
 		}
 
-		payloadJSON, err := Proto2JSON(txAction.GetBytesPayload(), target)
+		payloadJSON, err := Proto2JSON(responsePayload, target)
 		if err != nil {
 			log.Printf("%s", err)
 		}
 
-		txAction.BytesPayload = ReplaceBytesU0000ToNullBytes(payloadJSON)
+		txAction.ResponsePayload = ReplaceBytesU0000ToNullBytes(payloadJSON)
 		return nil
 	}
 }
