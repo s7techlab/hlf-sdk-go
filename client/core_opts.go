@@ -107,7 +107,7 @@ func WithPeers(mspID string, peers []config.ConnectionConfig) Opt {
 }
 
 // WithCrypto allows to init Client crypto suite.
-func WithCrypto(crypto crypto.Suite) Opt {
+func WithCrypto(crypto crypto.CryptoSuite) Opt {
 	return func(c *Client) error {
 		c.crypto = crypto
 		return nil

@@ -40,7 +40,7 @@ type Client struct {
 	channels  map[string]api.Channel
 	channelMx sync.Mutex
 
-	crypto   crypto.Suite
+	crypto   crypto.CryptoSuite
 	logger   *zap.Logger
 	fabricV2 bool
 }
@@ -176,16 +176,12 @@ func New(ctx context.Context, opts ...Opt) (*Client, error) {
 }
 
 func applyDefaults(c *Client) error {
-	var err error
 	if c.logger == nil {
 		c.logger = DefaultLogger
 	}
 
 	if c.crypto == nil {
-		c.crypto, err = crypto.NewSuiteByConfig(c.config.Crypto, true)
-		if err != nil {
-			return fmt.Errorf(`crypto: %w`, err)
-		}
+		c.crypto = api.DefaultCryptoSuite()
 	}
 
 	return nil
@@ -219,7 +215,7 @@ func (c *Client) CurrentIdentity() msp.SigningIdentity {
 	return c.defaultSigner
 }
 
-func (c *Client) CryptoSuite() crypto.Suite {
+func (c *Client) CryptoSuite() crypto.CryptoSuite {
 	return c.crypto
 }
 

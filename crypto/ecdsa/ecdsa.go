@@ -8,7 +8,6 @@ import (
 	"crypto/sha512"
 	"crypto/x509"
 	"encoding/asn1"
-	"fmt"
 	"hash"
 	"math/big"
 
@@ -17,6 +16,7 @@ import (
 	"golang.org/x/crypto/sha3"
 
 	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/crypto"
 )
 
 const (
@@ -38,6 +38,17 @@ const (
 var (
 	DefaultOpts = config.CryptoSuiteOpts{`curve`: `P256`, `signatureAlgorithm`: `SHA256`, `hash`: `SHA2-256`}
 
+	DefaultConfig = config.CryptoConfig{
+		Type:    Module,
+		Options: DefaultOpts,
+	}
+)
+
+func init() {
+	crypto.Register(Module, &ecdsaSuite{})
+}
+
+var (
 	// precomputed curves half order values for efficiency
 	ecCurveHalfOrders = map[elliptic.Curve]*big.Int{
 		elliptic.P224(): new(big.Int).Rsh(elliptic.P224().Params().N, 1),
@@ -55,34 +66,13 @@ var (
 	errInvalidSignature  = errors.New(`invalid ECDSA signature`)
 )
 
-func New(opts map[string]string) (*Suite, error) {
-	var options Opts
-	var err error
-
-	if err = mapstructure.Decode(opts, &options); err != nil {
-		return nil, fmt.Errorf(`decode ECDSA options: %w`, err)
-	}
-
-	cs := &Suite{}
-	if cs.curve, err = getCurve(options.Curve); err != nil {
-		return nil, fmt.Errorf(`elliptic curve: %w`, err)
-	}
-	if cs.hasher, err = getHasher(options.Hash); err != nil {
-		return nil, fmt.Errorf(`hasher: %w`, err)
-	}
-	if cs.sigAlgorithm, err = getSignatureAlgorithm(options.SignatureAlgorithm); err != nil {
-		return nil, errors.Wrap(err, `failed to get signature algorithm`)
-	}
-	return cs, nil
-}
-
-type Opts struct {
+type ecdsaOpts struct {
 	Curve              string
 	SignatureAlgorithm string
 	Hash               string
 }
 
-type Suite struct {
+type ecdsaSuite struct {
 	curve        elliptic.Curve
 	hasher       func() hash.Hash
 	sigAlgorithm x509.SignatureAlgorithm
@@ -92,7 +82,7 @@ type ecdsaSignature struct {
 	R, S *big.Int
 }
 
-func (c *Suite) Sign(msg []byte, key interface{}) ([]byte, error) {
+func (c *ecdsaSuite) Sign(msg []byte, key interface{}) ([]byte, error) {
 	if privateKey, ok := key.(*ecdsa.PrivateKey); !ok {
 		return nil, errInvalidPrivateKey
 	} else {
@@ -112,7 +102,7 @@ func (c *Suite) Sign(msg []byte, key interface{}) ([]byte, error) {
 	}
 }
 
-func (c *Suite) Verify(publicKey interface{}, msg, sig []byte) error {
+func (c *ecdsaSuite) Verify(publicKey interface{}, msg, sig []byte) error {
 	if key, ok := publicKey.(*ecdsa.PublicKey); !ok {
 		return errInvalidPublicKey
 	} else {
@@ -127,13 +117,13 @@ func (c *Suite) Verify(publicKey interface{}, msg, sig []byte) error {
 	return nil
 }
 
-func (c *Suite) Hash(data []byte) []byte {
+func (c *ecdsaSuite) Hash(data []byte) []byte {
 	h := c.hasher()
 	h.Write(data)
 	return h.Sum(nil)
 }
 
-func (c *Suite) NewPrivateKey() (interface{}, error) {
+func (c *ecdsaSuite) NewPrivateKey() (interface{}, error) {
 	if key, err := ecdsa.GenerateKey(c.curve, rand.Reader); err != nil {
 		return nil, errors.Wrap(err, `failed to generate ECDSA private key`)
 	} else {
@@ -141,8 +131,29 @@ func (c *Suite) NewPrivateKey() (interface{}, error) {
 	}
 }
 
-func (c *Suite) GetSignatureAlgorithm() x509.SignatureAlgorithm {
+func (c *ecdsaSuite) GetSignatureAlgorithm() x509.SignatureAlgorithm {
 	return c.sigAlgorithm
+}
+
+func (c *ecdsaSuite) Initialize(opts config.CryptoSuiteOpts) (crypto.CryptoSuite, error) {
+	var options ecdsaOpts
+	var err error
+
+	if err = mapstructure.Decode(opts, &options); err != nil {
+		return nil, errors.Wrap(err, `failed to decode ECDSA options`)
+	}
+
+	cs := &ecdsaSuite{}
+	if cs.curve, err = getCurve(options.Curve); err != nil {
+		return nil, errors.Wrap(err, `failed to get elliptic curve`)
+	}
+	if cs.hasher, err = getHasher(options.Hash); err != nil {
+		return nil, errors.Wrap(err, `failed to get hasher`)
+	}
+	if cs.sigAlgorithm, err = getSignatureAlgorithm(options.SignatureAlgorithm); err != nil {
+		return nil, errors.Wrap(err, `failed to get signature algorithm`)
+	}
+	return cs, nil
 }
 
 func getCurve(curveType string) (elliptic.Curve, error) {

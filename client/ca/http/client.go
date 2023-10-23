@@ -12,6 +12,7 @@ import (
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
 
+	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/s7techlab/hlf-sdk-go/client"
 	"github.com/s7techlab/hlf-sdk-go/client/ca"
@@ -20,7 +21,7 @@ import (
 )
 
 type Client struct {
-	crypto crypto.Suite
+	crypto crypto.CryptoSuite
 	config *config.CAConfig
 	client *http.Client
 	signer msp.SigningIdentity
@@ -44,10 +45,7 @@ func New(signer msp.SigningIdentity, opts ...Opt) (*Client, error) {
 	}
 
 	if c.crypto == nil {
-		c.crypto, err = crypto.NewSuiteByConfig(c.config.Crypto, true)
-		if err != nil {
-			return nil, err
-		}
+		c.crypto = api.DefaultCryptoSuite()
 	}
 
 	if c.client == nil {

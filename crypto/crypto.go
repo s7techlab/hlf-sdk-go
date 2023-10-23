@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
 )
 
 var (
@@ -39,9 +38,4 @@ func RandomBytes(length int) ([]byte, error) {
 		return nil, err
 	}
 	return b, nil
-}
-
-func DefaultCryptoSuite() CryptoSuite {
-	suite, _ := GetSuite(ecdsa.Module, ecdsa.DefaultOpts)
-	return suite
 }
