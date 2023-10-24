@@ -54,7 +54,7 @@ func ActionPayloadMatchFunc(str string) ActionPayloadMatch {
 
 func ActionPayloadMutateProto(target proto.Message) ActionPayloadMutate {
 	return func(txAction *hlfproto.TransactionAction) error {
-		responsePayload := txAction.GetResponsePayload()
+		responsePayload := txAction.Response().GetPayload()
 
 		if len(responsePayload) == 0 {
 			return nil
@@ -69,7 +69,7 @@ func ActionPayloadMutateProto(target proto.Message) ActionPayloadMutate {
 			log.Printf("%s", err)
 		}
 
-		txAction.ResponsePayload = ReplaceBytesU0000ToNullBytes(payloadJSON)
+		txAction.Payload.Action.ProposalResponsePayload.Extension.Response.Payload = ReplaceBytesU0000ToNullBytes(payloadJSON)
 		return nil
 	}
 }

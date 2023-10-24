@@ -1176,8 +1176,6 @@ func (m *TransactionAction) validate(all bool) error {
 		}
 	}
 
-	// no validation rules for ResponsePayload
-
 	if len(errors) > 0 {
 		return TransactionActionMultiError(errors)
 	}

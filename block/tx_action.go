@@ -82,8 +82,6 @@ func ParseTxAction(txAction *peer.TransactionAction) (*TransactionAction, error)
 		chaincodeProposalPayload.Input.ChaincodeSpec.ChaincodeId.Version = ccEndorserAction.ProposalResponsePayload.Extension.ChaincodeId.Version
 	}
 
-	responsePayload := ccEndorserAction.GetProposalResponsePayload().GetExtension().GetResponse().GetPayload()
-
 	return &TransactionAction{
 		Header: &SignatureHeader{
 			Creator: creator,
@@ -93,7 +91,6 @@ func ParseTxAction(txAction *peer.TransactionAction) (*TransactionAction, error)
 			ChaincodeProposalPayload: chaincodeProposalPayload,
 			Action:                   ccEndorserAction,
 		},
-		ResponsePayload: responsePayload,
 	}, nil
 }
 
