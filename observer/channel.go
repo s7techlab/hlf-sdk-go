@@ -43,9 +43,6 @@ type (
 		// when we subscribed to channel
 		connectedAt time.Time
 
-		// number of last fetched observer
-		// lastFetchedBlock uint64
-
 		// last errors we got
 		lastError error
 
@@ -84,6 +81,14 @@ func ChannelSeekFrom(seekFrom uint64) SeekFromFetcher {
 
 func ChannelSeekOldest() SeekFromFetcher {
 	return ChannelSeekFrom(0)
+}
+
+func (c *Channel) GetStatus() ChannelObserverStatus {
+	return c.status
+}
+
+func (c *Channel) GetLastError() error {
+	return c.lastError
 }
 
 func (c *Channel) setStatus(status ChannelObserverStatus) {

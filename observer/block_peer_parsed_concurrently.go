@@ -65,7 +65,7 @@ func (pbp *ParsedBlockPeer) initParsedChannelsConcurrently(ctx context.Context, 
 	}
 }
 
-func (pbp *ParsedBlockPeer) peerParsedChannelConcurrently(ctx context.Context, channel string, blocksByChannels *ParsedBlocksByChannels) *parsedBlockPeerChannel {
+func (pbp *ParsedBlockPeer) peerParsedChannelConcurrently(ctx context.Context, channel string, blocksByChannels *ParsedBlocksByChannels) *ParsedBlockPeerChannel {
 	seekFrom := pbp.blockPeer.seekFrom[channel]
 	if seekFrom > 0 {
 		// it must be -1, because start position here is excluded from array
@@ -78,13 +78,13 @@ func (pbp *ParsedBlockPeer) peerParsedChannelConcurrently(ctx context.Context, c
 
 	configBlock := pbp.configBlocks[channel]
 
-	peerParsedChannel := &parsedBlockPeerChannel{}
-	peerParsedChannel.observer = NewParsedBlockChannel(
+	peerParsedChannel := &ParsedBlockPeerChannel{}
+	peerParsedChannel.Observer = NewParsedBlockChannel(
 		commonBlockChannel,
 		WithParsedChannelBlockTransformers(pbp.transformers),
 		WithParsedChannelConfigBlock(configBlock))
 
-	_, peerParsedChannel.err = peerParsedChannel.observer.Observe(ctx)
+	_, peerParsedChannel.err = peerParsedChannel.Observer.Observe(ctx)
 	if peerParsedChannel.err != nil {
 		pbp.blockPeer.logger.Warn(`init parsed channel observer`, zap.Error(peerParsedChannel.err))
 	}
@@ -98,7 +98,7 @@ func (pbp *ParsedBlockPeer) peerParsedChannelConcurrently(ctx context.Context, c
 
 	// channel merger
 	go func() {
-		for b := range peerParsedChannel.observer.blocks {
+		for b := range peerParsedChannel.Observer.blocks {
 			blocks <- b
 		}
 	}()

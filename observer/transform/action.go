@@ -6,8 +6,8 @@ import (
 
 	"github.com/mohae/deepcopy"
 
+	hlfproto "github.com/s7techlab/hlf-sdk-go/block"
 	"github.com/s7techlab/hlf-sdk-go/observer"
-	hlfproto "github.com/s7techlab/hlf-sdk-go/proto"
 )
 
 type (
@@ -89,13 +89,13 @@ func (s *Action) Transform(block *observer.ParsedBlock) error {
 
 			for _, argsTransformer := range s.inputArgsTransformers {
 				if err := argsTransformer.Transform(txAction.ChaincodeSpec().Input.Args); err != nil {
-					return fmt.Errorf(`args transformer: %w`, err)
+					return fmt.Errorf(`transform input args: %w`, err)
 				}
 			}
 
 			for _, eventTransformer := range s.eventTransformers {
 				if err := eventTransformer.Transform(txAction.Event()); err != nil {
-					return fmt.Errorf(`event transformer: %w`, err)
+					return fmt.Errorf(`transform event: %w`, err)
 				}
 			}
 
@@ -104,7 +104,7 @@ func (s *Action) Transform(block *observer.ParsedBlock) error {
 					for _, kvWriteTransformer := range s.kvWriteTransformers {
 						origKey := write.Key
 						if err := kvWriteTransformer.Transform(write); err != nil {
-							return fmt.Errorf(`KV write transformer with key: %s: %w`, write.Key, err)
+							return fmt.Errorf(`transform KV write with key: %s: %w`, write.Key, err)
 						}
 
 						if origKey != write.Key {
@@ -117,7 +117,7 @@ func (s *Action) Transform(block *observer.ParsedBlock) error {
 					for _, kvReadTransform := range s.kvReadTransformers {
 						origKey := read.Key
 						if err := kvReadTransform.Transform(read); err != nil {
-							return fmt.Errorf(`KV read transformer with key: %s: %w`, read.Key, err)
+							return fmt.Errorf(`transform KV read with key: %s: %w`, read.Key, err)
 						}
 						if origKey != read.Key {
 							blockIsTransformed = true
@@ -127,7 +127,7 @@ func (s *Action) Transform(block *observer.ParsedBlock) error {
 
 				for _, actionPayloadTransform := range s.actionPayloadTransformers {
 					if err := actionPayloadTransform.Transform(txAction); err != nil {
-						return fmt.Errorf(`action payload transform: %w`, err)
+						return fmt.Errorf(`transform action payload: %w`, err)
 					}
 				}
 			}
@@ -146,6 +146,13 @@ func TxChaincodeIDMatch(chaincode string) TxActionMatch {
 		return action.ChaincodeSpec().ChaincodeId.Name == chaincode
 	}
 }
+
+func TxChaincodeIDNotMatch(chaincode string) TxActionMatch {
+	return func(action *hlfproto.TransactionAction) bool {
+		return action.ChaincodeSpec().ChaincodeId.Name != chaincode
+	}
+}
+
 func TxChaincodesIDMatch(chaincodes ...string) TxActionMatch {
 	return func(action *hlfproto.TransactionAction) bool {
 		for k := range chaincodes {
@@ -164,6 +171,7 @@ func TxChaincodesIDRegexp(chaincodePattern string) TxActionMatch {
 		return matched
 	}
 }
+
 func TxChaincodesIDRegexpExclude(chaincodePattern string) TxActionMatch {
 	return func(action *hlfproto.TransactionAction) bool {
 		matched, _ := regexp.MatchString(chaincodePattern, action.ChaincodeSpec().ChaincodeId.Name)

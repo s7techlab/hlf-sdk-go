@@ -63,7 +63,7 @@ func (bp *BlockPeer) initChannelsConcurrently(ctx context.Context, blocksByChann
 	}
 }
 
-func (bp *BlockPeer) peerChannelConcurrently(ctx context.Context, channel string, blocksByChannels *BlocksByChannels) *blockPeerChannel {
+func (bp *BlockPeer) peerChannelConcurrently(ctx context.Context, channel string, blocksByChannels *BlocksByChannels) *BlockPeerChannel {
 	seekFrom := bp.seekFrom[channel]
 	if seekFrom > 0 {
 		// it must be -1, because start position here is excluded from array
@@ -71,15 +71,15 @@ func (bp *BlockPeer) peerChannelConcurrently(ctx context.Context, channel string
 		seekFrom--
 	}
 
-	peerChannel := &blockPeerChannel{}
-	peerChannel.observer = NewBlockChannel(
+	peerChannel := &BlockPeerChannel{}
+	peerChannel.Observer = NewBlockChannel(
 		channel,
 		bp.blockDeliverer,
 		ChannelSeekFrom(seekFrom),
 		WithChannelBlockLogger(bp.logger),
 		WithChannelStopRecreateStream(bp.stopRecreateStream))
 
-	_, peerChannel.err = peerChannel.observer.Observe(ctx)
+	_, peerChannel.err = peerChannel.Observer.Observe(ctx)
 	if peerChannel.err != nil {
 		bp.logger.Warn(`init channel observer`, zap.Error(peerChannel.err))
 	}
@@ -93,7 +93,7 @@ func (bp *BlockPeer) peerChannelConcurrently(ctx context.Context, channel string
 
 	// channel merger
 	go func() {
-		for b := range peerChannel.observer.blocks {
+		for b := range peerChannel.Observer.blocks {
 			blocks <- b
 		}
 	}()

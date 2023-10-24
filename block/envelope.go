@@ -1,4 +1,4 @@
-package proto
+package block
 
 import (
 	"fmt"
@@ -8,8 +8,20 @@ import (
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/protoutil"
 
-	"github.com/s7techlab/hlf-sdk-go/proto/txflags"
+	"github.com/s7techlab/hlf-sdk-go/block/txflags"
 )
+
+func (x *Envelope) ChannelHeader() *common.ChannelHeader {
+	return x.GetPayload().GetHeader().GetChannelHeader()
+}
+
+func (x *Envelope) SignatureHeader() *SignatureHeader {
+	return x.GetPayload().GetHeader().GetSignatureHeader()
+}
+
+func (x *Envelope) TxActions() []*TransactionAction {
+	return x.GetPayload().GetTransaction().GetActions()
+}
 
 func ParseBlockData(blockData [][]byte, txFilter txflags.ValidationFlags) (*BlockData, error) {
 	var envelopes []*Envelope
