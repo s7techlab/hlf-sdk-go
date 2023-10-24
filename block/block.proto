@@ -57,7 +57,6 @@ message Transaction {
 message TransactionAction {
   SignatureHeader header = 1;
   ChaincodeActionPayload payload = 2;
-  bytes response_payload = 3;
 }
 
 message ChaincodeActionPayload {

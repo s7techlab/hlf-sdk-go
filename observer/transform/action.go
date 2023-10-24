@@ -146,6 +146,13 @@ func TxChaincodeIDMatch(chaincode string) TxActionMatch {
 		return action.ChaincodeSpec().ChaincodeId.Name == chaincode
 	}
 }
+
+func TxChaincodeIDNotMatch(chaincode string) TxActionMatch {
+	return func(action *hlfproto.TransactionAction) bool {
+		return action.ChaincodeSpec().ChaincodeId.Name != chaincode
+	}
+}
+
 func TxChaincodesIDMatch(chaincodes ...string) TxActionMatch {
 	return func(action *hlfproto.TransactionAction) bool {
 		for k := range chaincodes {
@@ -164,6 +171,7 @@ func TxChaincodesIDRegexp(chaincodePattern string) TxActionMatch {
 		return matched
 	}
 }
+
 func TxChaincodesIDRegexpExclude(chaincodePattern string) TxActionMatch {
 	return func(action *hlfproto.TransactionAction) bool {
 		matched, _ := regexp.MatchString(chaincodePattern, action.ChaincodeSpec().ChaincodeId.Name)

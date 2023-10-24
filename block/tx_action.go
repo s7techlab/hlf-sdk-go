@@ -26,6 +26,10 @@ func (x *TransactionAction) Endorsements() []*Endorsement {
 	return x.GetPayload().GetAction().GetEndorsement()
 }
 
+func (x *TransactionAction) Response() *peer.Response {
+	return x.GetPayload().GetAction().GetProposalResponsePayload().GetExtension().GetResponse()
+}
+
 func ParseTxActions(txActions []*peer.TransactionAction) ([]*TransactionAction, error) {
 	var parsedTxActions []*TransactionAction
 
