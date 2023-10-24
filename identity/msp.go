@@ -164,8 +164,10 @@ func MSPFromPath(mspID, mspPath string, opts ...MSPOpt) (*MSP, error) {
 		}
 	}
 
-	if mspInstance.config, err = FabricMSPConfigFromPath(mspID, mspOpts.mspPath); err != nil {
-		return nil, err
+	if !mspOpts.skipConfig {
+		if mspInstance.config, err = FabricMSPConfigFromPath(mspID, mspOpts.mspPath); err != nil {
+			return nil, err
+		}
 	}
 
 	if mspOpts.validateCertChain {
