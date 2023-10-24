@@ -5,7 +5,7 @@ import (
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
 
-	"github.com/s7techlab/hlf-sdk-go/proto"
+	"github.com/s7techlab/hlf-sdk-go/block"
 )
 
 type ChaincodeEventWithBlock struct {
@@ -74,13 +74,13 @@ func (e *EventSubscription) EventsExtended() chan interface {
 	return e.events
 }
 
-func (e *EventSubscription) Handler(block *common.Block) bool {
-	if block == nil {
+func (e *EventSubscription) Handler(b *common.Block) bool {
+	if b == nil {
 		close(e.events)
 		return false
 	}
 
-	parsedBlock, err := proto.ParseBlock(block)
+	parsedBlock, err := block.ParseBlock(b)
 	if err != nil {
 		return true
 	}
@@ -110,7 +110,7 @@ func (e *EventSubscription) Handler(block *common.Block) bool {
 			select {
 			case e.events <- &ChaincodeEventWithBlock{
 				event:       ev,
-				block:       block.Header.Number,
+				block:       b.Header.Number,
 				txTimestamp: envelope.Payload.Header.ChannelHeader.Timestamp,
 			}:
 			case <-e.ErrorCloser.Done():

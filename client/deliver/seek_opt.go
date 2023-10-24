@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
-	"github.com/s7techlab/hlf-sdk-go/proto"
+	"github.com/s7techlab/hlf-sdk-go/block"
 )
 
 type SeekOptConverter struct {
@@ -20,12 +20,12 @@ type SeekOptConverter struct {
 func NewSeekOptConverter(channelInfo api.ChainInfoGetter, logger *zap.Logger) *SeekOptConverter {
 	return &SeekOptConverter{
 		GetChannelHeight: func(ctx context.Context, channel string) (uint64, error) {
-			channelInfo, err := channelInfo.GetChainInfo(ctx, channel)
+			chInfo, err := channelInfo.GetChainInfo(ctx, channel)
 			if err != nil {
 				return 0, err
 			}
 
-			return channelInfo.Height, nil
+			return chInfo.Height, nil
 		},
 		Logger: logger,
 	}
@@ -63,7 +63,7 @@ func (so *SeekOptConverter) ByBlockRange(ctx context.Context, channel string, bl
 		case blockRangeFrom == 0:
 			seekFrom = api.SeekFromOldest
 		case blockRangeFrom > 0:
-			seekFrom = proto.NewSeekSpecified(uint64(blockRangeFrom))
+			seekFrom = block.NewSeekSpecified(uint64(blockRangeFrom))
 		case blockRangeFrom < 0:
 			// from  -{x} means we need to look x blocks back for events
 			// thus we need to  know current channel height
@@ -78,7 +78,7 @@ func (so *SeekOptConverter) ByBlockRange(ctx context.Context, channel string, bl
 			if from < 0 {
 				seekFrom = api.SeekFromOldest
 			} else {
-				seekFrom = proto.NewSeekSpecified(uint64(from))
+				seekFrom = block.NewSeekSpecified(uint64(from))
 			}
 		}
 
@@ -94,7 +94,7 @@ func (so *SeekOptConverter) ByBlockRange(ctx context.Context, channel string, bl
 		switch {
 
 		case blockRangeTo > 0:
-			seekTo = proto.NewSeekSpecified(uint64(blockRangeTo))
+			seekTo = block.NewSeekSpecified(uint64(blockRangeTo))
 
 		case blockRangeTo == 0:
 			fallthrough
@@ -115,7 +115,7 @@ func (so *SeekOptConverter) ByBlockRange(ctx context.Context, channel string, bl
 				to = 0
 			}
 
-			seekTo = proto.NewSeekSpecified(uint64(to))
+			seekTo = block.NewSeekSpecified(uint64(to))
 		}
 
 	default:

@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package hlfsdkgo.proto;
+package hlfsdkgo.block;
 
-option go_package = "github.com/s7techlab/hlf-sdk-go/proto";
+option go_package = "github.com/s7techlab/hlf-sdk-go/block";
 
 import "chan_config.proto";
 
@@ -50,14 +50,14 @@ message SignatureHeader {
 
 // field numbers correspond to HeaderType https://github.com/hyperledger/fabric-protos/blob/main/common/common.proto#L27
 message Transaction {
-  hlfsdkgo.proto.ChannelConfig channel_config = 1;
+  hlfsdkgo.block.ChannelConfig channel_config = 1;
   repeated TransactionAction actions = 3;
 }
 
 message TransactionAction {
   SignatureHeader header = 1;
   ChaincodeActionPayload payload = 2;
-  bytes bytes_payload = 3;
+  bytes response_payload = 3;
 }
 
 message ChaincodeActionPayload {

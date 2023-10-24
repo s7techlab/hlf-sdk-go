@@ -6,8 +6,8 @@ import (
 
 	"github.com/mohae/deepcopy"
 
+	hlfproto "github.com/s7techlab/hlf-sdk-go/block"
 	"github.com/s7techlab/hlf-sdk-go/observer"
-	hlfproto "github.com/s7techlab/hlf-sdk-go/proto"
 )
 
 type (
@@ -127,7 +127,7 @@ func (s *Action) Transform(block *observer.ParsedBlock) error {
 
 				for _, actionPayloadTransform := range s.actionPayloadTransformers {
 					if err := actionPayloadTransform.Transform(txAction); err != nil {
-						return fmt.Errorf(`action payload transform: %w`, err)
+						return fmt.Errorf(`action payload transformer: %w`, err)
 					}
 				}
 			}

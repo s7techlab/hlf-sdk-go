@@ -8,10 +8,10 @@ import (
 
 	"github.com/golang/protobuf/ptypes/empty"
 
+	"github.com/s7techlab/hlf-sdk-go/block"
 	"github.com/s7techlab/hlf-sdk-go/client"
 	_ "github.com/s7techlab/hlf-sdk-go/crypto/ecdsa"
 	"github.com/s7techlab/hlf-sdk-go/identity"
-	"github.com/s7techlab/hlf-sdk-go/proto"
 	"github.com/s7techlab/hlf-sdk-go/service/systemcc/cscc"
 	"github.com/s7techlab/hlf-sdk-go/service/systemcc/qscc"
 )
@@ -37,7 +37,7 @@ func main() {
 	ctx := context.Background()
 
 	// get chainInfo for all joined channels
-	chInfo, err := cscc.NewCSCC(core, proto.FabricV2).GetChannels(ctx, &empty.Empty{})
+	chInfo, err := cscc.NewCSCC(core, block.FabricV2).GetChannels(ctx, &empty.Empty{})
 	if err != nil {
 		log.Fatalln(`failed to fetch channel list:`, err)
 	}

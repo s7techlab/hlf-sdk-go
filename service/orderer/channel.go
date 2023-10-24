@@ -12,8 +12,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
+	hlfproto "github.com/s7techlab/hlf-sdk-go/block"
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
-	hlfproto "github.com/s7techlab/hlf-sdk-go/proto"
 )
 
 var (

@@ -8,7 +8,7 @@ import (
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
 
-	"github.com/s7techlab/hlf-sdk-go/proto"
+	"github.com/s7techlab/hlf-sdk-go/block"
 )
 
 var (
@@ -49,7 +49,7 @@ func NewEndorsementSignedProposal(
 		return nil, ``, fmt.Errorf(`tx id: %w`, err)
 	}
 
-	header, err := proto.NewMarshalledCommonHeader(
+	header, err := block.NewMarshalledCommonHeader(
 		common.HeaderType_ENDORSER_TRANSACTION,
 		txParams.ID,
 		txParams.Nonce,
@@ -62,11 +62,11 @@ func NewEndorsementSignedProposal(
 		return nil, ``, fmt.Errorf(`tx header: %w`, err)
 	}
 
-	proposal, err := proto.NewMarshaledPeerProposal(header, chaincode, args, transientMap)
+	proposal, err := block.NewMarshaledPeerProposal(header, chaincode, args, transientMap)
 	if err != nil {
 		return nil, ``, fmt.Errorf(`proposal: %w`, err)
 	}
 
-	signedProposal, err = proto.NewPeerSignedProposal(proposal, signer)
+	signedProposal, err = block.NewPeerSignedProposal(proposal, signer)
 	return signedProposal, txParams.ID, err
 }

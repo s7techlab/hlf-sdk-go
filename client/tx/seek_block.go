@@ -8,7 +8,7 @@ import (
 	"github.com/hyperledger/fabric-protos-go/orderer"
 	"github.com/hyperledger/fabric/msp"
 
-	"github.com/s7techlab/hlf-sdk-go/proto"
+	"github.com/s7techlab/hlf-sdk-go/block"
 )
 
 type SeekBlock struct {
@@ -24,8 +24,8 @@ func (sb SeekBlock) CreateEnvelope() (*common.Envelope, error) {
 }
 
 func NewSeekGenesisEnvelope(channel string, signer msp.SigningIdentity, tlsCertHash []byte) (*common.Envelope, error) {
-	start := proto.NewSeekSpecified(0)
-	stop := proto.NewSeekSpecified(0)
+	start := block.NewSeekSpecified(0)
+	stop := block.NewSeekSpecified(0)
 
 	return NewSeekBlockEnvelope(channel, signer, start, stop, tlsCertHash)
 }
@@ -45,12 +45,12 @@ func NewSeekBlockEnvelope(channel string, signer msp.SigningIdentity, start, sto
 		return nil, fmt.Errorf(`tx id: %w`, err)
 	}
 
-	seekInfo, err := proto.NewMarshalledSeekInfo(start, stop)
+	seekInfo, err := block.NewMarshalledSeekInfo(start, stop)
 	if err != nil {
 		return nil, fmt.Errorf(`seekInfo: %w`, err)
 	}
 
-	header, err := proto.NewCommonHeader(
+	header, err := block.NewCommonHeader(
 		common.HeaderType_DELIVER_SEEK_INFO,
 		txParams.ID,
 		txParams.Nonce,
@@ -62,10 +62,10 @@ func NewSeekBlockEnvelope(channel string, signer msp.SigningIdentity, start, sto
 		return nil, fmt.Errorf(`payload header: %w`, err)
 	}
 
-	payload, err := proto.NewMarshalledCommonPayload(header, seekInfo)
+	payload, err := block.NewMarshalledCommonPayload(header, seekInfo)
 	if err != nil {
 		return nil, fmt.Errorf(`common payload: %w`, err)
 	}
 
-	return proto.NewCommonEnvelope(payload, signer)
+	return block.NewCommonEnvelope(payload, signer)
 }

@@ -1,19 +1,17 @@
-package proto
+package block
 
 import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/msp"
 	"github.com/hyperledger/fabric-protos-go/orderer"
-	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/protoutil"
 
-	bft "github.com/s7techlab/hlf-sdk-go/proto/smartbft"
-	bftcommon "github.com/s7techlab/hlf-sdk-go/proto/smartbft/common"
-	"github.com/s7techlab/hlf-sdk-go/proto/txflags"
+	bft "github.com/s7techlab/hlf-sdk-go/block/smartbft"
+	bftcommon "github.com/s7techlab/hlf-sdk-go/block/smartbft/common"
+	"github.com/s7techlab/hlf-sdk-go/block/txflags"
 )
 
 type (
@@ -176,29 +174,4 @@ func createConfigEnvelope(data []byte) (*common.ConfigEnvelope, error) {
 	}
 
 	return configEnvelope, nil
-}
-
-func (x *Block) ValidEnvelopes() []*Envelope {
-	var envs []*Envelope
-	for _, e := range x.Data.Envelopes {
-		if e.ValidationCode != peer.TxValidationCode_VALID {
-			continue
-		}
-
-		envs = append(envs, e)
-	}
-
-	return envs
-}
-
-func (x *Block) BlockDate() *timestamp.Timestamp {
-	var max *timestamp.Timestamp
-	for _, envelope := range x.ValidEnvelopes() {
-		ts := envelope.GetPayload().GetHeader().GetChannelHeader().GetTimestamp()
-
-		if ts.AsTime().After(max.AsTime()) {
-			max = ts
-		}
-	}
-	return max
 }

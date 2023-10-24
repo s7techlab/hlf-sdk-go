@@ -1,7 +1,7 @@
 package observer
 
 import (
-	hlfproto "github.com/s7techlab/hlf-sdk-go/proto"
+	hlfproto "github.com/s7techlab/hlf-sdk-go/block"
 )
 
 type (
