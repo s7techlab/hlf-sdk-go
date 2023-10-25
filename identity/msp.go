@@ -121,6 +121,18 @@ func MSPFromPath(mspID, mspPath string, opts ...MSPOpt) (*MSP, error) {
 
 	mspInstance := &MSP{}
 
+	if len(mspOpts.signCert) != 0 && len(mspOpts.signKey) != 0 {
+		mspInstance.signer, err = NewSigningFromBytes(mspID, mspOpts.signCert, mspOpts.signKey)
+		if err != nil {
+			return nil, err
+		}
+	} else if mspOpts.signCertPath != "" && mspOpts.signKeyPath != "" {
+		mspInstance.signer, err = NewSigningFromFile(mspID, mspOpts.signCertPath, mspOpts.signKeyPath)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// admin in separate msp path
 	if mspOpts.adminMSPPath != `` {
 		logger.Debug(`load admin identities from separate msp path`,
@@ -157,7 +169,7 @@ func MSPFromPath(mspID, mspPath string, opts ...MSPOpt) (*MSP, error) {
 		logger.Debug(`user identities loaded`, zap.Int(`num`, len(mspInstance.users)))
 	}
 
-	if mspOpts.signCertsPath != `` {
+	if mspOpts.signCertsPath != `` && mspInstance.signer == nil {
 		mspInstance.signer, err = FirstSigningFromPath(mspID, mspOpts.signCertsPath, mspOpts.keystorePath)
 		if err != nil {
 			return nil, fmt.Errorf(`read signer identity from=%s: %w`, mspOpts.signCertsPath, err)
