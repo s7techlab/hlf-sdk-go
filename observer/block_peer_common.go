@@ -19,8 +19,8 @@ type (
 		peerChannels       PeerChannels
 		blockDeliverer     api.BlocksDeliverer
 		channelObservers   map[string]*BlockPeerChannel
-		seekFromFetcher    SeekFromFetcher
 		seekFromMap        map[string]uint64
+		seekFromFetcher    SeekFromFetcher
 		observePeriod      time.Duration
 		stopRecreateStream bool
 		logger             *zap.Logger
@@ -38,8 +38,8 @@ type (
 	}
 
 	BlockPeerOpts struct {
-		seekFromFetcher    SeekFromFetcher
 		seekFromMap        map[string]uint64
+		seekFromFetcher    SeekFromFetcher
 		observePeriod      time.Duration
 		stopRecreateStream bool
 		logger             *zap.Logger
@@ -64,15 +64,15 @@ func WithBlockPeerLogger(logger *zap.Logger) BlockPeerOpt {
 	}
 }
 
-func WithSeekFromFetcher(seekFromFetcher SeekFromFetcher) BlockPeerOpt {
-	return func(opts *BlockPeerOpts) {
-		opts.seekFromFetcher = seekFromFetcher
-	}
-}
-
 func WithSeekFromMap(seekFromMap map[string]uint64) BlockPeerOpt {
 	return func(opts *BlockPeerOpts) {
 		opts.seekFromMap = seekFromMap
+	}
+}
+
+func WithSeekFromFetcher(seekFromFetcher SeekFromFetcher) BlockPeerOpt {
+	return func(opts *BlockPeerOpts) {
+		opts.seekFromFetcher = seekFromFetcher
 	}
 }
 
@@ -102,8 +102,8 @@ func NewBlockPeer(peerChannels PeerChannels, blockDeliverer api.BlocksDeliverer,
 		channelObservers:   make(map[string]*BlockPeerChannel),
 		blocks:             make(chan *Block),
 		blocksByChannels:   make(map[string]chan *Block),
-		seekFromFetcher:    blockPeerOpts.seekFromFetcher,
 		seekFromMap:        blockPeerOpts.seekFromMap,
+		seekFromFetcher:    blockPeerOpts.seekFromFetcher,
 		observePeriod:      blockPeerOpts.observePeriod,
 		stopRecreateStream: blockPeerOpts.stopRecreateStream,
 		logger:             blockPeerOpts.logger,
@@ -189,11 +189,22 @@ func (bp *BlockPeer) initChannels(ctx context.Context) {
 	}
 }
 
-func (bp *BlockPeer) peerChannel(ctx context.Context, channel string) *BlockPeerChannel {
-	seekFrom := bp.seekFromFetcher
-	if seekFrom == nil {
-		seekFrom = ChannelSeekFrom(bp.seekFromMap[channel])
+func (bp *BlockPeer) getSeekFrom(channel string) SeekFromFetcher {
+	seekFrom := ChannelSeekOldest()
+	seekFromNum, exist := bp.seekFromMap[channel]
+	if exist {
+		seekFrom = ChannelSeekFrom(seekFromNum)
+	} else {
+		if bp.seekFromFetcher != nil {
+			seekFrom = bp.seekFromFetcher
+		}
 	}
+
+	return seekFrom
+}
+
+func (bp *BlockPeer) peerChannel(ctx context.Context, channel string) *BlockPeerChannel {
+	seekFrom := bp.getSeekFrom(channel)
 
 	peerChannel := &BlockPeerChannel{}
 	peerChannel.Observer = NewBlockChannel(

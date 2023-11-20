@@ -66,10 +66,7 @@ func (pbp *ParsedBlockPeer) initParsedChannelsConcurrently(ctx context.Context, 
 }
 
 func (pbp *ParsedBlockPeer) peerParsedChannelConcurrently(ctx context.Context, channel string, blocksByChannels *ParsedBlocksByChannels) *ParsedBlockPeerChannel {
-	seekFrom := pbp.blockPeer.seekFromFetcher
-	if seekFrom == nil {
-		seekFrom = ChannelSeekFrom(pbp.blockPeer.seekFromMap[channel])
-	}
+	seekFrom := pbp.blockPeer.getSeekFrom(channel)
 
 	commonBlockChannel := NewBlockChannel(
 		channel,
