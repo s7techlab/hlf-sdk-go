@@ -66,15 +66,17 @@ func (pbp *ParsedBlockPeer) initParsedChannelsConcurrently(ctx context.Context, 
 }
 
 func (pbp *ParsedBlockPeer) peerParsedChannelConcurrently(ctx context.Context, channel string, blocksByChannels *ParsedBlocksByChannels) *ParsedBlockPeerChannel {
-	seekFrom := pbp.blockPeer.seekFrom[channel]
-	if seekFrom > 0 {
-		// it must be -1, because start position here is excluded from array
-		// https://github.com/s7techlab/hlf-sdk-go/blob/master/proto/seek.go#L15
-		seekFrom--
+	seekFrom, exist := pbp.blockPeer.seekFrom[channel]
+	if !exist {
+		seekFrom = ChannelSeekOldest()
 	}
 
-	commonBlockChannel := NewBlockChannel(channel, pbp.blockPeer.blockDeliverer, ChannelSeekFrom(seekFrom),
-		WithChannelBlockLogger(pbp.blockPeer.logger), WithChannelStopRecreateStream(pbp.blockPeer.stopRecreateStream))
+	commonBlockChannel := NewBlockChannel(
+		channel,
+		pbp.blockPeer.blockDeliverer,
+		seekFrom,
+		WithChannelBlockLogger(pbp.blockPeer.logger),
+		WithChannelStopRecreateStream(pbp.blockPeer.stopRecreateStream))
 
 	configBlock := pbp.configBlocks[channel]
 

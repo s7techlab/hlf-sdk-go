@@ -19,7 +19,7 @@ type (
 		peerChannels       PeerChannels
 		blockDeliverer     api.BlocksDeliverer
 		channelObservers   map[string]*BlockPeerChannel
-		seekFrom           map[string]uint64
+		seekFrom           map[string]SeekFromFetcher
 		observePeriod      time.Duration
 		stopRecreateStream bool
 		logger             *zap.Logger
@@ -37,7 +37,7 @@ type (
 	}
 
 	BlockPeerOpts struct {
-		seekFrom           map[string]uint64
+		seekFrom           map[string]SeekFromFetcher
 		observePeriod      time.Duration
 		stopRecreateStream bool
 		logger             *zap.Logger
@@ -62,7 +62,7 @@ func WithBlockPeerLogger(logger *zap.Logger) BlockPeerOpt {
 	}
 }
 
-func WithSeekFrom(seekFrom map[string]uint64) BlockPeerOpt {
+func WithSeekFrom(seekFrom map[string]SeekFromFetcher) BlockPeerOpt {
 	return func(opts *BlockPeerOpts) {
 		opts.seekFrom = seekFrom
 	}
@@ -181,18 +181,16 @@ func (bp *BlockPeer) initChannels(ctx context.Context) {
 }
 
 func (bp *BlockPeer) peerChannel(ctx context.Context, channel string) *BlockPeerChannel {
-	seekFrom := bp.seekFrom[channel]
-	if seekFrom > 0 {
-		// it must be -1, because start position here is excluded from array
-		// https://github.com/s7techlab/hlf-sdk-go/blob/master/proto/seek.go#L15
-		seekFrom--
+	seekFrom, exist := bp.seekFrom[channel]
+	if !exist {
+		seekFrom = ChannelSeekOldest()
 	}
 
 	peerChannel := &BlockPeerChannel{}
 	peerChannel.Observer = NewBlockChannel(
 		channel,
 		bp.blockDeliverer,
-		ChannelSeekFrom(seekFrom),
+		seekFrom,
 		WithChannelBlockLogger(bp.logger),
 		WithChannelStopRecreateStream(bp.stopRecreateStream))
 
