@@ -16,10 +16,11 @@ type (
 	BlockPeer struct {
 		mu sync.RWMutex
 
-		peerChannels       PeerChannels
-		blockDeliverer     api.BlocksDeliverer
-		channelObservers   map[string]*BlockPeerChannel
-		seekFromMap        map[string]uint64
+		peerChannels     PeerChannels
+		blockDeliverer   api.BlocksDeliverer
+		channelObservers map[string]*BlockPeerChannel
+		// seekFrom has a higher priority than seekFromFetcher (look getSeekFrom method)
+		seekFrom           map[string]uint64
 		seekFromFetcher    SeekFromFetcher
 		observePeriod      time.Duration
 		stopRecreateStream bool
@@ -38,7 +39,7 @@ type (
 	}
 
 	BlockPeerOpts struct {
-		seekFromMap        map[string]uint64
+		seekFrom           map[string]uint64
 		seekFromFetcher    SeekFromFetcher
 		observePeriod      time.Duration
 		stopRecreateStream bool
@@ -64,9 +65,9 @@ func WithBlockPeerLogger(logger *zap.Logger) BlockPeerOpt {
 	}
 }
 
-func WithSeekFromMap(seekFromMap map[string]uint64) BlockPeerOpt {
+func WithSeekFrom(seekFrom map[string]uint64) BlockPeerOpt {
 	return func(opts *BlockPeerOpts) {
-		opts.seekFromMap = seekFromMap
+		opts.seekFrom = seekFrom
 	}
 }
 
@@ -102,7 +103,7 @@ func NewBlockPeer(peerChannels PeerChannels, blockDeliverer api.BlocksDeliverer,
 		channelObservers:   make(map[string]*BlockPeerChannel),
 		blocks:             make(chan *Block),
 		blocksByChannels:   make(map[string]chan *Block),
-		seekFromMap:        blockPeerOpts.seekFromMap,
+		seekFrom:           blockPeerOpts.seekFrom,
 		seekFromFetcher:    blockPeerOpts.seekFromFetcher,
 		observePeriod:      blockPeerOpts.observePeriod,
 		stopRecreateStream: blockPeerOpts.stopRecreateStream,
@@ -191,10 +192,12 @@ func (bp *BlockPeer) initChannels(ctx context.Context) {
 
 func (bp *BlockPeer) getSeekFrom(channel string) SeekFromFetcher {
 	seekFrom := ChannelSeekOldest()
-	seekFromNum, exist := bp.seekFromMap[channel]
+	// at first check seekFrom var, if it is empty, check seekFromFetcher
+	seekFromNum, exist := bp.seekFrom[channel]
 	if exist {
 		seekFrom = ChannelSeekFrom(seekFromNum)
 	} else {
+		// if seekFromFetcher is also empty, use ChannelSeekOldest
 		if bp.seekFromFetcher != nil {
 			seekFrom = bp.seekFromFetcher
 		}
