@@ -19,7 +19,8 @@ type (
 		peerChannels       PeerChannels
 		blockDeliverer     api.BlocksDeliverer
 		channelObservers   map[string]*BlockPeerChannel
-		seekFrom           map[string]SeekFromFetcher
+		seekFromFetcher    SeekFromFetcher
+		seekFromMap        map[string]uint64
 		observePeriod      time.Duration
 		stopRecreateStream bool
 		logger             *zap.Logger
@@ -37,7 +38,8 @@ type (
 	}
 
 	BlockPeerOpts struct {
-		seekFrom           map[string]SeekFromFetcher
+		seekFromFetcher    SeekFromFetcher
+		seekFromMap        map[string]uint64
 		observePeriod      time.Duration
 		stopRecreateStream bool
 		logger             *zap.Logger
@@ -62,9 +64,15 @@ func WithBlockPeerLogger(logger *zap.Logger) BlockPeerOpt {
 	}
 }
 
-func WithSeekFrom(seekFrom map[string]SeekFromFetcher) BlockPeerOpt {
+func WithSeekFromFetcher(seekFromFetcher SeekFromFetcher) BlockPeerOpt {
 	return func(opts *BlockPeerOpts) {
-		opts.seekFrom = seekFrom
+		opts.seekFromFetcher = seekFromFetcher
+	}
+}
+
+func WithSeekFromMap(seekFromMap map[string]uint64) BlockPeerOpt {
+	return func(opts *BlockPeerOpts) {
+		opts.seekFromMap = seekFromMap
 	}
 }
 
@@ -94,7 +102,8 @@ func NewBlockPeer(peerChannels PeerChannels, blockDeliverer api.BlocksDeliverer,
 		channelObservers:   make(map[string]*BlockPeerChannel),
 		blocks:             make(chan *Block),
 		blocksByChannels:   make(map[string]chan *Block),
-		seekFrom:           blockPeerOpts.seekFrom,
+		seekFromFetcher:    blockPeerOpts.seekFromFetcher,
+		seekFromMap:        blockPeerOpts.seekFromMap,
 		observePeriod:      blockPeerOpts.observePeriod,
 		stopRecreateStream: blockPeerOpts.stopRecreateStream,
 		logger:             blockPeerOpts.logger,
@@ -181,9 +190,9 @@ func (bp *BlockPeer) initChannels(ctx context.Context) {
 }
 
 func (bp *BlockPeer) peerChannel(ctx context.Context, channel string) *BlockPeerChannel {
-	seekFrom, exist := bp.seekFrom[channel]
-	if !exist {
-		seekFrom = ChannelSeekOldest()
+	seekFrom := bp.seekFromFetcher
+	if seekFrom == nil {
+		seekFrom = ChannelSeekFrom(bp.seekFromMap[channel])
 	}
 
 	peerChannel := &BlockPeerChannel{}

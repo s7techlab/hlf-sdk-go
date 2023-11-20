@@ -64,9 +64,9 @@ func (bp *BlockPeer) initChannelsConcurrently(ctx context.Context, blocksByChann
 }
 
 func (bp *BlockPeer) peerChannelConcurrently(ctx context.Context, channel string, blocksByChannels *BlocksByChannels) *BlockPeerChannel {
-	seekFrom, exist := bp.seekFrom[channel]
-	if !exist {
-		seekFrom = ChannelSeekOldest()
+	seekFrom := bp.seekFromFetcher
+	if seekFrom == nil {
+		seekFrom = ChannelSeekFrom(bp.seekFromMap[channel])
 	}
 
 	peerChannel := &BlockPeerChannel{}

@@ -144,9 +144,9 @@ func (pbp *ParsedBlockPeer) initParsedChannels(ctx context.Context) {
 }
 
 func (pbp *ParsedBlockPeer) peerParsedChannel(ctx context.Context, channel string) *ParsedBlockPeerChannel {
-	seekFrom, exist := pbp.blockPeer.seekFrom[channel]
-	if !exist {
-		seekFrom = ChannelSeekOldest()
+	seekFrom := pbp.blockPeer.seekFromFetcher
+	if seekFrom == nil {
+		seekFrom = ChannelSeekFrom(pbp.blockPeer.seekFromMap[channel])
 	}
 
 	commonBlockChannel := NewBlockChannel(
