@@ -40,7 +40,7 @@ func (s *Store) Put(ctx context.Context, req *ccpackage.PutPackageRequest) error
 }
 
 // Get gets chaincode package info from storage.
-func (s *Store) Get(_ context.Context, id *ccpackage.PackageID) (*ccpackage.PackageData, error) {
+func (s *Store) Get(_ context.Context, id *ccpackage.PackageID) (*ccpackage.Package, error) {
 	fStat, err := os.Stat(s.filePath(id))
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -49,7 +49,7 @@ func (s *Store) Get(_ context.Context, id *ccpackage.PackageID) (*ccpackage.Pack
 		return nil, fmt.Errorf("stat file: %w", err)
 	}
 
-	return &ccpackage.PackageData{
+	return &ccpackage.Package{
 		Id:        id,
 		Size:      fStat.Size(),
 		CreatedAt: timestamppb.New(fStat.ModTime()),

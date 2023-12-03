@@ -26,7 +26,7 @@ type (
 		// Put saves chaincode package into storage.
 		Put(context.Context, *ccpackage.PutPackageRequest) error
 		// Get gets chaincode package info from storage.
-		Get(context.Context, *ccpackage.PackageID) (*ccpackage.PackageData, error)
+		Get(context.Context, *ccpackage.PackageID) (*ccpackage.Package, error)
 		// List gets stored chaincode packages' infos.
 		List(context.Context) ([]*ccpackage.Package, error)
 		// Fetch fetches chaincode package.

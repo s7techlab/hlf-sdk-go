@@ -20,7 +20,7 @@ const (
 )
 
 type Storage struct {
-	packages map[string]*ccpackage.PackageData
+	packages map[string]*ccpackage.Package
 	mx       sync.RWMutex
 	wg       sync.WaitGroup
 	stop     chan struct{}
@@ -28,7 +28,7 @@ type Storage struct {
 
 func New() *Storage {
 	m := &Storage{
-		packages: map[string]*ccpackage.PackageData{},
+		packages: map[string]*ccpackage.Package{},
 		stop:     make(chan struct{}),
 	}
 
@@ -66,7 +66,7 @@ func (m *Storage) Put(ctx context.Context, req *ccpackage.PutPackageRequest) err
 	m.mx.Lock()
 	defer m.mx.Unlock()
 
-	m.packages[store.ObjectKey(req.Id)] = &ccpackage.PackageData{
+	m.packages[store.ObjectKey(req.Id)] = &ccpackage.Package{
 		Id:        req.Id,
 		Size:      int64(len(req.Data)),
 		CreatedAt: ptypes.TimestampNow(),
@@ -76,7 +76,7 @@ func (m *Storage) Put(ctx context.Context, req *ccpackage.PutPackageRequest) err
 }
 
 // Get gets chaincode package info from packages.
-func (m *Storage) Get(_ context.Context, id *ccpackage.PackageID) (*ccpackage.PackageData, error) {
+func (m *Storage) Get(_ context.Context, id *ccpackage.PackageID) (*ccpackage.Package, error) {
 	m.mx.RLock()
 	defer m.mx.RUnlock()
 
