@@ -15,21 +15,21 @@ service LifecycleService {
   // QueryInstalledChaincodes returns chaincode packages list installed on peer
   rpc QueryInstalledChaincodes(google.protobuf.Empty) returns (lifecycle.QueryInstalledChaincodesResult) {
     option (google.api.http) = {
-      get: "/lifecycle/chaincodes"
+      get: "/systemcc/lifecycle/chaincodes"
     };
   }
 
   // QueryInstalledChaincode returns chaincode package installed on peer
   rpc QueryInstalledChaincode(lifecycle.QueryInstalledChaincodeArgs) returns (lifecycle.QueryInstalledChaincodeResult) {
     option (google.api.http) = {
-      get: "/lifecycle/chaincodes/{package_id}"
+      get: "/systemcc/lifecycle/chaincodes/{package_id}"
     };
   }
 
   // InstallChaincode sets up chaincode package on peer
   rpc InstallChaincode(lifecycle.InstallChaincodeArgs) returns (lifecycle.InstallChaincodeResult) {
     option (google.api.http) = {
-      post: "/lifecycle/chaincodes"
+      post: "/systemcc/lifecycle/chaincodes"
       body: "*"
     };
   }
@@ -38,7 +38,7 @@ service LifecycleService {
   // ApproveChaincodeDefinitionForMyOrg marks chaincode definition on a channel
   rpc ApproveChaincodeDefinitionForMyOrg(ApproveChaincodeDefinitionForMyOrgRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/lifecycle/chaincodes/approve"
+      post: "/systemcc/lifecycle/chaincodes/approve"
       body: "*"
     };
   }
@@ -46,7 +46,7 @@ service LifecycleService {
   // QueryApprovedChaincodeDefinition returns approved chaincode definition
   rpc QueryApprovedChaincodeDefinition(QueryApprovedChaincodeDefinitionRequest) returns (lifecycle.QueryApprovedChaincodeDefinitionResult) {
     option (google.api.http) = {
-      post: "/lifecycle/chaincodes/approved"
+      post: "/systemcc/lifecycle/chaincodes/approved"
       body: "*"
     };
   }
@@ -54,7 +54,7 @@ service LifecycleService {
   // CheckCommitReadiness returns commitments statuses of participants on chaincode definition
   rpc CheckCommitReadiness(CheckCommitReadinessRequest) returns (lifecycle.CheckCommitReadinessResult) {
     option (google.api.http) = {
-      post: "/lifecycle/commit-readiness"
+      post: "/systemcc/lifecycle/commit-readiness"
       body: "*"
     };
   }
@@ -62,7 +62,7 @@ service LifecycleService {
   // CommitChaincodeDefinition the chaincode definition on the channel
   rpc CommitChaincodeDefinition(CommitChaincodeDefinitionRequest) returns (lifecycle.CommitChaincodeDefinitionResult) {
     option (google.api.http) = {
-      post: "/lifecycle/chaincodes/commit"
+      post: "/systemcc/lifecycle/chaincodes/commit"
       body: "*"
     };
   }
@@ -70,7 +70,7 @@ service LifecycleService {
   // QueryChaincodeDefinition returns chaincode definition committed on the channel
   rpc QueryChaincodeDefinition(QueryChaincodeDefinitionRequest) returns (lifecycle.QueryChaincodeDefinitionResult) {
     option (google.api.http) = {
-      post: "/lifecycle/chaincodes/commit-check"
+      post: "/systemcc/lifecycle/chaincodes/commit-check"
       body: "*"
     };
   }
@@ -79,7 +79,7 @@ service LifecycleService {
   // QueryChaincodeDefinitions returns chaincode definitions committed on the channel
   rpc QueryChaincodeDefinitions(QueryChaincodeDefinitionsRequest) returns (lifecycle.QueryChaincodeDefinitionsResult) {
     option (google.api.http) = {
-      post: "/lifecycle/chaincode/commits"
+      post: "/systemcc/lifecycle/chaincode/commits"
       body: "*"
     };
   }

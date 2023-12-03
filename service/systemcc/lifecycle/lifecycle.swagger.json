@@ -11,7 +11,7 @@
     "application/json"
   ],
   "paths": {
-    "/lifecycle/chaincode/commits": {
+    "/systemcc/lifecycle/chaincode/commits": {
       "post": {
         "summary": "QueryChaincodeDefinitions returns chaincode definitions committed on the channel",
         "operationId": "LifecycleService_QueryChaincodeDefinitions",
@@ -44,7 +44,7 @@
         ]
       }
     },
-    "/lifecycle/chaincodes": {
+    "/systemcc/lifecycle/chaincodes": {
       "get": {
         "summary": "QueryInstalledChaincodes returns chaincode packages list installed on peer",
         "operationId": "LifecycleService_QueryInstalledChaincodes",
@@ -98,7 +98,7 @@
         ]
       }
     },
-    "/lifecycle/chaincodes/approve": {
+    "/systemcc/lifecycle/chaincodes/approve": {
       "post": {
         "summary": "ApproveChaincodeDefinitionForMyOrg marks chaincode definition on a channel",
         "operationId": "LifecycleService_ApproveChaincodeDefinitionForMyOrg",
@@ -131,7 +131,7 @@
         ]
       }
     },
-    "/lifecycle/chaincodes/approved": {
+    "/systemcc/lifecycle/chaincodes/approved": {
       "post": {
         "summary": "QueryApprovedChaincodeDefinition returns approved chaincode definition",
         "operationId": "LifecycleService_QueryApprovedChaincodeDefinition",
@@ -164,7 +164,7 @@
         ]
       }
     },
-    "/lifecycle/chaincodes/commit": {
+    "/systemcc/lifecycle/chaincodes/commit": {
       "post": {
         "summary": "CommitChaincodeDefinition the chaincode definition on the channel",
         "operationId": "LifecycleService_CommitChaincodeDefinition",
@@ -197,7 +197,7 @@
         ]
       }
     },
-    "/lifecycle/chaincodes/commit-check": {
+    "/systemcc/lifecycle/chaincodes/commit-check": {
       "post": {
         "summary": "QueryChaincodeDefinition returns chaincode definition committed on the channel",
         "operationId": "LifecycleService_QueryChaincodeDefinition",
@@ -230,7 +230,7 @@
         ]
       }
     },
-    "/lifecycle/chaincodes/{package_id}": {
+    "/systemcc/lifecycle/chaincodes/{package_id}": {
       "get": {
         "summary": "QueryInstalledChaincode returns chaincode package installed on peer",
         "operationId": "LifecycleService_QueryInstalledChaincode",
@@ -261,7 +261,7 @@
         ]
       }
     },
-    "/lifecycle/commit-readiness": {
+    "/systemcc/lifecycle/commit-readiness": {
       "post": {
         "summary": "CheckCommitReadiness returns commitments statuses of participants on chaincode definition",
         "operationId": "LifecycleService_CheckCommitReadiness",

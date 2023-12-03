@@ -11,7 +11,7 @@
     "application/json"
   ],
   "paths": {
-    "/lscc/chaincodes": {
+    "/systemcc/lscc/chaincodes": {
       "get": {
         "summary": "GetInstalledChaincodes returns list of installed chaincodes on peer",
         "operationId": "LSCCService_GetInstalledChaincodes",
@@ -65,7 +65,7 @@
         ]
       }
     },
-    "/lscc/chaincodes/{channel}": {
+    "/systemcc/lscc/chaincodes/{channel}": {
       "get": {
         "summary": "GetChaincodes returns list of instantiated chaincodes on channel",
         "operationId": "LSCCService_GetChaincodes",
@@ -133,7 +133,7 @@
         ]
       }
     },
-    "/lscc/chaincodes/{channel}/{chaincode}": {
+    "/systemcc/lscc/chaincodes/{channel}/{chaincode}": {
       "get": {
         "summary": "GetChaincodeData returns information about instantiated chaincode on target channel",
         "operationId": "LSCCService_GetChaincodeData",
@@ -170,7 +170,7 @@
         ]
       }
     },
-    "/lscc/chaincodes/{channel}/{chaincode}/deployment-spec": {
+    "/systemcc/lscc/chaincodes/{channel}/{chaincode}/deployment-spec": {
       "get": {
         "summary": "GetDeploymentSpec returns spec for installed chaincode",
         "operationId": "LSCCService_GetDeploymentSpec",

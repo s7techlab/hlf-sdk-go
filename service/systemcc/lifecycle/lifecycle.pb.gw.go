@@ -783,23 +783,23 @@ func RegisterLifecycleServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 }
 
 var (
-	pattern_LifecycleService_QueryInstalledChaincodes_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"lifecycle", "chaincodes"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_LifecycleService_QueryInstalledChaincodes_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"systemcc", "lifecycle", "chaincodes"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_LifecycleService_QueryInstalledChaincode_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"lifecycle", "chaincodes", "package_id"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_LifecycleService_QueryInstalledChaincode_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"systemcc", "lifecycle", "chaincodes", "package_id"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_LifecycleService_InstallChaincode_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"lifecycle", "chaincodes"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_LifecycleService_InstallChaincode_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"systemcc", "lifecycle", "chaincodes"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_LifecycleService_ApproveChaincodeDefinitionForMyOrg_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"lifecycle", "chaincodes", "approve"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_LifecycleService_ApproveChaincodeDefinitionForMyOrg_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"systemcc", "lifecycle", "chaincodes", "approve"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_LifecycleService_QueryApprovedChaincodeDefinition_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"lifecycle", "chaincodes", "approved"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_LifecycleService_QueryApprovedChaincodeDefinition_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"systemcc", "lifecycle", "chaincodes", "approved"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_LifecycleService_CheckCommitReadiness_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"lifecycle", "commit-readiness"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_LifecycleService_CheckCommitReadiness_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"systemcc", "lifecycle", "commit-readiness"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_LifecycleService_CommitChaincodeDefinition_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"lifecycle", "chaincodes", "commit"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_LifecycleService_CommitChaincodeDefinition_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"systemcc", "lifecycle", "chaincodes", "commit"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_LifecycleService_QueryChaincodeDefinition_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"lifecycle", "chaincodes", "commit-check"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_LifecycleService_QueryChaincodeDefinition_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"systemcc", "lifecycle", "chaincodes", "commit-check"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_LifecycleService_QueryChaincodeDefinitions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"lifecycle", "chaincode", "commits"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_LifecycleService_QueryChaincodeDefinitions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"systemcc", "lifecycle", "chaincode", "commits"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (

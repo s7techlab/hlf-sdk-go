@@ -672,17 +672,17 @@ func RegisterLSCCServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 }
 
 var (
-	pattern_LSCCService_GetChaincodeData_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 1, 0, 4, 1, 5, 3}, []string{"lscc", "chaincodes", "channel", "chaincode"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_LSCCService_GetChaincodeData_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"systemcc", "lscc", "chaincodes", "channel", "chaincode"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_LSCCService_GetInstalledChaincodes_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"lscc", "chaincodes"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_LSCCService_GetInstalledChaincodes_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"systemcc", "lscc", "chaincodes"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_LSCCService_GetChaincodes_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"lscc", "chaincodes", "channel"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_LSCCService_GetChaincodes_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"systemcc", "lscc", "chaincodes", "channel"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_LSCCService_GetDeploymentSpec_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"lscc", "chaincodes", "channel", "chaincode", "deployment-spec"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_LSCCService_GetDeploymentSpec_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"systemcc", "lscc", "chaincodes", "channel", "chaincode", "deployment-spec"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_LSCCService_Install_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"lscc", "chaincodes"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_LSCCService_Install_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"systemcc", "lscc", "chaincodes"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_LSCCService_Deploy_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"lscc", "chaincodes", "channel"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_LSCCService_Deploy_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"systemcc", "lscc", "chaincodes", "channel"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
