@@ -152,7 +152,10 @@ func (p *Packer) PackFromFiles(ctx context.Context, spec *ccpackage.PackageSpec,
 		return nil, err
 	}
 
-	image, lifecycle, err := p.imageLifecycle(spec.Id.FabricVersion)
+	image, lifecycle, imageErr := p.imageLifecycle(spec.Id.FabricVersion)
+	if imageErr != nil {
+		return nil, imageErr
+	}
 	sourcePath := filepath.Join(containerSrcPath, spec.ChaincodePath)
 
 	p.logger.Info(`created container with mounted source code`,

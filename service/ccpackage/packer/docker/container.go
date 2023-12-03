@@ -209,7 +209,7 @@ func (c *Container) DownloadPath(ctx context.Context, path string) ([]byte, erro
 		InactivityTimeout: 0,
 		Context:           ctx,
 	}); err != nil {
-		err = fmt.Errorf("download path=%s from container: %w", path, err)
+		return nil, fmt.Errorf("download path=%s from container: %w", path, err)
 	}
 
 	pkgTar, err := UnTarFirstFile(outBf)
