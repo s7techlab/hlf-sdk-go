@@ -8,12 +8,12 @@ import (
 	"github.com/hyperledger/fabric-protos-go/common"
 	"go.uber.org/zap"
 
-	hlfproto "github.com/s7techlab/hlf-sdk-go/proto"
+	hlfproto "github.com/s7techlab/hlf-sdk-go/block"
 )
 
 type (
 	ParsedBlockChannel struct {
-		blockChannel *BlockChannel
+		BlockChannel *BlockChannel
 
 		transformers []BlockTransformer
 		configBlock  *common.Block
@@ -41,7 +41,7 @@ func WithParsedChannelConfigBlock(configBlock *common.Block) ParsedBlockChannelO
 
 func NewParsedBlockChannel(blockChannel *BlockChannel, opts ...ParsedBlockChannelOpt) *ParsedBlockChannel {
 	parsedBlockChannel := &ParsedBlockChannel{
-		blockChannel: blockChannel,
+		BlockChannel: blockChannel,
 	}
 
 	for _, opt := range opts {
@@ -63,7 +63,7 @@ func (p *ParsedBlockChannel) Observe(ctx context.Context) (<-chan *ParsedBlock, 
 	ctxObserve, cancel := context.WithCancel(ctx)
 	p.cancelObserve = cancel
 
-	incomingBlocks, err := p.blockChannel.Observe(ctxObserve)
+	incomingBlocks, err := p.BlockChannel.Observe(ctxObserve)
 	if err != nil {
 		return nil, fmt.Errorf("observe common blocks: %w", err)
 	}
@@ -85,13 +85,13 @@ func (p *ParsedBlockChannel) Observe(ctx context.Context) (<-chan *ParsedBlock, 
 				}
 
 				block := &ParsedBlock{
-					Channel: p.blockChannel.channel,
+					Channel: p.BlockChannel.channel,
 				}
 				block.Block, block.Error = hlfproto.ParseBlock(incomingBlock.Block, hlfproto.WithConfigBlock(p.configBlock))
 
 				for pos, transformer := range p.transformers {
 					if err = transformer.Transform(block); err != nil {
-						p.blockChannel.logger.Warn(`transformer`, zap.Int(`pos`, pos), zap.Error(err))
+						p.BlockChannel.logger.Warn(`transformer`, zap.Int(`pos`, pos), zap.Error(err))
 					}
 				}
 
@@ -99,7 +99,7 @@ func (p *ParsedBlockChannel) Observe(ctx context.Context) (<-chan *ParsedBlock, 
 
 			case <-ctxObserve.Done():
 				if err = p.Stop(); err != nil {
-					p.blockChannel.lastError = err
+					p.BlockChannel.lastError = err
 				}
 				return
 			}
@@ -115,7 +115,7 @@ func (p *ParsedBlockChannel) Stop() error {
 
 	// p.blocks mustn't be closed here, because it is closed elsewhere
 
-	err := p.blockChannel.Stop()
+	err := p.BlockChannel.Stop()
 
 	// If primary context is done then cancel ctxObserver
 	if p.cancelObserve != nil {

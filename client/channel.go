@@ -12,10 +12,10 @@ import (
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/block"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
 	"github.com/s7techlab/hlf-sdk-go/client/grpc"
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
-	"github.com/s7techlab/hlf-sdk-go/proto"
 	"github.com/s7techlab/hlf-sdk-go/service/systemcc/cscc"
 )
 
@@ -139,7 +139,7 @@ func (c *Channel) Join(ctx context.Context) error {
 	csccSvc := cscc.NewCSCC(
 		// use specified peer to process join (pool can contain more than one peer)
 		peers[0],
-		proto.FabricVersionIsV2(c.fabricV2))
+		block.FabricVersionIsV2(c.fabricV2))
 
 	_, err = csccSvc.JoinChain(ctx, &cscc.JoinChainRequest{
 		Channel:      c.chanName,

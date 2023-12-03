@@ -10,10 +10,10 @@ import (
 	"github.com/hyperledger/fabric-protos-go/peer"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
+	hlfproto "github.com/s7techlab/hlf-sdk-go/block"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
 	"github.com/s7techlab/hlf-sdk-go/client/channel"
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
-	hlfproto "github.com/s7techlab/hlf-sdk-go/proto"
 	"github.com/s7techlab/hlf-sdk-go/service"
 )
 

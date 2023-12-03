@@ -1,4 +1,4 @@
-package proto
+package block
 
 import (
 	"fmt"
@@ -11,15 +11,23 @@ import (
 )
 
 func (x *TransactionAction) Event() *peer.ChaincodeEvent {
-	return x.Payload.Action.ProposalResponsePayload.Extension.Events
+	return x.GetPayload().GetAction().GetProposalResponsePayload().GetExtension().GetEvents()
 }
 
 func (x *TransactionAction) NsReadWriteSet() []*NsReadWriteSet {
-	return x.Payload.Action.ProposalResponsePayload.Extension.Results.NsRwset
+	return x.GetPayload().GetAction().GetProposalResponsePayload().GetExtension().GetResults().GetNsRwset()
 }
 
 func (x *TransactionAction) ChaincodeSpec() *peer.ChaincodeSpec {
-	return x.Payload.ChaincodeProposalPayload.Input.ChaincodeSpec
+	return x.GetPayload().GetChaincodeProposalPayload().GetInput().GetChaincodeSpec()
+}
+
+func (x *TransactionAction) Endorsements() []*Endorsement {
+	return x.GetPayload().GetAction().GetEndorsement()
+}
+
+func (x *TransactionAction) Response() *peer.Response {
+	return x.GetPayload().GetAction().GetProposalResponsePayload().GetExtension().GetResponse()
 }
 
 func ParseTxActions(txActions []*peer.TransactionAction) ([]*TransactionAction, error) {
@@ -74,11 +82,6 @@ func ParseTxAction(txAction *peer.TransactionAction) (*TransactionAction, error)
 		chaincodeProposalPayload.Input.ChaincodeSpec.ChaincodeId.Version = ccEndorserAction.ProposalResponsePayload.Extension.ChaincodeId.Version
 	}
 
-	var bytesPayload []byte
-	if actionPayload.GetAction() != nil {
-		bytesPayload = actionPayload.GetAction().GetProposalResponsePayload()
-	}
-
 	return &TransactionAction{
 		Header: &SignatureHeader{
 			Creator: creator,
@@ -88,7 +91,6 @@ func ParseTxAction(txAction *peer.TransactionAction) (*TransactionAction, error)
 			ChaincodeProposalPayload: chaincodeProposalPayload,
 			Action:                   ccEndorserAction,
 		},
-		BytesPayload: bytesPayload,
 	}, nil
 }
 
