@@ -16,35 +16,35 @@ service QSCCService {
   // GetChainInfo allows getting common info about channel blockchain
   rpc GetChainInfo(GetChainInfoRequest) returns (common.BlockchainInfo) {
     option (google.api.http) = {
-      get: "/qscc/chain/{channel_name}"
+      get: "/systemcc/qscc/chain/{channel_name}"
     };
   }
 
   // GetBlockByNumber allows getting block by number
   rpc GetBlockByNumber(GetBlockByNumberRequest) returns (common.Block) {
     option (google.api.http) = {
-      get: "/qscc/chain/{channel_name}/{block_number}"
+      get: "/systemcc/qscc/chain/{channel_name}/{block_number}"
     };
   }
 
   // GetBlockByHash allows getting block by hash
   rpc GetBlockByHash(GetBlockByHashRequest) returns (common.Block) {
     option (google.api.http) = {
-      get: "/qscc/chain/{channel_name}/byhash/{block_hash}"
+      get: "/systemcc/qscc/chain/{channel_name}/byhash/{block_hash}"
     };
   }
 
   // GetBlockByTxID allows getting block by transaction
   rpc GetBlockByTxID (GetBlockByTxIDRequest) returns (common.Block) {
     option (google.api.http) = {
-      get: "/qscc/chain/{channel_name}/bytxid/{tx_id}"
+      get: "/systemcc/qscc/chain/{channel_name}/bytxid/{tx_id}"
     };
   }
 
   // GetTransactionByID allows getting transaction by id
   rpc GetTransactionByID(GetTransactionByIDRequest) returns (protos.ProcessedTransaction) {
     option (google.api.http) = {
-      get: "/qscc/tx/{channel_name}/{tx_id}"
+      get: "/systemcc/qscc/tx/{channel_name}/{tx_id}"
     };
   }
 }

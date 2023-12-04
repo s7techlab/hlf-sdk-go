@@ -1,0 +1,500 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "ccpackage/packages.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/ccpackages": {
+      "get": {
+        "operationId": "PackageService_ListInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ccpackagePackageInfoList"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "PackageService"
+        ]
+      },
+      "post": {
+        "operationId": "PackageService_Create",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ccpackagePackageInfo"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ccpackagePackageSpec"
+            }
+          }
+        ],
+        "tags": [
+          "PackageService"
+        ]
+      },
+      "put": {
+        "operationId": "PackageService_GetOrCreate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ccpackagePackageInfo"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ccpackagePackageSpec"
+            }
+          }
+        ],
+        "tags": [
+          "PackageService"
+        ]
+      }
+    },
+    "/ccpackages/{name}/{version}/{fabric_version}": {
+      "get": {
+        "operationId": "PackageService_GetInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ccpackagePackageInfo"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "name",
+            "description": "Name is a chaincode name, ex: payment",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "version",
+            "description": "Version is a chaincode version to use, ex: 2800dea5e957b3b65f48340337fdbbedc7caf396",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fabric_version",
+            "description": "Fabric version to use to build chaincode.",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "FABRIC_VERSION_UNSPECIFIED",
+              "FABRIC_V1",
+              "FABRIC_V2",
+              "FABRIC_V2_LIFECYCLE"
+            ]
+          }
+        ],
+        "tags": [
+          "PackageService"
+        ]
+      }
+    },
+    "/ccpackages/{name}/{version}/{fabric_version}/data": {
+      "get": {
+        "operationId": "PackageService_Get",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ccpackagePackage"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "name",
+            "description": "Name is a chaincode name, ex: payment",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "version",
+            "description": "Version is a chaincode version to use, ex: 2800dea5e957b3b65f48340337fdbbedc7caf396",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fabric_version",
+            "description": "Fabric version to use to build chaincode.",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "FABRIC_VERSION_UNSPECIFIED",
+              "FABRIC_V1",
+              "FABRIC_V2",
+              "FABRIC_V2_LIFECYCLE"
+            ]
+          }
+        ],
+        "tags": [
+          "PackageService"
+        ]
+      }
+    },
+    "/ccpackages/{name}/{version}/{fabric_version}/deployment-spec": {
+      "get": {
+        "operationId": "PackageService_GetDeploymentSpec",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protosChaincodeDeploymentSpec"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "name",
+            "description": "Name is a chaincode name, ex: payment",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "version",
+            "description": "Version is a chaincode version to use, ex: 2800dea5e957b3b65f48340337fdbbedc7caf396",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fabric_version",
+            "description": "Fabric version to use to build chaincode.",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "FABRIC_VERSION_UNSPECIFIED",
+              "FABRIC_V1",
+              "FABRIC_V2",
+              "FABRIC_V2_LIFECYCLE"
+            ]
+          }
+        ],
+        "tags": [
+          "PackageService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "ccpackageFabricVersion": {
+      "type": "string",
+      "enum": [
+        "FABRIC_VERSION_UNSPECIFIED",
+        "FABRIC_V1",
+        "FABRIC_V2",
+        "FABRIC_V2_LIFECYCLE"
+      ],
+      "default": "FABRIC_VERSION_UNSPECIFIED",
+      "title": "- FABRIC_VERSION_UNSPECIFIED: Fabric v1.4 tools\n - FABRIC_V1: Fabric v1.4 tools\n - FABRIC_V2: Fabric v2.3 tools\n - FABRIC_V2_LIFECYCLE: Fabric v2.3 tools with lifecycle"
+    },
+    "ccpackageFileChunk": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "ccpackagePackage": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/ccpackagePackageID"
+        },
+        "size": {
+          "type": "string",
+          "format": "int64"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "data": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "ccpackagePackageID": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "Name is a chaincode name, ex: payment"
+        },
+        "version": {
+          "type": "string",
+          "title": "Version is a chaincode version to use, ex: 2800dea5e957b3b65f48340337fdbbedc7caf396"
+        },
+        "fabric_version": {
+          "$ref": "#/definitions/ccpackageFabricVersion",
+          "description": "Fabric version to use to build chaincode."
+        }
+      }
+    },
+    "ccpackagePackageInfo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/ccpackagePackageID"
+        },
+        "size": {
+          "type": "string",
+          "format": "int64"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "ccpackagePackageInfoList": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ccpackagePackageInfo"
+          }
+        }
+      }
+    },
+    "ccpackagePackageSpec": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/ccpackagePackageID",
+          "title": "Package ID is package identification data"
+        },
+        "repository": {
+          "type": "string",
+          "title": "Repository is url to git sources, ex: http://:token@{repo url}\nor http://login:password@github.com/hyperledger-labs/cckit/examples/cars\nor path to local directory file:///path/to/sources/hyperledger-labs/cckit"
+        },
+        "chaincode_path": {
+          "type": "string",
+          "title": "Chaincode path is path to chaincode, ex: github.com/hyperledger-labs/cckit"
+        },
+        "binary_path": {
+          "type": "string",
+          "description": "BinaryPath is path to chaincode binary in given repository,\nex: `examples/cars`."
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "protosChaincodeDeploymentSpec": {
+      "type": "object",
+      "properties": {
+        "chaincode_spec": {
+          "$ref": "#/definitions/protosChaincodeSpec"
+        },
+        "code_package": {
+          "type": "string",
+          "format": "byte"
+        }
+      },
+      "description": "Specify the deployment of a chaincode.\nTODO: Define `codePackage`."
+    },
+    "protosChaincodeID": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "title": "deploy transaction will use the path"
+        },
+        "name": {
+          "type": "string",
+          "title": "all other requests will use the name (really a hashcode) generated by\nthe deploy transaction"
+        },
+        "version": {
+          "type": "string",
+          "title": "user friendly version name for the chaincode"
+        }
+      },
+      "title": "ChaincodeID contains the path as specified by the deploy transaction\nthat created it as well as the hashCode that is generated by the\nsystem for the path. From the user level (ie, CLI, REST API and so on)\ndeploy transaction is expected to provide the path and other requests\nare expected to provide the hashCode. The other value will be ignored.\nInternally, the structure could contain both values. For instance, the\nhashCode will be set when first generated using the path"
+    },
+    "protosChaincodeInput": {
+      "type": "object",
+      "properties": {
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "byte"
+          }
+        },
+        "decorations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "format": "byte"
+          }
+        },
+        "is_init": {
+          "type": "boolean",
+          "description": "is_init is used for the application to signal that an invocation is to be routed\nto the legacy 'Init' function for compatibility with chaincodes which handled\nInit in the old way.  New applications should manage their initialized state\nthemselves."
+        }
+      },
+      "description": "Carries the chaincode function and its arguments.\nUnmarshalJSON in transaction.go converts the string-based REST/JSON input to\nthe []byte-based current ChaincodeInput structure."
+    },
+    "protosChaincodeSpec": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/protosChaincodeSpecType"
+        },
+        "chaincode_id": {
+          "$ref": "#/definitions/protosChaincodeID"
+        },
+        "input": {
+          "$ref": "#/definitions/protosChaincodeInput"
+        },
+        "timeout": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "Carries the chaincode specification. This is the actual metadata required for\ndefining a chaincode."
+    },
+    "protosChaincodeSpecType": {
+      "type": "string",
+      "enum": [
+        "UNDEFINED",
+        "GOLANG",
+        "NODE",
+        "CAR",
+        "JAVA"
+      ],
+      "default": "UNDEFINED"
+    },
+    "runtimeError": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "runtimeStreamError": {
+      "type": "object",
+      "properties": {
+        "grpc_code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "http_code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "http_status": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

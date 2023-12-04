@@ -657,15 +657,15 @@ func RegisterQSCCServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 }
 
 var (
-	pattern_QSCCService_GetChainInfo_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"qscc", "chain", "channel_name"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QSCCService_GetChainInfo_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"systemcc", "qscc", "chain", "channel_name"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_QSCCService_GetBlockByNumber_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 1, 0, 4, 1, 5, 3}, []string{"qscc", "chain", "channel_name", "block_number"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QSCCService_GetBlockByNumber_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"systemcc", "qscc", "chain", "channel_name", "block_number"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_QSCCService_GetBlockByHash_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"qscc", "chain", "channel_name", "byhash", "block_hash"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QSCCService_GetBlockByHash_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 1, 0, 4, 1, 5, 5}, []string{"systemcc", "qscc", "chain", "channel_name", "byhash", "block_hash"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_QSCCService_GetBlockByTxID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"qscc", "chain", "channel_name", "bytxid", "tx_id"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QSCCService_GetBlockByTxID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 1, 0, 4, 1, 5, 5}, []string{"systemcc", "qscc", "chain", "channel_name", "bytxid", "tx_id"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_QSCCService_GetTransactionByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 1, 0, 4, 1, 5, 3}, []string{"qscc", "tx", "channel_name", "tx_id"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_QSCCService_GetTransactionByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"systemcc", "qscc", "tx", "channel_name", "tx_id"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (

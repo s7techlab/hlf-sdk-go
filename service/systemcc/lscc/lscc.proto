@@ -21,35 +21,35 @@ service LSCCService {
   // GetChaincodeData returns information about instantiated chaincode on target channel
   rpc GetChaincodeData (GetChaincodeDataRequest) returns (protos.ChaincodeData) {
     option (google.api.http) = {
-      get: "/lscc/chaincodes/{channel}/{chaincode}"
+      get: "/systemcc/lscc/chaincodes/{channel}/{chaincode}"
     };
   }
 
   // GetInstalledChaincodes returns list of installed chaincodes on peer
   rpc GetInstalledChaincodes (google.protobuf.Empty) returns (protos.ChaincodeQueryResponse) {
     option (google.api.http) = {
-      get: "/lscc/chaincodes"
+      get: "/systemcc/lscc/chaincodes"
     };
   }
 
   // GetChaincodes returns list of instantiated chaincodes on channel
   rpc GetChaincodes (GetChaincodesRequest) returns (protos.ChaincodeQueryResponse) {
     option (google.api.http) = {
-      get: "/lscc/chaincodes/{channel}"
+      get: "/systemcc/lscc/chaincodes/{channel}"
     };
   }
 
   // GetDeploymentSpec returns spec for installed chaincode
   rpc GetDeploymentSpec (GetDeploymentSpecRequest) returns (protos.ChaincodeDeploymentSpec) {
     option (google.api.http) = {
-      get: "/lscc/chaincodes/{channel}/{chaincode}/deployment-spec"
+      get: "/systemcc/lscc/chaincodes/{channel}/{chaincode}/deployment-spec"
     };
   }
 
   // Install allows installing chaincode using deployment specification
   rpc Install (protos.ChaincodeDeploymentSpec) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/lscc/chaincodes"
+      post: "/systemcc/lscc/chaincodes"
       body: "*"
     };
   }
@@ -58,7 +58,7 @@ service LSCCService {
   // Currently, deploy method is not canonical as lscc implementation, but currently we need to get full proposal, and it's response to broadcast to orderer
   rpc Deploy (DeployRequest) returns (protos.Response ) {
     option (google.api.http) = {
-      post: "/lscc/chaincodes/{channel}"
+      post: "/systemcc/lscc/chaincodes/{channel}"
       body: "*"
     };
   }

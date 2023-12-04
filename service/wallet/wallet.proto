@@ -1,9 +1,8 @@
 syntax = "proto3";
 
-// Wallet - identity
-package hlfsdkgo.wallet;
-
-option go_package = "github.com/s7techlab/hlf-sdk-go/wallet";
+// Wallet - identity storage
+package hlfsdkgo.service.wallet;
+option go_package = "github.com/s7techlab/hlf-sdk-go/service/wallet";
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";

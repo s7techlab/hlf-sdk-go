@@ -11,7 +11,7 @@
     "application/json"
   ],
   "paths": {
-    "/qscc/chain/{channel_name}": {
+    "/systemcc/qscc/chain/{channel_name}": {
       "get": {
         "summary": "GetChainInfo allows getting common info about channel blockchain",
         "operationId": "QSCCService_GetChainInfo",
@@ -42,7 +42,7 @@
         ]
       }
     },
-    "/qscc/chain/{channel_name}/byhash/{block_hash}": {
+    "/systemcc/qscc/chain/{channel_name}/byhash/{block_hash}": {
       "get": {
         "summary": "GetBlockByHash allows getting block by hash",
         "operationId": "QSCCService_GetBlockByHash",
@@ -80,7 +80,7 @@
         ]
       }
     },
-    "/qscc/chain/{channel_name}/bytxid/{tx_id}": {
+    "/systemcc/qscc/chain/{channel_name}/bytxid/{tx_id}": {
       "get": {
         "summary": "GetBlockByTxID allows getting block by transaction",
         "operationId": "QSCCService_GetBlockByTxID",
@@ -117,7 +117,7 @@
         ]
       }
     },
-    "/qscc/chain/{channel_name}/{block_number}": {
+    "/systemcc/qscc/chain/{channel_name}/{block_number}": {
       "get": {
         "summary": "GetBlockByNumber allows getting block by number",
         "operationId": "QSCCService_GetBlockByNumber",
@@ -155,7 +155,7 @@
         ]
       }
     },
-    "/qscc/tx/{channel_name}/{tx_id}": {
+    "/systemcc/qscc/tx/{channel_name}/{tx_id}": {
       "get": {
         "summary": "GetTransactionByID allows getting transaction by id",
         "operationId": "QSCCService_GetTransactionByID",

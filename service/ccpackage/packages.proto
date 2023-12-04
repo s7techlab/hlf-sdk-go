@@ -1,0 +1,118 @@
+syntax = "proto3";
+
+package hlfsdkgo.service.ccpackage;
+option go_package = "github.com/s7techlab/hlf-sdk-go/service/ccpackage";
+
+import "hyperledger/fabric-protos/peer/chaincode.proto";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "validate/validate.proto";
+
+
+
+// Service Packages install on operator service
+// and give opportunity to members of network fetch and install chaincode to
+// self peer directly please use `Get` and after `Fetch` for correctly fetch
+// package
+service PackageService {
+
+  rpc Create (PackageSpec) returns (PackageInfo) {
+    option (google.api.http) = {
+      post: "/ccpackages"
+      body: "*"
+    };
+  }
+  rpc GetInfo (PackageID) returns (PackageInfo) {
+    option (google.api.http) = {
+      get: "/ccpackages/{name}/{version}/{fabric_version}"
+    };
+  }
+
+  rpc GetOrCreate (PackageSpec) returns (PackageInfo) {
+    option (google.api.http) = {
+      put: "/ccpackages"
+      body: "*"
+    };
+  }
+
+  rpc ListInfo (google.protobuf.Empty) returns (PackageInfoList) {
+    option (google.api.http) = {
+      get: "/ccpackages"
+    };
+  }
+  rpc GetDeploymentSpec (PackageID) returns (protos.ChaincodeDeploymentSpec) {
+    option (google.api.http) = {
+      get: "/ccpackages/{name}/{version}/{fabric_version}/deployment-spec"
+    };
+  }
+
+  rpc Get(PackageID) returns (Package) {
+    option (google.api.http) = {
+      get: "/ccpackages/{name}/{version}/{fabric_version}/data"
+    };
+  }
+
+  rpc Fetch (PackageID) returns (stream FileChunk) {}
+}
+
+enum FabricVersion {
+  // Fabric v1.4 tools
+  FABRIC_VERSION_UNSPECIFIED = 0;
+  // Fabric v1.4 tools
+  FABRIC_V1 = 1;
+  // Fabric v2.3 tools
+  FABRIC_V2 = 2;
+  // Fabric v2.3 tools with lifecycle
+  FABRIC_V2_LIFECYCLE = 3;
+}
+
+message PackageID {
+  // Name is a chaincode name, ex: payment
+  string name = 1 [(validate.rules).string.min_len = 1];
+  // Version is a chaincode version to use, ex: 2800dea5e957b3b65f48340337fdbbedc7caf396
+  string version = 2 [(validate.rules).string.min_len = 1];
+  // Fabric version to use to build chaincode.
+  FabricVersion fabric_version = 3 [(validate.rules).enum = {defined_only: true; not_in: [0]}];
+}
+
+message PackageSpec {
+  // Package ID is package identification data
+  PackageID id = 1 [(validate.rules).message.required = true];
+  // Repository is url to git sources, ex: http://:token@{repo url}
+  // or http://login:password@github.com/hyperledger-labs/cckit/examples/cars
+  // or path to local directory file:///path/to/sources/hyperledger-labs/cckit
+  string repository = 2 [(validate.rules).string.min_len = 1];
+  // Chaincode path is path to chaincode, ex: github.com/hyperledger-labs/cckit
+  string chaincode_path = 3 [(validate.rules).string.min_len = 1];
+  // BinaryPath is path to chaincode binary in given repository,
+  // ex: `examples/cars`.
+  string binary_path = 4  [(validate.rules).string.min_len = 1];
+}
+
+message PackageInfo  {
+  PackageID id = 1;
+  int64 size = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message PackageInfoList {
+  repeated PackageInfo items = 1;
+}
+
+message FileChunk {
+  bytes data = 1;
+}
+
+message PutPackageRequest {
+  PackageID id = 1;
+  bytes data = 4;
+}
+
+message Package {
+  PackageID id = 1;
+  int64 size = 2;
+  google.protobuf.Timestamp created_at = 3;
+  bytes data = 4;
+}
