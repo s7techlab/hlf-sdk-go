@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "ccpackage/packages.proto",
+    "title": "ccpackage/ccpackage.proto",
     "version": "version not set"
   },
   "consumes": [
@@ -33,7 +33,7 @@
         ]
       },
       "post": {
-        "operationId": "PackageService_Create",
+        "operationId": "PackageManageService_Create",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -59,11 +59,11 @@
           }
         ],
         "tags": [
-          "PackageService"
+          "PackageManageService"
         ]
       },
       "put": {
-        "operationId": "PackageService_GetOrCreate",
+        "operationId": "PackageManageService_GetOrCreate",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -89,7 +89,7 @@
           }
         ],
         "tags": [
-          "PackageService"
+          "PackageManageService"
         ]
       }
     },

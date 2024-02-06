@@ -25,7 +25,7 @@ type (
 	}
 )
 
-func NewLifecycle(invoker api.Invoker) *Service {
+func New(invoker api.Invoker) *Service {
 	return &Service{
 		Invoker: invoker,
 	}

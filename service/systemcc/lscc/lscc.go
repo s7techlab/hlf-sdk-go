@@ -19,20 +19,20 @@ import (
 var Swagger []byte
 
 type (
-	LSCCService struct {
+	Service struct {
 		UnimplementedLSCCServiceServer
 
 		Invoker api.Invoker
 	}
 )
 
-func NewLSCC(invoker api.Invoker) *LSCCService {
-	return &LSCCService{
+func New(invoker api.Invoker) *Service {
+	return &Service{
 		Invoker: invoker,
 	}
 }
 
-func (l *LSCCService) ServiceDef() *service.Def {
+func (l *Service) ServiceDef() *service.Def {
 	return service.NewDef(
 		_LSCCService_serviceDesc.ServiceName,
 		Swagger,
@@ -42,7 +42,7 @@ func (l *LSCCService) ServiceDef() *service.Def {
 	)
 }
 
-func (l *LSCCService) GetChaincodeData(ctx context.Context, getChaincodeData *GetChaincodeDataRequest) (*peer.ChaincodeData, error) {
+func (l *Service) GetChaincodeData(ctx context.Context, getChaincodeData *GetChaincodeDataRequest) (*peer.ChaincodeData, error) {
 	res, err := tx.QueryStringsProto(ctx,
 		l.Invoker,
 		getChaincodeData.Channel, chaincode.LSCC,
@@ -54,7 +54,7 @@ func (l *LSCCService) GetChaincodeData(ctx context.Context, getChaincodeData *Ge
 	return res.(*peer.ChaincodeData), nil
 }
 
-func (l *LSCCService) GetInstalledChaincodes(ctx context.Context, _ *empty.Empty) (*peer.ChaincodeQueryResponse, error) {
+func (l *Service) GetInstalledChaincodes(ctx context.Context, _ *empty.Empty) (*peer.ChaincodeQueryResponse, error) {
 	res, err := tx.QueryStringsProto(ctx,
 		l.Invoker,
 		``, chaincode.LSCC,
@@ -65,7 +65,7 @@ func (l *LSCCService) GetInstalledChaincodes(ctx context.Context, _ *empty.Empty
 	}
 	return res.(*peer.ChaincodeQueryResponse), nil
 }
-func (l *LSCCService) GetChaincodes(ctx context.Context, getChaincodes *GetChaincodesRequest) (*peer.ChaincodeQueryResponse, error) {
+func (l *Service) GetChaincodes(ctx context.Context, getChaincodes *GetChaincodesRequest) (*peer.ChaincodeQueryResponse, error) {
 	res, err := tx.QueryStringsProto(ctx,
 		l.Invoker,
 		getChaincodes.Channel, chaincode.LSCC,
@@ -77,7 +77,7 @@ func (l *LSCCService) GetChaincodes(ctx context.Context, getChaincodes *GetChain
 	return res.(*peer.ChaincodeQueryResponse), nil
 }
 
-func (l *LSCCService) GetDeploymentSpec(ctx context.Context, getDeploymentSpec *GetDeploymentSpecRequest) (*peer.ChaincodeDeploymentSpec, error) {
+func (l *Service) GetDeploymentSpec(ctx context.Context, getDeploymentSpec *GetDeploymentSpecRequest) (*peer.ChaincodeDeploymentSpec, error) {
 	res, err := tx.QueryStringsProto(ctx,
 		l.Invoker,
 		getDeploymentSpec.Channel, chaincode.LSCC,
@@ -88,7 +88,7 @@ func (l *LSCCService) GetDeploymentSpec(ctx context.Context, getDeploymentSpec *
 	}
 	return res.(*peer.ChaincodeDeploymentSpec), nil
 }
-func (l *LSCCService) Install(ctx context.Context, spec *peer.ChaincodeDeploymentSpec) (*empty.Empty, error) {
+func (l *Service) Install(ctx context.Context, spec *peer.ChaincodeDeploymentSpec) (*empty.Empty, error) {
 	_, err := tx.QueryProto(ctx,
 		l.Invoker,
 		``, chaincode.LSCC,
@@ -97,7 +97,7 @@ func (l *LSCCService) Install(ctx context.Context, spec *peer.ChaincodeDeploymen
 
 	return nil, err
 }
-func (l *LSCCService) Deploy(ctx context.Context, deploy *DeployRequest) (response *peer.Response, err error) {
+func (l *Service) Deploy(ctx context.Context, deploy *DeployRequest) (response *peer.Response, err error) {
 
 	// Find chaincode instantiated or not
 	ccList, err := l.GetChaincodes(ctx, &GetChaincodesRequest{Channel: deploy.Channel})

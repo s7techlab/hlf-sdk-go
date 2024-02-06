@@ -1,0 +1,184 @@
+syntax = "proto3";
+
+package hlfsdkgo.service.channels;
+option go_package = "github.com/s7techlab/hlf-sdk-go/service/channels";
+
+import "hyperledger/fabric-protos/orderer/configuration.proto" ;
+import "hyperledger/fabric-protos/orderer/etcdraft/configuration.proto";
+import "hyperledger/fabric-protos/msp/msp_config.proto";
+import "hyperledger/fabric-protos/peer/configuration.proto";
+import "hyperledger/fabric-protos/common/policies.proto";
+
+import "validate/validate.proto";
+
+message Channel {
+  string name = 1;
+  uint64 height = 2;
+  string status = 3;
+}
+
+// Channels - list of orderer channels
+message Channels {
+  string system_channel = 1;
+  repeated Channel channels = 2;
+}
+
+// Channel - describes common channel params. Channel organization in short form
+message ChannelConfig  {
+  // channel name
+  string name = 1;
+  // controls the number of messages batched into block
+  orderer.BatchSize batch_size = 2;
+  // amount of time to wait before creating a batch
+  string batch_timeout = 3;
+  // consenter represents a consenting node (i.e. replica).
+  repeated etcdraft.Consenter etcdraft_nodes = 4;
+  // options to be specified for all the etcd/raft nodes
+  etcdraft.Options etcdraft_options = 5;
+  // orderers endpoints
+  repeated string endpoints = 6;
+  // organizations list of channel
+  // repeated Organization organizations = 7;
+  // total amunt of blocks
+  uint64 height = 8;
+  // channel status
+  string status = 9;
+}
+
+// Channel - describes common channel params. Channel organization in full form
+message ChannelOrganizationConfig  {
+  // channel name
+  string name = 1;
+  // controls the number of messages batched into block
+  orderer.BatchSize batch_size = 2;
+  // amount of time to wait before creating a batch
+  string batch_timeout = 3;
+  // consenter represents a consenting node (i.e. replica).
+  repeated etcdraft.Consenter etcdraft_nodes = 4;
+  // options to be specified for all the etcd/raft nodes
+  etcdraft.Options etcdraft_options = 5;
+  // orderers endpoints
+  repeated string endpoints = 6;
+  // organizations list of channel
+  repeated OrganizationDetailed organizations = 7 [(validate.rules).repeated.min_items = 1];
+  // total amunt of blocks
+  uint64 height = 8;
+  // channel status
+  string status = 9;
+}
+
+message Organization {
+  // msp identifier
+  string msp_id = 1 [(validate.rules).string.min_len = 1];
+  // unparsed cert bytes
+  bytes cert = 2  [(validate.rules).bytes.min_len = 1];
+  // parsed certificated for frontend (like openssl output)
+  string cert_content = 3;
+  // unparsed cert bytes
+  bytes ca_cert = 4 [(validate.rules).bytes.min_len = 1];
+  // parsed certificated for frontend (like openssl output)
+  string ca_cert_content = 5;
+
+  // List of intermediate certificates trusted by this MSP
+  repeated bytes intermediate_certs = 7;
+
+  // provides anchor peers address: 'host:port'
+  repeated string anchor_peers = 6 [(validate.rules).repeated.min_items = 1];
+}
+
+// OrganizationDetailed - full description of organization in the channel
+message OrganizationDetailed {
+  // collects all the configuration information for a Fabric MSP
+  msp.FabricMSPConfig msp = 1 [(validate.rules).message.required = true];
+  // provides information about anchor peer. host, port
+  protos.AnchorPeers anchor_peers = 2 [(validate.rules).message.required = true];
+  // organizations policies for admins, readers, writers
+  ChannelPolicies policies = 3;
+}
+
+// Policies - organizations policies for admins, readers, writers
+message ChannelPolicies {
+  // admins policy
+  common.Policy admins = 1;
+  // readers policy
+  common.Policy readers = 2;
+  // writers policy
+  common.Policy writers = 3;
+}
+
+
+// Generate channel requests
+message CreateRequest {
+  // channel name
+  string name = 1 [(validate.rules).string.min_len = 1];
+  // controls the number of messages batched into block
+  orderer.BatchSize batch_size = 2 [(validate.rules).message.required = true];
+  // amount of time to wait before creating a batch
+  string batch_timeout = 3 [(validate.rules).string.min_len = 1];
+  // consenter represents a consenting node (i.e. replica).
+  repeated Consenter etcdraft_nodes = 4 [(validate.rules).repeated.min_items = 1];
+  // orderers endpoints
+  repeated string endpoints = 5 [(validate.rules).repeated.min_items = 1];
+  // options to be specified for all the etcd/raft nodes
+  etcdraft.Options etcdraft_options = 6;
+  // Orderer MSP
+  MSPConfig orderer_msp = 7 [(validate.rules).message.required = true];
+  // Org msps
+  repeated OrgMSPConfig organizations = 8 [(validate.rules).repeated.min_items = 1];
+}
+
+// Consenter - consenter represents a consenting node (i.e. replica).
+message Consenter {
+  string endpoint = 1 [(validate.rules).string.min_len = 1];
+  bytes client_tls_cert = 2 [(validate.rules).bytes.min_len = 1];
+  bytes server_tls_cert = 3 [(validate.rules).bytes.min_len = 1];
+}
+
+message OrgMSPConfig {
+  MSPConfig MSP = 1 [(validate.rules).message.required = true];
+  // provides anchor peers address: 'host:port'
+  repeated string anchor_peers = 2 [(validate.rules).repeated.min_items = 1];
+}
+
+message Peer  {
+  string endpoint = 1;
+  string msp_id = 2;
+}
+
+// ChannelMSPConfig contains simplified version ob FabricMSPConfig
+message MSPConfig {
+  // msp name
+  string name = 1 [(validate.rules).string.min_len = 1];
+  // List of root certificates trusted by this MSP
+  // they are used upon certificate validation (see
+  // comment for IntermediateCerts below)
+  repeated bytes root_certs = 2 [(validate.rules).repeated.min_items = 1];
+  // List of intermediate certificates trusted by this MSP;
+  // they are used upon certificate validation as follows:
+  // validation attempts to build a path from the certificate
+  // to be validated (which is at one end of the path) and
+  // one of the certs in the RootCerts field (which is at
+  // the other end of the path). If the path is longer than
+  // 2, certificates in the middle are searched within the
+  // IntermediateCerts pool
+  repeated bytes intermediate_certs = 3;
+  // Identity denoting the administrator of this MSP
+  repeated bytes admins = 4;
+
+
+  // OrganizationalUnitIdentifiers holds one or more
+  // fabric organizational unit identifiers that belong to
+  // this MSP configuration
+  repeated  msp.FabricOUIdentifier organizational_unit_identifiers = 5;
+  // List of TLS root certificates trusted by this MSP.
+  // They are returned by GetTLSRootCerts.
+  repeated bytes tls_root_certs = 6;
+
+  // List of TLS intermediate certificates trusted by this MSP;
+  // They are returned by GetTLSIntermediateCerts.
+  repeated bytes tls_intermediate_certs = 9;
+
+  // fabric_node_ous contains the configuration to distinguish clients from peers from orderers
+  // based on the OUs.
+  msp.FabricNodeOUs fabric_node_ous = 10;
+}

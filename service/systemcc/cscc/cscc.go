@@ -9,8 +9,8 @@ import (
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
 
+	hlf_sdk_go "github.com/s7techlab/hlf-sdk-go"
 	"github.com/s7techlab/hlf-sdk-go/api"
-	hlfproto "github.com/s7techlab/hlf-sdk-go/block"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
 	"github.com/s7techlab/hlf-sdk-go/client/channel"
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
@@ -26,15 +26,15 @@ type (
 
 		Querier           *tx.ProtoQuerier
 		ChannelListGetter api.ChannelListGetter
-		FabricVersion     hlfproto.FabricVersion
+		FabricVersion     hlf_sdk_go.FabricVersion
 	}
 )
 
 func FromClient(client api.Client) *Service {
-	return NewCSCC(client, hlfproto.FabricVersionIsV2(client.FabricV2()))
+	return New(client, hlf_sdk_go.FabricVersionIsV2(client.FabricV2()))
 }
 
-func NewCSCC(querier api.Querier, version hlfproto.FabricVersion) *Service {
+func New(querier api.Querier, version hlf_sdk_go.FabricVersion) *Service {
 	return &Service{
 		// Channel and chaincode are fixed in queries to CSCC
 		Querier:           tx.NewProtoQuerier(querier, ``, chaincode.CSCC),
@@ -75,14 +75,14 @@ func (c *Service) GetConfigBlock(ctx context.Context, request *GetConfigBlockReq
 func (c *Service) GetChannelConfig(ctx context.Context, request *GetChannelConfigRequest) (*common.Config, error) {
 	switch c.FabricVersion {
 
-	case hlfproto.FabricV1:
+	case hlf_sdk_go.FabricV1:
 		res, err := c.Querier.QueryStringsProto(ctx, []string{chaincode.CSCCGetConfigTree, request.Channel}, &peer.ConfigTree{})
 		if err != nil {
 			return nil, err
 		}
 		return res.(*peer.ConfigTree).ChannelConfig, nil
 
-	case hlfproto.FabricV2:
+	case hlf_sdk_go.FabricV2:
 
 		res, err := c.Querier.QueryStringsProto(ctx, []string{chaincode.CSCCGetChannelConfig, request.Channel}, &common.Config{})
 		if err != nil {
@@ -91,6 +91,6 @@ func (c *Service) GetChannelConfig(ctx context.Context, request *GetChannelConfi
 		return res.(*common.Config), nil
 
 	default:
-		return nil, fmt.Errorf(`fabric version=%s: %w`, c.FabricVersion, hlfproto.ErrUnknownFabricVersion)
+		return nil, fmt.Errorf(`fabric version=%s: %w`, c.FabricVersion, hlf_sdk_go.ErrUnknownFabricVersion)
 	}
 }

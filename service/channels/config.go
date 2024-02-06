@@ -1,4 +1,4 @@
-package orderer
+package channels
 
 import (
 	"bytes"

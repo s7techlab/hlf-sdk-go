@@ -3,7 +3,6 @@ package block
 import (
 	"crypto/sha256"
 	"encoding/pem"
-	"errors"
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
@@ -13,27 +12,9 @@ import (
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/common/channelconfig"
 	"google.golang.org/protobuf/encoding/protojson"
+
+	hlfsdkgo "github.com/s7techlab/hlf-sdk-go"
 )
-
-var (
-	ErrUnknownFabricVersion = errors.New(`unknown fabric version`)
-)
-
-type FabricVersion string
-
-const (
-	FabricVersionUndefined FabricVersion = "undefined"
-	FabricV1               FabricVersion = "1"
-	FabricV2               FabricVersion = "2"
-)
-
-func FabricVersionIsV2(isV2 bool) FabricVersion {
-	if isV2 {
-		return FabricV2
-	}
-
-	return FabricV1
-}
 
 func (x *ChannelConfig) ToJSON() ([]byte, error) {
 	opt := protojson.MarshalOptions{
@@ -442,15 +423,15 @@ func (x *ChannelConfig) GetAllCertificates() ([]*Certificate, error) {
 	return certs, nil
 }
 
-func (x *ChannelConfig) FabricVersion() FabricVersion {
+func (x *ChannelConfig) FabricVersion() hlfsdkgo.FabricVersion {
 	if x.Capabilities != nil {
 		_, isFabricV2 := x.Capabilities.Capabilities["V2_0"]
 		if isFabricV2 {
-			return FabricV2
+			return hlfsdkgo.FabricV2
 		}
-		return FabricV1
+		return hlfsdkgo.FabricV1
 	}
-	return FabricVersionUndefined
+	return hlfsdkgo.FabricVersionUndefined
 }
 
 // GetAllCertificates - returns all certificates from MSP

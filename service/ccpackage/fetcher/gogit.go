@@ -51,15 +51,15 @@ func GitTokenAuth(token string) GitOpt {
 }
 
 func NewGit(opts ...GitOpt) *Git {
-	git := &Git{s: memory.NewStorage()}
+	gitFetcher := &Git{s: memory.NewStorage()}
 	for _, o := range opts {
-		o(git)
+		o(gitFetcher)
 	}
 
-	if git.Logger == nil {
-		git.Logger = zap.NewNop()
+	if gitFetcher.Logger == nil {
+		gitFetcher.Logger = zap.NewNop()
 	}
-	return git
+	return gitFetcher
 }
 
 func (g *Git) prepareUrl(rawUrl string) (string, error) {
@@ -73,10 +73,9 @@ func (g *Git) prepareUrl(rawUrl string) (string, error) {
 	}
 
 	if u.User != nil {
-		if pass, ok := u.User.Password(); ok {
-			GitBasicAuth(u.User.Username(), pass)(g)
-		}
-
+		pass, _ := u.User.Password()
+		GitBasicAuth(u.User.Username(), pass)(g)
+		u.User = nil
 	} else if u.Fragment != `` {
 		// consider as token
 		GitTokenAuth(u.Fragment)(g)
@@ -85,9 +84,8 @@ func (g *Git) prepareUrl(rawUrl string) (string, error) {
 	return u.String(), nil
 }
 
-func (g Git) Fetch(ctx context.Context, repo, version string) ([]byte, error) {
-
-	url, err := g.prepareUrl(repo)
+func (g *Git) Fetch(ctx context.Context, repo, version string) ([]byte, error) {
+	repoUrl, err := g.prepareUrl(repo)
 	if err != nil {
 		return nil, fmt.Errorf("prepare repo url: %w", err)
 	}
@@ -101,19 +99,19 @@ func (g Git) Fetch(ctx context.Context, repo, version string) ([]byte, error) {
 	}
 
 	fields := []zap.Field{
-		zap.String(`url`, url),
+		zap.String(`url`, repoUrl),
 		zap.String(`version`, version),
 		zap.String(`auth`, fmt.Sprintf(`%T`, g.auth))}
 	g.Logger.Info(`cloning git repo...`, fields...)
 
 	if _, err = git.CloneContext(ctx, g.s, fs, &git.CloneOptions{
-		URL:           url,
+		URL:           repoUrl,
 		Auth:          g.auth,
 		SingleBranch:  true,
 		Progress:      nil,
 		ReferenceName: refName,
 	}); err != nil {
-		return nil, fmt.Errorf("clone repository=%s, version=%s: %w", url, version, err)
+		return nil, fmt.Errorf("clone repository=%s, version=%s: %w", repoUrl, version, err)
 	}
 
 	g.Logger.Debug(`git repo cloned`, fields...)

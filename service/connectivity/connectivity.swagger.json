@@ -1,0 +1,155 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "connectivity/connectivity.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/connectivity/{channel}/peers": {
+      "get": {
+        "summary": "CheckChannelAnchorPeers - check availability of all anchor peers participating in channel",
+        "operationId": "ConnectivityService_CheckChannelConnectivity",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/connectivityCheckChannelConnectivityResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "channel",
+            "description": "name of channel we checking",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ConnectivityService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "connectivityCheckChannelConnectivityResponse": {
+      "type": "object",
+      "properties": {
+        "orderer": {
+          "$ref": "#/definitions/connectivityOrdererConnectivity"
+        },
+        "anchor_peers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/connectivityPeerConnectivity"
+          },
+          "title": "all anchor peers in channel and their statuses"
+        }
+      },
+      "title": "CheckAnchorPeerRes - checking anchor peers response"
+    },
+    "connectivityOrdererConnectivity": {
+      "type": "object",
+      "properties": {
+        "msp_id": {
+          "type": "string"
+        },
+        "endpoints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/connectivityOrdererEndpointConnectivity"
+          }
+        }
+      }
+    },
+    "connectivityOrdererEndpointConnectivity": {
+      "type": "object",
+      "properties": {
+        "endpoint": {
+          "type": "string"
+        },
+        "is_alive": {
+          "type": "boolean"
+        },
+        "dial_duration": {
+          "type": "string"
+        },
+        "dial_error": {
+          "type": "string"
+        }
+      }
+    },
+    "connectivityPeerConnectivity": {
+      "type": "object",
+      "properties": {
+        "endpoint": {
+          "type": "string"
+        },
+        "msp_id": {
+          "type": "string"
+        },
+        "is_alive": {
+          "type": "boolean"
+        },
+        "dial_duration": {
+          "type": "string"
+        },
+        "dial_error": {
+          "type": "string"
+        },
+        "gossip_ping_duration": {
+          "type": "string"
+        },
+        "gossip_ping_error": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "runtimeError": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

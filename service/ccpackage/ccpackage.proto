@@ -8,25 +8,18 @@ import "hyperledger/fabric-protos/peer/chaincode.proto";
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
+
 import "validate/validate.proto";
-
-
 
 // Service Packages install on operator service
 // and give opportunity to members of network fetch and install chaincode to
 // self peer directly please use `Get` and after `Fetch` for correctly fetch
 // package
-service PackageService {
-
+service PackageManageService {
   rpc Create (PackageSpec) returns (PackageInfo) {
     option (google.api.http) = {
       post: "/ccpackages"
       body: "*"
-    };
-  }
-  rpc GetInfo (PackageID) returns (PackageInfo) {
-    option (google.api.http) = {
-      get: "/ccpackages/{name}/{version}/{fabric_version}"
     };
   }
 
@@ -34,6 +27,16 @@ service PackageService {
     option (google.api.http) = {
       put: "/ccpackages"
       body: "*"
+    };
+  }
+}
+
+
+service PackageService {
+
+  rpc GetInfo (PackageID) returns (PackageInfo) {
+    option (google.api.http) = {
+      get: "/ccpackages/{name}/{version}/{fabric_version}"
     };
   }
 
@@ -56,6 +59,7 @@ service PackageService {
 
   rpc Fetch (PackageID) returns (stream FileChunk) {}
 }
+
 
 enum FabricVersion {
   // Fabric v1.4 tools
