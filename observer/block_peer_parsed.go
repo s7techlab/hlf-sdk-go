@@ -131,14 +131,19 @@ func (pbp *ParsedBlockPeer) Stop() {
 }
 
 func (pbp *ParsedBlockPeer) initParsedChannels(ctx context.Context) {
-	pbp.mu.RLock()
-	defer pbp.mu.RUnlock()
-
 	for channel := range pbp.blockPeer.peerChannels.Channels() {
-		if _, ok := pbp.parsedChannelObservers[channel]; !ok {
+		pbp.mu.RLock()
+		_, ok := pbp.parsedChannelObservers[channel]
+		pbp.mu.RUnlock()
+
+		if !ok {
 			pbp.blockPeer.logger.Info(`add parsed channel observer`, zap.String(`channel`, channel))
 
-			pbp.parsedChannelObservers[channel] = pbp.peerParsedChannel(ctx, channel)
+			parsedBlockPeerChannel := pbp.peerParsedChannel(ctx, channel)
+
+			pbp.mu.Lock()
+			pbp.parsedChannelObservers[channel] = parsedBlockPeerChannel
+			pbp.mu.Unlock()
 		}
 	}
 }
