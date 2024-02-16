@@ -178,14 +178,19 @@ func (bp *BlockPeer) Stop() {
 }
 
 func (bp *BlockPeer) initChannels(ctx context.Context) {
-	bp.mu.RLock()
-	defer bp.mu.RUnlock()
-
 	for channel := range bp.peerChannels.Channels() {
-		if _, ok := bp.channelObservers[channel]; !ok {
+		bp.mu.RLock()
+		_, ok := bp.channelObservers[channel]
+		bp.mu.RUnlock()
+
+		if !ok {
 			bp.logger.Info(`add channel observer`, zap.String(`channel`, channel))
 
-			bp.channelObservers[channel] = bp.peerChannel(ctx, channel)
+			blockPeerChannel := bp.peerChannel(ctx, channel)
+
+			bp.mu.Lock()
+			bp.channelObservers[channel] = blockPeerChannel
+			bp.mu.Unlock()
 		}
 	}
 }
@@ -193,9 +198,9 @@ func (bp *BlockPeer) initChannels(ctx context.Context) {
 func (bp *BlockPeer) getSeekFrom(channel string) SeekFromFetcher {
 	seekFrom := ChannelSeekOldest()
 	// at first check seekFrom var, if it is empty, check seekFromFetcher
-	bp.mu.Lock()
+	bp.mu.RLock()
 	seekFromNum, exist := bp.seekFrom[channel]
-	bp.mu.Unlock()
+	bp.mu.RUnlock()
 	if exist {
 		seekFrom = ChannelSeekFrom(seekFromNum - 1)
 	} else {

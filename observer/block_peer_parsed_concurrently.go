@@ -53,14 +53,19 @@ func (pbp *ParsedBlockPeer) ObserveByChannels(ctx context.Context) *ParsedBlocks
 }
 
 func (pbp *ParsedBlockPeer) initParsedChannelsConcurrently(ctx context.Context, blocksByChannels *ParsedBlocksByChannels) {
-	pbp.mu.Lock()
-	defer pbp.mu.Unlock()
-
 	for channel := range pbp.blockPeer.peerChannels.Channels() {
-		if _, ok := pbp.parsedChannelObservers[channel]; !ok {
+		pbp.mu.RLock()
+		_, ok := pbp.parsedChannelObservers[channel]
+		pbp.mu.RUnlock()
+
+		if !ok {
 			pbp.blockPeer.logger.Info(`add parsed channel observer concurrently`, zap.String(`channel`, channel))
 
-			pbp.parsedChannelObservers[channel] = pbp.peerParsedChannelConcurrently(ctx, channel, blocksByChannels)
+			parsedBlockPeerChannel := pbp.peerParsedChannelConcurrently(ctx, channel, blocksByChannels)
+
+			pbp.mu.Lock()
+			pbp.parsedChannelObservers[channel] = parsedBlockPeerChannel
+			pbp.mu.Unlock()
 		}
 	}
 }

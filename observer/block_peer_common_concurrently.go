@@ -51,14 +51,19 @@ func (bp *BlockPeer) ObserveByChannels(ctx context.Context) *BlocksByChannels {
 }
 
 func (bp *BlockPeer) initChannelsConcurrently(ctx context.Context, blocksByChannels *BlocksByChannels) {
-	bp.mu.Lock()
-	defer bp.mu.Unlock()
-
 	for channel := range bp.peerChannels.Channels() {
-		if _, ok := bp.channelObservers[channel]; !ok {
+		bp.mu.RLock()
+		_, ok := bp.channelObservers[channel]
+		bp.mu.RUnlock()
+
+		if !ok {
 			bp.logger.Info(`add channel observer concurrently`, zap.String(`channel`, channel))
 
-			bp.channelObservers[channel] = bp.peerChannelConcurrently(ctx, channel, blocksByChannels)
+			blockPeerChannel := bp.peerChannelConcurrently(ctx, channel, blocksByChannels)
+
+			bp.mu.Lock()
+			bp.channelObservers[channel] = blockPeerChannel
+			bp.mu.Unlock()
 		}
 	}
 }
