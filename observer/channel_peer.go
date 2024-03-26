@@ -137,7 +137,7 @@ func (cp *ChannelPeer) Observe(ctx context.Context) {
 	}()
 }
 
-func (cp *ChannelPeer) Host() string {
+func (cp *ChannelPeer) Uri() string {
 	return cp.channelFetcher.Uri()
 }
 
