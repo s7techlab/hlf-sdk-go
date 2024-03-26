@@ -42,11 +42,13 @@ type (
 	}
 
 	PeerChannelsFetcher interface {
+		Uri() string
 		api.ChannelListGetter
 		api.ChainInfoGetter
 	}
 
 	PeerChannels interface {
+		Uri() string
 		Channels() map[string]*ChannelInfo
 	}
 
@@ -133,6 +135,10 @@ func (cp *ChannelPeer) Observe(ctx context.Context) {
 			}
 		}
 	}()
+}
+
+func (cp *ChannelPeer) Host() string {
+	return cp.channelFetcher.Uri()
 }
 
 func (cp *ChannelPeer) Channels() map[string]*ChannelInfo {
