@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/cloudflare/cfssl v1.6.5
 	github.com/envoyproxy/protoc-gen-validate v1.0.2
-	github.com/golang/protobuf v1.5.3
+	github.com/golang/protobuf v1.5.4
 	github.com/google/certificate-transparency-go v1.1.7 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
@@ -29,10 +29,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-replace (
-	github.com/golang/protobuf => github.com/golang/protobuf v1.4.1
-	github.com/hyperledger/fabric => github.com/hyperledger/fabric v1.4.0-rc1.0.20210909064358-99553020d277
-)
+replace github.com/hyperledger/fabric => github.com/hyperledger/fabric v1.4.0-rc1.0.20210909064358-99553020d277
 
 require (
 	github.com/docker/docker v17.12.0-ce-rc1.0.20190628135806-70f67c6240bb+incompatible
