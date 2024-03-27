@@ -9,6 +9,10 @@ type ChannelPeerMock struct {
 	channelsInfo map[string]*ChannelInfo
 }
 
+func (m *ChannelPeerMock) Uri() string {
+	return "mock"
+}
+
 func NewChannelPeerMock(channelsInfo ...*ChannelInfo) *ChannelPeerMock {
 	channels := make(map[string]*ChannelInfo, len(channelsInfo))
 	for _, channelInfo := range channelsInfo {
