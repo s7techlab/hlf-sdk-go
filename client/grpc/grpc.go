@@ -6,8 +6,9 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
+	"google.golang.org/grpc/credentials/insecure"
 	"net"
+	"os"
 	"time"
 
 	grpcretry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
@@ -16,7 +17,6 @@ import (
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/balancer/roundrobin"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/resolver"
@@ -80,7 +80,7 @@ func OptionsFromConfig(c config.ConnectionConfig, logger *zap.Logger) (*Opts, er
 			if len(c.Tls.CACert) != 0 {
 				caCert = c.Tls.CACert
 			} else {
-				caCert, err = ioutil.ReadFile(c.Tls.CACertPath)
+				caCert, err = os.ReadFile(c.Tls.CACertPath)
 				if err != nil {
 					return nil, fmt.Errorf(`read CA certificate: %w`, err)
 				}
@@ -123,7 +123,7 @@ func OptionsFromConfig(c config.ConnectionConfig, logger *zap.Logger) (*Opts, er
 		cred := credentials.NewTLS(&tlsCfg)
 		opts.Dial = append(opts.Dial, grpc.WithTransportCredentials(cred))
 	} else {
-		opts.Dial = append(opts.Dial, grpc.WithInsecure())
+		opts.Dial = append(opts.Dial, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
 	// Set default keep alive
@@ -204,10 +204,10 @@ func ConnectionFromConfigs(ctx context.Context, logger *zap.Logger, conf ...conf
 		hosts = append(hosts, cc.Host)
 	}
 
-	r, _ := manual.GenerateAndRegisterManualResolver()
+	r := manual.NewBuilderWithScheme("fabric")
 	r.InitialState(resolver.State{Addresses: addr})
 
-	opts.Dial = append(opts.Dial, grpc.WithBalancerName(roundrobin.Name))
+	opts.Dial = append(opts.Dial, grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy":"round_robin"}`))
 
 	logger.Debug(`grpc dial to orderer`, zap.Strings(`hosts`, hosts))
 
