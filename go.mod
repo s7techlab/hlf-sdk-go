@@ -3,7 +3,7 @@ module github.com/s7techlab/hlf-sdk-go
 go 1.21
 
 require (
-	github.com/cloudflare/cfssl v1.6.5
+	github.com/cloudflare/cfssl v1.4.1
 	github.com/envoyproxy/protoc-gen-validate v1.0.2
 	github.com/golang/protobuf v1.5.4
 	github.com/google/certificate-transparency-go v1.1.7 // indirect
@@ -82,7 +82,6 @@ require (
 	github.com/hyperledger/fabric-lib-go v1.0.0 // indirect
 	github.com/ijc/Gotty v0.0.0-20170406111628-a8b993ba6abd // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
-	github.com/jmoiron/sqlx v1.3.5 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/miekg/pkcs11 v1.1.1 // indirect
@@ -112,7 +111,7 @@ require (
 	github.com/willf/bitset v1.1.10 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/zmap/zcrypto v0.0.0-20230310154051-c8b263fd8300 // indirect
-	github.com/zmap/zlint/v3 v3.5.0 // indirect
+	github.com/zmap/zlint v0.0.0-20190806154020-fd021b4cfbeb // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/mod v0.13.0 // indirect
 	golang.org/x/net v0.21.0 // indirect
@@ -125,3 +124,5 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/hyperledger/fabric => github.com/hyperledger/fabric v1.4.0-rc1.0.20210909064358-99553020d277
