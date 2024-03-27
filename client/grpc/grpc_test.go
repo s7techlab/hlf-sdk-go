@@ -4,8 +4,8 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
 	"net"
+	"os"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -17,7 +17,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	testpb "google.golang.org/grpc/test/grpc_testing"
+	testpb "google.golang.org/grpc/interop/grpc_testing"
 
 	"github.com/s7techlab/hlf-sdk-go/api/config"
 )
@@ -151,7 +151,7 @@ func init() {
 		panic(err)
 	}
 	certPool := x509.NewCertPool()
-	ca, err := ioutil.ReadFile(path.Join(curDir, `testdata`, `tls`, `ca`, `ca.pem`))
+	ca, err := os.ReadFile(path.Join(curDir, `testdata`, `tls`, `ca`, `ca.pem`))
 	if err != nil {
 		panic(err)
 	}
