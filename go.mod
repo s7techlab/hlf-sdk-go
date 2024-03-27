@@ -1,6 +1,6 @@
 module github.com/s7techlab/hlf-sdk-go
 
-go 1.19
+go 1.21
 
 require (
 	github.com/cloudflare/cfssl v1.6.5
