@@ -29,8 +29,6 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-replace github.com/hyperledger/fabric => github.com/hyperledger/fabric v1.4.0-rc1.0.20210909064358-99553020d277
-
 require (
 	github.com/docker/docker v17.12.0-ce-rc1.0.20190628135806-70f67c6240bb+incompatible
 	github.com/fsouza/go-dockerclient v1.4.1
