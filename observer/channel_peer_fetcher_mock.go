@@ -18,6 +18,10 @@ func NewChannelPeerFetcherMock(channels map[string]uint64) *ChannelPeerFetcherMo
 	}
 }
 
+func (c *ChannelPeerFetcherMock) Uri() string {
+	return "mock"
+}
+
 func (c *ChannelPeerFetcherMock) GetChannels(context.Context) (*peer.ChannelQueryResponse, error) {
 	var channels []*peer.ChannelInfo
 	for channelName := range c.channels {
