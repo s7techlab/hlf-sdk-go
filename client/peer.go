@@ -178,6 +178,10 @@ func (p *peer) ParsedBlocks(ctx context.Context, channel string, identity msp.Si
 
 	parsedBlockChan := make(chan *block.Block)
 	go func() {
+		defer func() {
+			close(parsedBlockChan)
+		}()
+
 		for {
 			select {
 			case b, ok := <-commonBlocks:
@@ -201,7 +205,7 @@ func (p *peer) ParsedBlocks(ctx context.Context, channel string, identity msp.Si
 			return closerErr
 		}
 
-		close(parsedBlockChan)
+		//close(parsedBlockChan)
 		return nil
 	}
 
