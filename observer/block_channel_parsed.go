@@ -2,7 +2,6 @@ package observer
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/hyperledger/fabric-protos-go/common"
@@ -18,7 +17,7 @@ type (
 		transformers []BlockTransformer
 		configBlock  *common.Block
 
-		blocks        chan *ParsedBlock
+		parsedBlocks  chan *ParsedBlock
 		isWork        bool
 		cancelObserve context.CancelFunc
 		mu            sync.Mutex
@@ -56,27 +55,47 @@ func (p *ParsedBlockChannel) Observe(ctx context.Context) (<-chan *ParsedBlock, 
 	defer p.mu.Unlock()
 
 	if p.isWork {
-		return p.blocks, nil
+		return p.parsedBlocks, nil
 	}
 
 	// ctxObserve using for nested control process without stopped primary context
 	ctxObserve, cancel := context.WithCancel(ctx)
 	p.cancelObserve = cancel
 
-	incomingBlocks, err := p.BlockChannel.Observe(ctxObserve)
-	if err != nil {
-		return nil, fmt.Errorf("observe common blocks: %w", err)
+	if err := p.BlockChannel.allowToObserve(); err != nil {
+		return nil, err
 	}
 
-	p.blocks = make(chan *ParsedBlock)
+	// Double check
+	if err := p.BlockChannel.allowToObserve(); err != nil {
+		return nil, err
+	}
+
+	p.parsedBlocks = make(chan *ParsedBlock)
 
 	go func() {
 		p.isWork = true
 
+		p.BlockChannel.logger.Debug(`creating parsed block stream`)
+		incomingBlocks, errCreateStream := p.BlockChannel.createParsedStreamWithRetry(ctxObserve, p.BlockChannel.createParsedStream)
+		if errCreateStream != nil {
+			return
+		}
+
+		p.BlockChannel.logger.Info(`parsed block stream created`)
 		for {
 			select {
 			case incomingBlock, hasMore := <-incomingBlocks:
-				if !hasMore {
+
+				var err error
+				if !hasMore && !p.BlockChannel.stopRecreateStream {
+					p.BlockChannel.logger.Debug(`parsed block stream interrupted, recreate`)
+					incomingBlocks, err = p.BlockChannel.createParsedStreamWithRetry(ctx, p.BlockChannel.createParsedStream)
+					if err != nil {
+						return
+					}
+
+					p.BlockChannel.logger.Debug(`parsed block stream recreated`)
 					continue
 				}
 
@@ -84,21 +103,28 @@ func (p *ParsedBlockChannel) Observe(ctx context.Context) (<-chan *ParsedBlock, 
 					continue
 				}
 
-				block := &ParsedBlock{
-					Channel: p.BlockChannel.channel,
+				parsedBlock := &ParsedBlock{
+					Channel:       p.BlockChannel.channel,
+					BlockOriginal: incomingBlock,
+					Block:         incomingBlock,
 				}
-				block.Block, block.Error = hlfproto.ParseBlock(incomingBlock.Block, hlfproto.WithConfigBlock(p.configBlock))
+
+				bftOrdererIdentities, err := hlfproto.ParseBTFOrderersIdentities(parsedBlock.BlockOriginal.GetMetadata().GetRawUnparsedMetadataSignatures(), p.configBlock)
+				if err != nil {
+					p.BlockChannel.logger.Error("parse bft orderers identities", zap.Error(err))
+				}
+				parsedBlock.Block.Metadata.OrdererSignatures = append(parsedBlock.Block.Metadata.OrdererSignatures, bftOrdererIdentities...)
 
 				for pos, transformer := range p.transformers {
-					if err = transformer.Transform(block); err != nil {
+					if err = transformer.Transform(parsedBlock); err != nil {
 						p.BlockChannel.logger.Warn(`transformer`, zap.Int(`pos`, pos), zap.Error(err))
 					}
 				}
 
-				p.blocks <- block
+				p.parsedBlocks <- parsedBlock
 
 			case <-ctxObserve.Done():
-				if err = p.Stop(); err != nil {
+				if err := p.Stop(); err != nil {
 					p.BlockChannel.lastError = err
 				}
 				return
@@ -106,7 +132,7 @@ func (p *ParsedBlockChannel) Observe(ctx context.Context) (<-chan *ParsedBlock, 
 		}
 	}()
 
-	return p.blocks, nil
+	return p.parsedBlocks, nil
 }
 
 func (p *ParsedBlockChannel) Stop() error {

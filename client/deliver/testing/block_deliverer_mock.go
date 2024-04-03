@@ -3,7 +3,6 @@ package testing
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
@@ -14,11 +13,14 @@ import (
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
+
+	hlfproto "github.com/s7techlab/hlf-sdk-go/block"
 )
 
 type BlocksDelivererMock struct {
 	//  <channel-name> => [<block1.pb>,...<blockN.pb>]
 	data             map[string][]*common.Block
+	parsedData       map[string][]*hlfproto.Block
 	closeWhenAllRead bool
 }
 
@@ -31,6 +33,7 @@ func NewBlocksDelivererMock(rootPath string, closeWhenAllRead bool) (*BlocksDeli
 
 	dc := &BlocksDelivererMock{
 		data:             make(map[string][]*common.Block),
+		parsedData:       make(map[string][]*hlfproto.Block),
 		closeWhenAllRead: closeWhenAllRead,
 	}
 
@@ -78,7 +81,7 @@ func NewBlocksDelivererMock(rootPath string, closeWhenAllRead bool) (*BlocksDeli
 				return err
 			}
 
-			block, err := ioutil.ReadFile(path)
+			block, err := os.ReadFile(path)
 			if err != nil {
 				return err
 			}
@@ -95,15 +98,23 @@ func NewBlocksDelivererMock(rootPath string, closeWhenAllRead bool) (*BlocksDeli
 
 	for channelID, data := range channels {
 		channelBlocks := make([]*common.Block, len(data))
+		parsedChannelBlocks := make([]*hlfproto.Block, len(data))
 		for blockID, blockData := range data {
 			block := &common.Block{}
-			err := proto.Unmarshal(blockData, block)
+			err = proto.Unmarshal(blockData, block)
 			if err != nil {
 				return nil, err
 			}
 			channelBlocks[blockID] = block
+
+			parsedBlock, err := hlfproto.ParseBlock(block)
+			if err != nil {
+				return nil, err
+			}
+			parsedChannelBlocks[blockID] = parsedBlock
 		}
 		dc.data[channelID] = channelBlocks
+		dc.parsedData[channelID] = parsedChannelBlocks
 		println("fill channel '"+channelID+"' blocks from", 0, "...", len(channelBlocks)-1)
 	}
 
@@ -115,11 +126,11 @@ func (m *BlocksDelivererMock) Blocks(
 	channelName string,
 	identity msp.SigningIdentity,
 	blockRange ...int64,
-) (blockChan <-chan *common.Block, closer func() error, err error) {
+) (<-chan *common.Block, func() error, error) {
 	if _, ok := m.data[channelName]; !ok {
 		return nil, nil, fmt.Errorf("have no mocked data for this channel")
 	}
-	closer = func() error { return nil }
+	closer := func() error { return nil }
 
 	var (
 		blockRangeFrom int64 = 0
@@ -152,6 +163,57 @@ func (m *BlocksDelivererMock) Blocks(
 	ch := make(chan *common.Block, (blockRangeTo-blockRangeFrom)+1)
 	for i := blockRangeFrom; i <= blockRangeTo; i++ {
 		ch <- m.data[channelName][i]
+	}
+
+	if m.closeWhenAllRead {
+		close(ch)
+	}
+
+	return ch, closer, nil
+}
+
+func (m *BlocksDelivererMock) ParsedBlocks(
+	ctx context.Context,
+	channelName string,
+	identity msp.SigningIdentity,
+	blockRange ...int64,
+) (<-chan *hlfproto.Block, func() error, error) {
+	if _, ok := m.parsedData[channelName]; !ok {
+		return nil, nil, fmt.Errorf("have no mocked data for this channel")
+	}
+	closer := func() error { return nil }
+
+	var (
+		blockRangeFrom int64 = 0
+		blockRangeTo   int64 = math.MaxInt64
+	)
+
+	if len(blockRange) > 0 {
+		blockRangeFrom = blockRange[0]
+	}
+	if len(blockRange) > 1 {
+		blockRangeTo = blockRange[1]
+	}
+
+	if blockRangeFrom < 0 {
+		blockRangeFrom = int64(len(m.data[channelName])) + blockRangeFrom
+	}
+
+	if blockRangeTo < 0 {
+		blockRangeTo = int64(len(m.data[channelName])) + blockRangeTo
+	}
+
+	if blockRangeFrom > int64(len(m.data[channelName])) {
+		blockRangeFrom = int64(len(m.data[channelName])) - 1
+	}
+
+	if blockRangeTo > int64(len(m.data[channelName])) {
+		blockRangeTo = int64(len(m.data[channelName])) - 1
+	}
+
+	ch := make(chan *hlfproto.Block, (blockRangeTo-blockRangeFrom)+1)
+	for i := blockRangeFrom; i <= blockRangeTo; i++ {
+		ch <- m.parsedData[channelName][i]
 	}
 
 	if m.closeWhenAllRead {

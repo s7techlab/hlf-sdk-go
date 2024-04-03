@@ -173,7 +173,7 @@ func (pbp *ParsedBlockPeer) peerParsedChannel(ctx context.Context, channel strin
 
 	// channel merger
 	go func() {
-		for b := range peerParsedChannel.Observer.blocks {
+		for b := range peerParsedChannel.Observer.parsedBlocks {
 			pbp.blocks <- b
 		}
 

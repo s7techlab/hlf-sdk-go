@@ -8,14 +8,16 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/block"
 )
 
 type (
 	BlockChannel struct {
 		*Channel
-		blocksDeliverer       api.BlocksDeliverer
-		createStreamWithRetry CreateBlockStreamWithRetry
-		stopRecreateStream    bool
+		blocksDeliverer             api.BlocksDeliverer
+		createStreamWithRetry       CreateBlockStreamWithRetry
+		createParsedStreamWithRetry CreateParsedBlockStreamWithRetry
+		stopRecreateStream          bool
 
 		blocks chan *Block
 
@@ -26,7 +28,8 @@ type (
 	BlockChannelOpts struct {
 		*Opts
 
-		createStreamWithRetry CreateBlockStreamWithRetry
+		createStreamWithRetry       CreateBlockStreamWithRetry
+		createParsedStreamWithRetry CreateParsedBlockStreamWithRetry
 
 		// don't recreate stream if it has not any blocks
 		stopRecreateStream bool
@@ -48,8 +51,9 @@ func WithChannelStopRecreateStream(stop bool) BlockChannelOpt {
 }
 
 var DefaultBlockChannelOpts = &BlockChannelOpts{
-	createStreamWithRetry: CreateBlockStreamWithRetryDelay(DefaultConnectRetryDelay),
-	Opts:                  DefaultOpts,
+	createStreamWithRetry:       CreateBlockStreamWithRetryDelay(DefaultConnectRetryDelay),
+	createParsedStreamWithRetry: CreateParsedBlockStreamWithRetryDelay(DefaultConnectRetryDelay),
+	Opts:                        DefaultOpts,
 }
 
 func NewBlockChannel(channel string, blocksDeliver api.BlocksDeliverer, seekFromFetcher SeekFromFetcher, opts ...BlockChannelOpt) *BlockChannel {
@@ -66,9 +70,10 @@ func NewBlockChannel(channel string, blocksDeliver api.BlocksDeliverer, seekFrom
 			logger:          blockChannelOpts.logger.With(zap.String(`channel`, channel)),
 		},
 
-		blocksDeliverer:       blocksDeliver,
-		createStreamWithRetry: blockChannelOpts.createStreamWithRetry,
-		stopRecreateStream:    blockChannelOpts.stopRecreateStream,
+		blocksDeliverer:             blocksDeliver,
+		createStreamWithRetry:       blockChannelOpts.createStreamWithRetry,
+		createParsedStreamWithRetry: blockChannelOpts.createParsedStreamWithRetry,
+		stopRecreateStream:          blockChannelOpts.stopRecreateStream,
 	}
 
 	return observer
@@ -180,6 +185,45 @@ func (c *BlockChannel) createStream(ctx context.Context) (<-chan *common.Block, 
 	)
 	c.logger.Debug(`subscribing to blocks stream`)
 	blocks, closer, err = c.blocksDeliverer.Blocks(ctx, c.channel, c.identity, int64(seekFrom))
+	if err != nil {
+		c.logger.Warn(`subscribing to blocks stream failed`, zap.Error(err))
+		c.setError(err)
+		return nil, fmt.Errorf(`blocks deliverer: %w`, err)
+	}
+	c.logger.Info(`subscribed to blocks stream`)
+
+	c.afterCreateStream(closer)
+
+	// Check close context
+	select {
+	case <-ctx.Done():
+		err = closer()
+		return nil, err
+	default:
+	}
+
+	return blocks, nil
+}
+
+func (c *BlockChannel) createParsedStream(ctx context.Context) (<-chan *block.Block, error) {
+	c.preCreateStream()
+
+	c.logger.Debug(`connecting to blocks stream, receiving seek offset`,
+		zap.Uint64(`attempt`, c.connectAttempt))
+
+	seekFrom, err := c.processSeekFrom(ctx)
+	if err != nil {
+		c.logger.Warn(`seek from failed`, zap.Error(err))
+		return nil, err
+	}
+	c.logger.Info(`block seek offset received`, zap.Uint64(`seek from`, seekFrom))
+
+	var (
+		blocks <-chan *block.Block
+		closer func() error
+	)
+	c.logger.Debug(`subscribing to blocks stream`)
+	blocks, closer, err = c.blocksDeliverer.ParsedBlocks(ctx, c.channel, c.identity, int64(seekFrom))
 	if err != nil {
 		c.logger.Warn(`subscribing to blocks stream failed`, zap.Error(err))
 		c.setError(err)

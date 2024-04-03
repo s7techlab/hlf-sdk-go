@@ -110,6 +110,7 @@ message Endorsement {
 
 message BlockMetadata {
   repeated OrdererSignature ordererSignatures = 1;
+  bytes raw_unparsed_metadata_signatures = 2;
 }
 
 message OrdererSignature {

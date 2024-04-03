@@ -41,6 +41,10 @@ func ParseBlock(block *common.Block, opts ...ParseBlockOpt) (*Block, error) {
 		Metadata: &BlockMetadata{},
 	}
 
+	if block.GetMetadata().GetMetadata() != nil {
+		parsedBlock.Metadata.RawUnparsedMetadataSignatures = block.GetMetadata().GetMetadata()[common.BlockMetadataIndex_SIGNATURES]
+	}
+
 	txFilter := txflags.ValidationFlags(block.Metadata.Metadata[common.BlockMetadataIndex_TRANSACTIONS_FILTER])
 	if parsedBlock.Data, err = ParseBlockData(block.GetData().GetData(), txFilter); err != nil {
 		return nil, fmt.Errorf("parse block data: %w", err)
@@ -59,7 +63,7 @@ func ParseBlock(block *common.Block, opts ...ParseBlockOpt) (*Block, error) {
 	// parse BFT orderer identities, if there is at least one config block was sent
 	if parsingOpts.configBlock != nil {
 		var bftOrdererIdentities []*OrdererSignature
-		bftOrdererIdentities, err = ParseBTFOrderersIdentities(block, parsingOpts.configBlock)
+		bftOrdererIdentities, err = ParseBTFOrderersIdentities(parsedBlock.Metadata.RawUnparsedMetadataSignatures, parsingOpts.configBlock)
 		if err != nil {
 			return nil, fmt.Errorf("parse bft orderers identities: %w", err)
 		}
@@ -95,9 +99,13 @@ func ParseOrdererIdentity(cb *common.Block) (*msp.SerializedIdentity, error) {
 	return serializedIdentity, nil
 }
 
-func ParseBTFOrderersIdentities(block *common.Block, configBlock *common.Block) ([]*OrdererSignature, error) {
+func ParseBTFOrderersIdentities(metadataSignatures []byte, configBlock *common.Block) ([]*OrdererSignature, error) {
+	if configBlock == nil {
+		return nil, nil
+	}
+
 	bftMeta := &bftcommon.BFTMetadata{}
-	if err := proto.Unmarshal(block.Metadata.Metadata[common.BlockMetadataIndex_SIGNATURES], bftMeta); err != nil {
+	if err := proto.Unmarshal(metadataSignatures, bftMeta); err != nil {
 		return nil, fmt.Errorf("unmarshaling bft block metadata from metadata: %w", err)
 	}
 
