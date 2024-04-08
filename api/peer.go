@@ -35,6 +35,8 @@ type Peer interface {
 
 	BlocksDeliverer
 
+	ParsedBlocksDeliverer
+
 	EventsDeliverer
 
 	// DeliverClient returns DeliverClient

@@ -24,18 +24,18 @@ type (
 		UpdatedAt *timestamppb.Timestamp
 	}
 
-	// ChannelPeer observes for peer channels
-	ChannelPeer struct {
-		channelFetcher PeerChannelsFetcher
+	// PeerChannels observes for peer channels
+	PeerChannels struct {
+		channels map[string]*ChannelInfo
 
+		channelFetcher  PeerChannelsFetcher
 		channelsMatcher *ChannelsMatcher
+		observePeriod   time.Duration
 
-		channels      map[string]*ChannelInfo
-		observePeriod time.Duration
+		mu     sync.Mutex
+		logger *zap.Logger
 
 		lastError error
-		mu        sync.Mutex
-		logger    *zap.Logger
 
 		isWork        bool
 		cancelObserve context.CancelFunc
@@ -45,11 +45,6 @@ type (
 		Uri() string
 		api.ChannelListGetter
 		api.ChainInfoGetter
-	}
-
-	PeerChannels interface {
-		Uri() string
-		Channels() map[string]*ChannelInfo
 	}
 
 	ChannelPeerOpts struct {
@@ -79,7 +74,7 @@ func WithChannelPeerLogger(logger *zap.Logger) ChannelPeerOpt {
 	}
 }
 
-func NewChannelPeer(peerChannelsFetcher PeerChannelsFetcher, opts ...ChannelPeerOpt) (*ChannelPeer, error) {
+func NewPeerChannels(peerChannelsFetcher PeerChannelsFetcher, opts ...ChannelPeerOpt) (*PeerChannels, error) {
 	channelPeerOpts := DefaultChannelPeerOpts
 	for _, opt := range opts {
 		opt(channelPeerOpts)
@@ -90,7 +85,7 @@ func NewChannelPeer(peerChannelsFetcher PeerChannelsFetcher, opts ...ChannelPeer
 		return nil, fmt.Errorf(`channels matcher: %w`, err)
 	}
 
-	channelPeer := &ChannelPeer{
+	channelPeer := &PeerChannels{
 		channelFetcher:  peerChannelsFetcher,
 		channelsMatcher: channelsMatcher,
 		channels:        make(map[string]*ChannelInfo),
@@ -101,101 +96,101 @@ func NewChannelPeer(peerChannelsFetcher PeerChannelsFetcher, opts ...ChannelPeer
 	return channelPeer, nil
 }
 
-func (cp *ChannelPeer) Stop() {
-	cp.cancelObserve()
-	cp.isWork = false
+func (pc *PeerChannels) Stop() {
+	pc.cancelObserve()
+	pc.isWork = false
 }
 
-func (cp *ChannelPeer) Observe(ctx context.Context) {
-	if cp.isWork {
+func (pc *PeerChannels) Observe(ctx context.Context) {
+	if pc.isWork {
 		return
 	}
 
 	// ctxObserve using for nested control process without stopped primary context
 	ctxObserve, cancel := context.WithCancel(context.Background())
-	cp.cancelObserve = cancel
+	pc.cancelObserve = cancel
 
 	go func() {
-		cp.isWork = true
-		cp.updateChannels(ctxObserve)
+		pc.isWork = true
+		pc.updateChannels(ctxObserve)
 
-		ticker := time.NewTicker(cp.observePeriod)
+		ticker := time.NewTicker(pc.observePeriod)
 		for {
 			select {
 			case <-ctx.Done():
 				// If primary context is done then cancel ctxObserver
-				cp.cancelObserve()
+				pc.cancelObserve()
 				return
 
 			case <-ctxObserve.Done():
 				return
 
 			case <-ticker.C:
-				cp.updateChannels(ctxObserve)
+				pc.updateChannels(ctxObserve)
 			}
 		}
 	}()
 }
 
-func (cp *ChannelPeer) Uri() string {
-	return cp.channelFetcher.Uri()
+func (pc *PeerChannels) Uri() string {
+	return pc.channelFetcher.Uri()
 }
 
-func (cp *ChannelPeer) Channels() map[string]*ChannelInfo {
-	cp.mu.Lock()
-	defer cp.mu.Unlock()
+func (pc *PeerChannels) Channels() map[string]*ChannelInfo {
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
 
-	var copyChannelInfo = make(map[string]*ChannelInfo, len(cp.channels))
-	for key, value := range cp.channels {
+	var copyChannelInfo = make(map[string]*ChannelInfo, len(pc.channels))
+	for key, value := range pc.channels {
 		copyChannelInfo[key] = value
 	}
 
 	return copyChannelInfo
 }
 
-func (cp *ChannelPeer) updateChannels(ctx context.Context) {
-	cp.logger.Debug(`fetching channels`)
-	channelsInfo, err := cp.channelFetcher.GetChannels(ctx)
+func (pc *PeerChannels) updateChannels(ctx context.Context) {
+	pc.logger.Debug(`fetching channels`)
+	channelsInfo, err := pc.channelFetcher.GetChannels(ctx)
 	if err != nil {
-		cp.logger.Warn(`error while fetching channels`, zap.Error(err))
-		cp.lastError = err
+		pc.logger.Warn(`error while fetching channels`, zap.Error(err))
+		pc.lastError = err
 		return
 	}
 
 	channels := ChannelsInfoToStrings(channelsInfo.Channels)
-	cp.logger.Debug(`channels fetched`, zap.Strings(`channels`, channels))
+	pc.logger.Debug(`channels fetched`, zap.Strings(`channels`, channels))
 
-	channelsMatched, err := cp.channelsMatcher.Match(channels)
+	channelsMatched, err := pc.channelsMatcher.Match(channels)
 	if err != nil {
-		cp.logger.Warn(`channel matching error`, zap.Error(err))
-		cp.lastError = err
+		pc.logger.Warn(`channel matching error`, zap.Error(err))
+		pc.lastError = err
 		return
 	}
-	cp.logger.Debug(`channels matched`, zap.Reflect(`channels`, channelsMatched))
+	pc.logger.Debug(`channels matched`, zap.Reflect(`channels`, channelsMatched))
 
 	channelHeights := make(map[string]uint64)
 
 	for _, channel := range channelsMatched {
 		var channelInfo *common.BlockchainInfo
-		channelInfo, err = cp.channelFetcher.GetChainInfo(ctx, channel.Name)
+		channelInfo, err = pc.channelFetcher.GetChainInfo(ctx, channel.Name)
 		if err != nil {
-			cp.lastError = err
+			pc.lastError = err
 			continue
 		}
 		channelHeights[channel.Name] = channelInfo.Height
 	}
 
-	cp.mu.Lock()
-	defer cp.mu.Unlock()
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
 
 	for channel, height := range channelHeights {
 		var updatedAt *timestamp.Timestamp
 		updatedAt, err = ptypes.TimestampProto(time.Now())
 		if err != nil {
-			cp.lastError = err
+			pc.lastError = err
 		}
 
-		cp.channels[channel] = &ChannelInfo{
+		pc.channels[channel] = &ChannelInfo{
 			Channel:   channel,
 			Height:    height,
 			UpdatedAt: updatedAt,

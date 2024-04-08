@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
@@ -30,6 +31,8 @@ const (
 
 	PeerDefaultDialTimeout    = 5 * time.Second
 	PeerDefaultEndorseTimeout = 5 * time.Second
+
+	DefaultPeerChannelsObservePeriod = 30 * time.Second
 )
 
 type peer struct {
@@ -40,11 +43,14 @@ type peer struct {
 
 	endorseDefaultTimeout time.Duration
 
+	configBlocks map[string]*common.Block
+	mu           sync.Mutex
+
 	logger *zap.Logger
 }
 
 // NewPeer returns new peer instance based on peer config
-func NewPeer(dialCtx context.Context, c config.ConnectionConfig, identity msp.SigningIdentity, logger *zap.Logger) (api.Peer, error) {
+func NewPeer(ctx context.Context, c config.ConnectionConfig, identity msp.SigningIdentity, logger *zap.Logger) (api.Peer, error) {
 	opts, err := grpcclient.OptionsFromConfig(c, logger)
 	if err != nil {
 		return nil, fmt.Errorf(`peer grpc options from config: %w`, err)
@@ -56,10 +62,11 @@ func NewPeer(dialCtx context.Context, c config.ConnectionConfig, identity msp.Si
 	}
 
 	// Dial should always have timeout
-	ctxDeadline, exists := dialCtx.Deadline()
+	var dialCtx context.Context
+	ctxDeadline, exists := ctx.Deadline()
 	if !exists {
 		var cancel context.CancelFunc
-		dialCtx, cancel = context.WithTimeout(dialCtx, dialTimeout)
+		dialCtx, cancel = context.WithTimeout(ctx, dialTimeout)
 		defer cancel()
 
 		ctxDeadline, _ = dialCtx.Deadline()
@@ -71,11 +78,11 @@ func NewPeer(dialCtx context.Context, c config.ConnectionConfig, identity msp.Si
 		return nil, fmt.Errorf(`grpc dial to peer endpoint=%s: %w`, c.Host, err)
 	}
 
-	return NewFromGRPC(conn, identity, opts.TLSCertHash, logger, c.Timeout.Duration)
+	return NewFromGRPC(ctx, conn, identity, opts.TLSCertHash, logger, c.Timeout.Duration)
 }
 
 // NewFromGRPC allows initializing peer from existing GRPC connection
-func NewFromGRPC(conn *grpc.ClientConn, identity msp.SigningIdentity, tlsCertHash []byte, logger *zap.Logger, endorseDefaultTimeout time.Duration) (api.Peer, error) {
+func NewFromGRPC(ctx context.Context, conn *grpc.ClientConn, identity msp.SigningIdentity, tlsCertHash []byte, logger *zap.Logger, endorseDefaultTimeout time.Duration) (api.Peer, error) {
 	if conn == nil {
 		return nil, errors.New(`empty connection`)
 	}
@@ -90,10 +97,59 @@ func NewFromGRPC(conn *grpc.ClientConn, identity msp.SigningIdentity, tlsCertHas
 		identity:              identity,
 		tlsCertHash:           tlsCertHash,
 		endorseDefaultTimeout: endorseDefaultTimeout,
+		configBlocks:          make(map[string]*common.Block),
 		logger:                logger.Named(`peer`),
 	}
 
+	qsccService := qscc.NewQSCC(p)
+
+	if err := p.getConfigBlocks(ctx, qsccService); err != nil {
+		return nil, err
+	}
+
+	go func() {
+		ticker := time.NewTicker(DefaultPeerChannelsObservePeriod)
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				if err := p.getConfigBlocks(ctx, qsccService); err != nil {
+					p.logger.Error("get config blocks", zap.Error(err))
+				}
+			}
+		}
+	}()
+
 	return p, nil
+}
+
+func (p *peer) getConfigBlocks(ctx context.Context, qsccService *qscc.QSCCService) error {
+	channels, err := p.GetChannels(ctx)
+	if err != nil {
+		return fmt.Errorf("get all channels: %w", err)
+	}
+
+	if len(channels.Channels) <= len(p.configBlocks) {
+		return nil
+	}
+
+	for _, ch := range channels.GetChannels() {
+		_, exist := p.configBlocks[ch.ChannelId]
+		if !exist {
+			configBlock, err := qsccService.GetBlockByNumber(ctx, &qscc.GetBlockByNumberRequest{ChannelName: ch.ChannelId, BlockNumber: 0})
+			if err != nil {
+				return fmt.Errorf("get block by number from channel %s: %w", ch.ChannelId, err)
+			}
+
+			if configBlock != nil {
+				p.configBlocks[ch.ChannelId] = configBlock
+			}
+		}
+	}
+
+	return nil
 }
 
 func (p *peer) Query(
@@ -188,8 +244,15 @@ func (p *peer) ParsedBlocks(ctx context.Context, channel string, identity msp.Si
 				if !ok {
 					return
 				}
+				if b == nil {
+					return
+				}
 
-				parsedBlock, err := block.ParseBlock(b)
+				p.mu.Lock()
+				configBlock := p.configBlocks[channel]
+				p.mu.Unlock()
+
+				parsedBlock, err := block.ParseBlock(b, block.WithConfigBlock(configBlock))
 				if err != nil {
 					p.logger.Error("parse block", zap.String("channel", channel), zap.Uint64("number", b.Header.Number))
 					continue
@@ -204,8 +267,6 @@ func (p *peer) ParsedBlocks(ctx context.Context, channel string, identity msp.Si
 		if closerErr := commonCloser(); closerErr != nil {
 			return closerErr
 		}
-
-		//close(parsedBlockChan)
 		return nil
 	}
 

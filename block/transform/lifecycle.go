@@ -6,7 +6,7 @@ import (
 
 	"github.com/hyperledger/fabric-protos-go/ledger/rwset/kvrwset"
 
-	"github.com/s7techlab/hlf-sdk-go/observer"
+	hlfproto "github.com/s7techlab/hlf-sdk-go/block"
 )
 
 const (
@@ -53,7 +53,7 @@ func keyReplace(key string) string {
 	return key
 }
 
-var LifecycleTransformers = []observer.BlockTransformer{
+var LifecycleTransformers = []hlfproto.Transformer{
 	NewAction(
 		TxChaincodeIDMatch(LifecycleChaincodeName),
 		WithKVWriteTransformer(

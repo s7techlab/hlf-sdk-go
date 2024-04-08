@@ -7,7 +7,6 @@ import (
 	"github.com/mohae/deepcopy"
 
 	hlfproto "github.com/s7techlab/hlf-sdk-go/block"
-	"github.com/s7techlab/hlf-sdk-go/observer"
 )
 
 type (
@@ -68,56 +67,55 @@ func NewAction(actionMach TxActionMatch, opts ...ActionOpt) *Action {
 	return a
 }
 
-func (s *Action) Transform(block *observer.ParsedBlock) error {
-	if block.Block == nil {
-		return nil
+func (s *Action) Transform(block *hlfproto.Block) (transformed *hlfproto.Block, original *hlfproto.Block, err error) {
+	if block == nil {
+		return nil, nil, nil
 	}
 
 	// if block is transformed, copy of block will be saved to block.BlockOriginal
-	blockCopy := deepcopy.Copy(block.Block).(*hlfproto.Block)
+	blockCopy := deepcopy.Copy(block).(*hlfproto.Block)
 	blockIsTransformed := false
 
-	for _, envelope := range block.Block.Data.Envelopes {
-		if envelope.Payload.Transaction == nil {
+	for _, envelope := range block.GetData().GetEnvelopes() {
+		if envelope.GetPayload().GetTransaction() == nil {
 			continue
 		}
 
-		for _, txAction := range envelope.Payload.Transaction.Actions {
+		for _, txAction := range envelope.GetPayload().GetTransaction().GetActions() {
 			if !s.match(txAction) {
 				continue
 			}
 
 			for _, argsTransformer := range s.inputArgsTransformers {
-				if err := argsTransformer.Transform(txAction.ChaincodeSpec().Input.Args); err != nil {
-					return fmt.Errorf(`transform input args: %w`, err)
+				if err := argsTransformer.Transform(txAction.ChaincodeSpec().GetInput().GetArgs()); err != nil {
+					return nil, nil, fmt.Errorf(`transform input args: %w`, err)
 				}
 			}
 
 			for _, eventTransformer := range s.eventTransformers {
 				if err := eventTransformer.Transform(txAction.Event()); err != nil {
-					return fmt.Errorf(`transform event: %w`, err)
+					return nil, nil, fmt.Errorf(`transform event: %w`, err)
 				}
 			}
 
 			for _, rwSet := range txAction.NsReadWriteSet() {
-				for _, write := range rwSet.Rwset.Writes {
+				for _, write := range rwSet.GetRwset().GetWrites() {
 					for _, kvWriteTransformer := range s.kvWriteTransformers {
 						origKey := write.Key
 						if err := kvWriteTransformer.Transform(write); err != nil {
-							return fmt.Errorf(`transform KV write with key: %s: %w`, write.Key, err)
+							return nil, nil, fmt.Errorf(`transform KV write with key: %s: %w`, write.Key, err)
 						}
-
 						if origKey != write.Key {
 							blockIsTransformed = true
 						}
 					}
 				}
 
-				for _, read := range rwSet.Rwset.Reads {
+				for _, read := range rwSet.GetRwset().GetReads() {
 					for _, kvReadTransform := range s.kvReadTransformers {
 						origKey := read.Key
 						if err := kvReadTransform.Transform(read); err != nil {
-							return fmt.Errorf(`transform KV read with key: %s: %w`, read.Key, err)
+							return nil, nil, fmt.Errorf(`transform KV read with key: %s: %w`, read.Key, err)
 						}
 						if origKey != read.Key {
 							blockIsTransformed = true
@@ -127,7 +125,7 @@ func (s *Action) Transform(block *observer.ParsedBlock) error {
 
 				for _, actionPayloadTransform := range s.actionPayloadTransformers {
 					if err := actionPayloadTransform.Transform(txAction); err != nil {
-						return fmt.Errorf(`transform action payload: %w`, err)
+						return nil, nil, fmt.Errorf(`transform action payload: %w`, err)
 					}
 				}
 			}
@@ -135,10 +133,10 @@ func (s *Action) Transform(block *observer.ParsedBlock) error {
 	}
 
 	if blockIsTransformed {
-		block.BlockOriginal = blockCopy
+		return block, blockCopy, nil
 	}
 
-	return nil
+	return block, nil, nil
 }
 
 func TxChaincodeIDMatch(chaincode string) TxActionMatch {

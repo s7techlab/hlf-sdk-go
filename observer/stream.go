@@ -4,28 +4,40 @@ import (
 	"context"
 	"strconv"
 	"sync"
+
+	"github.com/hyperledger/fabric-protos-go/common"
+
+	hlfproto "github.com/s7techlab/hlf-sdk-go/block"
 )
 
-type Stream interface {
-	Subscribe() (ch chan *Block, closer func())
+type CommonBlocksStream struct {
+	*BlocksStream[*common.Block]
 }
 
-type BlocksStream struct {
-	connections map[string]chan *Block
+type ParsedBlocksStream struct {
+	*BlocksStream[*hlfproto.Block]
+}
+
+type Stream[T any] interface {
+	Subscribe() (ch chan *Block[T], closer func())
+}
+
+type BlocksStream[T any] struct {
+	connections map[string]chan *Block[T]
 	mu          *sync.RWMutex
 
 	isWork        bool
 	cancelObserve context.CancelFunc
 }
 
-func NewBlocksStream() *BlocksStream {
-	return &BlocksStream{
-		connections: make(map[string]chan *Block),
+func NewBlocksStream[T any]() *BlocksStream[T] {
+	return &BlocksStream[T]{
+		connections: make(map[string]chan *Block[T]),
 		mu:          &sync.RWMutex{},
 	}
 }
 
-func (b *BlocksStream) Observe(ctx context.Context, blocks <-chan *Block) {
+func (b *BlocksStream[T]) Observe(ctx context.Context, blocks <-chan *Block[T]) {
 	if b.isWork {
 		return
 	}
@@ -65,9 +77,9 @@ func (b *BlocksStream) Observe(ctx context.Context, blocks <-chan *Block) {
 	}()
 }
 
-func (b *BlocksStream) Subscribe() (chan *Block, func()) {
+func (b *BlocksStream[T]) Subscribe() (chan *Block[T], func()) {
 	b.mu.Lock()
-	newConnection := make(chan *Block)
+	newConnection := make(chan *Block[T])
 	name := "channel-" + strconv.Itoa(len(b.connections))
 	b.connections[name] = newConnection
 	b.mu.Unlock()
@@ -77,14 +89,14 @@ func (b *BlocksStream) Subscribe() (chan *Block, func()) {
 	return newConnection, closer
 }
 
-func (b *BlocksStream) closeChannel(name string) {
+func (b *BlocksStream[T]) closeChannel(name string) {
 	b.mu.Lock()
 	close(b.connections[name])
 	delete(b.connections, name)
 	b.mu.Unlock()
 }
 
-func (b *BlocksStream) Stop() {
+func (b *BlocksStream[T]) Stop() {
 	if b.cancelObserve != nil {
 		b.cancelObserve()
 	}

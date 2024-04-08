@@ -2686,8 +2686,6 @@ func (m *BlockMetadata) validate(all bool) error {
 
 	}
 
-	// no validation rules for RawUnparsedMetadataSignatures
-
 	if len(errors) > 0 {
 		return BlockMetadataMultiError(errors)
 	}
