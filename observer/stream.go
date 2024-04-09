@@ -4,19 +4,7 @@ import (
 	"context"
 	"strconv"
 	"sync"
-
-	"github.com/hyperledger/fabric-protos-go/common"
-
-	hlfproto "github.com/s7techlab/hlf-sdk-go/block"
 )
-
-type CommonBlocksStream struct {
-	*BlocksStream[*common.Block]
-}
-
-type ParsedBlocksStream struct {
-	*BlocksStream[*hlfproto.Block]
-}
 
 type Stream[T any] interface {
 	Subscribe() (ch chan *Block[T], closer func())

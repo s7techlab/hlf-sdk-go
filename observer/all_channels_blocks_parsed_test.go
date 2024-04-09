@@ -16,7 +16,7 @@ import (
 var (
 	peerChannelsMockForParsed *observer.PeerChannelsMock
 	allChannelBlocksParsed    *observer.AllChannelBlocksParsed
-	parsedBlocks              <-chan *observer.ParsedBlock
+	parsedBlocks              <-chan *observer.Block[*hlfproto.Block]
 
 	peerChannelsMockConcurrentlyForParsed *observer.PeerChannelsMock
 	allChannelBlocksConcurrentlyParsed    *observer.AllChannelBlocksParsed
@@ -34,7 +34,7 @@ func allChannelsBlocksParsedTestBeforeSuit() {
 	}
 
 	allChannelBlocksParsed = observer.NewAllChannelBlocksParsed(peerChannelsMockForParsed, blockDelivererMock,
-		observer.WithBlockStopRecreateStream(true), observer.WithBlockPeerObservePeriod(time.Nanosecond))
+		observer.WithBlockStopRecreateStream(true), observer.WithAllChannelsBlocksObservePeriod(time.Nanosecond))
 
 	parsedBlocks = allChannelBlocksParsed.Observe(ctx)
 
@@ -44,7 +44,7 @@ func allChannelsBlocksParsedTestBeforeSuit() {
 	}
 
 	allChannelBlocksConcurrentlyParsed = observer.NewAllChannelBlocksParsed(peerChannelsMockConcurrentlyForParsed, blockDelivererMock,
-		observer.WithBlockStopRecreateStream(true), observer.WithBlockPeerObservePeriod(time.Nanosecond))
+		observer.WithBlockStopRecreateStream(true), observer.WithAllChannelsBlocksObservePeriod(time.Nanosecond))
 
 	channelWithChannelsParsed = allChannelBlocksConcurrentlyParsed.ObserveByChannels(ctx)
 }
@@ -63,7 +63,7 @@ var _ = Describe("All channels blocks parsed", func() {
 				peerChannelsMockForParsed.UpdateChannelInfo(&observer.ChannelInfo{Channel: channel})
 			}
 
-			// wait to parsedBlockPeer observer
+			// wait to allChannelsBlocksParsed observer
 			time.Sleep(time.Second + time.Millisecond*10)
 
 			channels := allChannelBlocksParsed.Channels()
@@ -84,7 +84,7 @@ var _ = Describe("All channels blocks parsed", func() {
 				Expect(b.Channel).To(Equal(curBlockChannel))
 
 				blockNum := channelsBlocksHeights[curBlockChannel]
-				Expect(b.Block.Block.Header.Number).To(Equal(blockNum))
+				Expect(b.Block.Header.Number).To(Equal(blockNum))
 
 				channelsBlocksHeights[curBlockChannel]++
 
@@ -145,7 +145,7 @@ var _ = Describe("All channels blocks parsed", func() {
 				peerChannelsMockConcurrentlyForParsed.UpdateChannelInfo(&observer.ChannelInfo{Channel: channel})
 			}
 
-			// wait to blockPeer observer
+			// wait to allChannelsBlocksParsed observer
 			time.Sleep(time.Millisecond * 200)
 
 			channels := allChannelBlocksConcurrentlyParsed.Channels()

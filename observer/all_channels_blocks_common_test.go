@@ -19,7 +19,7 @@ var (
 
 	peerChannelsMockForCommon *observer.PeerChannelsMock
 	allChannelBlocksCommon    *observer.AllChannelBlocksCommon
-	commonBlocks              <-chan *observer.CommonBlock
+	commonBlocks              <-chan *observer.Block[*common.Block]
 
 	peerChannelsMockConcurrentlyForCommon *observer.PeerChannelsMock
 	allChannelBlocksConcurrentlyCommon    *observer.AllChannelBlocksCommon
@@ -37,7 +37,7 @@ func allChannelsBlocksCommonTestBeforeSuit() {
 	}
 
 	allChannelBlocksCommon = observer.NewAllChannelBlocksCommon(peerChannelsMockForCommon, blockDelivererMock,
-		observer.WithBlockStopRecreateStream(true), observer.WithBlockPeerObservePeriod(time.Nanosecond))
+		observer.WithBlockStopRecreateStream(true), observer.WithAllChannelsBlocksObservePeriod(time.Nanosecond))
 
 	commonBlocks = allChannelBlocksCommon.Observe(ctx)
 
@@ -47,7 +47,7 @@ func allChannelsBlocksCommonTestBeforeSuit() {
 	}
 
 	allChannelBlocksConcurrentlyCommon = observer.NewAllChannelBlocksCommon(peerChannelsMockConcurrentlyForCommon, blockDelivererMock,
-		observer.WithBlockStopRecreateStream(true), observer.WithBlockPeerObservePeriod(time.Nanosecond))
+		observer.WithBlockStopRecreateStream(true), observer.WithAllChannelsBlocksObservePeriod(time.Nanosecond))
 
 	channelWithChannelsCommon = allChannelBlocksConcurrentlyCommon.ObserveByChannels(ctx)
 }
@@ -66,7 +66,7 @@ var _ = Describe("All channels blocks common", func() {
 				peerChannelsMockForCommon.UpdateChannelInfo(&observer.ChannelInfo{Channel: channel})
 			}
 
-			// wait to commonBlockPeer observer
+			// wait to allChannelsBlocksCommon observer
 			time.Sleep(time.Millisecond * 10)
 
 			channels := allChannelBlocksCommon.Channels()
@@ -87,7 +87,7 @@ var _ = Describe("All channels blocks common", func() {
 				Expect(b.Channel).To(Equal(curBlockChannel))
 
 				blockNum := channelsBlocksHeights[curBlockChannel]
-				Expect(b.Block.Block.Header.Number).To(Equal(blockNum))
+				Expect(b.Block.Header.Number).To(Equal(blockNum))
 
 				channelsBlocksHeights[curBlockChannel]++
 
@@ -148,7 +148,7 @@ var _ = Describe("All channels blocks common", func() {
 				peerChannelsMockConcurrentlyForCommon.UpdateChannelInfo(&observer.ChannelInfo{Channel: channel})
 			}
 
-			// wait to commonBlockPeer observer
+			// wait to allChannelsBlocksCommon observer
 			time.Sleep(time.Millisecond * 200)
 
 			channels := allChannelBlocksConcurrentlyCommon.Channels()

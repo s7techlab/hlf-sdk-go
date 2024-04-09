@@ -15,7 +15,7 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
-const DefaultChannelPeerObservePeriod = 30 * time.Second
+const DefaultPeerChannelsObservePeriod = 30 * time.Second
 
 type (
 	ChannelInfo struct {
@@ -47,53 +47,53 @@ type (
 		api.ChainInfoGetter
 	}
 
-	ChannelPeerOpts struct {
+	PeerChannelsOpts struct {
 		channels      []ChannelToMatch
 		observePeriod time.Duration
 		logger        *zap.Logger
 	}
 
-	ChannelPeerOpt func(*ChannelPeerOpts)
+	PeerChannelsOpt func(*PeerChannelsOpts)
 )
 
-var DefaultChannelPeerOpts = &ChannelPeerOpts{
+var DefaultPeerChannelsOpts = &PeerChannelsOpts{
 	channels:      MatchAllChannels,
-	observePeriod: DefaultChannelPeerObservePeriod,
+	observePeriod: DefaultPeerChannelsObservePeriod,
 	logger:        zap.NewNop(),
 }
 
-func WithChannels(channels []ChannelToMatch) ChannelPeerOpt {
-	return func(opts *ChannelPeerOpts) {
+func WithChannels(channels []ChannelToMatch) PeerChannelsOpt {
+	return func(opts *PeerChannelsOpts) {
 		opts.channels = channels
 	}
 }
 
-func WithChannelPeerLogger(logger *zap.Logger) ChannelPeerOpt {
-	return func(opts *ChannelPeerOpts) {
+func WithPeerChannelsLogger(logger *zap.Logger) PeerChannelsOpt {
+	return func(opts *PeerChannelsOpts) {
 		opts.logger = logger
 	}
 }
 
-func NewPeerChannels(peerChannelsFetcher PeerChannelsFetcher, opts ...ChannelPeerOpt) (*PeerChannels, error) {
-	channelPeerOpts := DefaultChannelPeerOpts
+func NewPeerChannels(peerChannelsFetcher PeerChannelsFetcher, opts ...PeerChannelsOpt) (*PeerChannels, error) {
+	peerChannelsOpts := DefaultPeerChannelsOpts
 	for _, opt := range opts {
-		opt(channelPeerOpts)
+		opt(peerChannelsOpts)
 	}
 
-	channelsMatcher, err := NewChannelsMatcher(channelPeerOpts.channels)
+	channelsMatcher, err := NewChannelsMatcher(peerChannelsOpts.channels)
 	if err != nil {
 		return nil, fmt.Errorf(`channels matcher: %w`, err)
 	}
 
-	channelPeer := &PeerChannels{
+	peerChannels := &PeerChannels{
 		channelFetcher:  peerChannelsFetcher,
 		channelsMatcher: channelsMatcher,
 		channels:        make(map[string]*ChannelInfo),
-		observePeriod:   channelPeerOpts.observePeriod,
-		logger:          channelPeerOpts.logger,
+		observePeriod:   peerChannelsOpts.observePeriod,
+		logger:          peerChannelsOpts.logger,
 	}
 
-	return channelPeer, nil
+	return peerChannels, nil
 }
 
 func (pc *PeerChannels) Stop() {

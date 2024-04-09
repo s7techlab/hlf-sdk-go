@@ -57,7 +57,7 @@ var DefaultAllChannelsBlocksOpts = &AllChannelsBlocksOpts{
 	logger:        zap.NewNop(),
 }
 
-func WithBlockPeerLogger(logger *zap.Logger) AllChannelsBlocksOpt {
+func WithAllChannelsBlocksLogger(logger *zap.Logger) AllChannelsBlocksOpt {
 	return func(opts *AllChannelsBlocksOpts) {
 		opts.logger = logger
 	}
@@ -75,7 +75,7 @@ func WithSeekFromFetcher(seekFromFetcher SeekFromFetcher) AllChannelsBlocksOpt {
 	}
 }
 
-func WithBlockPeerObservePeriod(observePeriod time.Duration) AllChannelsBlocksOpt {
+func WithAllChannelsBlocksObservePeriod(observePeriod time.Duration) AllChannelsBlocksOpt {
 	return func(opts *AllChannelsBlocksOpts) {
 		if observePeriod != 0 {
 			opts.observePeriod = observePeriod
@@ -96,9 +96,9 @@ func NewAllChannelsBlocks[T any](
 	opts ...AllChannelsBlocksOpt,
 ) *AllChannelsBlocks[T] {
 
-	blockPeerOpts := DefaultAllChannelsBlocksOpts
+	allChannelsBlocksOpts := DefaultAllChannelsBlocksOpts
 	for _, opt := range opts {
-		opt(blockPeerOpts)
+		opt(allChannelsBlocksOpts)
 	}
 
 	return &AllChannelsBlocks[T]{
@@ -109,12 +109,12 @@ func NewAllChannelsBlocks[T any](
 		peerChannelsGetter:    peerChannelsGetter,
 		deliverer:             deliverer,
 		createStreamWithRetry: createStreamWithRetry,
-		observePeriod:         blockPeerOpts.observePeriod,
+		observePeriod:         allChannelsBlocksOpts.observePeriod,
 
-		seekFrom:           blockPeerOpts.seekFrom,
-		seekFromFetcher:    blockPeerOpts.seekFromFetcher,
-		stopRecreateStream: blockPeerOpts.stopRecreateStream,
-		logger:             blockPeerOpts.logger,
+		seekFrom:           allChannelsBlocksOpts.seekFrom,
+		seekFromFetcher:    allChannelsBlocksOpts.seekFromFetcher,
+		stopRecreateStream: allChannelsBlocksOpts.stopRecreateStream,
+		logger:             allChannelsBlocksOpts.logger,
 	}
 }
 
