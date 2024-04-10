@@ -12,11 +12,6 @@ import (
 const DefaultChannelsBLocksPeerRefreshPeriod = 10 * time.Second
 
 type (
-	PeerChannelsGetter interface {
-		URI() string
-		Channels() map[string]*ChannelInfo
-	}
-
 	ChannelsBlocksPeer[T any] struct {
 		channelObservers map[string]*ChannelBlocks[T]
 
@@ -26,7 +21,7 @@ type (
 		deliverer             func(context.Context, string, msp.SigningIdentity, ...int64) (<-chan T, func() error, error)
 		createStreamWithRetry CreateBlockStreamWithRetry[T]
 
-		observePeriod time.Duration
+		refreshPeriod time.Duration
 
 		// seekFrom has a higher priority than seekFromFetcher (look getSeekFrom method)
 		seekFrom           map[string]uint64
@@ -107,7 +102,7 @@ func NewChannelsBlocksPeer[T any](
 		peerChannelsGetter:    peerChannelsGetter,
 		deliverer:             deliverer,
 		createStreamWithRetry: createStreamWithRetry,
-		observePeriod:         channelsBlocksPeerOpts.refreshPeriod,
+		refreshPeriod:         channelsBlocksPeerOpts.refreshPeriod,
 
 		seekFrom:           channelsBlocksPeerOpts.seekFrom,
 		seekFromFetcher:    channelsBlocksPeerOpts.seekFromFetcher,
@@ -166,10 +161,12 @@ func (acb *ChannelsBlocksPeer[T]) Observe(ctx context.Context) <-chan *Block[T] 
 	// init new channels if they are fetched
 	go func() {
 		acb.isWork = true
-		defer close(acb.blocks)
 
-		ticker := time.NewTicker(acb.observePeriod)
-		defer ticker.Stop()
+		ticker := time.NewTicker(acb.refreshPeriod)
+		defer func() {
+			ticker.Stop()
+			close(acb.blocks)
+		}()
 
 		for {
 			select {

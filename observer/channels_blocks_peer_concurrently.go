@@ -33,12 +33,11 @@ func (acb *ChannelsBlocksPeer[T]) ObserveByChannels(ctx context.Context) *Channe
 
 	// init new channels if they are fetched
 	go func() {
+		ticker := time.NewTicker(acb.refreshPeriod)
 		defer func() {
+			ticker.Stop()
 			close(channelWithChannels.channels)
 		}()
-
-		ticker := time.NewTicker(acb.observePeriod)
-		defer ticker.Stop()
 
 		for {
 			select {

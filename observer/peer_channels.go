@@ -18,6 +18,17 @@ import (
 const DefaultPeerChannelsRefreshPeriod = 30 * time.Second
 
 type (
+	PeerChannelsGetter interface {
+		URI() string
+		Channels() map[string]*ChannelInfo
+	}
+
+	PeerChannelsFetcher interface {
+		URI() string
+		api.ChannelListGetter
+		api.ChainInfoGetter
+	}
+
 	ChannelInfo struct {
 		Channel   string
 		Height    uint64
@@ -30,7 +41,7 @@ type (
 
 		channelFetcher  PeerChannelsFetcher
 		channelsMatcher *ChannelsMatcher
-		observePeriod   time.Duration
+		refreshPeriod   time.Duration
 
 		mu     sync.RWMutex
 		logger *zap.Logger
@@ -41,15 +52,9 @@ type (
 		cancelObserve context.CancelFunc
 	}
 
-	PeerChannelsFetcher interface {
-		URI() string
-		api.ChannelListGetter
-		api.ChainInfoGetter
-	}
-
 	PeerChannelsOpts struct {
 		channels      []ChannelToMatch
-		observePeriod time.Duration
+		refreshPeriod time.Duration
 		logger        *zap.Logger
 	}
 
@@ -58,7 +63,7 @@ type (
 
 var DefaultPeerChannelsOpts = &PeerChannelsOpts{
 	channels:      MatchAllChannels,
-	observePeriod: DefaultPeerChannelsRefreshPeriod,
+	refreshPeriod: DefaultPeerChannelsRefreshPeriod,
 	logger:        zap.NewNop(),
 }
 
@@ -89,7 +94,7 @@ func NewPeerChannels(peerChannelsFetcher PeerChannelsFetcher, opts ...PeerChanne
 		channelFetcher:  peerChannelsFetcher,
 		channelsMatcher: channelsMatcher,
 		channels:        make(map[string]*ChannelInfo),
-		observePeriod:   peerChannelsOpts.observePeriod,
+		refreshPeriod:   peerChannelsOpts.refreshPeriod,
 		logger:          peerChannelsOpts.logger,
 	}
 
@@ -114,7 +119,7 @@ func (pc *PeerChannels) Observe(ctx context.Context) {
 		pc.isWork = true
 		pc.updateChannels(ctxObserve)
 
-		ticker := time.NewTicker(pc.observePeriod)
+		ticker := time.NewTicker(pc.refreshPeriod)
 		defer ticker.Stop()
 
 		for {

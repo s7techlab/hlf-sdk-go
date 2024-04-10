@@ -76,11 +76,11 @@ func NewPeer(ctx context.Context, c config.ConnectionConfig, identity msp.Signin
 		return nil, fmt.Errorf(`grpc dial to peer endpoint=%s: %w`, c.Host, err)
 	}
 
-	return NewFromGRPC(ctx, conn, identity, opts.TLSCertHash, logger, c.Timeout.Duration)
+	return NewFromGRPC(conn, identity, opts.TLSCertHash, logger, c.Timeout.Duration)
 }
 
 // NewFromGRPC allows initializing peer from existing GRPC connection
-func NewFromGRPC(ctx context.Context, conn *grpc.ClientConn, identity msp.SigningIdentity, tlsCertHash []byte, logger *zap.Logger, endorseDefaultTimeout time.Duration) (api.Peer, error) {
+func NewFromGRPC(conn *grpc.ClientConn, identity msp.SigningIdentity, tlsCertHash []byte, logger *zap.Logger, endorseDefaultTimeout time.Duration) (api.Peer, error) {
 	if conn == nil {
 		return nil, errors.New(`empty connection`)
 	}
