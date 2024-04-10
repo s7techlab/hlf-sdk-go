@@ -13,15 +13,14 @@ const DefaultAllChannelsBlocksObservePeriod = 10 * time.Second
 
 type (
 	PeerChannelsGetter interface {
-		Uri() string
+		URI() string
 		Channels() map[string]*ChannelInfo
 	}
 
 	AllChannelsBlocks[T any] struct {
 		channelObservers map[string]*ChannelBlocks[T]
 
-		blocks           chan *Block[T]
-		blocksByChannels map[string]chan *Block[T]
+		blocks chan *Block[T]
 
 		peerChannelsGetter    PeerChannelsGetter
 		deliverer             func(context.Context, string, msp.SigningIdentity, ...int64) (<-chan T, func() error, error)
@@ -104,7 +103,6 @@ func NewAllChannelsBlocks[T any](
 	return &AllChannelsBlocks[T]{
 		channelObservers: make(map[string]*ChannelBlocks[T]),
 		blocks:           make(chan *Block[T]),
-		blocksByChannels: make(map[string]chan *Block[T]),
 
 		peerChannelsGetter:    peerChannelsGetter,
 		deliverer:             deliverer,
@@ -131,18 +129,19 @@ func (acb *AllChannelsBlocks[T]) Channels() map[string]*Channel {
 }
 
 func (acb *AllChannelsBlocks[T]) Stop() {
-	acb.mu.Lock()
-	defer acb.mu.Unlock()
-
 	// acb.blocks and acb.blocksByChannels mustn't be closed here, because they are closed elsewhere
 
+	acb.mu.RLock()
 	for _, c := range acb.channelObservers {
 		if err := c.Stop(); err != nil {
 			zap.Error(err)
 		}
 	}
+	acb.mu.RUnlock()
 
+	acb.mu.Lock()
 	acb.channelObservers = make(map[string]*ChannelBlocks[T])
+	acb.mu.Unlock()
 
 	if acb.cancelObserve != nil {
 		acb.cancelObserve()
@@ -170,6 +169,8 @@ func (acb *AllChannelsBlocks[T]) Observe(ctx context.Context) <-chan *Block[T] {
 		defer close(acb.blocks)
 
 		ticker := time.NewTicker(acb.observePeriod)
+		defer ticker.Stop()
+
 		for {
 			select {
 			case <-ctxObserve.Done():

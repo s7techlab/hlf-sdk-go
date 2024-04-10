@@ -16,7 +16,7 @@ type ChannelWithChannels[T any] struct {
 	channels chan *ChannelBlocksWithName[T]
 }
 
-func (cwc *ChannelWithChannels[T]) Observe() chan *ChannelBlocksWithName[T] {
+func (cwc *ChannelWithChannels[T]) Observe() <-chan *ChannelBlocksWithName[T] {
 	return cwc.channels
 }
 
@@ -38,6 +38,8 @@ func (acb *AllChannelsBlocks[T]) ObserveByChannels(ctx context.Context) *Channel
 		}()
 
 		ticker := time.NewTicker(acb.observePeriod)
+		defer ticker.Stop()
+
 		for {
 			select {
 			case <-ctx.Done():

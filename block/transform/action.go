@@ -69,7 +69,7 @@ func NewAction(actionMach TxActionMatch, opts ...ActionOpt) *Action {
 
 func (s *Action) Transform(block *hlfproto.Block) (transformed *hlfproto.Block, original *hlfproto.Block, err error) {
 	if block == nil {
-		return nil, nil, nil
+		return nil, nil, fmt.Errorf("block is nil")
 	}
 
 	// if block is transformed, copy of block will be saved to block.BlockOriginal

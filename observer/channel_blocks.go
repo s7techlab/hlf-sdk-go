@@ -157,6 +157,9 @@ func (cb *ChannelBlocks[T]) Observe(ctx context.Context) (<-chan *Block[T], erro
 					if t == nil {
 						continue
 					}
+
+				default:
+					continue
 				}
 
 				cb.channelWithBlocks <- &Block[T]{

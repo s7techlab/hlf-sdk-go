@@ -16,7 +16,7 @@ func NewPeerChannelsFetcherMock(channels map[string]uint64) *PeerChannelsFetcher
 	return &PeerChannelsFetcherMock{channels: channels}
 }
 
-func (p *PeerChannelsFetcherMock) Uri() string {
+func (p *PeerChannelsFetcherMock) URI() string {
 	return "mock"
 }
 

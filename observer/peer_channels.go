@@ -32,7 +32,7 @@ type (
 		channelsMatcher *ChannelsMatcher
 		observePeriod   time.Duration
 
-		mu     sync.Mutex
+		mu     sync.RWMutex
 		logger *zap.Logger
 
 		lastError error
@@ -42,7 +42,7 @@ type (
 	}
 
 	PeerChannelsFetcher interface {
-		Uri() string
+		URI() string
 		api.ChannelListGetter
 		api.ChainInfoGetter
 	}
@@ -115,6 +115,8 @@ func (pc *PeerChannels) Observe(ctx context.Context) {
 		pc.updateChannels(ctxObserve)
 
 		ticker := time.NewTicker(pc.observePeriod)
+		defer ticker.Stop()
+
 		for {
 			select {
 			case <-ctx.Done():
@@ -132,13 +134,13 @@ func (pc *PeerChannels) Observe(ctx context.Context) {
 	}()
 }
 
-func (pc *PeerChannels) Uri() string {
-	return pc.channelFetcher.Uri()
+func (pc *PeerChannels) URI() string {
+	return pc.channelFetcher.URI()
 }
 
 func (pc *PeerChannels) Channels() map[string]*ChannelInfo {
-	pc.mu.Lock()
-	defer pc.mu.Unlock()
+	pc.mu.RLock()
+	defer pc.mu.RUnlock()
 
 	var copyChannelInfo = make(map[string]*ChannelInfo, len(pc.channels))
 	for key, value := range pc.channels {

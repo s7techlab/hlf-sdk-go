@@ -7,7 +7,7 @@ import (
 )
 
 type Stream[T any] interface {
-	Subscribe() (ch chan *Block[T], closer func())
+	Subscribe() (ch <-chan *Block[T], closer func())
 }
 
 type BlocksStream[T any] struct {
@@ -36,9 +36,11 @@ func (b *BlocksStream[T]) Observe(ctx context.Context, blocks <-chan *Block[T]) 
 
 	go func() {
 		defer func() {
+			b.mu.Lock()
 			for connName := range b.connections {
 				b.closeChannel(connName)
 			}
+			b.mu.Unlock()
 		}()
 
 		b.isWork = true
@@ -65,7 +67,7 @@ func (b *BlocksStream[T]) Observe(ctx context.Context, blocks <-chan *Block[T]) 
 	}()
 }
 
-func (b *BlocksStream[T]) Subscribe() (chan *Block[T], func()) {
+func (b *BlocksStream[T]) Subscribe() (<-chan *Block[T], func()) {
 	b.mu.Lock()
 	newConnection := make(chan *Block[T])
 	name := "channel-" + strconv.Itoa(len(b.connections))

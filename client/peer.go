@@ -44,7 +44,7 @@ type peer struct {
 	endorseDefaultTimeout time.Duration
 
 	configBlocks map[string]*common.Block
-	mu           sync.Mutex
+	mu           sync.RWMutex
 
 	logger *zap.Logger
 }
@@ -109,6 +109,7 @@ func NewFromGRPC(ctx context.Context, conn *grpc.ClientConn, identity msp.Signin
 
 	go func() {
 		ticker := time.NewTicker(DefaultPeerChannelsObservePeriod)
+		defer ticker.Stop()
 
 		for {
 			select {
@@ -136,7 +137,9 @@ func (p *peer) getConfigBlocks(ctx context.Context, qsccService *qscc.QSCCServic
 	}
 
 	for _, ch := range channels.GetChannels() {
+		p.mu.RLock()
 		_, exist := p.configBlocks[ch.ChannelId]
+		p.mu.RUnlock()
 		if !exist {
 			configBlock, err := qsccService.GetBlockByNumber(ctx, &qscc.GetBlockByNumberRequest{ChannelName: ch.ChannelId, BlockNumber: 0})
 			if err != nil {
@@ -144,7 +147,9 @@ func (p *peer) getConfigBlocks(ctx context.Context, qsccService *qscc.QSCCServic
 			}
 
 			if configBlock != nil {
+				p.mu.Lock()
 				p.configBlocks[ch.ChannelId] = configBlock
+				p.mu.Unlock()
 			}
 		}
 	}
@@ -199,7 +204,7 @@ func (p *peer) Query(
 
 func (p *peer) Blocks(ctx context.Context, channel string, identity msp.SigningIdentity, blockRange ...int64) (<-chan *common.Block, func() error, error) {
 	p.logger.Debug(`peer blocks request`,
-		zap.String(`uri`, p.Uri()),
+		zap.String(`uri`, p.URI()),
 		zap.String(`channel`, channel),
 		zap.Reflect(`range`, blockRange))
 
@@ -248,9 +253,9 @@ func (p *peer) ParsedBlocks(ctx context.Context, channel string, identity msp.Si
 					return
 				}
 
-				p.mu.Lock()
+				p.mu.RLock()
 				configBlock := p.configBlocks[channel]
-				p.mu.Unlock()
+				p.mu.RUnlock()
 
 				parsedBlock, err := block.ParseBlock(b, block.WithConfigBlock(configBlock))
 				if err != nil {
@@ -280,7 +285,7 @@ func (p *peer) Events(ctx context.Context, channel string, chaincode string, ide
 }, closer func() error, err error) {
 
 	p.logger.Debug(`peer events request`,
-		zap.String(`uri`, p.Uri()),
+		zap.String(`uri`, p.URI()),
 		zap.String(`channel`, channel),
 		zap.Reflect(`range`, blockRange))
 
@@ -321,7 +326,7 @@ func (p *peer) Endorse(ctx context.Context, proposal *fabricPeer.SignedProposal)
 		defer cancel()
 	}
 
-	p.logger.Debug(`endorse`, zap.String(`uri`, p.Uri()))
+	p.logger.Debug(`endorse`, zap.String(`uri`, p.URI()))
 
 	resp, err := p.client.ProcessProposal(ctx, proposal)
 	if err != nil {
@@ -351,7 +356,7 @@ func (p *peer) Conn() *grpc.ClientConn {
 	return p.conn
 }
 
-func (p *peer) Uri() string {
+func (p *peer) URI() string {
 	return p.conn.Target()
 }
 

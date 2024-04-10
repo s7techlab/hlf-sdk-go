@@ -41,8 +41,8 @@ type Peer interface {
 
 	// DeliverClient returns DeliverClient
 	DeliverClient(identity msp.SigningIdentity) (DeliverClient, error)
-	// Uri returns url used for grpc connection
-	Uri() string
+	// URI returns url used for grpc connection
+	URI() string
 	// Conn returns instance of grpc connection
 	Conn() *grpc.ClientConn
 	// Close terminates peer connection

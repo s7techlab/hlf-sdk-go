@@ -18,7 +18,7 @@ func NewPeerChannelsMock(channelsInfo ...*ChannelInfo) *PeerChannelsMock {
 	return &PeerChannelsMock{channelsInfo: channels}
 }
 
-func (p *PeerChannelsMock) Uri() string {
+func (p *PeerChannelsMock) URI() string {
 	return "mock"
 }
 

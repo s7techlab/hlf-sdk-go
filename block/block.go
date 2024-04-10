@@ -72,7 +72,7 @@ func ParseBlock(block *common.Block, opts ...ParseBlockOpt) (*Block, error) {
 
 func ParseOrdererIdentity(cb *common.Block) (*msp.SerializedIdentity, error) {
 	if cb == nil {
-		return nil, nil
+		return nil, fmt.Errorf("block is nil")
 	}
 
 	meta, err := protoutil.GetMetadataFromBlock(cb, common.BlockMetadataIndex_SIGNATURES)
@@ -100,8 +100,12 @@ func ParseOrdererIdentity(cb *common.Block) (*msp.SerializedIdentity, error) {
 }
 
 func ParseBTFOrderersIdentities(block *common.Block, configBlock *common.Block) ([]*OrdererSignature, error) {
+	if block == nil {
+		return nil, fmt.Errorf("block is nil")
+	}
+
 	if configBlock == nil {
-		return nil, nil
+		return nil, fmt.Errorf("config block is nil")
 	}
 
 	bftMeta := &bftcommon.BFTMetadata{}
