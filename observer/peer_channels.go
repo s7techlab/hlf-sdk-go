@@ -15,7 +15,7 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api"
 )
 
-const DefaultPeerChannelsObservePeriod = 30 * time.Second
+const DefaultPeerChannelsRefreshPeriod = 30 * time.Second
 
 type (
 	ChannelInfo struct {
@@ -58,7 +58,7 @@ type (
 
 var DefaultPeerChannelsOpts = &PeerChannelsOpts{
 	channels:      MatchAllChannels,
-	observePeriod: DefaultPeerChannelsObservePeriod,
+	observePeriod: DefaultPeerChannelsRefreshPeriod,
 	logger:        zap.NewNop(),
 }
 

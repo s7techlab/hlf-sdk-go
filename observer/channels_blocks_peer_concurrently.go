@@ -20,7 +20,7 @@ func (cwc *ChannelWithChannels[T]) Observe() <-chan *ChannelBlocksWithName[T] {
 	return cwc.channels
 }
 
-func (acb *AllChannelsBlocks[T]) ObserveByChannels(ctx context.Context) *ChannelWithChannels[T] {
+func (acb *ChannelsBlocksPeer[T]) ObserveByChannels(ctx context.Context) *ChannelWithChannels[T] {
 	channelWithChannels := &ChannelWithChannels[T]{
 		channels: make(chan *ChannelBlocksWithName[T]),
 	}
@@ -60,7 +60,7 @@ func (acb *AllChannelsBlocks[T]) ObserveByChannels(ctx context.Context) *Channel
 	return channelWithChannels
 }
 
-func (acb *AllChannelsBlocks[T]) startNotObservedChannelsConcurrently(
+func (acb *ChannelsBlocksPeer[T]) startNotObservedChannelsConcurrently(
 	ctx context.Context,
 	notObservedChannels []*ChannelBlocks[T],
 	channelWithChannels *ChannelWithChannels[T],

@@ -15,15 +15,15 @@ import (
 
 var (
 	peerChannelsMockForParsed *observer.PeerChannelsMock
-	allChannelBlocksParsed    *observer.AllChannelBlocksParsed
+	channelsBlocksPeerParsed  *observer.ChannelsBlocksPeerParsed
 	parsedBlocks              <-chan *observer.Block[*hlfproto.Block]
 
 	peerChannelsMockConcurrentlyForParsed *observer.PeerChannelsMock
-	allChannelBlocksConcurrentlyParsed    *observer.AllChannelBlocksParsed
+	channelsBlocksPeerConcurrentlyParsed  *observer.ChannelsBlocksPeerParsed
 	channelWithChannelsParsed             *observer.ChannelWithChannels[*hlfproto.Block]
 )
 
-func allChannelsBlocksParsedTestBeforeSuit() {
+func channelsBlocksPeerParsedTestBeforeSuit() {
 	const closeChannelWhenAllRead = true
 	blockDelivererMock, err := sdkmocks.NewBlocksDelivererMock(fmt.Sprintf("../%s", testdata.Path), closeChannelWhenAllRead)
 	Expect(err).ShouldNot(HaveOccurred())
@@ -33,26 +33,26 @@ func allChannelsBlocksParsedTestBeforeSuit() {
 		peerChannelsMockForParsed.UpdateChannelInfo(&observer.ChannelInfo{Channel: channel})
 	}
 
-	allChannelBlocksParsed = observer.NewAllChannelBlocksParsed(peerChannelsMockForParsed, blockDelivererMock,
-		observer.WithBlockStopRecreateStream(true), observer.WithAllChannelsBlocksObservePeriod(time.Nanosecond))
+	channelsBlocksPeerParsed = observer.NewChannelsBlocksPeerParsed(peerChannelsMockForParsed, blockDelivererMock,
+		observer.WithBlockStopRecreateStream(true), observer.WithChannelsBlocksPeerRefreshPeriod(time.Nanosecond))
 
-	parsedBlocks = allChannelBlocksParsed.Observe(ctx)
+	parsedBlocks = channelsBlocksPeerParsed.Observe(ctx)
 
 	peerChannelsMockConcurrentlyForParsed = observer.NewPeerChannelsMock()
 	for _, channel := range testdata.Channels {
 		peerChannelsMockConcurrentlyForParsed.UpdateChannelInfo(&observer.ChannelInfo{Channel: channel})
 	}
 
-	allChannelBlocksConcurrentlyParsed = observer.NewAllChannelBlocksParsed(peerChannelsMockConcurrentlyForParsed, blockDelivererMock,
-		observer.WithBlockStopRecreateStream(true), observer.WithAllChannelsBlocksObservePeriod(time.Nanosecond))
+	channelsBlocksPeerConcurrentlyParsed = observer.NewChannelsBlocksPeerParsed(peerChannelsMockConcurrentlyForParsed, blockDelivererMock,
+		observer.WithBlockStopRecreateStream(true), observer.WithChannelsBlocksPeerRefreshPeriod(time.Nanosecond))
 
-	channelWithChannelsParsed = allChannelBlocksConcurrentlyParsed.ObserveByChannels(ctx)
+	channelWithChannelsParsed = channelsBlocksPeerConcurrentlyParsed.ObserveByChannels(ctx)
 }
 
 var _ = Describe("All channels blocks parsed", func() {
 	Context("Sequentially", func() {
 		It("should return current number of channels", func() {
-			channels := allChannelBlocksParsed.Channels()
+			channels := channelsBlocksPeerParsed.Channels()
 			Expect(channels).To(HaveLen(len(testdata.Channels)))
 		})
 
@@ -63,10 +63,10 @@ var _ = Describe("All channels blocks parsed", func() {
 				peerChannelsMockForParsed.UpdateChannelInfo(&observer.ChannelInfo{Channel: channel})
 			}
 
-			// wait to allChannelsBlocksParsed observer
+			// wait to channelsBlocksPeerParsed observer
 			time.Sleep(time.Second + time.Millisecond*10)
 
-			channels := allChannelBlocksParsed.Channels()
+			channels := channelsBlocksPeerParsed.Channels()
 			Expect(channels).To(HaveLen(len(testdata.Channels) + len(newChannels)))
 		})
 
@@ -100,7 +100,7 @@ var _ = Describe("All channels blocks parsed", func() {
 
 	Context("Concurrently", func() {
 		It("should return current number of channels", func() {
-			channels := allChannelBlocksConcurrentlyParsed.Channels()
+			channels := channelsBlocksPeerConcurrentlyParsed.Channels()
 			Expect(channels).To(HaveLen(len(testdata.Channels)))
 
 			channelsWithBlocks := channelWithChannelsParsed.Observe()
@@ -145,10 +145,10 @@ var _ = Describe("All channels blocks parsed", func() {
 				peerChannelsMockConcurrentlyForParsed.UpdateChannelInfo(&observer.ChannelInfo{Channel: channel})
 			}
 
-			// wait to allChannelsBlocksParsed observer
+			// wait to channelsBlocksPeerParsed observer
 			time.Sleep(time.Millisecond * 200)
 
-			channels := allChannelBlocksConcurrentlyParsed.Channels()
+			channels := channelsBlocksPeerConcurrentlyParsed.Channels()
 			Expect(channels).To(HaveLen(len(testdata.Channels) + len(newChannels)))
 
 			channelsWithBlocks := channelWithChannelsParsed.Observe()

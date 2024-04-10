@@ -13,6 +13,7 @@ import (
 
 type (
 	ChannelBlocks[T any] struct {
+		// pointer is to use Channel's data, which can be changed
 		*Channel
 
 		channelWithBlocks     chan *Block[T]

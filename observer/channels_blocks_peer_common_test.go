@@ -18,15 +18,15 @@ var (
 	ctx = context.Background()
 
 	peerChannelsMockForCommon *observer.PeerChannelsMock
-	allChannelBlocksCommon    *observer.AllChannelBlocksCommon
+	channelsBlocksPeerCommon  *observer.ChannelsBlocksPeerCommon
 	commonBlocks              <-chan *observer.Block[*common.Block]
 
 	peerChannelsMockConcurrentlyForCommon *observer.PeerChannelsMock
-	allChannelBlocksConcurrentlyCommon    *observer.AllChannelBlocksCommon
+	channelsBlocksPeerConcurrentlyCommon  *observer.ChannelsBlocksPeerCommon
 	channelWithChannelsCommon             *observer.ChannelWithChannels[*common.Block]
 )
 
-func allChannelsBlocksCommonTestBeforeSuit() {
+func channelsBlocksPeerCommonTestBeforeSuit() {
 	const closeChannelWhenAllRead = true
 	blockDelivererMock, err := sdkmocks.NewBlocksDelivererMock(fmt.Sprintf("../%s", testdata.Path), closeChannelWhenAllRead)
 	Expect(err).ShouldNot(HaveOccurred())
@@ -36,26 +36,26 @@ func allChannelsBlocksCommonTestBeforeSuit() {
 		peerChannelsMockForCommon.UpdateChannelInfo(&observer.ChannelInfo{Channel: channel})
 	}
 
-	allChannelBlocksCommon = observer.NewAllChannelBlocksCommon(peerChannelsMockForCommon, blockDelivererMock,
-		observer.WithBlockStopRecreateStream(true), observer.WithAllChannelsBlocksObservePeriod(time.Nanosecond))
+	channelsBlocksPeerCommon = observer.NewChannelsBlocksPeerCommon(peerChannelsMockForCommon, blockDelivererMock,
+		observer.WithBlockStopRecreateStream(true), observer.WithChannelsBlocksPeerRefreshPeriod(time.Nanosecond))
 
-	commonBlocks = allChannelBlocksCommon.Observe(ctx)
+	commonBlocks = channelsBlocksPeerCommon.Observe(ctx)
 
 	peerChannelsMockConcurrentlyForCommon = observer.NewPeerChannelsMock()
 	for _, channel := range testdata.Channels {
 		peerChannelsMockConcurrentlyForCommon.UpdateChannelInfo(&observer.ChannelInfo{Channel: channel})
 	}
 
-	allChannelBlocksConcurrentlyCommon = observer.NewAllChannelBlocksCommon(peerChannelsMockConcurrentlyForCommon, blockDelivererMock,
-		observer.WithBlockStopRecreateStream(true), observer.WithAllChannelsBlocksObservePeriod(time.Nanosecond))
+	channelsBlocksPeerConcurrentlyCommon = observer.NewChannelsBlocksPeerCommon(peerChannelsMockConcurrentlyForCommon, blockDelivererMock,
+		observer.WithBlockStopRecreateStream(true), observer.WithChannelsBlocksPeerRefreshPeriod(time.Nanosecond))
 
-	channelWithChannelsCommon = allChannelBlocksConcurrentlyCommon.ObserveByChannels(ctx)
+	channelWithChannelsCommon = channelsBlocksPeerConcurrentlyCommon.ObserveByChannels(ctx)
 }
 
 var _ = Describe("All channels blocks common", func() {
 	Context("Sequentially", func() {
 		It("should return current number of channels", func() {
-			channels := allChannelBlocksCommon.Channels()
+			channels := channelsBlocksPeerCommon.Channels()
 			Expect(channels).To(HaveLen(len(testdata.Channels)))
 		})
 
@@ -66,10 +66,10 @@ var _ = Describe("All channels blocks common", func() {
 				peerChannelsMockForCommon.UpdateChannelInfo(&observer.ChannelInfo{Channel: channel})
 			}
 
-			// wait to allChannelsBlocksCommon observer
+			// wait to channelsBlocksPeerCommon observer
 			time.Sleep(time.Millisecond * 10)
 
-			channels := allChannelBlocksCommon.Channels()
+			channels := channelsBlocksPeerCommon.Channels()
 			Expect(channels).To(HaveLen(len(testdata.Channels) + len(newChannels)))
 		})
 
@@ -103,7 +103,7 @@ var _ = Describe("All channels blocks common", func() {
 
 	Context("Concurrently", func() {
 		It("should return current number of channels", func() {
-			channels := allChannelBlocksConcurrentlyCommon.Channels()
+			channels := channelsBlocksPeerConcurrentlyCommon.Channels()
 			Expect(channels).To(HaveLen(len(testdata.Channels)))
 
 			channelsWithBlocks := channelWithChannelsCommon.Observe()
@@ -148,10 +148,10 @@ var _ = Describe("All channels blocks common", func() {
 				peerChannelsMockConcurrentlyForCommon.UpdateChannelInfo(&observer.ChannelInfo{Channel: channel})
 			}
 
-			// wait to allChannelsBlocksCommon observer
+			// wait to channelsBlocksPeerCommon observer
 			time.Sleep(time.Millisecond * 200)
 
-			channels := allChannelBlocksConcurrentlyCommon.Channels()
+			channels := channelsBlocksPeerConcurrentlyCommon.Channels()
 			Expect(channels).To(HaveLen(len(testdata.Channels) + len(newChannels)))
 
 			channelsWithBlocks := channelWithChannelsCommon.Observe()

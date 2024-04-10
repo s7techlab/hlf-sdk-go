@@ -31,8 +31,6 @@ const (
 
 	PeerDefaultDialTimeout    = 5 * time.Second
 	PeerDefaultEndorseTimeout = 5 * time.Second
-
-	DefaultPeerChannelsObservePeriod = 30 * time.Second
 )
 
 type peer struct {
@@ -91,7 +89,7 @@ func NewFromGRPC(ctx context.Context, conn *grpc.ClientConn, identity msp.Signin
 		endorseDefaultTimeout = PeerDefaultEndorseTimeout
 	}
 
-	p := &peer{
+	return &peer{
 		conn:                  conn,
 		client:                fabricPeer.NewEndorserClient(conn),
 		identity:              identity,
@@ -99,62 +97,7 @@ func NewFromGRPC(ctx context.Context, conn *grpc.ClientConn, identity msp.Signin
 		endorseDefaultTimeout: endorseDefaultTimeout,
 		configBlocks:          make(map[string]*common.Block),
 		logger:                logger.Named(`peer`),
-	}
-
-	qsccService := qscc.NewQSCC(p)
-
-	if err := p.getConfigBlocks(ctx, qsccService); err != nil {
-		return nil, err
-	}
-
-	go func() {
-		ticker := time.NewTicker(DefaultPeerChannelsObservePeriod)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-				if err := p.getConfigBlocks(ctx, qsccService); err != nil {
-					p.logger.Error("get config blocks", zap.Error(err))
-				}
-			}
-		}
-	}()
-
-	return p, nil
-}
-
-func (p *peer) getConfigBlocks(ctx context.Context, qsccService *qscc.QSCCService) error {
-	channels, err := p.GetChannels(ctx)
-	if err != nil {
-		return fmt.Errorf("get all channels: %w", err)
-	}
-
-	if len(channels.Channels) <= len(p.configBlocks) {
-		return nil
-	}
-
-	for _, ch := range channels.GetChannels() {
-		p.mu.RLock()
-		_, exist := p.configBlocks[ch.ChannelId]
-		p.mu.RUnlock()
-		if !exist {
-			configBlock, err := qsccService.GetBlockByNumber(ctx, &qscc.GetBlockByNumberRequest{ChannelName: ch.ChannelId, BlockNumber: 0})
-			if err != nil {
-				return fmt.Errorf("get block by number from channel %s: %w", ch.ChannelId, err)
-			}
-
-			if configBlock != nil {
-				p.mu.Lock()
-				p.configBlocks[ch.ChannelId] = configBlock
-				p.mu.Unlock()
-			}
-		}
-	}
-
-	return nil
+	}, nil
 }
 
 func (p *peer) Query(
@@ -231,9 +174,35 @@ func (p *peer) Blocks(ctx context.Context, channel string, identity msp.SigningI
 	return bs.Blocks(), bs.Close, nil
 }
 
+func (p *peer) addConfigBlock(ctx context.Context, channel string) error {
+	p.mu.RLock()
+	_, exist := p.configBlocks[channel]
+	p.mu.RUnlock()
+	if exist {
+		return nil
+	}
+
+	configBlock, err := qscc.NewQSCC(p).GetBlockByNumber(ctx, &qscc.GetBlockByNumberRequest{ChannelName: channel, BlockNumber: 0})
+	if err != nil {
+		return fmt.Errorf("get block by number from channel %s: %w", channel, err)
+	}
+
+	if configBlock != nil {
+		p.mu.Lock()
+		p.configBlocks[channel] = configBlock
+		p.mu.Unlock()
+	}
+
+	return nil
+}
+
 func (p *peer) ParsedBlocks(ctx context.Context, channel string, identity msp.SigningIdentity, blockRange ...int64) (<-chan *block.Block, func() error, error) {
 	commonBlocks, commonCloser, err := p.Blocks(ctx, channel, identity, blockRange...)
 	if err != nil {
+		return nil, nil, err
+	}
+
+	if err = p.addConfigBlock(ctx, channel); err != nil {
 		return nil, nil, err
 	}
 
@@ -242,6 +211,10 @@ func (p *peer) ParsedBlocks(ctx context.Context, channel string, identity msp.Si
 		defer func() {
 			close(parsedBlockChan)
 		}()
+
+		p.mu.RLock()
+		configBlock := p.configBlocks[channel]
+		p.mu.RUnlock()
 
 		for {
 			select {
@@ -252,10 +225,6 @@ func (p *peer) ParsedBlocks(ctx context.Context, channel string, identity msp.Si
 				if b == nil {
 					return
 				}
-
-				p.mu.RLock()
-				configBlock := p.configBlocks[channel]
-				p.mu.RUnlock()
 
 				parsedBlock, err := block.ParseBlock(b, block.WithConfigBlock(configBlock))
 				if err != nil {

@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 )
 
-const DefaultAllChannelsBlocksObservePeriod = 10 * time.Second
+const DefaultChannelsBLocksPeerRefreshPeriod = 10 * time.Second
 
 type (
 	PeerChannelsGetter interface {
@@ -17,7 +17,7 @@ type (
 		Channels() map[string]*ChannelInfo
 	}
 
-	AllChannelsBlocks[T any] struct {
+	ChannelsBlocksPeer[T any] struct {
 		channelObservers map[string]*ChannelBlocks[T]
 
 		blocks chan *Block[T]
@@ -40,83 +40,83 @@ type (
 		logger *zap.Logger
 	}
 
-	AllChannelsBlocksOpts struct {
+	ChannelsBlocksPeerOpts struct {
 		seekFrom           map[string]uint64
 		seekFromFetcher    SeekFromFetcher
-		observePeriod      time.Duration
+		refreshPeriod      time.Duration
 		stopRecreateStream bool
 		logger             *zap.Logger
 	}
 
-	AllChannelsBlocksOpt func(*AllChannelsBlocksOpts)
+	ChannelsBlocksPeerOpt func(*ChannelsBlocksPeerOpts)
 )
 
-var DefaultAllChannelsBlocksOpts = &AllChannelsBlocksOpts{
-	observePeriod: DefaultAllChannelsBlocksObservePeriod,
+var DefaultChannelsBlocksPeerOpts = &ChannelsBlocksPeerOpts{
+	refreshPeriod: DefaultChannelsBLocksPeerRefreshPeriod,
 	logger:        zap.NewNop(),
 }
 
-func WithAllChannelsBlocksLogger(logger *zap.Logger) AllChannelsBlocksOpt {
-	return func(opts *AllChannelsBlocksOpts) {
+func WithChannelsBlocksPeerLogger(logger *zap.Logger) ChannelsBlocksPeerOpt {
+	return func(opts *ChannelsBlocksPeerOpts) {
 		opts.logger = logger
 	}
 }
 
-func WithSeekFrom(seekFrom map[string]uint64) AllChannelsBlocksOpt {
-	return func(opts *AllChannelsBlocksOpts) {
+func WithSeekFrom(seekFrom map[string]uint64) ChannelsBlocksPeerOpt {
+	return func(opts *ChannelsBlocksPeerOpts) {
 		opts.seekFrom = seekFrom
 	}
 }
 
-func WithSeekFromFetcher(seekFromFetcher SeekFromFetcher) AllChannelsBlocksOpt {
-	return func(opts *AllChannelsBlocksOpts) {
+func WithSeekFromFetcher(seekFromFetcher SeekFromFetcher) ChannelsBlocksPeerOpt {
+	return func(opts *ChannelsBlocksPeerOpts) {
 		opts.seekFromFetcher = seekFromFetcher
 	}
 }
 
-func WithAllChannelsBlocksObservePeriod(observePeriod time.Duration) AllChannelsBlocksOpt {
-	return func(opts *AllChannelsBlocksOpts) {
-		if observePeriod != 0 {
-			opts.observePeriod = observePeriod
+func WithChannelsBlocksPeerRefreshPeriod(refreshPeriod time.Duration) ChannelsBlocksPeerOpt {
+	return func(opts *ChannelsBlocksPeerOpts) {
+		if refreshPeriod != 0 {
+			opts.refreshPeriod = refreshPeriod
 		}
 	}
 }
 
-func WithBlockStopRecreateStream(stop bool) AllChannelsBlocksOpt {
-	return func(opts *AllChannelsBlocksOpts) {
+func WithBlockStopRecreateStream(stop bool) ChannelsBlocksPeerOpt {
+	return func(opts *ChannelsBlocksPeerOpts) {
 		opts.stopRecreateStream = stop
 	}
 }
 
-func NewAllChannelsBlocks[T any](
+func NewChannelsBlocksPeer[T any](
 	peerChannelsGetter PeerChannelsGetter,
 	deliverer func(context.Context, string, msp.SigningIdentity, ...int64) (<-chan T, func() error, error),
 	createStreamWithRetry CreateBlockStreamWithRetry[T],
-	opts ...AllChannelsBlocksOpt,
-) *AllChannelsBlocks[T] {
+	opts ...ChannelsBlocksPeerOpt,
+) *ChannelsBlocksPeer[T] {
 
-	allChannelsBlocksOpts := DefaultAllChannelsBlocksOpts
+	channelsBlocksPeerOpts := DefaultChannelsBlocksPeerOpts
 	for _, opt := range opts {
-		opt(allChannelsBlocksOpts)
+		opt(channelsBlocksPeerOpts)
 	}
 
-	return &AllChannelsBlocks[T]{
+	return &ChannelsBlocksPeer[T]{
 		channelObservers: make(map[string]*ChannelBlocks[T]),
 		blocks:           make(chan *Block[T]),
 
 		peerChannelsGetter:    peerChannelsGetter,
 		deliverer:             deliverer,
 		createStreamWithRetry: createStreamWithRetry,
-		observePeriod:         allChannelsBlocksOpts.observePeriod,
+		observePeriod:         channelsBlocksPeerOpts.refreshPeriod,
 
-		seekFrom:           allChannelsBlocksOpts.seekFrom,
-		seekFromFetcher:    allChannelsBlocksOpts.seekFromFetcher,
-		stopRecreateStream: allChannelsBlocksOpts.stopRecreateStream,
-		logger:             allChannelsBlocksOpts.logger,
+		seekFrom:           channelsBlocksPeerOpts.seekFrom,
+		seekFromFetcher:    channelsBlocksPeerOpts.seekFromFetcher,
+		stopRecreateStream: channelsBlocksPeerOpts.stopRecreateStream,
+		logger:             channelsBlocksPeerOpts.logger,
 	}
 }
 
-func (acb *AllChannelsBlocks[T]) Channels() map[string]*Channel {
+func (acb *ChannelsBlocksPeer[T]) Channels() map[string]*Channel {
 	acb.mu.RLock()
 	defer acb.mu.RUnlock()
 
@@ -128,7 +128,7 @@ func (acb *AllChannelsBlocks[T]) Channels() map[string]*Channel {
 	return copyChannels
 }
 
-func (acb *AllChannelsBlocks[T]) Stop() {
+func (acb *ChannelsBlocksPeer[T]) Stop() {
 	// acb.blocks and acb.blocksByChannels mustn't be closed here, because they are closed elsewhere
 
 	acb.mu.RLock()
@@ -150,7 +150,7 @@ func (acb *AllChannelsBlocks[T]) Stop() {
 	acb.isWork = false
 }
 
-func (acb *AllChannelsBlocks[T]) Observe(ctx context.Context) <-chan *Block[T] {
+func (acb *ChannelsBlocksPeer[T]) Observe(ctx context.Context) <-chan *Block[T] {
 	if acb.isWork {
 		return acb.blocks
 	}
@@ -186,7 +186,7 @@ func (acb *AllChannelsBlocks[T]) Observe(ctx context.Context) <-chan *Block[T] {
 	return acb.blocks
 }
 
-func (acb *AllChannelsBlocks[T]) startNotObservedChannels(ctx context.Context, notObservedChannels []*ChannelBlocks[T]) {
+func (acb *ChannelsBlocksPeer[T]) startNotObservedChannels(ctx context.Context, notObservedChannels []*ChannelBlocks[T]) {
 	for _, notObservedChannel := range notObservedChannels {
 		chBlocks := notObservedChannel
 
@@ -203,7 +203,7 @@ func (acb *AllChannelsBlocks[T]) startNotObservedChannels(ctx context.Context, n
 	}
 }
 
-func (acb *AllChannelsBlocks[T]) initChannelsObservers() []*ChannelBlocks[T] {
+func (acb *ChannelsBlocksPeer[T]) initChannelsObservers() []*ChannelBlocks[T] {
 	var notObservedChannels []*ChannelBlocks[T]
 
 	for channel := range acb.peerChannelsGetter.Channels() {
@@ -235,7 +235,7 @@ func (acb *AllChannelsBlocks[T]) initChannelsObservers() []*ChannelBlocks[T] {
 	return notObservedChannels
 }
 
-func (acb *AllChannelsBlocks[T]) getSeekFrom(channel string) SeekFromFetcher {
+func (acb *ChannelsBlocksPeer[T]) getSeekFrom(channel string) SeekFromFetcher {
 	seekFrom := ChannelSeekOldest()
 	// at first check seekFrom var, if it is empty, check seekFromFetcher
 	acb.mu.RLock()
