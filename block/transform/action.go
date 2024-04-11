@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"regexp"
 
-	"google.golang.org/protobuf/proto"
-
 	hlfproto "github.com/s7techlab/hlf-sdk-go/block"
 )
 
@@ -72,10 +70,7 @@ func (s *Action) Transform(block *hlfproto.Block) (*hlfproto.Block, error) {
 		return nil, hlfproto.ErrNilBlock
 	}
 
-	// make block copy not to change original
-	blockCopy := proto.Clone(block).(*hlfproto.Block)
-
-	for _, envelope := range blockCopy.GetData().GetEnvelopes() {
+	for _, envelope := range block.GetData().GetEnvelopes() {
 		if envelope.GetPayload().GetTransaction() == nil {
 			continue
 		}
@@ -123,7 +118,7 @@ func (s *Action) Transform(block *hlfproto.Block) (*hlfproto.Block, error) {
 		}
 	}
 
-	return blockCopy, nil
+	return block, nil
 }
 
 func TxChaincodeIDMatch(chaincode string) TxActionMatch {
