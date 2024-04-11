@@ -2,7 +2,7 @@ package client
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
@@ -51,7 +51,7 @@ func WithOrderer(orderer api.Orderer) Opt {
 // WithConfigYaml allows passing path to YAML configuration file
 func WithConfigYaml(configPath string) Opt {
 	return func(c *Client) error {
-		configBytes, err := ioutil.ReadFile(configPath)
+		configBytes, err := os.ReadFile(configPath)
 		if err != nil {
 			return errors.Wrap(err, `failed to read config file`)
 		}

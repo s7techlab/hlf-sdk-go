@@ -10,22 +10,22 @@ import (
 	testdata "github.com/s7techlab/hlf-sdk-go/testdata/blocks"
 )
 
-var _ = Describe("Channel peer", func() {
+var _ = Describe("Peer channels", func() {
 	var (
-		channelPeerFetcherMock observer.PeerChannelsFetcher
+		peerChannelsFetcherMock observer.PeerChannelsFetcher
 	)
 	BeforeEach(func() {
-		channelPeerFetcherMock = observer.NewChannelPeerFetcherMock(testdata.ChannelsHeights)
+		peerChannelsFetcherMock = observer.NewPeerChannelsFetcherMock(testdata.ChannelsHeights)
 	})
 
-	It("default channel peer, no channel matcher", func() {
-		channelPeer, err := observer.NewChannelPeer(channelPeerFetcherMock)
+	It("default peer channels, no channel matcher", func() {
+		peerChannels, err := observer.NewPeerChannels(peerChannelsFetcherMock)
 		Expect(err).To(BeNil())
 
-		channelPeer.Observe(ctx)
+		peerChannels.Observe(ctx)
 		time.Sleep(time.Millisecond * 100)
 
-		channelsMap := channelPeer.Channels()
+		channelsMap := peerChannels.Channels()
 
 		sampleChannelInfo, exist := channelsMap[testdata.SampleChannel]
 		Expect(exist).To(BeTrue())
@@ -38,15 +38,15 @@ var _ = Describe("Channel peer", func() {
 		Expect(fabcarChannelInfo.Height).To(Equal(testdata.FabcarChannelHeight))
 	})
 
-	It("default channel peer, with channel matcher, exclude Fabcar", func() {
-		channelPeer, err := observer.NewChannelPeer(channelPeerFetcherMock,
+	It("default peer channels, with channel matcher, exclude Fabcar", func() {
+		peerChannels, err := observer.NewPeerChannels(peerChannelsFetcherMock,
 			observer.WithChannels([]observer.ChannelToMatch{{MatchPattern: testdata.SampleChannel}}))
 		Expect(err).To(BeNil())
 
-		channelPeer.Observe(ctx)
+		peerChannels.Observe(ctx)
 		time.Sleep(time.Millisecond * 100)
 
-		channelsMap := channelPeer.Channels()
+		channelsMap := peerChannels.Channels()
 
 		sampleChannelInfo, exist := channelsMap[testdata.SampleChannel]
 		Expect(exist).To(BeTrue())

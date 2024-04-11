@@ -6,8 +6,8 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"net"
+	"os"
 	"time"
 
 	grpcretry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
@@ -80,7 +80,7 @@ func OptionsFromConfig(c config.ConnectionConfig, logger *zap.Logger) (*Opts, er
 			if len(c.Tls.CACert) != 0 {
 				caCert = c.Tls.CACert
 			} else {
-				caCert, err = ioutil.ReadFile(c.Tls.CACertPath)
+				caCert, err = os.ReadFile(c.Tls.CACertPath)
 				if err != nil {
 					return nil, fmt.Errorf(`read CA certificate: %w`, err)
 				}

@@ -10,6 +10,7 @@ import (
 	"github.com/hyperledger/fabric/msp"
 
 	"github.com/s7techlab/hlf-sdk-go/api"
+	"github.com/s7techlab/hlf-sdk-go/block"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode/txwaiter"
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
@@ -108,7 +109,7 @@ func (c *Client) Blocks(
 	channel string,
 	identity msp.SigningIdentity,
 	blockRange ...int64,
-) (blocks <-chan *common.Block, closer func() error, _ error) {
+) (<-chan *common.Block, func() error, error) {
 	if identity == nil {
 		identity = c.CurrentIdentity()
 	}
@@ -119,4 +120,22 @@ func (c *Client) Blocks(
 	}
 
 	return peer.Blocks(ctx, channel, identity, blockRange...)
+}
+
+func (c *Client) ParsedBlocks(
+	ctx context.Context,
+	channel string,
+	identity msp.SigningIdentity,
+	blockRange ...int64,
+) (<-chan *block.Block, func() error, error) {
+	if identity == nil {
+		identity = c.CurrentIdentity()
+	}
+
+	peer, err := c.PeerPool().FirstReadyPeer(identity.GetMSPIdentifier())
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return peer.ParsedBlocks(ctx, channel, identity, blockRange...)
 }

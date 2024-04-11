@@ -1,6 +1,7 @@
 package block
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
@@ -12,6 +13,11 @@ import (
 	bft "github.com/s7techlab/hlf-sdk-go/block/smartbft"
 	bftcommon "github.com/s7techlab/hlf-sdk-go/block/smartbft/common"
 	"github.com/s7techlab/hlf-sdk-go/block/txflags"
+)
+
+var (
+	ErrNilBlock       = errors.New("nil block")
+	ErrNilConfigBlock = errors.New("nil config block")
 )
 
 type (
@@ -71,6 +77,10 @@ func ParseBlock(block *common.Block, opts ...ParseBlockOpt) (*Block, error) {
 }
 
 func ParseOrdererIdentity(cb *common.Block) (*msp.SerializedIdentity, error) {
+	if cb == nil {
+		return nil, ErrNilBlock
+	}
+
 	meta, err := protoutil.GetMetadataFromBlock(cb, common.BlockMetadataIndex_SIGNATURES)
 	if err != nil {
 		return nil, fmt.Errorf("get metadata from block: %w", err)
@@ -96,6 +106,14 @@ func ParseOrdererIdentity(cb *common.Block) (*msp.SerializedIdentity, error) {
 }
 
 func ParseBTFOrderersIdentities(block *common.Block, configBlock *common.Block) ([]*OrdererSignature, error) {
+	if block == nil {
+		return nil, ErrNilBlock
+	}
+
+	if configBlock == nil {
+		return nil, ErrNilConfigBlock
+	}
+
 	bftMeta := &bftcommon.BFTMetadata{}
 	if err := proto.Unmarshal(block.Metadata.Metadata[common.BlockMetadataIndex_SIGNATURES], bftMeta); err != nil {
 		return nil, fmt.Errorf("unmarshaling bft block metadata from metadata: %w", err)

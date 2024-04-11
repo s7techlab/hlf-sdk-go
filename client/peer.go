@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/block"
 	"github.com/s7techlab/hlf-sdk-go/client/channel"
 	"github.com/s7techlab/hlf-sdk-go/client/deliver"
 	grpcclient "github.com/s7techlab/hlf-sdk-go/client/grpc"
@@ -39,11 +41,14 @@ type peer struct {
 
 	endorseDefaultTimeout time.Duration
 
+	configBlocks map[string]*common.Block
+	mu           sync.RWMutex
+
 	logger *zap.Logger
 }
 
 // NewPeer returns new peer instance based on peer config
-func NewPeer(dialCtx context.Context, c config.ConnectionConfig, identity msp.SigningIdentity, logger *zap.Logger) (api.Peer, error) {
+func NewPeer(ctx context.Context, c config.ConnectionConfig, identity msp.SigningIdentity, logger *zap.Logger) (api.Peer, error) {
 	opts, err := grpcclient.OptionsFromConfig(c, logger)
 	if err != nil {
 		return nil, fmt.Errorf(`peer grpc options from config: %w`, err)
@@ -55,10 +60,11 @@ func NewPeer(dialCtx context.Context, c config.ConnectionConfig, identity msp.Si
 	}
 
 	// Dial should always have timeout
-	ctxDeadline, exists := dialCtx.Deadline()
+	var dialCtx context.Context
+	ctxDeadline, exists := ctx.Deadline()
 	if !exists {
 		var cancel context.CancelFunc
-		dialCtx, cancel = context.WithTimeout(dialCtx, dialTimeout)
+		dialCtx, cancel = context.WithTimeout(ctx, dialTimeout)
 		defer cancel()
 
 		ctxDeadline, _ = dialCtx.Deadline()
@@ -83,16 +89,15 @@ func NewFromGRPC(conn *grpc.ClientConn, identity msp.SigningIdentity, tlsCertHas
 		endorseDefaultTimeout = PeerDefaultEndorseTimeout
 	}
 
-	p := &peer{
+	return &peer{
 		conn:                  conn,
 		client:                fabricPeer.NewEndorserClient(conn),
 		identity:              identity,
 		tlsCertHash:           tlsCertHash,
 		endorseDefaultTimeout: endorseDefaultTimeout,
+		configBlocks:          make(map[string]*common.Block),
 		logger:                logger.Named(`peer`),
-	}
-
-	return p, nil
+	}, nil
 }
 
 func (p *peer) Query(
@@ -140,9 +145,9 @@ func (p *peer) Query(
 	return response.Response, nil
 }
 
-func (p *peer) Blocks(ctx context.Context, channel string, identity msp.SigningIdentity, blockRange ...int64) (blockChan <-chan *common.Block, closer func() error, err error) {
+func (p *peer) Blocks(ctx context.Context, channel string, identity msp.SigningIdentity, blockRange ...int64) (<-chan *common.Block, func() error, error) {
 	p.logger.Debug(`peer blocks request`,
-		zap.String(`uri`, p.Uri()),
+		zap.String(`uri`, p.URI()),
 		zap.String(`channel`, channel),
 		zap.Reflect(`range`, blockRange))
 
@@ -169,6 +174,82 @@ func (p *peer) Blocks(ctx context.Context, channel string, identity msp.SigningI
 	return bs.Blocks(), bs.Close, nil
 }
 
+func (p *peer) addConfigBlock(ctx context.Context, channel string) error {
+	p.mu.RLock()
+	_, exist := p.configBlocks[channel]
+	p.mu.RUnlock()
+	if exist {
+		return nil
+	}
+
+	configBlock, err := qscc.NewQSCC(p).GetBlockByNumber(ctx, &qscc.GetBlockByNumberRequest{ChannelName: channel, BlockNumber: 0})
+	if err != nil {
+		return fmt.Errorf("get block by number from channel %s: %w", channel, err)
+	}
+
+	if configBlock != nil {
+		p.mu.Lock()
+		p.configBlocks[channel] = configBlock
+		p.mu.Unlock()
+	}
+
+	return nil
+}
+
+func (p *peer) ParsedBlocks(ctx context.Context, channel string, identity msp.SigningIdentity, blockRange ...int64) (<-chan *block.Block, func() error, error) {
+	commonBlocks, commonCloser, err := p.Blocks(ctx, channel, identity, blockRange...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if err = p.addConfigBlock(ctx, channel); err != nil {
+		return nil, nil, err
+	}
+
+	parsedBlockChan := make(chan *block.Block)
+	go func() {
+		defer func() {
+			close(parsedBlockChan)
+		}()
+
+		p.mu.RLock()
+		configBlock := p.configBlocks[channel]
+		p.mu.RUnlock()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+
+			case b, ok := <-commonBlocks:
+				if !ok {
+					return
+				}
+				if b == nil {
+					return
+				}
+
+				parsedBlock, err := block.ParseBlock(b, block.WithConfigBlock(configBlock))
+				if err != nil {
+					p.logger.Error("parse block", zap.String("channel", channel), zap.Uint64("number", b.Header.Number))
+					continue
+				}
+
+				parsedBlockChan <- parsedBlock
+			}
+		}
+	}()
+
+	parsedCloser := func() error {
+		if closerErr := commonCloser(); closerErr != nil {
+			return closerErr
+		}
+		return nil
+	}
+
+	return parsedBlockChan, parsedCloser, nil
+}
+
 func (p *peer) Events(ctx context.Context, channel string, chaincode string, identity msp.SigningIdentity, blockRange ...int64) (events chan interface {
 	Event() *fabricPeer.ChaincodeEvent
 	Block() uint64
@@ -176,7 +257,7 @@ func (p *peer) Events(ctx context.Context, channel string, chaincode string, ide
 }, closer func() error, err error) {
 
 	p.logger.Debug(`peer events request`,
-		zap.String(`uri`, p.Uri()),
+		zap.String(`uri`, p.URI()),
 		zap.String(`channel`, channel),
 		zap.Reflect(`range`, blockRange))
 
@@ -217,7 +298,7 @@ func (p *peer) Endorse(ctx context.Context, proposal *fabricPeer.SignedProposal)
 		defer cancel()
 	}
 
-	p.logger.Debug(`endorse`, zap.String(`uri`, p.Uri()))
+	p.logger.Debug(`endorse`, zap.String(`uri`, p.URI()))
 
 	resp, err := p.client.ProcessProposal(ctx, proposal)
 	if err != nil {
@@ -247,7 +328,7 @@ func (p *peer) Conn() *grpc.ClientConn {
 	return p.conn
 }
 
-func (p *peer) Uri() string {
+func (p *peer) URI() string {
 	return p.conn.Target()
 }
 

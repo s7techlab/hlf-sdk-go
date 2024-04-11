@@ -13,6 +13,6 @@ func TestObservers(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	blockPeerCommonTestBeforeSuit()
-	blockPeerParsedTestBeforeSuit()
+	channelsBlocksPeerCommonTestBeforeSuit()
+	channelsBlocksPeerParsedTestBeforeSuit()
 })
