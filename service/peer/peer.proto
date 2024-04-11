@@ -1,0 +1,178 @@
+syntax = "proto3";
+
+package hlfsdkgo.service.peer;
+option go_package = "github.com/s7techlab/hlf-sdk-go/service/peer";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "validate/validate.proto";
+import "hyperledger/fabric-protos/peer/chaincode.proto";
+
+import "ccpackage/ccpackage.proto";
+
+service PeerManagerService {
+  // ChaincodeInstall - it install chaincode
+  rpc InstallChaincode (InstallChaincodeRequest) returns (Chaincode) {
+    option (google.api.http) = {
+      post: "/peer/chaincodes"
+      body: "*"
+    };
+  };
+
+  // ChaincodeUp - it installs and instantiates/upgrades  (LSCC) or
+  //  installs, approves and commits
+  rpc UpChaincode (UpChaincodeRequest) returns (UpChaincodeResponse) {
+    option (google.api.http) = {
+      post: "/peer/chaincode-up"
+      body: "*"
+    };
+  };
+
+  // JoinChannel - join channel to peer
+  rpc JoinChannel (JoinChannelRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/peer/channels"
+      body: "*"
+    };
+  }
+}
+
+service PeerInfoService {
+  // ChaincodeList - returns list chaincode and mapped to channel if it upped
+  rpc GetInstalledChaincodes (google.protobuf.Empty) returns (Chaincodes) {
+    option (google.api.http) = {
+      get: "/peer/chaincodes"
+    };
+  };
+
+  rpc GetInstalledChaincode(ccpackage.PackageID) returns (Chaincode) {
+    option (google.api.http) = {
+      get: "/peer/chaincodes/{name}/{version}"
+    };
+  }
+
+  // ListChannels - returns list of channels
+  rpc ListChannels (google.protobuf.Empty) returns (Channels) {
+    option (google.api.http) = {
+      get: "/peer/channels"
+    };
+  };
+
+  // GetChannel - returns information about channel that peer joined
+  rpc GetChannel (GetChannelRequest) returns (GetChannelResponse) {
+    option (google.api.http) = {
+      get: "/peer/channels/{channel_name}"
+    };
+  };
+
+  // GetInstantiatedChaincodes - returns information about channel that peer joined
+  rpc GetInstantiatedChaincodes (GetInstantiatedChaincodesRequest) returns (Chaincodes) {
+    option (google.api.http) = {
+      get: "/peer/channels/{channel_name}/chaincodes"
+    };
+  };
+
+  // GetPeerInfo - returns information about peer
+  rpc GetPeerInfo(google.protobuf.Empty) returns (GetPeerInfoResponse) {
+    option (google.api.http) = {
+      get: "/peer"
+    };
+  };
+}
+
+
+message GetInstantiatedChaincodesRequest {
+  // name of channel we checking
+  string channel_name = 1 [(validate.rules).string.min_len = 1];
+}
+
+message InstallChaincodeRequest {
+  oneof chaincode_package {
+    ccpackage.PackageID chaincode_package_id = 1;
+    ccpackage.PackageSpec chaincode_package_spec = 2;
+  }
+}
+
+message UpChaincodeRequest {
+  string channel = 1 [(validate.rules).string.min_len = 1];
+  oneof chaincode_package {
+    ccpackage.PackageID chaincode_package_id = 2;
+    ccpackage.PackageSpec chaincode_package_spec = 3;
+  }
+  protos.ChaincodeInput input = 4;
+  string policy = 5 [(validate.rules).string.min_len = 1];
+  map<string, bytes> transient_map = 6;
+}
+
+message UpChaincodeResponse {
+  // Chaincode information
+  Chaincode chaincode = 1;
+  // Success of committing attempt
+  bool committed = 2;
+  // Approvals on chaincode definition [MSPId => bool]
+  map<string, bool> approvals = 3;
+  // Error on chaincode committing attempt
+  string commit_err = 4;
+}
+
+// ChannelJoinReq - join channel to peer request
+message JoinChannelRequest {
+  // name of channel
+  string channel_id = 1 [(validate.rules).string.min_len = 1];
+  // orderer address with port, ex: "orderer.example.com:7050"
+  string orderer_address = 2 [(validate.rules).string.min_len = 1];
+}
+
+enum LifecycleVersion {
+  LIFECYCLE_V1 = 0;
+  LIFECYCLE_V2 = 1;
+}
+
+// Request with channel name. Will return information about channel that peer joined
+message GetChannelRequest {
+  // name of channel we checking
+  string channel_name = 1 [(validate.rules).string.min_len = 1];
+}
+
+// Response with channel properties and height
+message GetChannelResponse {
+  // properties of channel
+  Channel channel = 1;
+  // how much transactions block have
+  uint64 height = 2;
+}
+
+message Chaincode {
+  string name = 1;
+  string version = 2;
+  string package_id = 3;
+  LifecycleVersion lifecycle_version = 4;
+
+  // Instantiated at channels
+  repeated string channels = 5;
+}
+
+message Chaincodes {
+  repeated Chaincode chaincodes = 1;
+}
+
+message Channel {
+  string name = 1;
+  uint64 height = 2;
+}
+
+message Channels {
+  repeated Channel channels = 1;
+}
+
+message GetPeerInfoResponse{
+  string msp_id = 1;
+  // unparsed cert bytes
+  bytes cert_pem = 2;
+  // parsed certificated for frontend (like openssl output)
+  string cert_content = 3;
+  string address = 4;
+  string peer_version = 5;
+  Channels channels = 6;
+  Chaincodes chaincodes = 7;
+}

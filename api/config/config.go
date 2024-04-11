@@ -1,8 +1,6 @@
 package config
 
 import (
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/s7techlab/hlf-sdk-go/crypto"
@@ -20,10 +18,10 @@ type Config struct {
 }
 
 type ConnectionConfig struct {
-	Host    string     `yaml:"host"`
-	Tls     TlsConfig  `yaml:"tls"`
-	GRPC    GRPCConfig `yaml:"grpc"`
-	Timeout Duration   `yaml:"timeout"`
+	Host    string        `yaml:"host"`
+	Tls     TlsConfig     `yaml:"tls"`
+	GRPC    GRPCConfig    `yaml:"grpc"`
+	Timeout time.Duration `yaml:"timeout"`
 }
 
 type CAConfig struct {
@@ -33,7 +31,7 @@ type CAConfig struct {
 }
 
 type PoolConfig struct {
-	DeliverTimeout Duration `yaml:"deliver_timeout"`
+	DeliverTimeout time.Duration `yaml:"deliver_timeout"`
 }
 
 type MSPConfig struct {
@@ -50,7 +48,7 @@ type GRPCRetryConfig struct {
 	// Count for max retries
 	Max uint `yaml:"max"`
 	// Timeout is used for back-off
-	Timeout Duration `yaml:"timeout"`
+	Timeout time.Duration `yaml:"timeout"`
 }
 
 type GRPCKeepAliveConfig struct {
@@ -101,44 +99,8 @@ type DiscoveryChaincode struct {
 	Policy  string `json:"policy"`
 }
 
-type Duration struct {
-	time.Duration
-}
-
 type Endpoint struct {
 	Host         string    `yaml:"host"`
 	HostOverride string    `yaml:"host_override"`
 	TlsConfig    TlsConfig `yaml:"tls"`
-}
-
-func (d *Duration) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var out string
-	var err error
-
-	if err = unmarshal(&out); err != nil {
-		return err
-	}
-
-	switch {
-	case strings.HasSuffix(out, `s`):
-		if d.Duration, err = time.ParseDuration(out); err != nil {
-			return err
-		}
-	case strings.HasSuffix(out, `h`):
-		if d.Duration, err = time.ParseDuration(out); err != nil {
-			return err
-		}
-	case strings.HasSuffix(out, `m`):
-		if d.Duration, err = time.ParseDuration(out); err != nil {
-			return err
-		}
-	default:
-		if t, err := strconv.Atoi(out); err != nil {
-			return err
-		} else {
-			d.Duration = time.Millisecond * time.Duration(t)
-		}
-	}
-
-	return nil
 }

@@ -1,0 +1,589 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "peer/peer.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/peer": {
+      "get": {
+        "summary": "GetPeerInfo - returns information about peer",
+        "operationId": "PeerInfoService_GetPeerInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/peerGetPeerInfoResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "PeerInfoService"
+        ]
+      }
+    },
+    "/peer/chaincode-up": {
+      "post": {
+        "summary": "ChaincodeUp - it installs and instantiates/upgrades  (LSCC) or\n installs, approves and commits",
+        "operationId": "PeerManagerService_UpChaincode",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/peerUpChaincodeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/peerUpChaincodeRequest"
+            }
+          }
+        ],
+        "tags": [
+          "PeerManagerService"
+        ]
+      }
+    },
+    "/peer/chaincodes": {
+      "get": {
+        "summary": "ChaincodeList - returns list chaincode and mapped to channel if it upped",
+        "operationId": "PeerInfoService_GetInstalledChaincodes",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/peerChaincodes"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "PeerInfoService"
+        ]
+      },
+      "post": {
+        "summary": "ChaincodeInstall - it install chaincode",
+        "operationId": "PeerManagerService_InstallChaincode",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/peerChaincode"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/peerInstallChaincodeRequest"
+            }
+          }
+        ],
+        "tags": [
+          "PeerManagerService"
+        ]
+      }
+    },
+    "/peer/chaincodes/{name}/{version}": {
+      "get": {
+        "operationId": "PeerInfoService_GetInstalledChaincode",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/peerChaincode"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "name",
+            "description": "Name is a chaincode name, ex: payment",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "version",
+            "description": "Version is a chaincode version to use, ex: 2800dea5e957b3b65f48340337fdbbedc7caf396",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fabric_version",
+            "description": "Fabric version to use to build chaincode.\n\n - FABRIC_VERSION_UNSPECIFIED: Fabric v1.4 tools\n - FABRIC_V1: Fabric v1.4 tools\n - FABRIC_V2: Fabric v2.3 tools\n - FABRIC_V2_LIFECYCLE: Fabric v2.3 tools with lifecycle",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "FABRIC_VERSION_UNSPECIFIED",
+              "FABRIC_V1",
+              "FABRIC_V2",
+              "FABRIC_V2_LIFECYCLE"
+            ],
+            "default": "FABRIC_VERSION_UNSPECIFIED"
+          }
+        ],
+        "tags": [
+          "PeerInfoService"
+        ]
+      }
+    },
+    "/peer/channels": {
+      "get": {
+        "summary": "ListChannels - returns list of channels",
+        "operationId": "PeerInfoService_ListChannels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/peerChannels"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "PeerInfoService"
+        ]
+      },
+      "post": {
+        "summary": "JoinChannel - join channel to peer",
+        "operationId": "PeerManagerService_JoinChannel",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/peerJoinChannelRequest"
+            }
+          }
+        ],
+        "tags": [
+          "PeerManagerService"
+        ]
+      }
+    },
+    "/peer/channels/{channel_name}": {
+      "get": {
+        "summary": "GetChannel - returns information about channel that peer joined",
+        "operationId": "PeerInfoService_GetChannel",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/peerGetChannelResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "channel_name",
+            "description": "name of channel we checking",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "PeerInfoService"
+        ]
+      }
+    },
+    "/peer/channels/{channel_name}/chaincodes": {
+      "get": {
+        "summary": "GetInstantiatedChaincodes - returns information about channel that peer joined",
+        "operationId": "PeerInfoService_GetInstantiatedChaincodes",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/peerChaincodes"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "channel_name",
+            "description": "name of channel we checking",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "PeerInfoService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "ccpackageFabricVersion": {
+      "type": "string",
+      "enum": [
+        "FABRIC_VERSION_UNSPECIFIED",
+        "FABRIC_V1",
+        "FABRIC_V2",
+        "FABRIC_V2_LIFECYCLE"
+      ],
+      "default": "FABRIC_VERSION_UNSPECIFIED",
+      "title": "- FABRIC_VERSION_UNSPECIFIED: Fabric v1.4 tools\n - FABRIC_V1: Fabric v1.4 tools\n - FABRIC_V2: Fabric v2.3 tools\n - FABRIC_V2_LIFECYCLE: Fabric v2.3 tools with lifecycle"
+    },
+    "ccpackagePackageID": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "Name is a chaincode name, ex: payment"
+        },
+        "version": {
+          "type": "string",
+          "title": "Version is a chaincode version to use, ex: 2800dea5e957b3b65f48340337fdbbedc7caf396"
+        },
+        "fabric_version": {
+          "$ref": "#/definitions/ccpackageFabricVersion",
+          "description": "Fabric version to use to build chaincode."
+        }
+      }
+    },
+    "ccpackagePackageSpec": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/ccpackagePackageID",
+          "title": "Package ID is package identification data"
+        },
+        "repository": {
+          "type": "string",
+          "title": "Repository is url to git sources, ex: http://:token@{repo url}\nor http://login:password@github.com/hyperledger-labs/cckit/examples/cars\nor path to local directory file:///path/to/sources/hyperledger-labs/cckit"
+        },
+        "chaincode_path": {
+          "type": "string",
+          "title": "Chaincode path is path to chaincode, ex: github.com/hyperledger-labs/cckit"
+        },
+        "binary_path": {
+          "type": "string",
+          "description": "BinaryPath is path to chaincode binary in given repository,\nex: `examples/cars`."
+        }
+      }
+    },
+    "peerChaincode": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "package_id": {
+          "type": "string"
+        },
+        "lifecycle_version": {
+          "$ref": "#/definitions/peerLifecycleVersion"
+        },
+        "channels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Instantiated at channels"
+        }
+      }
+    },
+    "peerChaincodes": {
+      "type": "object",
+      "properties": {
+        "chaincodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/peerChaincode"
+          }
+        }
+      }
+    },
+    "peerChannel": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "height": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "peerChannels": {
+      "type": "object",
+      "properties": {
+        "channels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/peerChannel"
+          }
+        }
+      }
+    },
+    "peerGetChannelResponse": {
+      "type": "object",
+      "properties": {
+        "channel": {
+          "$ref": "#/definitions/peerChannel",
+          "title": "properties of channel"
+        },
+        "height": {
+          "type": "string",
+          "format": "uint64",
+          "title": "how much transactions block have"
+        }
+      },
+      "title": "Response with channel properties and height"
+    },
+    "peerGetPeerInfoResponse": {
+      "type": "object",
+      "properties": {
+        "msp_id": {
+          "type": "string"
+        },
+        "cert_pem": {
+          "type": "string",
+          "format": "byte",
+          "title": "unparsed cert bytes"
+        },
+        "cert_content": {
+          "type": "string",
+          "title": "parsed certificated for frontend (like openssl output)"
+        },
+        "address": {
+          "type": "string"
+        },
+        "peer_version": {
+          "type": "string"
+        },
+        "channels": {
+          "$ref": "#/definitions/peerChannels"
+        },
+        "chaincodes": {
+          "$ref": "#/definitions/peerChaincodes"
+        }
+      }
+    },
+    "peerInstallChaincodeRequest": {
+      "type": "object",
+      "properties": {
+        "chaincode_package_id": {
+          "$ref": "#/definitions/ccpackagePackageID"
+        },
+        "chaincode_package_spec": {
+          "$ref": "#/definitions/ccpackagePackageSpec"
+        }
+      }
+    },
+    "peerJoinChannelRequest": {
+      "type": "object",
+      "properties": {
+        "channel_id": {
+          "type": "string",
+          "title": "name of channel"
+        },
+        "orderer_address": {
+          "type": "string",
+          "title": "orderer address with port, ex: \"orderer.example.com:7050\""
+        }
+      },
+      "title": "ChannelJoinReq - join channel to peer request"
+    },
+    "peerLifecycleVersion": {
+      "type": "string",
+      "enum": [
+        "LIFECYCLE_V1",
+        "LIFECYCLE_V2"
+      ],
+      "default": "LIFECYCLE_V1"
+    },
+    "peerUpChaincodeRequest": {
+      "type": "object",
+      "properties": {
+        "channel": {
+          "type": "string"
+        },
+        "chaincode_package_id": {
+          "$ref": "#/definitions/ccpackagePackageID"
+        },
+        "chaincode_package_spec": {
+          "$ref": "#/definitions/ccpackagePackageSpec"
+        },
+        "input": {
+          "$ref": "#/definitions/protosChaincodeInput"
+        },
+        "policy": {
+          "type": "string"
+        },
+        "transient_map": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "format": "byte"
+          }
+        }
+      }
+    },
+    "peerUpChaincodeResponse": {
+      "type": "object",
+      "properties": {
+        "chaincode": {
+          "$ref": "#/definitions/peerChaincode",
+          "title": "Chaincode information"
+        },
+        "committed": {
+          "type": "boolean",
+          "title": "Success of committing attempt"
+        },
+        "approvals": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "title": "Approvals on chaincode definition [MSPId =\u003e bool]"
+        },
+        "commit_err": {
+          "type": "string",
+          "title": "Error on chaincode committing attempt"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "protosChaincodeInput": {
+      "type": "object",
+      "properties": {
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "byte"
+          }
+        },
+        "decorations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "format": "byte"
+          }
+        },
+        "is_init": {
+          "type": "boolean",
+          "description": "is_init is used for the application to signal that an invocation is to be routed\nto the legacy 'Init' function for compatibility with chaincodes which handled\nInit in the old way.  New applications should manage their initialized state\nthemselves."
+        }
+      },
+      "description": "Carries the chaincode function and its arguments.\nUnmarshalJSON in transaction.go converts the string-based REST/JSON input to\nthe []byte-based current ChaincodeInput structure."
+    },
+    "runtimeError": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}
