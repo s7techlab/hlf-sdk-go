@@ -62,6 +62,9 @@ var LifecycleTransformers = []hlfproto.Transformer{
 				return nil
 			}),
 		),
+	),
+	NewAction(
+		TxChaincodeAnyMatch(),
 		WithKVReadTransformer(
 			KVReadKeyReplace(LifecycleStateKeyStrMapping(), func(read *kvrwset.KVRead) error {
 				read.Key = keyReplace(read.Key)
