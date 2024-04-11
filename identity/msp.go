@@ -182,9 +182,9 @@ func MSPFromPath(mspID, mspPath string, opts ...MSPOpt) (*MSP, error) {
 		}
 	}
 
-	if mspOpts.validateCertChain {
-		// todo: validate
-	}
+	// todo: validate
+	//if mspOpts.validateCertChain {
+	//}
 
 	return mspInstance, nil
 }

@@ -14,7 +14,6 @@ require (
 	github.com/hyperledger/fabric-chaincode-go v0.0.0-20201119163726-f8ef75b17719
 	github.com/hyperledger/fabric-protos-go v0.0.0-20201028172056-a3136dde2354
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/onsi/ginkgo v1.14.0
 	github.com/onsi/gomega v1.27.10
 	github.com/pkg/errors v0.9.1
