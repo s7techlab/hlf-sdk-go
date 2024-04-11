@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/golang/protobuf/proto"
@@ -92,7 +92,7 @@ func (c *Client) setAuthToken(req *http.Request, body []byte) error {
 
 func (c *Client) processResponse(resp *http.Response, out interface{}, expectedHTTPStatuses ...int) error {
 	defer func() { _ = resp.Body.Close() }()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return errors.Wrap(err, `failed to read response body`)
 	}

@@ -218,6 +218,9 @@ func (p *peer) ParsedBlocks(ctx context.Context, channel string, identity msp.Si
 
 		for {
 			select {
+			case <-ctx.Done():
+				return
+
 			case b, ok := <-commonBlocks:
 				if !ok {
 					return
