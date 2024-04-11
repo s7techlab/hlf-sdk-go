@@ -18,6 +18,12 @@ import (
 const DefaultPeerChannelsRefreshPeriod = 30 * time.Second
 
 type (
+	PeerChannelsFetcherAndBlockDeliverer interface {
+		PeerChannelsFetcher
+		api.BlocksDeliverer
+		api.ParsedBlocksDeliverer
+	}
+
 	PeerChannelsGetter interface {
 		URI() string
 		Channels() map[string]*ChannelInfo
