@@ -6,16 +6,24 @@ on:
     branches:
       - main
   pull_request:
+
+permissions:
+  contents: read
+
 jobs:
   golangci:
     name: lint
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go: [ "1.21.x","1.22.x" ]
         os: [ ubuntu-latest ]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+          cache: false
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
