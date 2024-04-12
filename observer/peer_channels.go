@@ -18,7 +18,8 @@ import (
 const DefaultPeerChannelsRefreshPeriod = 30 * time.Second
 
 type (
-	PeerChannelsFetcherAndBlockDeliverer interface {
+	// PeerReader implement it to create your service as peer (for example, message broker)
+	PeerReader interface {
 		PeerChannelsFetcher
 		api.BlocksDeliverer
 		api.ParsedBlocksDeliverer
