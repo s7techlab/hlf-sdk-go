@@ -7,6 +7,8 @@ import (
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/msp"
+
+	hlfproto "github.com/s7techlab/hlf-sdk-go/block"
 )
 
 type CurrentIdentity interface {
@@ -41,6 +43,16 @@ type BlocksDeliverer interface {
 		identity msp.SigningIdentity,
 		blockRange ...int64,
 	) (blockChan <-chan *common.Block, closer func() error, err error)
+}
+
+type ParsedBlocksDeliverer interface {
+	// ParsedBlocks the same as BlocksDeliverer.Blocks, but returns a channel with parsed blocks
+	ParsedBlocks(
+		ctx context.Context,
+		channel string,
+		identity msp.SigningIdentity,
+		blockRange ...int64,
+	) (parsedBlockChan <-chan *hlfproto.Block, parsedCloser func() error, err error)
 }
 
 type Querier interface {

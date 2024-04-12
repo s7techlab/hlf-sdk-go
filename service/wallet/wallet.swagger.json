@@ -13,7 +13,7 @@
   "paths": {
     "/wallet/identities": {
       "get": {
-        "summary": "Список identity",
+        "summary": "identity list",
         "operationId": "WalletService_IdentityList",
         "responses": {
           "200": {
@@ -34,7 +34,7 @@
         ]
       },
       "put": {
-        "summary": "Записать identity",
+        "summary": "set identity",
         "operationId": "WalletService_IdentitySet",
         "responses": {
           "200": {
@@ -67,7 +67,7 @@
     },
     "/wallet/identities/withpassword": {
       "post": {
-        "summary": "Получить identity из зашифрованного вида",
+        "summary": "get identity from encrypted view",
         "operationId": "WalletService_IdentityGetWithPassword",
         "responses": {
           "200": {
@@ -98,7 +98,7 @@
         ]
       },
       "put": {
-        "summary": "Записать identity в зашифрованном виде",
+        "summary": "set identity in encrypted form",
         "operationId": "WalletService_IdentitySetWithPassword",
         "responses": {
           "200": {
@@ -131,7 +131,7 @@
     },
     "/wallet/identities/{label}": {
       "get": {
-        "summary": "Получить identity",
+        "summary": "get identity",
         "operationId": "WalletService_IdentityGet",
         "responses": {
           "200": {
@@ -160,7 +160,7 @@
         ]
       },
       "delete": {
-        "summary": "Удалить identity",
+        "summary": "delete identity",
         "operationId": "WalletService_IdentityDelete",
         "responses": {
           "200": {
@@ -191,7 +191,7 @@
     },
     "/wallet/identities/{label}/text": {
       "get": {
-        "summary": "Получить identity в виде текста",
+        "summary": "Get identity like text",
         "operationId": "WalletService_IdentityGetText",
         "responses": {
           "200": {

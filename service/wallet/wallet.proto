@@ -10,21 +10,21 @@ import "validate/validate.proto";
 
 service WalletService {
 
-  // Получить identity
+  // get identity
   rpc IdentityGet (IdentityLabel) returns (IdentityInWallet) {
     option (google.api.http) = {
       get: "/wallet/identities/{label}"
     };
   }
 
-  // Получить identity в виде текста
+  // Get identity like text
   rpc IdentityGetText (IdentityLabel) returns (IdentityInWalletText) {
     option (google.api.http) = {
       get: "/wallet/identities/{label}/text"
     };
   }
 
-  // Записать identity
+  // set identity
   rpc IdentitySet (Identity) returns (IdentityInWallet) {
     option (google.api.http) = {
       put: "/wallet/identities"
@@ -32,7 +32,7 @@ service WalletService {
     };
   }
 
-  // Записать identity в зашифрованном виде
+  // set identity in encrypted form
   rpc IdentitySetWithPassword (IdentityWithPassword) returns (IdentityInWallet) {
     option (google.api.http) = {
       put: "/wallet/identities/withpassword"
@@ -47,7 +47,7 @@ service WalletService {
   //        };
   //    }
 
-  // Получить identity из зашифрованного вида
+  // get identity from encrypted view
   rpc IdentityGetWithPassword (IdentityPassword) returns (IdentityInWallet) {
     option (google.api.http) = {
       post: "/wallet/identities/withpassword"
@@ -55,14 +55,14 @@ service WalletService {
     };
   }
 
-  // Список identity
+  // identity list
   rpc IdentityList (google.protobuf.Empty) returns (IdentityLabels) {
     option (google.api.http) = {
       get: "/wallet/identities"
     };
   }
 
-  // Удалить identity
+  // delete identity
   rpc IdentityDelete (IdentityLabel) returns (IdentityInWallet) {
     option (google.api.http) = {
       delete: "/wallet/identities/{label}"
