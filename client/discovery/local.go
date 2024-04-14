@@ -80,7 +80,7 @@ func (d *LocalConfigProvider) Channel(_ context.Context, channelName string) (ap
 
 	for _, ch := range d.channels {
 		if ch.Name == channelName {
-			channelFoundFlag = true
+			channelFoundFlag = true //nolint:ineffassign
 
 			chanDTO := newChannelDTO(channelName)
 			for i := range ch.Orderers {

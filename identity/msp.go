@@ -56,9 +56,8 @@ type (
 
 		userPaths []string
 
-		skipConfig        bool
-		validateCertChain bool
-		logger            *zap.Logger
+		skipConfig bool
+		logger     *zap.Logger
 	}
 
 	MSPOpt func(opts *MSPOpts)

@@ -12,18 +12,17 @@ import (
 
 	grpcretry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/pkg/errors"
+	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/client/grpc/opencensus/hlf"
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/balancer/roundrobin"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/resolver"
 	"google.golang.org/grpc/resolver/manual"
-
-	"github.com/s7techlab/hlf-sdk-go/api/config"
-	"github.com/s7techlab/hlf-sdk-go/client/grpc/opencensus/hlf"
 )
 
 var (
@@ -123,7 +122,7 @@ func OptionsFromConfig(c config.ConnectionConfig, logger *zap.Logger) (*Opts, er
 		cred := credentials.NewTLS(&tlsCfg)
 		opts.Dial = append(opts.Dial, grpc.WithTransportCredentials(cred))
 	} else {
-		opts.Dial = append(opts.Dial, grpc.WithInsecure())
+		opts.Dial = append(opts.Dial, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
 	// Set default keep alive
@@ -204,10 +203,10 @@ func ConnectionFromConfigs(ctx context.Context, logger *zap.Logger, conf ...conf
 		hosts = append(hosts, cc.Host)
 	}
 
-	r, _ := manual.GenerateAndRegisterManualResolver()
+	r := manual.NewBuilderWithScheme("fabric")
 	r.InitialState(resolver.State{Addresses: addr})
 
-	opts.Dial = append(opts.Dial, grpc.WithBalancerName(roundrobin.Name))
+	opts.Dial = append(opts.Dial, grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy":"round_robin"}`))
 
 	logger.Debug(`grpc dial to orderer`, zap.Strings(`hosts`, hosts))
 

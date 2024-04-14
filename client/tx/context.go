@@ -12,11 +12,13 @@ var (
 	ErrSignerNotDefinedInContext = errors.New(`signer is not defined in context`)
 )
 
+type ContextKey string
+
 const (
-	CtxTransientKey    = `TransientMap`
-	CtxSignerKey       = `SigningIdentity`
-	CtxTxWaiterKey     = `TxWaiter`
-	CtxEndorserMSPsKey = `EndorserMSPs`
+	CtxTransientKey    ContextKey = `TransientMap`
+	CtxSignerKey       ContextKey = `SigningIdentity`
+	CtxTxWaiterKey     ContextKey = `TxWaiter`
+	CtxEndorserMSPsKey ContextKey = `EndorserMSPs`
 )
 
 func ContextWithTransientMap(ctx context.Context, transient map[string][]byte) context.Context {
