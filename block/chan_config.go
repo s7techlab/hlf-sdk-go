@@ -112,7 +112,7 @@ func ParseApplicationConfig(cfg common.Config) (map[string]*ApplicationConfig, e
 	for groupName := range applicationGroup.Groups {
 		var (
 			mspCfg   *MSP
-			ancPeers = make([]*peer.AnchorPeer, 0)
+			ancPeers []*peer.AnchorPeer
 			err      error
 		)
 

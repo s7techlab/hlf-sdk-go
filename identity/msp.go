@@ -56,9 +56,8 @@ type (
 
 		userPaths []string
 
-		skipConfig        bool
-		validateCertChain bool
-		logger            *zap.Logger
+		skipConfig bool
+		logger     *zap.Logger
 	}
 
 	MSPOpt func(opts *MSPOpts)
@@ -182,9 +181,9 @@ func MSPFromPath(mspID, mspPath string, opts ...MSPOpt) (*MSP, error) {
 		}
 	}
 
-	if mspOpts.validateCertChain {
-		// todo: validate
-	}
+	// todo: validate
+	//if mspOpts.validateCertChain {
+	//}
 
 	return mspInstance, nil
 }

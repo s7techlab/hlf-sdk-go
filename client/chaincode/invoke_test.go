@@ -160,8 +160,8 @@ package chaincode_test
 //	return p.deliver, nil
 //}
 //
-//// Uri returns url used for grpc connection
-//func (p *mockPeer) Uri() string {
+//// URI returns url used for grpc connection
+//func (p *mockPeer) URI() string {
 //	return "localhost:7051"
 //}
 //

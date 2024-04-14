@@ -6,21 +6,29 @@ on:
     branches:
       - main
   pull_request:
+
+permissions:
+  contents: read
+
 jobs:
   golangci:
     name: lint
     strategy:
       matrix:
-        go-version: [ 1.18.x ]
+        go: [ "1.21.x","1.22.x" ]
         os: [ ubuntu-latest ]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+          cache: false
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
           # Required: the version of golangci-lint is required and must be specified without patch version: we always use the latest patch version.
-          version: v1.52
+          version: v1.57
 
           # Optional: working directory, useful for monorepos
           # working-directory: somedir
@@ -29,7 +37,7 @@ jobs:
           args: --exclude SA1019  --timeout=10m
 
           # Optional: show only new issues if it's a pull request. The default value is `false`.
-          only-new-issues: true
+          only-new-issues: false
 
           # Optional: if set to true then the action will use pre-installed Go
           # skip-go-installation: true

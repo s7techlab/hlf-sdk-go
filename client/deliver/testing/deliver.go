@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -75,7 +74,7 @@ func NewDeliverClient(rootPath string, closeWhenAllRead bool) (peer.DeliverClien
 				return err
 			}
 
-			block, err := ioutil.ReadFile(path)
+			block, err := os.ReadFile(path)
 			if err != nil {
 				return err
 			}

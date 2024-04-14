@@ -1,14 +1,14 @@
 package config
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
 
 func NewYamlConfig(configPath string) (*Config, error) {
-	if configBytes, err := ioutil.ReadFile(configPath); err != nil {
+	if configBytes, err := os.ReadFile(configPath); err != nil {
 		return nil, errors.Wrap(err, `failed to read config file`)
 	} else {
 		var c Config
