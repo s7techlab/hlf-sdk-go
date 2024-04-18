@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"github.com/hyperledger/fabric-protos-go/peer"
-
-	"github.com/s7techlab/hlf-sdk-go/service/ccpackage"
 )
 
 type (
@@ -27,29 +25,29 @@ type (
 	}
 )
 
-func LifecycleVersionMatch(version LifecycleVersion, fabricVersion ccpackage.FabricVersion) bool {
-	switch version {
-	case LifecycleVersion_LIFECYCLE_V1:
-		switch fabricVersion {
-		case ccpackage.FabricVersion_FABRIC_V2_LIFECYCLE:
-			return false
-		case ccpackage.FabricVersion_FABRIC_V1:
-			fallthrough
-		case ccpackage.FabricVersion_FABRIC_V2:
-			return true
-		}
-
-	case LifecycleVersion_LIFECYCLE_V2:
-		switch fabricVersion {
-
-		case ccpackage.FabricVersion_FABRIC_V2_LIFECYCLE:
-			return true
-		case ccpackage.FabricVersion_FABRIC_V1:
-			fallthrough
-		case ccpackage.FabricVersion_FABRIC_V2:
-			return false
-		}
-	}
-
-	return false
-}
+//func LifecycleVersionMatch(version LifecycleVersion, fabricVersion ccpackage.FabricVersion) bool {
+//	switch version {
+//	case LifecycleVersion_LIFECYCLE_V1:
+//		switch fabricVersion {
+//		case ccpackage.FabricVersion_FABRIC_V2_LIFECYCLE:
+//			return false
+//		case ccpackage.FabricVersion_FABRIC_V1:
+//			fallthrough
+//		case ccpackage.FabricVersion_FABRIC_V2:
+//			return true
+//		}
+//
+//	case LifecycleVersion_LIFECYCLE_V2:
+//		switch fabricVersion {
+//
+//		case ccpackage.FabricVersion_FABRIC_V2_LIFECYCLE:
+//			return true
+//		case ccpackage.FabricVersion_FABRIC_V1:
+//			fallthrough
+//		case ccpackage.FabricVersion_FABRIC_V2:
+//			return false
+//		}
+//	}
+//
+//	return false
+//}

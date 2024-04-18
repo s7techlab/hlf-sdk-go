@@ -24,7 +24,7 @@ type (
 	LifecycleChaincodeInfoClient struct {
 		admin         msp.SigningIdentity // todo: is required here ?
 		signer        msp.SigningIdentity
-		invoker       api.Invoker
+		querier       api.Querier
 		fabricVersion hlfsdkgo.FabricVersion
 		logger        *zap.Logger
 	}

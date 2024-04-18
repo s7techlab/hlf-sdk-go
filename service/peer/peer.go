@@ -194,37 +194,7 @@ var (
 //}
 //
 //func (p *PeerService) GetInstalledChaincodes(ctx context.Context, _ *empty.Empty) (*Chaincodes, error) {
-//	p.logger.Debug(`get installed chaincodes`)
-//
-//	ctxRead, ctxReadCancel := context.WithTimeout(ctx, p.timeouts.ReadRequest)
-//	defer ctxReadCancel()
-//
-//	ccClientLSCC, err := p.ccClient(ctx, chaincode.FabricVersion_FABRIC_V1)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	chaincodes, err := ccClientLSCC.GetInstalledChaincodes(ctxRead)
-//	if err != nil {
-//		return nil, fmt.Errorf(`get lscc installed chaincodes: %w`, err)
-//	}
-//
-//	if p.fabricVersion == hlfconfig.FabricV2 {
-//
-//		ccClientLifecycle, err := p.ccClient(ctx, chaincode.FabricVersion_FABRIC_V2_LIFECYCLE)
-//		if err != nil {
-//			return nil, err
-//		}
-//
-//		lifecycleChaincodes, err := ccClientLifecycle.GetInstalledChaincodes(ctxRead)
-//		if err != nil {
-//			return nil, fmt.Errorf(`get lifecycle installed chaincodes: %w`, err)
-//		}
-//
-//		chaincodes.Chaincodes = append(chaincodes.Chaincodes, lifecycleChaincodes.Chaincodes...)
-//	}
-//
-//	return chaincodes, nil
+
 //}
 //
 //func (p *PeerService) GetInstalledChaincode(ctx context.Context, packageID *chaincode.PackageID) (*Chaincode, error) {

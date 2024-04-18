@@ -2,11 +2,14 @@ package peer
 
 import (
 	"context"
+	"fmt"
 
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	hlf_sdk_go "github.com/s7techlab/hlf-sdk-go"
 	"github.com/s7techlab/hlf-sdk-go/api/config"
+	"github.com/s7techlab/hlf-sdk-go/client"
 	"github.com/s7techlab/hlf-sdk-go/identity"
 	"github.com/s7techlab/hlf-sdk-go/service"
 	"github.com/s7techlab/hlf-sdk-go/service/ccpackage"
@@ -73,9 +76,8 @@ func (p *InfoService) ServiceDef() *service.Def {
 		RegisterPeerInfoServiceHandlerFromEndpoint)
 }
 
-func (p *InfoService) ccClient(ctx context.Context, fabricVersion hlf_sdk_go.FabricVersion) (ChaincodeInfoClient, error) {
-
-	client, err := p.Client(ctx)
+func (p *InfoService) chaincodeInfoClient(ctx context.Context, fabricVersion hlf_sdk_go.FabricVersion) (ChaincodeInfoClient, error) {
+	peer, err := client.NewPeer(ctx, p.connection, p.msp.Signer(), p.logger)
 	if err != nil {
 		return nil, err
 	}
@@ -84,19 +86,17 @@ func (p *InfoService) ccClient(ctx context.Context, fabricVersion hlf_sdk_go.Fab
 	signer := p.msp.Signer()
 
 	switch fabricVersion {
-	case  ccpackage.FabricVersion_FABRIC_V2_LIFECYCLE
-		return &LifecycleClient{
-			invoker:       client,
+	case hlf_sdk_go.FabricV2:
+		return &LifecycleChaincodeInfoClient{
+			querier:       peer,
 			admin:         admin,
 			signer:        signer,
 			fabricVersion: fabricVersion,
 			logger:        p.logger,
 		}, nil
-	case chaincode.FabricVersion_FABRIC_V1:
-		fallthrough
-	case chaincode.FabricVersion_FABRIC_V2:
-		return &LSCCClient{
-			invoker:       client,
+	case hlf_sdk_go.FabricV1:
+		return &LSCCChaincodeInfoClient{
+			querier:       peer,
 			admin:         admin,
 			signer:        signer,
 			fabricVersion: fabricVersion,
@@ -104,5 +104,62 @@ func (p *InfoService) ccClient(ctx context.Context, fabricVersion hlf_sdk_go.Fab
 		}, nil
 	}
 
-	return nil, errors.New(`unknown fabric version`)
+	return nil, hlf_sdk_go.ErrUnknownFabricVersion
+}
+
+func (p *InfoService) GetInstalledChaincodes(ctx context.Context, _ *emptypb.Empty) (*Chaincodes, error) {
+	p.logger.Debug(`get installed chaincodes`)
+
+	ctxRead, ctxReadCancel := context.WithTimeout(ctx, p.timeouts.ReadRequest)
+	defer ctxReadCancel()
+
+	ccClientLSCC, err := p.chaincodeInfoClient(ctx, hlf_sdk_go.FabricV1)
+	if err != nil {
+		return nil, err
+	}
+
+	chaincodes, err := ccClientLSCC.GetInstalledChaincodes(ctxRead)
+	if err != nil {
+		return nil, fmt.Errorf(`get lscc installed chaincodes: %w`, err)
+	}
+
+	if p.fabricVersion == hlf_sdk_go.FabricV2 {
+		ccClientLifecycle, err := p.chaincodeInfoClient(ctx, hlf_sdk_go.FabricV2)
+		if err != nil {
+			return nil, err
+		}
+
+		lifecycleChaincodes, err := ccClientLifecycle.GetInstalledChaincodes(ctxRead)
+		if err != nil {
+			return nil, fmt.Errorf(`get lifecycle installed chaincodes: %w`, err)
+		}
+		chaincodes.Chaincodes = append(chaincodes.Chaincodes, lifecycleChaincodes.Chaincodes...)
+	}
+
+	return chaincodes, nil
+}
+
+func (p *InfoService) GetInstalledChaincode(ctx context.Context, id *ccpackage.PackageID) (*Chaincode, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *InfoService) ListChannels(ctx context.Context, empty *emptypb.Empty) (*Channels, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *InfoService) GetChannel(ctx context.Context, request *GetChannelRequest) (*GetChannelResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *InfoService) GetInstantiatedChaincodes(ctx context.Context, request *GetInstantiatedChaincodesRequest) (*Chaincodes, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *InfoService) GetPeerInfo(ctx context.Context, empty *emptypb.Empty) (*GetPeerInfoResponse, error) {
+	//TODO implement me
+	panic("implement me")
 }

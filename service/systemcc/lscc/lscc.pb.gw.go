@@ -35,7 +35,7 @@ var _ = utilities.NewDoubleArray
 var _ = descriptor.ForMessage
 var _ = metadata.Join
 
-func request_LSCCService_GetChaincodeData_0(ctx context.Context, marshaler runtime.Marshaler, client LSCCServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_LSCCQueryService_GetChaincodeData_0(ctx context.Context, marshaler runtime.Marshaler, client LSCCQueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetChaincodeDataRequest
 	var metadata runtime.ServerMetadata
 
@@ -73,7 +73,7 @@ func request_LSCCService_GetChaincodeData_0(ctx context.Context, marshaler runti
 
 }
 
-func local_request_LSCCService_GetChaincodeData_0(ctx context.Context, marshaler runtime.Marshaler, server LSCCServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_LSCCQueryService_GetChaincodeData_0(ctx context.Context, marshaler runtime.Marshaler, server LSCCQueryServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetChaincodeDataRequest
 	var metadata runtime.ServerMetadata
 
@@ -111,7 +111,7 @@ func local_request_LSCCService_GetChaincodeData_0(ctx context.Context, marshaler
 
 }
 
-func request_LSCCService_GetInstalledChaincodes_0(ctx context.Context, marshaler runtime.Marshaler, client LSCCServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_LSCCQueryService_GetInstalledChaincodes_0(ctx context.Context, marshaler runtime.Marshaler, client LSCCQueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq emptypb.Empty
 	var metadata runtime.ServerMetadata
 
@@ -120,7 +120,7 @@ func request_LSCCService_GetInstalledChaincodes_0(ctx context.Context, marshaler
 
 }
 
-func local_request_LSCCService_GetInstalledChaincodes_0(ctx context.Context, marshaler runtime.Marshaler, server LSCCServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_LSCCQueryService_GetInstalledChaincodes_0(ctx context.Context, marshaler runtime.Marshaler, server LSCCQueryServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq emptypb.Empty
 	var metadata runtime.ServerMetadata
 
@@ -129,7 +129,7 @@ func local_request_LSCCService_GetInstalledChaincodes_0(ctx context.Context, mar
 
 }
 
-func request_LSCCService_GetChaincodes_0(ctx context.Context, marshaler runtime.Marshaler, client LSCCServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_LSCCQueryService_GetChaincodes_0(ctx context.Context, marshaler runtime.Marshaler, client LSCCQueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetChaincodesRequest
 	var metadata runtime.ServerMetadata
 
@@ -156,7 +156,7 @@ func request_LSCCService_GetChaincodes_0(ctx context.Context, marshaler runtime.
 
 }
 
-func local_request_LSCCService_GetChaincodes_0(ctx context.Context, marshaler runtime.Marshaler, server LSCCServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_LSCCQueryService_GetChaincodes_0(ctx context.Context, marshaler runtime.Marshaler, server LSCCQueryServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetChaincodesRequest
 	var metadata runtime.ServerMetadata
 
@@ -183,7 +183,7 @@ func local_request_LSCCService_GetChaincodes_0(ctx context.Context, marshaler ru
 
 }
 
-func request_LSCCService_GetDeploymentSpec_0(ctx context.Context, marshaler runtime.Marshaler, client LSCCServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_LSCCQueryService_GetDeploymentSpec_0(ctx context.Context, marshaler runtime.Marshaler, client LSCCQueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetDeploymentSpecRequest
 	var metadata runtime.ServerMetadata
 
@@ -221,7 +221,7 @@ func request_LSCCService_GetDeploymentSpec_0(ctx context.Context, marshaler runt
 
 }
 
-func local_request_LSCCService_GetDeploymentSpec_0(ctx context.Context, marshaler runtime.Marshaler, server LSCCServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_LSCCQueryService_GetDeploymentSpec_0(ctx context.Context, marshaler runtime.Marshaler, server LSCCQueryServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetDeploymentSpecRequest
 	var metadata runtime.ServerMetadata
 
@@ -259,7 +259,7 @@ func local_request_LSCCService_GetDeploymentSpec_0(ctx context.Context, marshale
 
 }
 
-func request_LSCCService_Install_0(ctx context.Context, marshaler runtime.Marshaler, client LSCCServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_LSCCQueryService_Install_0(ctx context.Context, marshaler runtime.Marshaler, client LSCCQueryServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq peer.ChaincodeDeploymentSpec
 	var metadata runtime.ServerMetadata
 
@@ -276,7 +276,7 @@ func request_LSCCService_Install_0(ctx context.Context, marshaler runtime.Marsha
 
 }
 
-func local_request_LSCCService_Install_0(ctx context.Context, marshaler runtime.Marshaler, server LSCCServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_LSCCQueryService_Install_0(ctx context.Context, marshaler runtime.Marshaler, server LSCCQueryServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq peer.ChaincodeDeploymentSpec
 	var metadata runtime.ServerMetadata
 
@@ -293,7 +293,7 @@ func local_request_LSCCService_Install_0(ctx context.Context, marshaler runtime.
 
 }
 
-func request_LSCCService_Deploy_0(ctx context.Context, marshaler runtime.Marshaler, client LSCCServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_LSCCInvokeService_Deploy_0(ctx context.Context, marshaler runtime.Marshaler, client LSCCInvokeServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq DeployRequest
 	var metadata runtime.ServerMetadata
 
@@ -328,7 +328,7 @@ func request_LSCCService_Deploy_0(ctx context.Context, marshaler runtime.Marshal
 
 }
 
-func local_request_LSCCService_Deploy_0(ctx context.Context, marshaler runtime.Marshaler, server LSCCServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_LSCCInvokeService_Deploy_0(ctx context.Context, marshaler runtime.Marshaler, server LSCCInvokeServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq DeployRequest
 	var metadata runtime.ServerMetadata
 
@@ -363,13 +363,13 @@ func local_request_LSCCService_Deploy_0(ctx context.Context, marshaler runtime.M
 
 }
 
-// RegisterLSCCServiceHandlerServer registers the http handlers for service LSCCService to "mux".
-// UnaryRPC     :call LSCCServiceServer directly.
+// RegisterLSCCQueryServiceHandlerServer registers the http handlers for service LSCCQueryService to "mux".
+// UnaryRPC     :call LSCCQueryServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
-// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterLSCCServiceHandlerFromEndpoint instead.
-func RegisterLSCCServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server LSCCServiceServer) error {
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterLSCCQueryServiceHandlerFromEndpoint instead.
+func RegisterLSCCQueryServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server LSCCQueryServiceServer) error {
 
-	mux.Handle("GET", pattern_LSCCService_GetChaincodeData_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_LSCCQueryService_GetChaincodeData_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -380,7 +380,7 @@ func RegisterLSCCServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_LSCCService_GetChaincodeData_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_LSCCQueryService_GetChaincodeData_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -388,11 +388,11 @@ func RegisterLSCCServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			return
 		}
 
-		forward_LSCCService_GetChaincodeData_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_LSCCQueryService_GetChaincodeData_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_LSCCService_GetInstalledChaincodes_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_LSCCQueryService_GetInstalledChaincodes_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -403,7 +403,7 @@ func RegisterLSCCServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_LSCCService_GetInstalledChaincodes_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_LSCCQueryService_GetInstalledChaincodes_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -411,11 +411,11 @@ func RegisterLSCCServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			return
 		}
 
-		forward_LSCCService_GetInstalledChaincodes_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_LSCCQueryService_GetInstalledChaincodes_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_LSCCService_GetChaincodes_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_LSCCQueryService_GetChaincodes_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -426,7 +426,7 @@ func RegisterLSCCServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_LSCCService_GetChaincodes_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_LSCCQueryService_GetChaincodes_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -434,11 +434,11 @@ func RegisterLSCCServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			return
 		}
 
-		forward_LSCCService_GetChaincodes_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_LSCCQueryService_GetChaincodes_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_LSCCService_GetDeploymentSpec_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_LSCCQueryService_GetDeploymentSpec_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -449,7 +449,7 @@ func RegisterLSCCServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_LSCCService_GetDeploymentSpec_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_LSCCQueryService_GetDeploymentSpec_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -457,11 +457,11 @@ func RegisterLSCCServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			return
 		}
 
-		forward_LSCCService_GetDeploymentSpec_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_LSCCQueryService_GetDeploymentSpec_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_LSCCService_Install_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_LSCCQueryService_Install_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -472,7 +472,7 @@ func RegisterLSCCServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_LSCCService_Install_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_LSCCQueryService_Install_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -480,39 +480,48 @@ func RegisterLSCCServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			return
 		}
 
-		forward_LSCCService_Install_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("POST", pattern_LSCCService_Deploy_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		var stream runtime.ServerTransportStream
-		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := local_request_LSCCService_Deploy_0(rctx, inboundMarshaler, server, req, pathParams)
-		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_LSCCService_Deploy_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_LSCCQueryService_Install_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	return nil
 }
 
-// RegisterLSCCServiceHandlerFromEndpoint is same as RegisterLSCCServiceHandler but
+// RegisterLSCCInvokeServiceHandlerServer registers the http handlers for service LSCCInvokeService to "mux".
+// UnaryRPC     :call LSCCInvokeServiceServer directly.
+// StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterLSCCInvokeServiceHandlerFromEndpoint instead.
+func RegisterLSCCInvokeServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server LSCCInvokeServiceServer) error {
+
+	mux.Handle("POST", pattern_LSCCInvokeService_Deploy_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_LSCCInvokeService_Deploy_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_LSCCInvokeService_Deploy_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	return nil
+}
+
+// RegisterLSCCQueryServiceHandlerFromEndpoint is same as RegisterLSCCQueryServiceHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
-func RegisterLSCCServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
+func RegisterLSCCQueryServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
 	conn, err := grpc.Dial(endpoint, opts...)
 	if err != nil {
 		return err
@@ -532,23 +541,23 @@ func RegisterLSCCServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.Se
 		}()
 	}()
 
-	return RegisterLSCCServiceHandler(ctx, mux, conn)
+	return RegisterLSCCQueryServiceHandler(ctx, mux, conn)
 }
 
-// RegisterLSCCServiceHandler registers the http handlers for service LSCCService to "mux".
+// RegisterLSCCQueryServiceHandler registers the http handlers for service LSCCQueryService to "mux".
 // The handlers forward requests to the grpc endpoint over "conn".
-func RegisterLSCCServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return RegisterLSCCServiceHandlerClient(ctx, mux, NewLSCCServiceClient(conn))
+func RegisterLSCCQueryServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return RegisterLSCCQueryServiceHandlerClient(ctx, mux, NewLSCCQueryServiceClient(conn))
 }
 
-// RegisterLSCCServiceHandlerClient registers the http handlers for service LSCCService
-// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "LSCCServiceClient".
-// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "LSCCServiceClient"
+// RegisterLSCCQueryServiceHandlerClient registers the http handlers for service LSCCQueryService
+// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "LSCCQueryServiceClient".
+// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "LSCCQueryServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "LSCCServiceClient" to call the correct interceptors.
-func RegisterLSCCServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client LSCCServiceClient) error {
+// "LSCCQueryServiceClient" to call the correct interceptors.
+func RegisterLSCCQueryServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client LSCCQueryServiceClient) error {
 
-	mux.Handle("GET", pattern_LSCCService_GetChaincodeData_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_LSCCQueryService_GetChaincodeData_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -557,18 +566,18 @@ func RegisterLSCCServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_LSCCService_GetChaincodeData_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_LSCCQueryService_GetChaincodeData_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_LSCCService_GetChaincodeData_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_LSCCQueryService_GetChaincodeData_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_LSCCService_GetInstalledChaincodes_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_LSCCQueryService_GetInstalledChaincodes_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -577,18 +586,18 @@ func RegisterLSCCServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_LSCCService_GetInstalledChaincodes_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_LSCCQueryService_GetInstalledChaincodes_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_LSCCService_GetInstalledChaincodes_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_LSCCQueryService_GetInstalledChaincodes_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_LSCCService_GetChaincodes_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_LSCCQueryService_GetChaincodes_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -597,18 +606,18 @@ func RegisterLSCCServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_LSCCService_GetChaincodes_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_LSCCQueryService_GetChaincodes_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_LSCCService_GetChaincodes_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_LSCCQueryService_GetChaincodes_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_LSCCService_GetDeploymentSpec_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_LSCCQueryService_GetDeploymentSpec_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -617,18 +626,18 @@ func RegisterLSCCServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_LSCCService_GetDeploymentSpec_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_LSCCQueryService_GetDeploymentSpec_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_LSCCService_GetDeploymentSpec_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_LSCCQueryService_GetDeploymentSpec_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_LSCCService_Install_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_LSCCQueryService_Install_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -637,34 +646,14 @@ func RegisterLSCCServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_LSCCService_Install_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_LSCCQueryService_Install_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_LSCCService_Install_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("POST", pattern_LSCCService_Deploy_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_LSCCService_Deploy_0(rctx, inboundMarshaler, client, req, pathParams)
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_LSCCService_Deploy_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_LSCCQueryService_Install_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -672,29 +661,94 @@ func RegisterLSCCServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 }
 
 var (
-	pattern_LSCCService_GetChaincodeData_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"systemcc", "lscc", "chaincodes", "channel", "chaincode"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_LSCCQueryService_GetChaincodeData_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"systemcc", "lscc", "chaincodes", "channel", "chaincode"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_LSCCService_GetInstalledChaincodes_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"systemcc", "lscc", "chaincodes"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_LSCCQueryService_GetInstalledChaincodes_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"systemcc", "lscc", "chaincodes"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_LSCCService_GetChaincodes_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"systemcc", "lscc", "chaincodes", "channel"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_LSCCQueryService_GetChaincodes_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"systemcc", "lscc", "chaincodes", "channel"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_LSCCService_GetDeploymentSpec_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"systemcc", "lscc", "chaincodes", "channel", "chaincode", "deployment-spec"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_LSCCQueryService_GetDeploymentSpec_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"systemcc", "lscc", "chaincodes", "channel", "chaincode", "deployment-spec"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_LSCCService_Install_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"systemcc", "lscc", "chaincodes"}, "", runtime.AssumeColonVerbOpt(true)))
-
-	pattern_LSCCService_Deploy_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"systemcc", "lscc", "chaincodes", "channel"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_LSCCQueryService_Install_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"systemcc", "lscc", "chaincodes"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
-	forward_LSCCService_GetChaincodeData_0 = runtime.ForwardResponseMessage
+	forward_LSCCQueryService_GetChaincodeData_0 = runtime.ForwardResponseMessage
 
-	forward_LSCCService_GetInstalledChaincodes_0 = runtime.ForwardResponseMessage
+	forward_LSCCQueryService_GetInstalledChaincodes_0 = runtime.ForwardResponseMessage
 
-	forward_LSCCService_GetChaincodes_0 = runtime.ForwardResponseMessage
+	forward_LSCCQueryService_GetChaincodes_0 = runtime.ForwardResponseMessage
 
-	forward_LSCCService_GetDeploymentSpec_0 = runtime.ForwardResponseMessage
+	forward_LSCCQueryService_GetDeploymentSpec_0 = runtime.ForwardResponseMessage
 
-	forward_LSCCService_Install_0 = runtime.ForwardResponseMessage
+	forward_LSCCQueryService_Install_0 = runtime.ForwardResponseMessage
+)
 
-	forward_LSCCService_Deploy_0 = runtime.ForwardResponseMessage
+// RegisterLSCCInvokeServiceHandlerFromEndpoint is same as RegisterLSCCInvokeServiceHandler but
+// automatically dials to "endpoint" and closes the connection when "ctx" gets done.
+func RegisterLSCCInvokeServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
+	conn, err := grpc.Dial(endpoint, opts...)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			if cerr := conn.Close(); cerr != nil {
+				grpclog.Infof("Failed to close conn to %s: %v", endpoint, cerr)
+			}
+			return
+		}
+		go func() {
+			<-ctx.Done()
+			if cerr := conn.Close(); cerr != nil {
+				grpclog.Infof("Failed to close conn to %s: %v", endpoint, cerr)
+			}
+		}()
+	}()
+
+	return RegisterLSCCInvokeServiceHandler(ctx, mux, conn)
+}
+
+// RegisterLSCCInvokeServiceHandler registers the http handlers for service LSCCInvokeService to "mux".
+// The handlers forward requests to the grpc endpoint over "conn".
+func RegisterLSCCInvokeServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return RegisterLSCCInvokeServiceHandlerClient(ctx, mux, NewLSCCInvokeServiceClient(conn))
+}
+
+// RegisterLSCCInvokeServiceHandlerClient registers the http handlers for service LSCCInvokeService
+// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "LSCCInvokeServiceClient".
+// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "LSCCInvokeServiceClient"
+// doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
+// "LSCCInvokeServiceClient" to call the correct interceptors.
+func RegisterLSCCInvokeServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client LSCCInvokeServiceClient) error {
+
+	mux.Handle("POST", pattern_LSCCInvokeService_Deploy_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_LSCCInvokeService_Deploy_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_LSCCInvokeService_Deploy_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	return nil
+}
+
+var (
+	pattern_LSCCInvokeService_Deploy_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"systemcc", "lscc", "chaincodes", "channel"}, "", runtime.AssumeColonVerbOpt(true)))
+)
+
+var (
+	forward_LSCCInvokeService_Deploy_0 = runtime.ForwardResponseMessage
 )

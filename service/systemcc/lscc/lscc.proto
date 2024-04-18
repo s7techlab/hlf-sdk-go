@@ -15,8 +15,8 @@ import "hyperledger/fabric-protos/peer/proposal_response.proto";
 import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
 
-// LSCC implements gateway to Life Cycle System Chaincode (LSCC)
-service LSCCService {
+// LSCC implements gateway to query functions of Life Cycle System Chaincode (LSCC)
+service LSCCQueryService {
 
   // GetChaincodeData returns information about instantiated chaincode on target channel
   rpc GetChaincodeData (GetChaincodeDataRequest) returns (protos.ChaincodeData) {
@@ -54,6 +54,9 @@ service LSCCService {
     };
   }
 
+}
+
+service LSCCInvokeService {
   // Deploy allows instantiating or upgrade chaincode if instantiated
   // Currently, deploy method is not canonical as lscc implementation, but currently we need to get full proposal, and it's response to broadcast to orderer
   rpc Deploy (DeployRequest) returns (protos.Response ) {
@@ -63,6 +66,7 @@ service LSCCService {
     };
   }
 }
+
 
 message GetChaincodeDataRequest {
   string channel = 1;
@@ -87,6 +91,8 @@ message DeployRequest {
   common.CollectionConfigPackage collection_config = 6;
   map<string, bytes> transient = 7;
 }
+
+
 
 //message DeployResponse {
 //  protos.SignedProposal signed_proposal = 1;

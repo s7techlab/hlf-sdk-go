@@ -23,7 +23,7 @@ type (
 	LSCCChaincodeInfoClient struct {
 		admin         msp.SigningIdentity
 		signer        msp.SigningIdentity
-		invoker       api.Invoker
+		querier       api.Querier
 		fabricVersion hlfsdkgo.FabricVersion
 		logger        *zap.Logger
 	}
@@ -42,13 +42,13 @@ func (c *LSCCChaincodeManagerClient) InstallChaincode(ctx context.Context, deplo
 	c.logger.Debug(`LSCC install chaincode as admin`,
 		zap.Int(`code package length`, len(deploymentSpec.CodePackage)))
 
-	_, err := lscc.New(c.invoker).Install(tx.ContextWithSigner(ctx, c.admin), deploymentSpec)
+	_, err := lscc.NewInvokeService(c.invoker).Install(tx.ContextWithSigner(ctx, c.admin), deploymentSpec)
 	return err
 }
 
 func (c *LSCCChaincodeInfoClient) GetInstantiatedChaincodes(ctx context.Context, channel string) (*Chaincodes, error) {
 	c.logger.Debug(`get instantiated chaincodes from lscc`, zap.String(`channel`, channel))
-	instChaincodes, err := lscc.New(c.invoker).GetChaincodes(
+	instChaincodes, err := lscc.NewQueryService(c.querier).GetChaincodes(
 		tx.ContextWithSigner(ctx, c.admin),
 		&lscc.GetChaincodesRequest{Channel: channel})
 	if err != nil {
@@ -72,14 +72,14 @@ func (c *LSCCChaincodeInfoClient) GetInstantiatedChaincodes(ctx context.Context,
 // GetInstalledChaincodes with info about channel instantiation
 func (c *LSCCChaincodeInfoClient) GetInstalledChaincodes(ctx context.Context) (*Chaincodes, error) {
 	ctxAsAdmin := tx.ContextWithSigner(ctx, c.admin)
-	lsccSvc := lscc.New(c.invoker)
+	lsccSvc := lscc.NewQueryService(c.querier)
 
 	installedChaincodes, err := lsccSvc.GetInstalledChaincodes(ctxAsAdmin, &empty.Empty{})
 	if err != nil {
 		return nil, fmt.Errorf("get installed chaincodes from LSCC: %w", err)
 	}
 
-	channelsList, err := cscc.New(c.invoker, c.fabricVersion).GetChannels(ctxAsAdmin, &empty.Empty{})
+	channelsList, err := cscc.New(c.querier, c.fabricVersion).GetChannels(ctxAsAdmin, &empty.Empty{})
 	if err != nil {
 		return nil, fmt.Errorf("get channels: %w", err)
 	}
@@ -130,7 +130,7 @@ func (c *LSCCChaincodeManagerClient) UpChaincode(ctx context.Context, chaincode 
 		zap.String(`channel`, upChaincode.Channel),
 		zap.Reflect(`chaincode`, depSpec.ChaincodeSpec))
 
-	_, err = lscc.New(c.invoker).Deploy(tx.ContextWithSigner(ctx, c.admin), &lscc.DeployRequest{
+	_, err = lscc.NewInvokeService(c.invoker).Deploy(tx.ContextWithSigner(ctx, c.admin), &lscc.DeployRequest{
 		Channel:        upChaincode.Channel,
 		DeploymentSpec: depSpec,
 		Policy:         policy,
