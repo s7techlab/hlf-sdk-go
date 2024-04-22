@@ -7,8 +7,8 @@ import (
 type EnrollProfile string
 
 const (
-	// EnrollProfileMsp asks Fabric CA for certificate used for signing
-	EnrollProfileMsp EnrollProfile = "msp"
+	// EnrollProfileDefault asks Fabric CA for certificate used for signing
+	EnrollProfileDefault EnrollProfile = "default"
 	// EnrollProfileTls asks Fabric CA for certificate used for TLS communication
 	EnrollProfileTls EnrollProfile = "tls"
 )

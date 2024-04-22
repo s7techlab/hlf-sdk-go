@@ -34,7 +34,7 @@ func (c *Client) Enroll(ctx context.Context, name, secret string, req *x509.Cert
 	}
 
 	if options.Profile == "" {
-		options.Profile = ca.EnrollProfileMsp
+		options.Profile = ca.EnrollProfileDefault
 	}
 
 	// Add default signature algorithm if not defined
