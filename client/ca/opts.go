@@ -4,15 +4,34 @@ import (
 	"net/url"
 )
 
+type EnrollProfile string
+
+const (
+	// EnrollProfileMsp asks Fabric CA for certificate used for signing
+	EnrollProfileMsp EnrollProfile = "msp"
+	// EnrollProfileTls asks Fabric CA for certificate used for TLS communication
+	EnrollProfileTls EnrollProfile = "tls"
+)
+
 type EnrollOpts struct {
 	PrivateKey interface{}
+	Profile    EnrollProfile
 }
 
 type EnrollOpt func(opts *EnrollOpts) error
 
+// WithEnrollPrivateKey allows to use previously created private key
 func WithEnrollPrivateKey(privateKey interface{}) EnrollOpt {
 	return func(opts *EnrollOpts) error {
 		opts.PrivateKey = privateKey
+		return nil
+	}
+}
+
+// WithEnrollProfile allows to require profile of enrolled certificate
+func WithEnrollProfile(profile EnrollProfile) EnrollOpt {
+	return func(opts *EnrollOpts) error {
+		opts.Profile = profile
 		return nil
 	}
 }
