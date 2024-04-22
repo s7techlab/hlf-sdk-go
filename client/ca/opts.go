@@ -8,7 +8,7 @@ type EnrollProfile string
 
 const (
 	// EnrollProfileDefault asks Fabric CA for certificate used for signing
-	EnrollProfileDefault EnrollProfile = "default"
+	EnrollProfileDefault EnrollProfile = ""
 	// EnrollProfileTls asks Fabric CA for certificate used for TLS communication
 	EnrollProfileTls EnrollProfile = "tls"
 )
