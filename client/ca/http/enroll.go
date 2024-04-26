@@ -33,6 +33,10 @@ func (c *Client) Enroll(ctx context.Context, name, secret string, req *x509.Cert
 		}
 	}
 
+	if options.Profile == "" {
+		options.Profile = ca.EnrollProfileDefault
+	}
+
 	// Add default signature algorithm if not defined
 	if req.SignatureAlgorithm == x509.UnknownSignatureAlgorithm {
 		req.SignatureAlgorithm = c.crypto.GetSignatureAlgorithm()
@@ -45,7 +49,7 @@ func (c *Client) Enroll(ctx context.Context, name, secret string, req *x509.Cert
 
 	pemCsr := pem.EncodeToMemory(&pem.Block{Type: `CERTIFICATE REQUEST`, Bytes: csr})
 
-	reqBytes, err := json.Marshal(signer.SignRequest{Request: string(pemCsr)})
+	reqBytes, err := json.Marshal(signer.SignRequest{Request: string(pemCsr), Profile: string(options.Profile)})
 	if err != nil {
 		return nil, options.PrivateKey, errors.Wrap(err, `failed to marshal CSR request to JSON`)
 	}
