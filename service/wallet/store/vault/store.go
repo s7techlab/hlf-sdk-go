@@ -10,7 +10,8 @@ import (
 
 	"github.com/hashicorp/vault/api"
 
-	"github.com/s7techlab/hlf-sdk-go/service/wallet"
+	"github.com/s7techlab/hlf-sdk-go/proto/wallet"
+	"github.com/s7techlab/hlf-sdk-go/service/wallet/store"
 )
 
 type (
@@ -66,7 +67,7 @@ func (s *Store) Get(label string) (*wallet.IdentityInWallet, error) {
 	if err != nil {
 
 		if res != nil && res.StatusCode == http.StatusNotFound {
-			return nil, fmt.Errorf(`%s: %w`, err, wallet.ErrIdentityNotFound)
+			return nil, fmt.Errorf(`%s: %w`, err, store.ErrIdentityNotFound)
 		}
 
 		return nil, fmt.Errorf("make request: %w", err)

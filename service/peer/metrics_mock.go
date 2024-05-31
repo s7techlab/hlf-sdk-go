@@ -2,12 +2,12 @@ package peer
 
 import "context"
 
-type MockMetricsClient struct{}
+type EmptyMetricsClient struct{}
 
-func NewMockMetricsClient() *MockMetricsClient {
-	return &MockMetricsClient{}
+func NewEmptyMetricsClient() *EmptyMetricsClient {
+	return &EmptyMetricsClient{}
 }
 
-func (c *MockMetricsClient) GetFabricVersion(ctx context.Context) (string, error) {
+func (c *EmptyMetricsClient) GetFabricVersion(ctx context.Context) (string, error) {
 	return "", nil
 }

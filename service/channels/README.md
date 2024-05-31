@@ -1,1 +1,1 @@
-# Channel management service
+# Channel service

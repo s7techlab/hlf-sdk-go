@@ -2,7 +2,6 @@ package lscc
 
 import (
 	"context"
-	_ "embed"
 	"fmt"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -12,20 +11,18 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
+	"github.com/s7techlab/hlf-sdk-go/proto/systemcc/lscc"
 	"github.com/s7techlab/hlf-sdk-go/service"
 )
 
-//go:embed lscc.swagger.json
-var Swagger []byte
-
 type (
 	QueryService struct {
-		UnimplementedLSCCQueryServiceServer
+		lscc.UnimplementedLSCCQueryServiceServer
 		Querier api.Querier
 	}
 
 	InvokeService struct {
-		UnimplementedLSCCInvokeServiceServer
+		lscc.UnimplementedLSCCInvokeServiceServer
 		Invoker api.Invoker
 	}
 )
@@ -43,25 +40,26 @@ func NewInvokeService(invoker api.Invoker) *InvokeService {
 }
 func (q *QueryService) ServiceDef() *service.Def {
 	return service.NewDef(
-		_LSCCQueryService_serviceDesc.ServiceName,
-		Swagger,
-		&_LSCCQueryService_serviceDesc,
+		lscc.ServiceDesc.ServiceName,
+		lscc.Swagger,
+		&lscc.ServiceDesc,
 		q,
-		RegisterLSCCQueryServiceHandlerFromEndpoint,
+		lscc.RegisterLSCCQueryServiceHandlerFromEndpoint,
 	)
 }
 
 func (i *InvokeService) ServiceDef() *service.Def {
 	return service.NewDef(
-		_LSCCInvokeService_serviceDesc.ServiceName,
-		Swagger,
-		&_LSCCInvokeService_serviceDesc,
+		lscc.ServiceDesc.ServiceName,
+		lscc.Swagger,
+		&lscc.ServiceDesc,
 		i,
-		RegisterLSCCInvokeServiceHandlerFromEndpoint,
+		lscc.RegisterLSCCQueryServiceHandlerFromEndpoint,
 	)
 }
 
-func (q *QueryService) GetChaincodeData(ctx context.Context, getChaincodeData *GetChaincodeDataRequest) (*peer.ChaincodeData, error) {
+func (q *QueryService) GetChaincodeData(ctx context.Context, getChaincodeData *lscc.GetChaincodeDataRequest) (
+	*peer.ChaincodeData, error) {
 	res, err := tx.QueryStringsProto(ctx,
 		q.Querier,
 		getChaincodeData.Channel, chaincode.LSCC,
@@ -84,7 +82,8 @@ func (q *QueryService) GetInstalledChaincodes(ctx context.Context, _ *empty.Empt
 	}
 	return res.(*peer.ChaincodeQueryResponse), nil
 }
-func (q *QueryService) GetChaincodes(ctx context.Context, getChaincodes *GetChaincodesRequest) (*peer.ChaincodeQueryResponse, error) {
+func (q *QueryService) GetChaincodes(ctx context.Context, getChaincodes *lscc.GetChaincodesRequest) (
+	*peer.ChaincodeQueryResponse, error) {
 	res, err := tx.QueryStringsProto(ctx,
 		q.Querier,
 		getChaincodes.Channel, chaincode.LSCC,
@@ -96,7 +95,8 @@ func (q *QueryService) GetChaincodes(ctx context.Context, getChaincodes *GetChai
 	return res.(*peer.ChaincodeQueryResponse), nil
 }
 
-func (q *QueryService) GetDeploymentSpec(ctx context.Context, getDeploymentSpec *GetDeploymentSpecRequest) (*peer.ChaincodeDeploymentSpec, error) {
+func (q *QueryService) GetDeploymentSpec(ctx context.Context, getDeploymentSpec *lscc.GetDeploymentSpecRequest) (
+	*peer.ChaincodeDeploymentSpec, error) {
 	res, err := tx.QueryStringsProto(ctx,
 		q.Querier,
 		getDeploymentSpec.Channel, chaincode.LSCC,
@@ -117,9 +117,9 @@ func (i *InvokeService) Install(ctx context.Context, spec *peer.ChaincodeDeploym
 	return nil, err
 }
 
-func (i *InvokeService) Deploy(ctx context.Context, deploy *DeployRequest) (response *peer.Response, err error) {
+func (i *InvokeService) Deploy(ctx context.Context, deploy *lscc.DeployRequest) (response *peer.Response, err error) {
 	// Find chaincode instantiated or not
-	ccList, err := NewQueryService(i.Invoker).GetChaincodes(ctx, &GetChaincodesRequest{Channel: deploy.Channel})
+	ccList, err := NewQueryService(i.Invoker).GetChaincodes(ctx, &lscc.GetChaincodesRequest{Channel: deploy.Channel})
 	if err != nil {
 		return nil, fmt.Errorf(`get chaincodes: %w`, err)
 	}

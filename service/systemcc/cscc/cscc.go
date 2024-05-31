@@ -14,15 +14,13 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
 	"github.com/s7techlab/hlf-sdk-go/client/channel"
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
+	"github.com/s7techlab/hlf-sdk-go/proto/systemcc/cscc"
 	"github.com/s7techlab/hlf-sdk-go/service"
 )
 
-//go:embed cscc.swagger.json
-var Swagger []byte
-
 type (
 	Service struct {
-		UnimplementedCSCCServiceServer
+		cscc.UnimplementedCSCCServiceServer
 
 		Querier           *tx.ProtoQuerier
 		ChannelListGetter api.ChannelListGetter
@@ -45,11 +43,11 @@ func New(querier api.Querier, version hlf_sdk_go.FabricVersion) *Service {
 
 func (c *Service) ServiceDef() *service.Def {
 	return service.NewDef(
-		_CSCCService_serviceDesc.ServiceName,
-		Swagger,
-		&_CSCCService_serviceDesc,
+		cscc.ServiceDesc.ServiceName,
+		cscc.Swagger,
+		&cscc.ServiceDesc,
 		c,
-		RegisterCSCCServiceHandlerFromEndpoint,
+		cscc.RegisterCSCCServiceHandlerFromEndpoint,
 	)
 }
 
@@ -57,14 +55,14 @@ func (c *Service) GetChannels(ctx context.Context, _ *empty.Empty) (*peer.Channe
 	return c.ChannelListGetter.GetChannels(ctx)
 }
 
-func (c *Service) JoinChain(ctx context.Context, request *JoinChainRequest) (*empty.Empty, error) {
+func (c *Service) JoinChain(ctx context.Context, request *cscc.JoinChainRequest) (*empty.Empty, error) {
 	if _, err := c.Querier.Query(ctx, chaincode.CSCCJoinChain, request.GenesisBlock); err != nil {
 		return nil, err
 	}
 	return &empty.Empty{}, nil
 }
 
-func (c *Service) GetConfigBlock(ctx context.Context, request *GetConfigBlockRequest) (*common.Block, error) {
+func (c *Service) GetConfigBlock(ctx context.Context, request *cscc.GetConfigBlockRequest) (*common.Block, error) {
 	res, err := c.Querier.QueryProto(ctx, []interface{}{chaincode.CSCCGetConfigBlock, request.Channel}, &common.Block{})
 	if err != nil {
 		return nil, err
@@ -72,7 +70,7 @@ func (c *Service) GetConfigBlock(ctx context.Context, request *GetConfigBlockReq
 	return res.(*common.Block), nil
 }
 
-func (c *Service) GetChannelConfig(ctx context.Context, request *GetChannelConfigRequest) (*common.Config, error) {
+func (c *Service) GetChannelConfig(ctx context.Context, request *cscc.GetChannelConfigRequest) (*common.Config, error) {
 	switch c.FabricVersion {
 
 	case hlf_sdk_go.FabricV1:

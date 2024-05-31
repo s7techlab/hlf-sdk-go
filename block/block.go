@@ -3,6 +3,7 @@ package block
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
@@ -10,9 +11,10 @@ import (
 	"github.com/hyperledger/fabric-protos-go/orderer"
 	"github.com/hyperledger/fabric/protoutil"
 
-	bft "github.com/s7techlab/hlf-sdk-go/block/smartbft"
-	bftcommon "github.com/s7techlab/hlf-sdk-go/block/smartbft/common"
 	"github.com/s7techlab/hlf-sdk-go/block/txflags"
+	"github.com/s7techlab/hlf-sdk-go/proto/block"
+	bft "github.com/s7techlab/hlf-sdk-go/proto/block/smartbft"
+	bftcommon "github.com/s7techlab/hlf-sdk-go/proto/block/smartbft/common"
 )
 
 var (
@@ -34,38 +36,39 @@ func WithConfigBlock(configBlock *common.Block) ParseBlockOpt {
 	}
 }
 
-func ParseBlock(block *common.Block, opts ...ParseBlockOpt) (*Block, error) {
+func ParseBlock(commonBlock *common.Block, opts ...ParseBlockOpt) (*block.Block, error) {
 	var parsingOpts parseBlockOpts
 	for _, opt := range opts {
 		opt(&parsingOpts)
 	}
 
 	var err error
-	parsedBlock := &Block{
-		Header:   block.Header,
-		Data:     &BlockData{},
-		Metadata: &BlockMetadata{},
+	parsedBlock := &block.Block{
+		Header:   commonBlock.Header,
+		Data:     &block.BlockData{},
+		Metadata: &block.BlockMetadata{},
 	}
 
-	txFilter := txflags.ValidationFlags(block.Metadata.Metadata[common.BlockMetadataIndex_TRANSACTIONS_FILTER])
-	if parsedBlock.Data, err = ParseBlockData(block.GetData().GetData(), txFilter); err != nil {
+	txFilter := txflags.ValidationFlags(commonBlock.Metadata.Metadata[common.BlockMetadataIndex_TRANSACTIONS_FILTER])
+	if parsedBlock.Data, err = ParseBlockData(commonBlock.GetData().GetData(), txFilter); err != nil {
 		return nil, fmt.Errorf("parse block data: %w", err)
 	}
 
 	// parse Raft orderer identity
-	raftOrdererIdentity, err := ParseOrdererIdentity(block)
+	raftOrdererIdentity, err := ParseOrdererIdentity(commonBlock)
 	if err != nil {
 		return nil, fmt.Errorf("parse orderer identity from block: %w", err)
 	}
 
 	if raftOrdererIdentity != nil && raftOrdererIdentity.IdBytes != nil {
-		parsedBlock.Metadata.OrdererSignatures = append(parsedBlock.Metadata.OrdererSignatures, &OrdererSignature{Identity: raftOrdererIdentity})
+		parsedBlock.Metadata.OrdererSignatures = append(parsedBlock.Metadata.OrdererSignatures,
+			&block.OrdererSignature{Identity: raftOrdererIdentity})
 	}
 
 	// parse BFT orderer identities, if there is at least one config block was sent
 	if parsingOpts.configBlock != nil {
-		var bftOrdererIdentities []*OrdererSignature
-		bftOrdererIdentities, err = ParseBTFOrderersIdentities(block, parsingOpts.configBlock)
+		var bftOrdererIdentities []*block.OrdererSignature
+		bftOrdererIdentities, err = ParseBTFOrderersIdentities(commonBlock, parsingOpts.configBlock)
 		if err != nil {
 			return nil, fmt.Errorf("parse bft orderers identities: %w", err)
 		}
@@ -105,8 +108,8 @@ func ParseOrdererIdentity(cb *common.Block) (*msp.SerializedIdentity, error) {
 	return serializedIdentity, nil
 }
 
-func ParseBTFOrderersIdentities(block *common.Block, configBlock *common.Block) ([]*OrdererSignature, error) {
-	if block == nil {
+func ParseBTFOrderersIdentities(commonBlock *common.Block, configBlock *common.Block) ([]*block.OrdererSignature, error) {
+	if commonBlock == nil {
 		return nil, ErrNilBlock
 	}
 
@@ -115,7 +118,7 @@ func ParseBTFOrderersIdentities(block *common.Block, configBlock *common.Block) 
 	}
 
 	bftMeta := &bftcommon.BFTMetadata{}
-	if err := proto.Unmarshal(block.Metadata.Metadata[common.BlockMetadataIndex_SIGNATURES], bftMeta); err != nil {
+	if err := proto.Unmarshal(commonBlock.Metadata.Metadata[common.BlockMetadataIndex_SIGNATURES], bftMeta); err != nil {
 		return nil, fmt.Errorf("unmarshaling bft block metadata from metadata: %w", err)
 	}
 
@@ -144,7 +147,7 @@ func ParseBTFOrderersIdentities(block *common.Block, configBlock *common.Block) 
 		return nil, fmt.Errorf("unmarshaling bft config metadata from concensus type metadata: %w", err)
 	}
 
-	var ordererSignatures []*OrdererSignature
+	var ordererSignatures []*block.OrdererSignature
 	for _, consenter := range configMetadata.Consenters {
 		var identity msp.SerializedIdentity
 		if err = proto.Unmarshal(consenter.Identity, &identity); err != nil {
@@ -154,7 +157,7 @@ func ParseBTFOrderersIdentities(block *common.Block, configBlock *common.Block) 
 		// among all channel orderers, find those that signed this block
 		for _, signature := range bftMeta.Signatures {
 			if signature.SignerId == consenter.ConsenterId {
-				ordererSignatures = append(ordererSignatures, &OrdererSignature{
+				ordererSignatures = append(ordererSignatures, &block.OrdererSignature{
 					Identity:  &identity,
 					Signature: signature.Signature,
 				})
@@ -192,4 +195,35 @@ func createConfigEnvelope(data []byte) (*common.ConfigEnvelope, error) {
 	}
 
 	return configEnvelope, nil
+}
+
+// Writes ONLY VALID writes from block
+func Writes(b *block.Block) []*Write {
+	var blockWrites []*Write
+
+	for _, e := range b.ValidEnvelopes() {
+		for _, a := range e.TxActions() {
+			for _, rwSet := range a.NsReadWriteSet() {
+				for _, write := range rwSet.GetRwset().GetWrites() {
+					blockWrite := &Write{
+						KWWrite: write,
+
+						Block:            b.GetHeader().GetNumber(),
+						Chaincode:        a.ChaincodeSpec().GetChaincodeId().GetName(),
+						ChaincodeVersion: a.ChaincodeSpec().GetChaincodeId().GetVersion(),
+						Tx:               e.ChannelHeader().GetTxId(),
+						Timestamp:        e.ChannelHeader().GetTimestamp(),
+					}
+
+					blockWrite.KeyObjectType, blockWrite.KeyAttrs = SplitCompositeKey(write.Key)
+					// Normalized key without null byte
+					blockWrite.Key = strings.Join(append([]string{blockWrite.KeyObjectType}, blockWrite.KeyAttrs...), "_")
+
+					blockWrites = append(blockWrites, blockWrite)
+				}
+			}
+		}
+	}
+
+	return blockWrites
 }

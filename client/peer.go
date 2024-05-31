@@ -197,7 +197,7 @@ func (p *peer) addConfigBlock(ctx context.Context, channel string) error {
 }
 
 func (p *peer) ParsedBlocks(ctx context.Context, channel string, identity msp.SigningIdentity, blockRange ...int64) (<-chan *block.Block, func() error, error) {
-	commonBlocks, commonCloser, err := p.Blocks(ctx, channel, identity, blockRange...)
+	blocks, closer, err := p.Blocks(ctx, channel, identity, blockRange...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -221,7 +221,7 @@ func (p *peer) ParsedBlocks(ctx context.Context, channel string, identity msp.Si
 			case <-ctx.Done():
 				return
 
-			case b, ok := <-commonBlocks:
+			case b, ok := <-blocks:
 				if !ok {
 					return
 				}
@@ -240,14 +240,7 @@ func (p *peer) ParsedBlocks(ctx context.Context, channel string, identity msp.Si
 		}
 	}()
 
-	parsedCloser := func() error {
-		if closerErr := commonCloser(); closerErr != nil {
-			return closerErr
-		}
-		return nil
-	}
-
-	return parsedBlockChan, parsedCloser, nil
+	return parsedBlockChan, closer, nil
 }
 
 func (p *peer) Events(ctx context.Context, channel string, chaincode string, identity msp.SigningIdentity, blockRange ...int64) (events chan interface {

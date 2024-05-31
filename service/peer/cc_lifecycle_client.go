@@ -17,6 +17,8 @@ import (
 	hlfsdkgo "github.com/s7techlab/hlf-sdk-go"
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
+	peerproto "github.com/s7techlab/hlf-sdk-go/proto/peer"
+	lifecycleccproto "github.com/s7techlab/hlf-sdk-go/proto/systemcc/lifecycle"
 	"github.com/s7techlab/hlf-sdk-go/service/systemcc/lifecycle"
 )
 
@@ -53,19 +55,19 @@ func (c *LifecycleChaincodeManagerClient) InstallChaincode(ctx context.Context, 
 }
 
 // GetInstalledChaincodes with info about channel instantiation
-func (c *LifecycleChaincodeInfoClient) GetInstalledChaincodes(ctx context.Context) (*Chaincodes, error) {
+func (c *LifecycleChaincodeInfoClient) GetInstalledChaincodes(ctx context.Context) (*peerproto.Chaincodes, error) {
 	installedChaincodes, err := lifecycle.New(c.invoker).QueryInstalledChaincodes(
 		tx.ContextWithSigner(ctx, c.admin), &empty.Empty{})
 	if err != nil {
 		return nil, fmt.Errorf("get installed chaincodes fro lifecycle: %w", err)
 	}
 
-	ccs := &Chaincodes{}
+	ccs := &peerproto.Chaincodes{}
 	for _, cc := range installedChaincodes.InstalledChaincodes {
 
-		info := &Chaincode{
+		info := &peerproto.Chaincode{
 			PackageId:        cc.PackageId, //cc.PackageId[len(cc.Label)+1:],
-			LifecycleVersion: LifecycleVersion_LIFECYCLE_V2,
+			LifecycleVersion: peerproto.LifecycleVersion_LIFECYCLE_V2,
 		}
 		for channelName := range cc.References {
 			info.Channels = append(info.Channels, channelName)
@@ -87,12 +89,12 @@ func (c *LifecycleChaincodeInfoClient) GetInstalledChaincodes(ctx context.Contex
 	return ccs, nil
 }
 
-func (c *LifecycleChaincodeInfoClient) GetInstantiatedChaincodes(ctx context.Context, channel string) (*Chaincodes, error) {
+func (c *LifecycleChaincodeInfoClient) GetInstantiatedChaincodes(ctx context.Context, channel string) (*peerproto.Chaincodes, error) {
 	c.logger.Debug(`query chaincode definitions from lifecycle`, zap.String(`channel`, channel))
-	lifecycleSvc := lifecycle.New(c.invoker)
+	lifecycleSvc := lifecycle.New(c.querier)
 	ccs, err := lifecycleSvc.QueryChaincodeDefinitions(
 		tx.ContextWithSigner(ctx, c.admin),
-		&lifecycle.QueryChaincodeDefinitionsRequest{
+		&lifecycleccproto.QueryChaincodeDefinitionsRequest{
 			Channel: channel,
 			Args:    &lifecycleproto.QueryChaincodeDefinitionsArgs{},
 		})
@@ -112,13 +114,13 @@ func (c *LifecycleChaincodeInfoClient) GetInstantiatedChaincodes(ctx context.Con
 		m[installedCc.Label] = installedCc.PackageId
 	}
 
-	chaincodes := &Chaincodes{}
+	chaincodes := &peerproto.Chaincodes{}
 	for _, cc := range ccs.ChaincodeDefinitions {
-		chaincodes.Chaincodes = append(chaincodes.Chaincodes, &Chaincode{
+		chaincodes.Chaincodes = append(chaincodes.Chaincodes, &peerproto.Chaincode{
 			Name:             cc.Name,
 			Version:          cc.Version,
 			PackageId:        m[cc.Name+`_`+cc.Version],
-			LifecycleVersion: LifecycleVersion_LIFECYCLE_V2,
+			LifecycleVersion: peerproto.LifecycleVersion_LIFECYCLE_V2,
 			Channels:         []string{channel},
 		})
 	}
@@ -126,7 +128,9 @@ func (c *LifecycleChaincodeInfoClient) GetInstantiatedChaincodes(ctx context.Con
 	return chaincodes, nil
 }
 
-func (c *LifecycleChaincodeManagerClient) UpChaincode(ctx context.Context, chaincode *Chaincode, upChaincode *UpChaincodeRequest) (*UpChaincodeResponse, error) {
+func (c *LifecycleChaincodeManagerClient) UpChaincode(
+	ctx context.Context, chaincode *peerproto.Chaincode, upChaincode *peerproto.UpChaincodeRequest) (
+	*peerproto.UpChaincodeResponse, error) {
 	if chaincode == nil {
 		return nil, errors.New(`installed chaincode data required`)
 	}
@@ -152,7 +156,7 @@ func (c *LifecycleChaincodeManagerClient) UpChaincode(ctx context.Context, chain
 	c.logger.Info(`query chaincode definitions`, zap.String(`channel`, upChaincode.Channel))
 	committedDefs, err := lifecycleSvc.QueryChaincodeDefinitions(
 		asAdminCtx,
-		&lifecycle.QueryChaincodeDefinitionsRequest{
+		&lifecycleccproto.QueryChaincodeDefinitionsRequest{
 			Channel: upChaincode.Channel,
 			Args:    &lifecycleproto.QueryChaincodeDefinitionsArgs{},
 		})
@@ -177,7 +181,7 @@ func (c *LifecycleChaincodeManagerClient) UpChaincode(ctx context.Context, chain
 	// Check whether chaincode definition was approved or not
 	readiness, err := lifecycleSvc.CheckCommitReadiness(
 		asAdminCtx,
-		&lifecycle.CheckCommitReadinessRequest{
+		&lifecycleccproto.CheckCommitReadinessRequest{
 			Channel: upChaincode.Channel,
 			Args: &lifecycleproto.CheckCommitReadinessArgs{
 				Sequence: ccSequence,
@@ -204,7 +208,7 @@ func (c *LifecycleChaincodeManagerClient) UpChaincode(ctx context.Context, chain
 
 		_, err = lifecycleSvc.ApproveChaincodeDefinitionForMyOrg(
 			asAdminCtx,
-			&lifecycle.ApproveChaincodeDefinitionForMyOrgRequest{
+			&lifecycleccproto.ApproveChaincodeDefinitionForMyOrgRequest{
 				Channel: upChaincode.Channel,
 				Args: &lifecycleproto.ApproveChaincodeDefinitionForMyOrgArgs{
 					Sequence: ccSequence,
@@ -226,12 +230,12 @@ func (c *LifecycleChaincodeManagerClient) UpChaincode(ctx context.Context, chain
 		approvals[curMSPId] = true
 	}
 
-	result := &UpChaincodeResponse{
-		Chaincode: &Chaincode{
+	result := &peerproto.UpChaincodeResponse{
+		Chaincode: &peerproto.Chaincode{
 			Name:             packageID.Name,
 			Version:          packageID.Version,
 			PackageId:        chaincode.PackageId,
-			LifecycleVersion: LifecycleVersion_LIFECYCLE_V2,
+			LifecycleVersion: peerproto.LifecycleVersion_LIFECYCLE_V2,
 			Channels:         make([]string, 0),
 		},
 		Approvals: approvals,
@@ -245,7 +249,7 @@ func (c *LifecycleChaincodeManagerClient) UpChaincode(ctx context.Context, chain
 
 	_, commitErr := lifecycleSvc.CommitChaincodeDefinition(
 		asSignerCtx,
-		&lifecycle.CommitChaincodeDefinitionRequest{
+		&lifecycleccproto.CommitChaincodeDefinitionRequest{
 			Channel: upChaincode.Channel,
 			Args: &lifecycleproto.CommitChaincodeDefinitionArgs{
 				Sequence: ccSequence,

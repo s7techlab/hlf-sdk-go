@@ -193,27 +193,7 @@ var (
 //	}
 //}
 //
-//func (p *PeerService) GetInstalledChaincodes(ctx context.Context, _ *empty.Empty) (*Chaincodes, error) {
 
-//}
-//
-//func (p *PeerService) GetInstalledChaincode(ctx context.Context, packageID *chaincode.PackageID) (*Chaincode, error) {
-//	ccs, err := p.GetInstalledChaincodes(ctx, &empty.Empty{})
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	for _, cc := range ccs.Chaincodes {
-//		if cc.Name == packageID.Name &&
-//			cc.Version == packageID.Version &&
-//			LifecycleVersionMatch(cc.LifecycleVersion, packageID.FabricVersion) {
-//			return cc, nil
-//		}
-//	}
-//
-//	return nil, fmt.Errorf(`chaincode name=%s, version=%s: %w`, packageID.Name, packageID.Version, ErrChaincodeNotInstalled)
-//}
-//
 //func (p *PeerService) GetInstantiatedChaincodes(ctx context.Context, getChaincodes *GetInstantiatedChaincodesRequest) (*Chaincodes, error) {
 //	if err := getChaincodes.Validate(); err != nil {
 //		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -339,37 +319,7 @@ var (
 //	}, nil
 //}
 //
-//func (p *PeerService) ListChannels(ctx context.Context, _ *empty.Empty) (*Channels, error) {
-//	client, err := p.Client(ctx)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	res, err := system.NewCSCCFromClient(client).GetChannels(ctx, &empty.Empty{})
-//	if err != nil {
-//		return nil, fmt.Errorf("get channels: %w", err)
-//	}
-//
-//	var (
-//		channels Channels
-//		info     *common.BlockchainInfo
-//	)
-//
-//	qscc := system.NewQSCC(client)
-//
-//	for _, ch := range res.GetChannels() {
-//		info, err = qscc.GetChainInfo(ctx, &system.GetChainInfoRequest{ChannelName: ch.ChannelId})
-//		if err != nil {
-//			return nil, fmt.Errorf("get channel=%s info: %w", ch.GetChannelId(), err)
-//		}
-//		channels.Channels = append(channels.Channels, &Channel{
-//			Name:   ch.GetChannelId(),
-//			Height: info.GetHeight(),
-//		})
-//	}
-//
-//	return &channels, nil
-//}
+
 //
 //func (p *PeerService) ListEndorsers(ctx context.Context, _ *empty.Empty) (*Endorsers, error) {
 //	var endorsers []string

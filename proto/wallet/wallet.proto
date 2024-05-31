@@ -1,0 +1,120 @@
+syntax = "proto3";
+
+// Wallet - identity storage
+package hlfsdkgo.proto.wallet;
+option go_package = "github.com/s7techlab/hlf-sdk-go/proto/wallet";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "validate/validate.proto";
+
+service WalletService {
+
+  // get identity
+  rpc IdentityGet (IdentityLabel) returns (IdentityInWallet) {
+    option (google.api.http) = {
+      get: "/wallet/identities/{label}"
+    };
+  }
+
+  // Get identity like text
+  rpc IdentityGetText (IdentityLabel) returns (IdentityInWalletText) {
+    option (google.api.http) = {
+      get: "/wallet/identities/{label}/text"
+    };
+  }
+
+  // set identity
+  rpc IdentitySet (Identity) returns (IdentityInWallet) {
+    option (google.api.http) = {
+      put: "/wallet/identities"
+      body: "*"
+    };
+  }
+
+  // set identity in encrypted form
+  rpc IdentitySetWithPassword (IdentityWithPassword) returns (IdentityInWallet) {
+    option (google.api.http) = {
+      put: "/wallet/identities/withpassword"
+      body: "*"
+    };
+  }
+
+  // todo: implement
+  //    rpc IdentityAuthCheck (IdentityPassword) returns (IdentityInWallet) {
+  //        option (google.api.http) = {
+  //            post: "/identity/auth-check"
+  //        };
+  //    }
+
+  // get identity from encrypted view
+  rpc IdentityGetWithPassword (IdentityPassword) returns (IdentityInWallet) {
+    option (google.api.http) = {
+      post: "/wallet/identities/withpassword"
+      body: "*"
+    };
+  }
+
+  // identity list
+  rpc IdentityList (google.protobuf.Empty) returns (IdentityLabels) {
+    option (google.api.http) = {
+      get: "/wallet/identities"
+    };
+  }
+
+  // delete identity
+  rpc IdentityDelete (IdentityLabel) returns (IdentityInWallet) {
+    option (google.api.http) = {
+      delete: "/wallet/identities/{label}"
+    };
+  }
+}
+
+message Identity {
+  string label = 1 [(validate.rules).string.min_len = 1];
+  string msp_id = 2 [(validate.rules).string.min_len = 1];
+  string role = 5;
+  bytes cert = 3;
+  bytes key = 4;
+}
+
+message IdentityWithPassword {
+  string label = 1 [(validate.rules).string.min_len = 1];
+  string msp_id = 2 [(validate.rules).string.min_len = 1];
+  string role = 6;
+  bytes cert = 3;
+  bytes key = 4;
+  string password = 5;
+}
+
+message IdentityPassword {
+  string label = 1 [(validate.rules).string.min_len = 1];
+  string password = 2 [(validate.rules).string.min_len = 1];
+}
+
+message IdentityInWallet {
+  string label = 1 [(validate.rules).string.min_len = 1];
+  string msp_id = 2 [(validate.rules).string.min_len = 1];
+  string role = 6;
+  bytes cert = 3;
+  bytes key = 4;
+  bool with_password = 5;
+}
+
+message IdentityInWalletText {
+  string label = 1 [(validate.rules).string.min_len = 1];
+  string msp_id = 2 [(validate.rules).string.min_len = 1];
+  string role = 7;
+  string cert = 3;
+  string cert_content = 4;
+  string key = 5;
+  bool with_password = 6;
+}
+
+message IdentityLabel {
+  string label = 1;
+}
+
+message IdentityLabels {
+  repeated string labels = 1;
+}

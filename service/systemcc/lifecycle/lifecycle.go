@@ -2,7 +2,6 @@ package lifecycle
 
 import (
 	"context"
-	_ "embed"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	lifecycleproto "github.com/hyperledger/fabric-protos-go/peer/lifecycle"
@@ -11,15 +10,13 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
+	"github.com/s7techlab/hlf-sdk-go/proto/systemcc/lifecycle"
 	"github.com/s7techlab/hlf-sdk-go/service"
 )
 
-//go:embed lifecycle.swagger.json
-var Swagger []byte
-
 type (
 	Service struct {
-		UnimplementedLifecycleServiceServer
+		lifecycle.UnimplementedLifecycleServiceServer
 
 		Invoker api.Invoker
 	}
@@ -33,11 +30,11 @@ func New(invoker api.Invoker) *Service {
 
 func (l *Service) ServiceDef() *service.Def {
 	return service.NewDef(
-		_LifecycleService_serviceDesc.ServiceName,
-		Swagger,
-		&_LifecycleService_serviceDesc,
+		lifecycle.ServiceDesc.ServiceName,
+		lifecycle.Swagger,
+		&lifecycle.ServiceDesc,
 		l,
-		RegisterLifecycleServiceHandlerFromEndpoint,
+		lifecycle.RegisterLifecycleServiceHandlerFromEndpoint,
 	)
 }
 
@@ -78,7 +75,7 @@ func (l *Service) InstallChaincode(ctx context.Context, args *lifecycleproto.Ins
 }
 
 func (l *Service) ApproveChaincodeDefinitionForMyOrg(ctx context.Context,
-	approveChaincodeDefinitionForMyOrg *ApproveChaincodeDefinitionForMyOrgRequest) (*empty.Empty, error) {
+	approveChaincodeDefinitionForMyOrg *lifecycle.ApproveChaincodeDefinitionForMyOrgRequest) (*empty.Empty, error) {
 
 	// approve method should be endorsed only on local msp peer
 	ctxWithEndorserSpecified := tx.ContextWithEndorserMSPs(ctx,
@@ -104,7 +101,9 @@ func (l *Service) ApproveChaincodeDefinitionForMyOrg(ctx context.Context,
 	return nil, err
 }
 
-func (l *Service) QueryApprovedChaincodeDefinition(ctx context.Context, queryApprovedChaincodeDefinition *QueryApprovedChaincodeDefinitionRequest) (*lifecycleproto.QueryApprovedChaincodeDefinitionResult, error) {
+func (l *Service) QueryApprovedChaincodeDefinition(
+	ctx context.Context, queryApprovedChaincodeDefinition *lifecycle.QueryApprovedChaincodeDefinitionRequest) (
+	*lifecycleproto.QueryApprovedChaincodeDefinitionResult, error) {
 	res, err := tx.QueryProto(ctx,
 		l.Invoker,
 		queryApprovedChaincodeDefinition.Channel, chaincode.Lifecycle,
@@ -116,7 +115,7 @@ func (l *Service) QueryApprovedChaincodeDefinition(ctx context.Context, queryApp
 	return res.(*lifecycleproto.QueryApprovedChaincodeDefinitionResult), nil
 }
 
-func (l *Service) CheckCommitReadiness(ctx context.Context, checkCommitReadiness *CheckCommitReadinessRequest) (
+func (l *Service) CheckCommitReadiness(ctx context.Context, checkCommitReadiness *lifecycle.CheckCommitReadinessRequest) (
 	*lifecycleproto.CheckCommitReadinessResult, error) {
 	res, err := tx.QueryProto(ctx,
 		l.Invoker,
@@ -129,7 +128,9 @@ func (l *Service) CheckCommitReadiness(ctx context.Context, checkCommitReadiness
 	return res.(*lifecycleproto.CheckCommitReadinessResult), nil
 }
 
-func (l *Service) CommitChaincodeDefinition(ctx context.Context, commitChaincodeDefinition *CommitChaincodeDefinitionRequest) (*lifecycleproto.CommitChaincodeDefinitionResult, error) {
+func (l *Service) CommitChaincodeDefinition(
+	ctx context.Context, commitChaincodeDefinition *lifecycle.CommitChaincodeDefinitionRequest) (
+	*lifecycleproto.CommitChaincodeDefinitionResult, error) {
 	res, err := tx.InvokeProto(ctx,
 		l.Invoker,
 		commitChaincodeDefinition.Channel, chaincode.Lifecycle,
@@ -141,7 +142,9 @@ func (l *Service) CommitChaincodeDefinition(ctx context.Context, commitChaincode
 	return res.(*lifecycleproto.CommitChaincodeDefinitionResult), nil
 }
 
-func (l *Service) QueryChaincodeDefinition(ctx context.Context, queryChaincodeDefinition *QueryChaincodeDefinitionRequest) (*lifecycleproto.QueryChaincodeDefinitionResult, error) {
+func (l *Service) QueryChaincodeDefinition(
+	ctx context.Context, queryChaincodeDefinition *lifecycle.QueryApprovedChaincodeDefinitionRequest) (
+	*lifecycleproto.QueryChaincodeDefinitionResult, error) {
 	res, err := tx.QueryProto(ctx,
 		l.Invoker,
 		queryChaincodeDefinition.Channel, chaincode.Lifecycle,
@@ -153,7 +156,9 @@ func (l *Service) QueryChaincodeDefinition(ctx context.Context, queryChaincodeDe
 	return res.(*lifecycleproto.QueryChaincodeDefinitionResult), nil
 }
 
-func (l *Service) QueryChaincodeDefinitions(ctx context.Context, queryChaincodeDefinitions *QueryChaincodeDefinitionsRequest) (*lifecycleproto.QueryChaincodeDefinitionsResult, error) {
+func (l *Service) QueryChaincodeDefinitions(
+	ctx context.Context, queryChaincodeDefinitions *lifecycle.QueryChaincodeDefinitionsRequest) (
+	*lifecycleproto.QueryChaincodeDefinitionsResult, error) {
 	res, err := tx.QueryProto(ctx,
 		l.Invoker,
 		queryChaincodeDefinitions.Channel, chaincode.Lifecycle,

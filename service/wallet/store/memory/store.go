@@ -1,22 +1,23 @@
 package memory
 
 import (
+	"github.com/s7techlab/hlf-sdk-go/proto/wallet"
 	wallet2 "github.com/s7techlab/hlf-sdk-go/service/wallet"
 )
 
 type (
 	MemoryStore struct {
-		identities map[string]*wallet2.IdentityInWallet
+		identities map[string]*wallet.IdentityInWallet
 	}
 )
 
 func New() *MemoryStore {
 	return &MemoryStore{
-		identities: make(map[string]*wallet2.IdentityInWallet),
+		identities: make(map[string]*wallet.IdentityInWallet),
 	}
 }
 
-func (ms *MemoryStore) Get(label string) (*wallet2.IdentityInWallet, error) {
+func (ms *MemoryStore) Get(label string) (*wallet.IdentityInWallet, error) {
 	id, exists := ms.identities[label]
 	if !exists {
 		return nil, wallet2.ErrIdentityNotFound
@@ -25,7 +26,7 @@ func (ms *MemoryStore) Get(label string) (*wallet2.IdentityInWallet, error) {
 	return id, nil
 }
 
-func (ms *MemoryStore) Set(identity *wallet2.IdentityInWallet) error {
+func (ms *MemoryStore) Set(identity *wallet.IdentityInWallet) error {
 	ms.identities[identity.Label] = identity
 	return nil
 }

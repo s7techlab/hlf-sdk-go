@@ -8,30 +8,12 @@ import (
 	"github.com/hyperledger/fabric-protos-go/ledger/rwset/kvrwset"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/protoutil"
+
+	"github.com/s7techlab/hlf-sdk-go/proto/block"
 )
 
-func (x *TransactionAction) Event() *peer.ChaincodeEvent {
-	return x.GetPayload().GetAction().GetProposalResponsePayload().GetExtension().GetEvents()
-}
-
-func (x *TransactionAction) NsReadWriteSet() []*NsReadWriteSet {
-	return x.GetPayload().GetAction().GetProposalResponsePayload().GetExtension().GetResults().GetNsRwset()
-}
-
-func (x *TransactionAction) ChaincodeSpec() *peer.ChaincodeSpec {
-	return x.GetPayload().GetChaincodeProposalPayload().GetInput().GetChaincodeSpec()
-}
-
-func (x *TransactionAction) Endorsements() []*Endorsement {
-	return x.GetPayload().GetAction().GetEndorsement()
-}
-
-func (x *TransactionAction) Response() *peer.Response {
-	return x.GetPayload().GetAction().GetProposalResponsePayload().GetExtension().GetResponse()
-}
-
-func ParseTxActions(txActions []*peer.TransactionAction) ([]*TransactionAction, error) {
-	var parsedTxActions []*TransactionAction
+func ParseTxActions(txActions []*peer.TransactionAction) ([]*block.TransactionAction, error) {
+	var parsedTxActions []*block.TransactionAction
 
 	for _, action := range txActions {
 		txAction, err := ParseTxAction(action)
@@ -44,7 +26,7 @@ func ParseTxActions(txActions []*peer.TransactionAction) ([]*TransactionAction, 
 	return parsedTxActions, nil
 }
 
-func ParseTxAction(txAction *peer.TransactionAction) (*TransactionAction, error) {
+func ParseTxAction(txAction *peer.TransactionAction) (*block.TransactionAction, error) {
 	sigHeader, err := protoutil.UnmarshalSignatureHeader(txAction.Header)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal signature header: %w", err)
@@ -82,19 +64,19 @@ func ParseTxAction(txAction *peer.TransactionAction) (*TransactionAction, error)
 		chaincodeProposalPayload.Input.ChaincodeSpec.ChaincodeId.Version = ccEndorserAction.ProposalResponsePayload.Extension.ChaincodeId.Version
 	}
 
-	return &TransactionAction{
-		Header: &SignatureHeader{
+	return &block.TransactionAction{
+		Header: &block.SignatureHeader{
 			Creator: creator,
 			Nonce:   sigHeader.Nonce,
 		},
-		Payload: &ChaincodeActionPayload{
+		Payload: &block.ChaincodeActionPayload{
 			ChaincodeProposalPayload: chaincodeProposalPayload,
 			Action:                   ccEndorserAction,
 		},
 	}, nil
 }
 
-func ParseChaincodeProposalPayload(actionPayload *peer.ChaincodeActionPayload) (*ChaincodeProposalPayload, error) {
+func ParseChaincodeProposalPayload(actionPayload *peer.ChaincodeActionPayload) (*block.ChaincodeProposalPayload, error) {
 	chaincodeProposalPayload, err := protoutil.UnmarshalChaincodeProposalPayload(actionPayload.ChaincodeProposalPayload)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal chaincode proposal from action payload: %w", err)
@@ -105,13 +87,13 @@ func ParseChaincodeProposalPayload(actionPayload *peer.ChaincodeActionPayload) (
 		return nil, fmt.Errorf("unmarshal chaincode invocation spec from action payload: %w", err)
 	}
 
-	return &ChaincodeProposalPayload{
+	return &block.ChaincodeProposalPayload{
 		Input:        input,
 		TransientMap: chaincodeProposalPayload.TransientMap,
 	}, nil
 }
 
-func ParseChaincodeEndorsedAction(actionPayload *peer.ChaincodeActionPayload) (*ChaincodeEndorsedAction, error) {
+func ParseChaincodeEndorsedAction(actionPayload *peer.ChaincodeActionPayload) (*block.ChaincodeEndorsedAction, error) {
 	proposalResponsePayload, err := protoutil.UnmarshalProposalResponsePayload(actionPayload.Action.ProposalResponsePayload)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal chaincode proposal response proposal: %w", err)
@@ -132,23 +114,23 @@ func ParseChaincodeEndorsedAction(actionPayload *peer.ChaincodeActionPayload) (*
 		return nil, fmt.Errorf("unmarshal cc event from chaincode action: %w", err)
 	}
 
-	var endorsements []*Endorsement
+	var endorsements []*block.Endorsement
 	for _, endorsement := range actionPayload.Action.Endorsements {
 		endorser, err := protoutil.UnmarshalSerializedIdentity(endorsement.Endorser)
 		if err != nil {
 			return nil, fmt.Errorf("unmarshal transaction endorser: %w", err)
 		}
 
-		endorsements = append(endorsements, &Endorsement{
+		endorsements = append(endorsements, &block.Endorsement{
 			Endorser:  endorser,
 			Signature: endorsement.Signature,
 		})
 	}
 
-	return &ChaincodeEndorsedAction{
-		ProposalResponsePayload: &ProposalResponsePayload{
+	return &block.ChaincodeEndorsedAction{
+		ProposalResponsePayload: &block.ProposalResponsePayload{
 			ProposalHash: proposalResponsePayload.ProposalHash,
-			Extension: &ChaincodeAction{
+			Extension: &block.ChaincodeAction{
 				Results:     txReadWriteSet,
 				Events:      events,
 				Response:    chaincodeAction.Response,
@@ -159,41 +141,41 @@ func ParseChaincodeEndorsedAction(actionPayload *peer.ChaincodeActionPayload) (*
 	}, nil
 }
 
-func ParseTxReadWriteSet(chaincodeAction *peer.ChaincodeAction) (*TxReadWriteSet, error) {
+func ParseTxReadWriteSet(chaincodeAction *peer.ChaincodeAction) (*block.TxReadWriteSet, error) {
 	txReadWriteSet := &rwset.TxReadWriteSet{}
 	if err := proto.Unmarshal(chaincodeAction.Results, txReadWriteSet); err != nil {
 		return nil, fmt.Errorf("unmarshal txReadWriteSet from cc action result: %w", err)
 	}
 
-	var nsReadWriteSets []*NsReadWriteSet
+	var nsReadWriteSets []*block.NsReadWriteSet
 	for _, nsRWset := range txReadWriteSet.NsRwset {
 		kvRWSet := &kvrwset.KVRWSet{}
 		if err := proto.Unmarshal(nsRWset.Rwset, kvRWSet); err != nil {
 			return nil, fmt.Errorf("unmarshal kvReadWriteSet from nsRWSet: %w", err)
 		}
 
-		var collectionHashedRwset []*CollectionHashedReadWriteSet
+		var collectionHashedRwset []*block.CollectionHashedReadWriteSet
 		for _, hashedRwsetItem := range nsRWset.CollectionHashedRwset {
 			hashedRwset := &kvrwset.HashedRWSet{}
 			if err := proto.Unmarshal(hashedRwsetItem.HashedRwset, hashedRwset); err != nil {
 				return nil, fmt.Errorf("unmarshal HashedRWset from collection hashedRWSet: %w", err)
 			}
 
-			collectionHashedRwset = append(collectionHashedRwset, &CollectionHashedReadWriteSet{
+			collectionHashedRwset = append(collectionHashedRwset, &block.CollectionHashedReadWriteSet{
 				CollectionName: hashedRwsetItem.CollectionName,
 				HashedRwset:    hashedRwset,
 				PvtRwsetHash:   hashedRwsetItem.PvtRwsetHash,
 			})
 		}
 
-		nsReadWriteSets = append(nsReadWriteSets, &NsReadWriteSet{
+		nsReadWriteSets = append(nsReadWriteSets, &block.NsReadWriteSet{
 			Namespace:             nsRWset.Namespace,
 			Rwset:                 kvRWSet,
 			CollectionHashedRwset: collectionHashedRwset,
 		})
 	}
 
-	return &TxReadWriteSet{
+	return &block.TxReadWriteSet{
 		DataModel: txReadWriteSet.DataModel.String(),
 		NsRwset:   nsReadWriteSets,
 	}, nil
