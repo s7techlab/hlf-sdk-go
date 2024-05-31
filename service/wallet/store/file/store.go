@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/s7techlab/hlf-sdk-go/proto/wallet"
 	wallet2 "github.com/s7techlab/hlf-sdk-go/service/wallet"
 )
 
@@ -50,7 +51,7 @@ func (f *FilesystemStore) filenameToLabel(filename string) string {
 	return filename[0 : len(filename)-5]
 }
 
-func (f *FilesystemStore) Get(label string) (*wallet2.IdentityInWallet, error) {
+func (f *FilesystemStore) Get(label string) (*wallet.IdentityInWallet, error) {
 	if _, err := os.Stat(f.labelToFilename(label)); os.IsNotExist(err) {
 		return nil, wallet2.ErrIdentityNotFound
 	}
@@ -60,7 +61,7 @@ func (f *FilesystemStore) Get(label string) (*wallet2.IdentityInWallet, error) {
 		return nil, err
 	}
 
-	identity := new(wallet2.IdentityInWallet)
+	identity := new(wallet.IdentityInWallet)
 
 	if err = json.Unmarshal(bb, identity); err != nil {
 		return nil, err
@@ -69,7 +70,7 @@ func (f *FilesystemStore) Get(label string) (*wallet2.IdentityInWallet, error) {
 	return identity, nil
 }
 
-func (f *FilesystemStore) Set(identity *wallet2.IdentityInWallet) error {
+func (f *FilesystemStore) Set(identity *wallet.IdentityInWallet) error {
 	bb, err := json.Marshal(identity)
 	if err != nil {
 		return err

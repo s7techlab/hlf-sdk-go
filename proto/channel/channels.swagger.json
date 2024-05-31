@@ -1,0 +1,598 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "channel/channels.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/channels": {
+      "get": {
+        "summary": "ListChannels - returns list of channels",
+        "operationId": "ChannelInfoService_ListChannels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/channelChannels"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "ChannelInfoService"
+        ]
+      }
+    },
+    "/channels/{id}": {
+      "get": {
+        "summary": "GetChannel - returns short information about channel",
+        "operationId": "ChannelInfoService_GetChannel",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/channelChannel"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "name of channel we checking",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ChannelInfoService"
+        ]
+      }
+    },
+    "/channels/{id}/config": {
+      "get": {
+        "summary": "GetChannelConfig  - returns information about channel config",
+        "operationId": "ChannelInfoService_GetChannelConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/channelChannelConfig"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "name of channel we checking",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ChannelInfoService"
+        ]
+      }
+    },
+    "/channels/{id}/config-msp": {
+      "get": {
+        "summary": "GetChannelConfigMSP  - returns information about channel config with full msp info",
+        "operationId": "ChannelInfoService_GetChannelConfigMSP",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/channelChannelConfigMSP"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "name of channel we checking",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ChannelInfoService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "channelChannel": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "height": {
+          "type": "string",
+          "format": "uint64"
+        }
+      },
+      "title": "Channel properties and height"
+    },
+    "channelChannelConfig": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "channel name"
+        },
+        "batch_size": {
+          "$ref": "#/definitions/ordererBatchSize",
+          "title": "controls the number of messages batched into block"
+        },
+        "batch_timeout": {
+          "type": "string",
+          "title": "amount of time to wait before creating a batch"
+        },
+        "etcdraft_nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/etcdraftConsenter"
+          },
+          "description": "consenter represents a consenting node (i.e. replica)."
+        },
+        "etcdraft_options": {
+          "$ref": "#/definitions/etcdraftOptions",
+          "title": "options to be specified for all the etcd/raft nodes"
+        },
+        "endpoints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "orderers endpoints"
+        },
+        "height": {
+          "type": "string",
+          "format": "uint64",
+          "title": "organizations list of channel\nrepeated Organization organizations = 7;\ntotal amunt of blocks"
+        },
+        "status": {
+          "type": "string",
+          "title": "channel status"
+        }
+      },
+      "title": "ChannelConfig  - describes common channel params. Channel organization in short form"
+    },
+    "channelChannelConfigMSP": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "channel name"
+        },
+        "batch_size": {
+          "$ref": "#/definitions/ordererBatchSize",
+          "title": "controls the number of messages batched into block"
+        },
+        "batch_timeout": {
+          "type": "string",
+          "title": "amount of time to wait before creating a batch"
+        },
+        "etcdraft_nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/etcdraftConsenter"
+          },
+          "description": "consenter represents a consenting node (i.e. replica)."
+        },
+        "etcdraft_options": {
+          "$ref": "#/definitions/etcdraftOptions",
+          "title": "options to be specified for all the etcd/raft nodes"
+        },
+        "endpoints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "orderers endpoints"
+        },
+        "organizations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/channelOrganizationMSPConfig"
+          },
+          "title": "organizations list of channel"
+        },
+        "height": {
+          "type": "string",
+          "format": "uint64",
+          "title": "total amunt of blocks"
+        },
+        "status": {
+          "type": "string",
+          "title": "channel status"
+        }
+      },
+      "title": "ChannelConfigDetailed with organizations details"
+    },
+    "channelChannelPolicies": {
+      "type": "object",
+      "properties": {
+        "admins": {
+          "$ref": "#/definitions/commonPolicy",
+          "title": "admins policy"
+        },
+        "readers": {
+          "$ref": "#/definitions/commonPolicy",
+          "title": "readers policy"
+        },
+        "writers": {
+          "$ref": "#/definitions/commonPolicy",
+          "title": "writers policy"
+        }
+      },
+      "title": "Policies - organizations policies for admins, readers, writers"
+    },
+    "channelChannels": {
+      "type": "object",
+      "properties": {
+        "system_channel": {
+          "type": "string"
+        },
+        "channels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/channelChannel"
+          }
+        }
+      },
+      "title": "Channels - list of orderer channels"
+    },
+    "channelOrganizationMSPConfig": {
+      "type": "object",
+      "properties": {
+        "msp": {
+          "$ref": "#/definitions/mspFabricMSPConfig",
+          "title": "collects all the configuration information for a Fabric MSP"
+        },
+        "anchor_peers": {
+          "$ref": "#/definitions/protosAnchorPeers",
+          "title": "provides information about anchor peer. host, port"
+        },
+        "policies": {
+          "$ref": "#/definitions/channelChannelPolicies",
+          "title": "organizations policies for admins, readers, writers"
+        }
+      },
+      "title": "OrganizationDetailed - full description of organization in the channel"
+    },
+    "commonPolicy": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      },
+      "title": "Policy expresses a policy which the orderer can evaluate, because there has been some desire expressed to support\nmultiple policy engines, this is typed as a oneof for now"
+    },
+    "etcdraftConsenter": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "client_tls_cert": {
+          "type": "string",
+          "format": "byte"
+        },
+        "server_tls_cert": {
+          "type": "string",
+          "format": "byte"
+        }
+      },
+      "description": "Consenter represents a consenting node (i.e. replica)."
+    },
+    "etcdraftOptions": {
+      "type": "object",
+      "properties": {
+        "tick_interval": {
+          "type": "string"
+        },
+        "election_tick": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "heartbeat_tick": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "max_inflight_blocks": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "snapshot_interval_size": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Take snapshot when cumulative data exceeds certain size in bytes."
+        }
+      },
+      "description": "Options to be specified for all the etcd/raft nodes. These can be modified on a\nper-channel basis."
+    },
+    "mspFabricCryptoConfig": {
+      "type": "object",
+      "properties": {
+        "signature_hash_family": {
+          "type": "string",
+          "description": "SignatureHashFamily is a string representing the hash family to be used\nduring sign and verify operations.\nAllowed values are \"SHA2\" and \"SHA3\"."
+        },
+        "identity_identifier_hash_function": {
+          "type": "string",
+          "description": "IdentityIdentifierHashFunction is a string representing the hash function\nto be used during the computation of the identity identifier of an MSP identity.\nAllowed values are \"SHA256\", \"SHA384\" and \"SHA3_256\", \"SHA3_384\"."
+        }
+      },
+      "title": "FabricCryptoConfig contains configuration parameters\nfor the cryptographic algorithms used by the MSP\nthis configuration refers to"
+    },
+    "mspFabricMSPConfig": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name holds the identifier of the MSP; MSP identifier\nis chosen by the application that governs this MSP.\nFor example, and assuming the default implementation of MSP,\nthat is X.509-based and considers a single Issuer,\nthis can refer to the Subject OU field or the Issuer OU field."
+        },
+        "root_certs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "byte"
+          },
+          "title": "List of root certificates trusted by this MSP\nthey are used upon certificate validation (see\ncomment for IntermediateCerts below)"
+        },
+        "intermediate_certs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "byte"
+          },
+          "title": "List of intermediate certificates trusted by this MSP;\nthey are used upon certificate validation as follows:\nvalidation attempts to build a path from the certificate\nto be validated (which is at one end of the path) and\none of the certs in the RootCerts field (which is at\nthe other end of the path). If the path is longer than\n2, certificates in the middle are searched within the\nIntermediateCerts pool"
+        },
+        "admins": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "byte"
+          },
+          "title": "Identity denoting the administrator of this MSP"
+        },
+        "revocation_list": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "byte"
+          },
+          "title": "Identity revocation list"
+        },
+        "signing_identity": {
+          "$ref": "#/definitions/mspSigningIdentityInfo",
+          "title": "SigningIdentity holds information on the signing identity\nthis peer is to use, and which is to be imported by the\nMSP defined before"
+        },
+        "organizational_unit_identifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/mspFabricOUIdentifier"
+          },
+          "title": "OrganizationalUnitIdentifiers holds one or more\nfabric organizational unit identifiers that belong to\nthis MSP configuration"
+        },
+        "crypto_config": {
+          "$ref": "#/definitions/mspFabricCryptoConfig",
+          "title": "FabricCryptoConfig contains the configuration parameters\nfor the cryptographic algorithms used by this MSP"
+        },
+        "tls_root_certs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "byte"
+          },
+          "description": "List of TLS root certificates trusted by this MSP.\nThey are returned by GetTLSRootCerts."
+        },
+        "tls_intermediate_certs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "byte"
+          },
+          "description": "List of TLS intermediate certificates trusted by this MSP;\nThey are returned by GetTLSIntermediateCerts."
+        },
+        "fabric_node_ous": {
+          "$ref": "#/definitions/mspFabricNodeOUs",
+          "description": "fabric_node_ous contains the configuration to distinguish clients from peers from orderers\nbased on the OUs."
+        }
+      },
+      "description": "FabricMSPConfig collects all the configuration information for\na Fabric MSP.\nHere we assume a default certificate validation policy, where\nany certificate signed by any of the listed rootCA certs would\nbe considered as valid under this MSP.\nThis MSP may or may not come with a signing identity. If it does,\nit can also issue signing identities. If it does not, it can only\nbe used to validate and verify certificates."
+    },
+    "mspFabricNodeOUs": {
+      "type": "object",
+      "properties": {
+        "enable": {
+          "type": "boolean",
+          "description": "If true then an msp identity that does not contain any of the specified OU will be considered invalid."
+        },
+        "client_ou_identifier": {
+          "$ref": "#/definitions/mspFabricOUIdentifier",
+          "title": "OU Identifier of the clients"
+        },
+        "peer_ou_identifier": {
+          "$ref": "#/definitions/mspFabricOUIdentifier",
+          "title": "OU Identifier of the peers"
+        },
+        "admin_ou_identifier": {
+          "$ref": "#/definitions/mspFabricOUIdentifier",
+          "title": "OU Identifier of the admins"
+        },
+        "orderer_ou_identifier": {
+          "$ref": "#/definitions/mspFabricOUIdentifier",
+          "title": "OU Identifier of the orderers"
+        }
+      },
+      "description": "FabricNodeOUs contains configuration to tell apart clients from peers from orderers\nbased on OUs. If NodeOUs recognition is enabled then an msp identity\nthat does not contain any of the specified OU will be considered invalid."
+    },
+    "mspFabricOUIdentifier": {
+      "type": "object",
+      "properties": {
+        "certificate": {
+          "type": "string",
+          "format": "byte",
+          "title": "Certificate represents the second certificate in a certification chain.\n(Notice that the first certificate in a certification chain is supposed\nto be the certificate of an identity).\nIt must correspond to the certificate of root or intermediate CA\nrecognized by the MSP this message belongs to.\nStarting from this certificate, a certification chain is computed\nand bound to the OrganizationUnitIdentifier specified"
+        },
+        "organizational_unit_identifier": {
+          "type": "string",
+          "title": "OrganizationUnitIdentifier defines the organizational unit under the\nMSP identified with MSPIdentifier"
+        }
+      },
+      "description": "FabricOUIdentifier represents an organizational unit and\nits related chain of trust identifier."
+    },
+    "mspKeyInfo": {
+      "type": "object",
+      "properties": {
+        "key_identifier": {
+          "type": "string",
+          "title": "Identifier of the key inside the default keystore; this for\nthe case of Software BCCSP as well as the HSM BCCSP would be\nthe SKI of the key"
+        },
+        "key_material": {
+          "type": "string",
+          "format": "byte",
+          "title": "KeyMaterial (optional) for the key to be imported; this is\nproperly encoded key bytes, prefixed by the type of the key"
+        }
+      },
+      "title": "KeyInfo represents a (secret) key that is either already stored\nin the bccsp/keystore or key material to be imported to the\nbccsp key-store. In later versions it may contain also a\nkeystore identifier"
+    },
+    "mspSigningIdentityInfo": {
+      "type": "object",
+      "properties": {
+        "public_signer": {
+          "type": "string",
+          "format": "byte",
+          "title": "PublicSigner carries the public information of the signing\nidentity. For an X.509 provider this would be represented by\nan X.509 certificate"
+        },
+        "private_signer": {
+          "$ref": "#/definitions/mspKeyInfo",
+          "title": "PrivateSigner denotes a reference to the private key of the\npeer's signing identity"
+        }
+      },
+      "title": "SigningIdentityInfo represents the configuration information\nrelated to the signing identity the peer is to use for generating\nendorsements"
+    },
+    "ordererBatchSize": {
+      "type": "object",
+      "properties": {
+        "max_message_count": {
+          "type": "integer",
+          "format": "int64",
+          "title": "Simply specified as number of messages for now, in the future\nwe may want to allow this to be specified by size in bytes"
+        },
+        "absolute_max_bytes": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The byte count of the serialized messages in a batch cannot\nexceed this value."
+        },
+        "preferred_max_bytes": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The byte count of the serialized messages in a batch should not\nexceed this value."
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "protosAnchorPeer": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "AnchorPeer message structure which provides information about anchor peer, it includes host name,\nport number and peer certificate."
+    },
+    "protosAnchorPeers": {
+      "type": "object",
+      "properties": {
+        "anchor_peers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protosAnchorPeer"
+          }
+        }
+      },
+      "title": "AnchorPeers simply represents list of anchor peers which is used in ConfigurationItem"
+    },
+    "runtimeError": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

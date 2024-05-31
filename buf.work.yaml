@@ -1,5 +1,4 @@
 version: v1
 directories:
-  - block
-  - service
+  - proto
   - third_party

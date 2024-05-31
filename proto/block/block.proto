@@ -1,0 +1,118 @@
+syntax = "proto3";
+
+package hlfsdkgo.proto.block;
+
+option go_package = "github.com/s7techlab/hlf-sdk-go/proto/block";
+
+import "block/chan_config.proto";
+
+import "block/smartbft/configuration.proto";
+
+import "hyperledger/fabric-protos/common/common.proto";
+import "hyperledger/fabric-protos/ledger/rwset/kvrwset/kv_rwset.proto";
+import "hyperledger/fabric-protos/msp/identities.proto";
+import "hyperledger/fabric-protos/peer/chaincode.proto";
+import "hyperledger/fabric-protos/peer/chaincode_event.proto";
+import "hyperledger/fabric-protos/peer/proposal_response.proto";
+import "hyperledger/fabric-protos/peer/transaction.proto";
+
+message Block {
+  common.BlockHeader header = 1;
+  BlockData data = 2;
+  BlockMetadata metadata = 3;
+}
+
+message BlockData {
+  repeated Envelope envelopes = 1;
+}
+
+message Envelope {
+  Payload payload = 1;
+  bytes signature = 2;
+  protos.TxValidationCode validation_code = 3;
+}
+
+message Payload {
+  Header header = 1;
+  Transaction transaction = 2;
+  bytes raw_unparsed_transaction = 3;
+}
+
+message Header {
+  common.ChannelHeader channel_header = 1;
+  SignatureHeader signature_header = 2;
+}
+
+message SignatureHeader {
+  msp.SerializedIdentity creator = 1;
+  bytes nonce = 2;
+}
+
+// field numbers correspond to HeaderType https://github.com/hyperledger/fabric-protos/blob/main/common/common.proto#L27
+message Transaction {
+  hlfsdkgo.proto.block.ChannelConfig channel_config = 1;
+  repeated TransactionAction actions = 3;
+}
+
+message TransactionAction {
+  SignatureHeader header = 1;
+  ChaincodeActionPayload payload = 2;
+}
+
+message ChaincodeActionPayload {
+  ChaincodeProposalPayload chaincode_proposal_payload = 1;
+  ChaincodeEndorsedAction action = 2;
+}
+
+message ChaincodeProposalPayload {
+  protos.ChaincodeInvocationSpec input = 1;
+  map<string, bytes> TransientMap = 2;
+}
+
+message ChaincodeEndorsedAction {
+  ProposalResponsePayload proposal_response_payload = 1;
+  repeated Endorsement endorsement = 2;
+}
+
+message ProposalResponsePayload {
+  bytes proposal_hash = 1;
+  ChaincodeAction extension = 2;
+}
+
+message ChaincodeAction {
+  TxReadWriteSet results = 1;
+  protos.ChaincodeEvent events = 2;
+  protos.Response response = 3;
+  protos.ChaincodeID chaincode_id = 4;
+}
+
+message TxReadWriteSet {
+  string data_model = 1;
+  repeated NsReadWriteSet ns_rwset = 2;
+}
+
+message NsReadWriteSet {
+  string namespace = 1;
+  kvrwset.KVRWSet rwset = 2;
+  repeated CollectionHashedReadWriteSet collection_hashed_rwset = 3;
+}
+
+message CollectionHashedReadWriteSet {
+  string collection_name = 1;
+  kvrwset.HashedRWSet hashed_rwset = 2;
+  bytes pvt_rwset_hash = 3;
+}
+
+message Endorsement {
+  msp.SerializedIdentity endorser = 1;
+  bytes signature = 2;
+}
+
+message BlockMetadata {
+  repeated OrdererSignature ordererSignatures = 1;
+}
+
+message OrdererSignature {
+  msp.SerializedIdentity identity = 1;
+  bytes signature = 2;
+}

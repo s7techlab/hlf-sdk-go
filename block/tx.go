@@ -4,23 +4,13 @@ import (
 	"fmt"
 
 	"github.com/hyperledger/fabric-protos-go/common"
-	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/protoutil"
+
+	"github.com/s7techlab/hlf-sdk-go/proto/block"
 )
 
-func (x *Transaction) Events() []*peer.ChaincodeEvent {
-	var events []*peer.ChaincodeEvent
-	for _, a := range x.Actions {
-		event := a.GetPayload().GetAction().GetProposalResponsePayload().GetExtension().GetEvents()
-		if event != nil {
-			events = append(events, event)
-		}
-	}
-	return events
-}
-
-func ParseEndorserTransaction(payload *common.Payload) (*Transaction, error) {
-	var actions []*TransactionAction
+func ParseEndorserTransaction(payload *common.Payload) (*block.Transaction, error) {
+	var actions []*block.TransactionAction
 	tx, err := protoutil.UnmarshalTransaction(payload.Data)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal transaction from payload data: %w", err)
@@ -31,7 +21,7 @@ func ParseEndorserTransaction(payload *common.Payload) (*Transaction, error) {
 		return nil, fmt.Errorf("parse transaction actions: %w", err)
 	}
 
-	return &Transaction{
+	return &block.Transaction{
 		Actions: actions,
 	}, nil
 }

@@ -1,9 +1,6 @@
 package block
 
 import (
-	"crypto/sha256"
-	"encoding/pem"
-	"errors"
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
@@ -13,38 +10,12 @@ import (
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/common/channelconfig"
 	"google.golang.org/protobuf/encoding/protojson"
+
+	"github.com/s7techlab/hlf-sdk-go/proto/block"
 )
 
-var (
-	ErrUnknownFabricVersion = errors.New(`unknown fabric version`)
-)
-
-type FabricVersion string
-
-const (
-	FabricVersionUndefined FabricVersion = "undefined"
-	FabricV1               FabricVersion = "1"
-	FabricV2               FabricVersion = "2"
-)
-
-func FabricVersionIsV2(isV2 bool) FabricVersion {
-	if isV2 {
-		return FabricV2
-	}
-
-	return FabricV1
-}
-
-func (x *ChannelConfig) ToJSON() ([]byte, error) {
-	opt := protojson.MarshalOptions{
-		UseProtoNames: true,
-	}
-
-	return opt.Marshal(x)
-}
-
-func UnmarshalChannelConfig(b []byte) (*ChannelConfig, error) {
-	cc := &ChannelConfig{}
+func UnmarshalChannelConfig(b []byte) (*block.ChannelConfig, error) {
+	cc := &block.ChannelConfig{}
 
 	if err := protojson.Unmarshal(b, cc); err != nil {
 		return nil, err
@@ -53,8 +24,8 @@ func UnmarshalChannelConfig(b []byte) (*ChannelConfig, error) {
 	return cc, nil
 }
 
-func ParseChannelConfig(cc common.Config) (*ChannelConfig, error) {
-	chanCfg := &ChannelConfig{}
+func ParseChannelConfig(cc common.Config) (*block.ChannelConfig, error) {
+	chanCfg := &block.ChannelConfig{}
 
 	appCfg, err := ParseApplicationConfig(cc)
 	if err != nil {
@@ -120,17 +91,17 @@ func ParseChannelConfig(cc common.Config) (*ChannelConfig, error) {
 	return chanCfg, nil
 }
 
-func ParseApplicationConfig(cfg common.Config) (map[string]*ApplicationConfig, error) {
+func ParseApplicationConfig(cfg common.Config) (map[string]*block.ApplicationConfig, error) {
 	applicationGroup, exists := cfg.ChannelGroup.Groups[channelconfig.ApplicationGroupKey]
 	if !exists {
 		return nil, fmt.Errorf("application group doesn't exists")
 	}
 
-	appCfg := map[string]*ApplicationConfig{}
+	appCfg := map[string]*block.ApplicationConfig{}
 
 	for groupName := range applicationGroup.Groups {
 		var (
-			mspCfg   *MSP
+			mspCfg   *block.MSP
 			ancPeers []*peer.AnchorPeer
 			err      error
 		)
@@ -145,7 +116,7 @@ func ParseApplicationConfig(cfg common.Config) (map[string]*ApplicationConfig, e
 			return nil, fmt.Errorf("parse anchor peers: %w", err)
 		}
 
-		appCfg[groupName] = &ApplicationConfig{
+		appCfg[groupName] = &block.ApplicationConfig{
 			Name:        groupName,
 			Msp:         mspCfg,
 			AnchorPeers: ancPeers,
@@ -155,7 +126,7 @@ func ParseApplicationConfig(cfg common.Config) (map[string]*ApplicationConfig, e
 	return appCfg, nil
 }
 
-func ParseMSP(mspConfigGroup *common.ConfigGroup, groupName string) (*MSP, error) {
+func ParseMSP(mspConfigGroup *common.ConfigGroup, groupName string) (*block.MSP, error) {
 	mspCV, ok := mspConfigGroup.Values[channelconfig.MSPKey]
 	if !ok {
 		return nil, fmt.Errorf("%v type group doesn't exists", channelconfig.MSPKey)
@@ -176,15 +147,15 @@ func ParseMSP(mspConfigGroup *common.ConfigGroup, groupName string) (*MSP, error
 		return nil, fmt.Errorf("parse policy: %w", err)
 	}
 
-	return &MSP{Config: fabricMSPCfg, Policy: policy, Name: groupName}, nil
+	return &block.MSP{Config: fabricMSPCfg, Policy: policy, Name: groupName}, nil
 }
 
-func ParseOrderer(cfg common.Config) (map[string]*OrdererConfig, error) {
+func ParseOrderer(cfg common.Config) (map[string]*block.OrdererConfig, error) {
 	ordererGroup, exists := cfg.ChannelGroup.Groups[channelconfig.OrdererGroupKey]
 	if !exists {
 		return nil, nil
 	}
-	orderersCfg := map[string]*OrdererConfig{}
+	orderersCfg := map[string]*block.OrdererConfig{}
 
 	for groupName := range ordererGroup.Groups {
 		mspCfg, err := ParseMSP(ordererGroup.Groups[groupName], groupName)
@@ -201,7 +172,7 @@ func ParseOrderer(cfg common.Config) (map[string]*OrdererConfig, error) {
 			}
 		}
 
-		orderersCfg[groupName] = &OrdererConfig{
+		orderersCfg[groupName] = &block.OrdererConfig{
 			Name:      groupName,
 			Msp:       mspCfg,
 			Endpoints: endpoints,
@@ -375,8 +346,8 @@ func ParseParseCapabilitiesFromBytes(b []byte) (*common.Capabilities, error) {
 	return c, nil
 }
 
-func ParsePolicy(policiesCfg map[string]*common.ConfigPolicy) (map[string]*Policy, error) {
-	policies := make(map[string]*Policy)
+func ParsePolicy(policiesCfg map[string]*common.ConfigPolicy) (map[string]*block.Policy, error) {
+	policies := make(map[string]*block.Policy)
 
 	for policyKey, policyCfg := range policiesCfg {
 		switch policyCfg.Policy.Type {
@@ -394,8 +365,8 @@ func ParsePolicy(policiesCfg map[string]*common.ConfigPolicy) (map[string]*Polic
 				return nil, fmt.Errorf("unmarshal implicit meta policy from config: %w", err)
 			}
 
-			policies[policyKey] = &Policy{
-				Policy: &Policy_Implicit{
+			policies[policyKey] = &block.Policy{
+				Policy: &block.Policy_Implicit{
 					Implicit: implicitMetaPolicy,
 				},
 			}
@@ -406,8 +377,8 @@ func ParsePolicy(policiesCfg map[string]*common.ConfigPolicy) (map[string]*Polic
 				return nil, fmt.Errorf("unmarshal implicit meta policy from config: %w", err)
 			}
 
-			policies[policyKey] = &Policy{
-				Policy: &Policy_SignaturePolicy{
+			policies[policyKey] = &block.Policy{
+				Policy: &block.Policy_SignaturePolicy{
 					SignaturePolicy: signaturePolicyEnv,
 				},
 			}
@@ -415,98 +386,4 @@ func ParsePolicy(policiesCfg map[string]*common.ConfigPolicy) (map[string]*Polic
 	}
 
 	return policies, nil
-}
-
-/* structs methods */
-
-// GetAllCertificates - returns all(root, intermediate, admins) certificates from all MSPs'
-func (x *ChannelConfig) GetAllCertificates() ([]*Certificate, error) {
-	var certs []*Certificate
-
-	for mspID := range x.Applications {
-		cs, err := x.Applications[mspID].Msp.GetAllCertificates()
-		if err != nil {
-			return nil, fmt.Errorf("get all msps certificates: %w", err)
-		}
-		certs = append(certs, cs...)
-	}
-
-	for mspID := range x.Orderers {
-		cs, err := x.Orderers[mspID].Msp.GetAllCertificates()
-		if err != nil {
-			return nil, fmt.Errorf("get all orderers certificates: %w", err)
-		}
-		certs = append(certs, cs...)
-	}
-
-	return certs, nil
-}
-
-func (x *ChannelConfig) FabricVersion() FabricVersion {
-	if x.Capabilities != nil {
-		_, isFabricV2 := x.Capabilities.Capabilities["V2_0"]
-		if isFabricV2 {
-			return FabricV2
-		}
-		return FabricV1
-	}
-	return FabricVersionUndefined
-}
-
-// GetAllCertificates - returns all certificates from MSP
-func (x *MSP) GetAllCertificates() ([]*Certificate, error) {
-	var certs []*Certificate
-
-	for i := range x.Config.RootCerts {
-		cert, err := NewCertificate(x.Config.RootCerts[i], CertType_CERT_TYPE_CA, x.Config.Name, x.Name)
-		if err != nil {
-			return nil, err
-		}
-		certs = append(certs, cert)
-	}
-
-	for i := range x.Config.IntermediateCerts {
-		cert, err := NewCertificate(x.Config.IntermediateCerts[i], CertType_CERT_TYPE_INTERMEDIATE, x.Config.Name, x.Name)
-		if err != nil {
-			return nil, err
-		}
-		certs = append(certs, cert)
-	}
-
-	for i := range x.Config.Admins {
-		cert, err := NewCertificate(x.Config.Admins[i], CertType_CERT_TYPE_ADMIN, x.Config.Name, x.Name)
-		if err != nil {
-			return nil, err
-		}
-		certs = append(certs, cert)
-	}
-
-	return certs, nil
-}
-
-func NewCertificate(cert []byte, t CertType, mspID, mspName string) (*Certificate, error) {
-	b, _ := pem.Decode(cert)
-	if b == nil {
-		return &Certificate{}, fmt.Errorf("decode %s cert of %s", t, mspID)
-	}
-
-	c := &Certificate{
-		Data:    cert,
-		MspId:   mspID,
-		Type:    t,
-		MspName: mspName,
-	}
-	c.setCertificateSHA256(b)
-
-	return c, nil
-}
-
-func (x *Certificate) setCertificateSHA256(b *pem.Block) {
-	f := CalcCertificateSHA256(b)
-	x.Fingerprint = f[:]
-}
-
-func CalcCertificateSHA256(b *pem.Block) []byte {
-	f := sha256.Sum256(b.Bytes)
-	return f[:]
 }

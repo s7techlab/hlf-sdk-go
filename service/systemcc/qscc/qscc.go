@@ -12,14 +12,12 @@ import (
 	"github.com/s7techlab/hlf-sdk-go/api"
 	"github.com/s7techlab/hlf-sdk-go/client/chaincode"
 	"github.com/s7techlab/hlf-sdk-go/client/tx"
+	"github.com/s7techlab/hlf-sdk-go/proto/systemcc/qscc"
 	"github.com/s7techlab/hlf-sdk-go/service"
 )
 
-//go:embed qscc.swagger.json
-var Swagger []byte
-
 type QSCCService struct {
-	UnimplementedQSCCServiceServer
+	qscc.UnimplementedQSCCServiceServer
 	Querier *tx.ProtoQuerier
 }
 
@@ -31,15 +29,15 @@ func NewQSCC(querier api.Querier) *QSCCService {
 
 func (q *QSCCService) ServiceDef() *service.Def {
 	return service.NewDef(
-		_QSCCService_serviceDesc.ServiceName,
-		Swagger,
-		&_QSCCService_serviceDesc,
+		qscc.ServiceDesc.ServiceName,
+		qscc.Swagger,
+		&qscc.ServiceDesc,
 		q,
-		RegisterQSCCServiceHandlerFromEndpoint,
+		qscc.RegisterQSCCServiceHandlerFromEndpoint,
 	)
 }
 
-func (q *QSCCService) GetChainInfo(ctx context.Context, request *GetChainInfoRequest) (*common.BlockchainInfo, error) {
+func (q *QSCCService) GetChainInfo(ctx context.Context, request *qscc.GetChainInfoRequest) (*common.BlockchainInfo, error) {
 	res, err := q.Querier.QueryStringsProto(ctx, []string{qscccore.GetChainInfo, request.ChannelName}, &common.BlockchainInfo{})
 	if err != nil {
 		return nil, err
@@ -47,7 +45,7 @@ func (q *QSCCService) GetChainInfo(ctx context.Context, request *GetChainInfoReq
 	return res.(*common.BlockchainInfo), nil
 }
 
-func (q *QSCCService) GetBlockByNumber(ctx context.Context, request *GetBlockByNumberRequest) (*common.Block, error) {
+func (q *QSCCService) GetBlockByNumber(ctx context.Context, request *qscc.GetBlockByNumberRequest) (*common.Block, error) {
 	res, err := q.Querier.QueryStringsProto(ctx,
 		[]string{qscccore.GetBlockByNumber, request.ChannelName, strconv.FormatInt(request.BlockNumber, 10)},
 		&common.Block{})
@@ -57,7 +55,7 @@ func (q *QSCCService) GetBlockByNumber(ctx context.Context, request *GetBlockByN
 	return res.(*common.Block), nil
 }
 
-func (q *QSCCService) GetBlockByHash(ctx context.Context, request *GetBlockByHashRequest) (*common.Block, error) {
+func (q *QSCCService) GetBlockByHash(ctx context.Context, request *qscc.GetBlockByHashRequest) (*common.Block, error) {
 	res, err := q.Querier.QueryStringsProto(ctx,
 		[]string{qscccore.GetBlockByHash, request.ChannelName, string(request.BlockHash)},
 		&common.Block{})
@@ -67,7 +65,7 @@ func (q *QSCCService) GetBlockByHash(ctx context.Context, request *GetBlockByHas
 	return res.(*common.Block), nil
 }
 
-func (q *QSCCService) GetBlockByTxID(ctx context.Context, request *GetBlockByTxIDRequest) (*common.Block, error) {
+func (q *QSCCService) GetBlockByTxID(ctx context.Context, request *qscc.GetBlockByTxIDRequest) (*common.Block, error) {
 	res, err := q.Querier.QueryStringsProto(ctx,
 		[]string{qscccore.GetBlockByTxID, request.ChannelName, request.TxId},
 		&common.Block{})
@@ -77,7 +75,8 @@ func (q *QSCCService) GetBlockByTxID(ctx context.Context, request *GetBlockByTxI
 	return res.(*common.Block), nil
 }
 
-func (q *QSCCService) GetTransactionByID(ctx context.Context, request *GetTransactionByIDRequest) (*peer.ProcessedTransaction, error) {
+func (q *QSCCService) GetTransactionByID(ctx context.Context, request *qscc.GetTransactionByIDRequest) (
+	*peer.ProcessedTransaction, error) {
 	res, err := q.Querier.QueryStringsProto(ctx,
 		[]string{qscccore.GetTransactionByID, request.ChannelName, request.TxId},
 		&peer.ProcessedTransaction{})

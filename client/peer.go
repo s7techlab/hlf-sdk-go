@@ -54,7 +54,7 @@ func NewPeer(ctx context.Context, c config.ConnectionConfig, identity msp.Signin
 		return nil, fmt.Errorf(`peer grpc options from config: %w`, err)
 	}
 
-	dialTimeout := c.Timeout.Duration
+	dialTimeout := c.Timeout
 	if dialTimeout == 0 {
 		dialTimeout = PeerDefaultDialTimeout
 	}
@@ -76,7 +76,7 @@ func NewPeer(ctx context.Context, c config.ConnectionConfig, identity msp.Signin
 		return nil, fmt.Errorf(`grpc dial to peer endpoint=%s: %w`, c.Host, err)
 	}
 
-	return NewFromGRPC(conn, identity, opts.TLSCertHash, logger, c.Timeout.Duration)
+	return NewFromGRPC(conn, identity, opts.TLSCertHash, logger, c.Timeout)
 }
 
 // NewFromGRPC allows initializing peer from existing GRPC connection
@@ -197,7 +197,7 @@ func (p *peer) addConfigBlock(ctx context.Context, channel string) error {
 }
 
 func (p *peer) ParsedBlocks(ctx context.Context, channel string, identity msp.SigningIdentity, blockRange ...int64) (<-chan *block.Block, func() error, error) {
-	commonBlocks, commonCloser, err := p.Blocks(ctx, channel, identity, blockRange...)
+	blocks, closer, err := p.Blocks(ctx, channel, identity, blockRange...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -221,7 +221,7 @@ func (p *peer) ParsedBlocks(ctx context.Context, channel string, identity msp.Si
 			case <-ctx.Done():
 				return
 
-			case b, ok := <-commonBlocks:
+			case b, ok := <-blocks:
 				if !ok {
 					return
 				}
@@ -240,14 +240,7 @@ func (p *peer) ParsedBlocks(ctx context.Context, channel string, identity msp.Si
 		}
 	}()
 
-	parsedCloser := func() error {
-		if closerErr := commonCloser(); closerErr != nil {
-			return closerErr
-		}
-		return nil
-	}
-
-	return parsedBlockChan, parsedCloser, nil
+	return parsedBlockChan, closer, nil
 }
 
 func (p *peer) Events(ctx context.Context, channel string, chaincode string, identity msp.SigningIdentity, blockRange ...int64) (events chan interface {

@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+option go_package = "github.com/s7techlab/hlf-sdk-go/proto/block/smartbft";
+
+package smartbft;
+
+// ConfigMetadata is serialized and set as the value of ConsensusType.Metadata in
+// a channel configuration when the ConsensusType.Type is set "smartbft".
+message ConfigMetadata {
+  repeated Consenter consenters = 1;
+  Options options = 2;
+}
+
+// Consenter represents a consenting node (i.e. replica).
+message Consenter {
+  uint64 consenter_id = 1;
+  string host = 2;
+  uint32 port = 3;
+  string msp_id = 4;
+  bytes identity = 5;
+  bytes client_tls_cert = 6;
+  bytes server_tls_cert = 7;
+}
+
+// Options to be specified for all the smartbft nodes. These can be modified on a
+// per-channel basis.
+message Options {
+  reserved "config";
+  reserved 1;
+
+  uint64 request_batch_max_count = 2;
+  uint64 request_batch_max_bytes = 3;
+  string request_batch_max_interval = 4;
+
+  uint64 incoming_message_buffer_size = 5;
+  uint64 request_pool_size = 6;
+
+  string request_forward_timeout = 7;
+  string request_complain_timeout = 8;
+  string request_auto_remove_timeout = 9;
+
+  string view_change_resend_interval = 10;
+  string view_change_timeout = 11;
+
+  string leader_heartbeat_timeout = 12;
+  uint64 leader_heartbeat_count = 13;
+
+  string collect_timeout = 14;
+  bool sync_on_start = 15;
+  bool speed_up_view_change = 16;
+}

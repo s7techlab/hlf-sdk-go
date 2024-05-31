@@ -12,17 +12,13 @@ import (
 
 	empty "google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/s7techlab/hlf-sdk-go/proto/wallet"
 	"github.com/s7techlab/hlf-sdk-go/service"
 )
 
 var (
-	//go:embed wallet.swagger.json
-	Swagger []byte
-)
-var (
 	ErrEmptyLabel         = errors.New(`empty label`)
 	ErrInvalidCharInLabel = errors.New(`invalid char in label`)
-	ErrIdentityNotFound   = errors.New(`identity not found`)
 
 	DisallowedCharsInLabel, _ = regexp.Compile("[^A-Za-z0-9_-]+")
 )
@@ -41,22 +37,24 @@ func New(store Store) *Wallet {
 
 func (w *Wallet) ServiceDef() *service.Def {
 	return service.NewDef(
-		`wallet`, Swagger, &_WalletService_serviceDesc, w, RegisterWalletServiceHandlerFromEndpoint)
+		`wallet`,
+		wallet.Swagger,
+		&wallet.ServiceDesc,
+		w,
+		wallet.RegisterWalletServiceHandlerFromEndpoint)
 }
 
 func ValidateLabel(label string) error {
 	if label == `` {
 		return ErrEmptyLabel
 	}
-
 	if DisallowedCharsInLabel.Match([]byte(label)) {
 		return ErrInvalidCharInLabel
 	}
-
 	return nil
 }
 
-func (w *Wallet) IdentityGet(_ context.Context, lbl *IdentityLabel) (*IdentityInWallet, error) {
+func (w *Wallet) IdentityGet(_ context.Context, lbl *wallet.IdentityLabel) (*wallet.IdentityInWallet, error) {
 	if err := ValidateLabel(lbl.Label); err != nil {
 		return nil, err
 	}
@@ -69,7 +67,8 @@ func (w *Wallet) IdentityGet(_ context.Context, lbl *IdentityLabel) (*IdentityIn
 	return id, nil
 }
 
-func (w *Wallet) IdentityGetText(ctx context.Context, lbl *IdentityLabel) (*IdentityInWalletText, error) {
+func (w *Wallet) IdentityGetText(ctx context.Context, lbl *wallet.IdentityLabel) (
+	*wallet.IdentityInWalletText, error) {
 	id, err := w.IdentityGet(ctx, lbl)
 	if err != nil {
 		return nil, err
@@ -84,7 +83,7 @@ func (w *Wallet) IdentityGetText(ctx context.Context, lbl *IdentityLabel) (*Iden
 	//	content = x509util.CertificateToString(cert)
 	//}
 
-	return &IdentityInWalletText{
+	return &wallet.IdentityInWalletText{
 		Label: id.Label,
 		MspId: id.MspId,
 		Role:  id.Role,
@@ -95,12 +94,12 @@ func (w *Wallet) IdentityGetText(ctx context.Context, lbl *IdentityLabel) (*Iden
 	}, nil
 }
 
-func (w *Wallet) IdentitySet(ctx context.Context, identity *Identity) (*IdentityInWallet, error) {
+func (w *Wallet) IdentitySet(ctx context.Context, identity *wallet.Identity) (*wallet.IdentityInWallet, error) {
 	if err := ValidateLabel(identity.Label); err != nil {
 		return nil, err
 	}
 
-	identityInWallet := &IdentityInWallet{
+	identityInWallet := &wallet.IdentityInWallet{
 		Label:        identity.Label,
 		MspId:        identity.MspId,
 		Role:         identity.Role,
@@ -116,7 +115,8 @@ func (w *Wallet) IdentitySet(ctx context.Context, identity *Identity) (*Identity
 	return identityInWallet, nil
 }
 
-func (w *Wallet) IdentitySetWithPassword(_ context.Context, identity *IdentityWithPassword) (*IdentityInWallet, error) {
+func (w *Wallet) IdentitySetWithPassword(_ context.Context, identity *wallet.IdentityWithPassword) (
+	*wallet.IdentityInWallet, error) {
 	encryptedPemBlock, err := x509.EncryptPEMBlock(rand.Reader, `EC PRIVATE KEY`, identity.Key,
 		[]byte(identity.Password), x509.PEMCipherAES256)
 	if err != nil {
@@ -125,7 +125,7 @@ func (w *Wallet) IdentitySetWithPassword(_ context.Context, identity *IdentityWi
 
 	encryptedKey := pem.EncodeToMemory(encryptedPemBlock)
 
-	identityInWallet := &IdentityInWallet{
+	identityInWallet := &wallet.IdentityInWallet{
 		Label:        identity.Label,
 		MspId:        identity.MspId,
 		Role:         identity.Role,
@@ -141,7 +141,7 @@ func (w *Wallet) IdentitySetWithPassword(_ context.Context, identity *IdentityWi
 	return identityInWallet, nil
 }
 
-func (w *Wallet) IdentityGetWithPassword(_ context.Context, identity *IdentityPassword) (*IdentityInWallet, error) {
+func (w *Wallet) IdentityGetWithPassword(_ context.Context, identity *wallet.IdentityPassword) (*wallet.IdentityInWallet, error) {
 	if err := ValidateLabel(identity.Label); err != nil {
 		return nil, err
 	}
@@ -171,18 +171,18 @@ func (w *Wallet) IdentityGetWithPassword(_ context.Context, identity *IdentityPa
 	return identityInWallet, nil
 }
 
-func (w *Wallet) IdentityList(context.Context, *empty.Empty) (*IdentityLabels, error) {
+func (w *Wallet) IdentityList(context.Context, *empty.Empty) (*wallet.IdentityLabels, error) {
 	labels, err := w.store.List()
 	if err != nil {
 		return nil, err
 	}
 
-	return &IdentityLabels{
+	return &wallet.IdentityLabels{
 		Labels: labels,
 	}, nil
 }
 
-func (w *Wallet) IdentityDelete(ctx context.Context, label *IdentityLabel) (*IdentityInWallet, error) {
+func (w *Wallet) IdentityDelete(ctx context.Context, label *wallet.IdentityLabel) (*wallet.IdentityInWallet, error) {
 	id, err := w.IdentityGet(ctx, label)
 	if err != nil {
 		return nil, err

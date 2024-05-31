@@ -4,13 +4,16 @@
 
 #### Project structure:
 
-- api - interface definitions
-- ca - sdk for Hyperledger Fabric CA
-- client - sdk for Hyperledger Fabric Network
-- crypto - cryptographic implementation
-- discovery - discovery service implementation
-- examples - examples of using current SDK (invoke cli and events client)
-- [event-listener](examples/event-listener) - example of using peer.DeliverService, which shows new blocks
-- [blockchain_info](examples/channel_info/blockchain_info.go) - example of viewing info about channels and channel's ledger
-- identity - identity implementation
-- proto - Hyperledger fabric protobuf messages creating and parsing
+| package                    | description
+|----------------------------|-------------------------------------------------------
+| [api](api)                 | interface definitions
+| [block]                    | Hyperledger Fabric protobuf messages creating and parsing
+| [client](client)           | client for HLF Network & HLF CA
+| [cmd](cmd)                 | applications
+| [crypto](crypto)           | cryptographic implementation
+| [examples](examples)       | usage examples
+| [identity](identity)       | identity implementation
+| [observer](observer)       | block observer
+| [service](service)         | services for building HLF applications
+| [testdata](testdata)       | testdata
+| [third_party](third_party) | proto deps

@@ -9,22 +9,11 @@ import (
 	"github.com/hyperledger/fabric/protoutil"
 
 	"github.com/s7techlab/hlf-sdk-go/block/txflags"
+	"github.com/s7techlab/hlf-sdk-go/proto/block"
 )
 
-func (x *Envelope) ChannelHeader() *common.ChannelHeader {
-	return x.GetPayload().GetHeader().GetChannelHeader()
-}
-
-func (x *Envelope) SignatureHeader() *SignatureHeader {
-	return x.GetPayload().GetHeader().GetSignatureHeader()
-}
-
-func (x *Envelope) TxActions() []*TransactionAction {
-	return x.GetPayload().GetTransaction().GetActions()
-}
-
-func ParseBlockData(blockData [][]byte, txFilter txflags.ValidationFlags) (*BlockData, error) {
-	var envelopes []*Envelope
+func ParseBlockData(blockData [][]byte, txFilter txflags.ValidationFlags) (*block.BlockData, error) {
+	var envelopes []*block.Envelope
 	for i, envelope := range blockData {
 		parsedEnvelope, err := ParseEnvelope(envelope, txFilter.Flag(i))
 		if err != nil {
@@ -34,12 +23,12 @@ func ParseBlockData(blockData [][]byte, txFilter txflags.ValidationFlags) (*Bloc
 		envelopes = append(envelopes, parsedEnvelope)
 	}
 
-	return &BlockData{
+	return &block.BlockData{
 		Envelopes: envelopes,
 	}, nil
 }
 
-func ParseEnvelope(envelopeData []byte, validationCode peer.TxValidationCode) (*Envelope, error) {
+func ParseEnvelope(envelopeData []byte, validationCode peer.TxValidationCode) (*block.Envelope, error) {
 	envelope, err := protoutil.GetEnvelopeFromBlock(envelopeData)
 	if err != nil {
 		return nil, fmt.Errorf("get envelope from block data: %w", err)
@@ -55,7 +44,7 @@ func ParseEnvelope(envelopeData []byte, validationCode peer.TxValidationCode) (*
 		return nil, fmt.Errorf("unmarshal channel header from envelope payload: %w", err)
 	}
 
-	signatureHeader := &SignatureHeader{}
+	signatureHeader := &block.SignatureHeader{}
 	sigHeader, err := protoutil.UnmarshalSignatureHeader(payload.Header.SignatureHeader)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal signature header: %w", err)
@@ -71,7 +60,7 @@ func ParseEnvelope(envelopeData []byte, validationCode peer.TxValidationCode) (*
 		protoutil.SetTxID(channelHeader, sigHeader)
 	}
 
-	tx := &Transaction{}
+	tx := &block.Transaction{}
 	var rawUnparsedTransaction []byte
 	switch common.HeaderType(channelHeader.Type) {
 	case common.HeaderType_CONFIG:
@@ -94,9 +83,9 @@ func ParseEnvelope(envelopeData []byte, validationCode peer.TxValidationCode) (*
 		rawUnparsedTransaction = payload.Data
 	}
 
-	return &Envelope{
-		Payload: &Payload{
-			Header: &Header{
+	return &block.Envelope{
+		Payload: &block.Payload{
+			Header: &block.Header{
 				ChannelHeader:   channelHeader,
 				SignatureHeader: signatureHeader,
 			},
