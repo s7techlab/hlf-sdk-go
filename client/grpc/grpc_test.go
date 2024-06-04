@@ -13,13 +13,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/s7techlab/hlf-sdk-go/api/config"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	testpb "google.golang.org/grpc/interop/grpc_testing"
-
-	"github.com/s7techlab/hlf-sdk-go/api/config"
 )
 
 var (
