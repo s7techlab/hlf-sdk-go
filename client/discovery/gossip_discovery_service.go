@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/hyperledger/fabric-protos-go/discovery"
+	"github.com/hyperledger/fabric-protos-go/peer"
 	discClient "github.com/hyperledger/fabric/discovery/client"
 )
 
@@ -31,8 +32,8 @@ func (s *gossipServiceDiscovery) DiscoverChaincode(ctx context.Context, ccName, 
 		OfChannel(chanName).
 		AddPeersQuery().
 		AddConfigQuery().
-		AddEndorsersQuery(&discovery.ChaincodeInterest{
-			Chaincodes: []*discovery.ChaincodeCall{
+		AddEndorsersQuery(&peer.ChaincodeInterest{
+			Chaincodes: []*peer.ChaincodeCall{
 				{Name: ccName},
 			},
 		})
@@ -46,7 +47,7 @@ func (s *gossipServiceDiscovery) DiscoverChaincode(ctx context.Context, ccName, 
 	}
 
 	chanEndorsers, err := res.ForChannel(chanName).Endorsers(discClient.InvocationChain{
-		&discovery.ChaincodeCall{
+		&peer.ChaincodeCall{
 			Name: ccName,
 		},
 	}, discClient.NoFilter)

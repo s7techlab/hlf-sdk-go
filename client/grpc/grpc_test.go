@@ -85,7 +85,7 @@ func TestNewGRPCOptionsFromConfig(t *testing.T) {
 	assert.NotNil(t, opts)
 	assert.NoError(t, err)
 	conn, err = grpc.DialContext(ctx, tlsConnConfig.Host, opts.Dial...)
-	assert.NoError(t, err)
+	assert.NoError(t, err, tlsConnConfig.Host)
 	assert.NotNil(t, conn)
 	cli = testpb.NewTestServiceClient(conn)
 	out, err = cli.EmptyCall(context.Background(), &testpb.Empty{})

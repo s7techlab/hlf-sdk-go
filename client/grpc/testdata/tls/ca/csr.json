@@ -1,4 +1,8 @@
 {
+  "CA": {
+    "expiry": "87600h",
+    "pathlen": 0
+  },
   "hosts": [
     "localhost",
     "127.0.0.1"
