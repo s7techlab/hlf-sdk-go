@@ -15,7 +15,7 @@ jobs:
     name: lint
     strategy:
       matrix:
-        go: [ "1.21.x","1.22.x" ]
+        go: [ "1.22.x","1.23.x" ]
         os: [ ubuntu-latest ]
     runs-on: ${{ matrix.os }}
     steps:
@@ -34,7 +34,7 @@ jobs:
           # working-directory: somedir
 
           # Optional: golangci-lint command line arguments.
-          args: --exclude SA1019  --timeout=10m
+          args: --exclude SA1019 --timeout=10m
 
           # Optional: show only new issues if it's a pull request. The default value is `false`.
           only-new-issues: false
