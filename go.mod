@@ -1,6 +1,8 @@
 module github.com/s7techlab/hlf-sdk-go
 
-go 1.23.4
+go 1.22.0
+
+toolchain go1.23.4
 
 require (
 	github.com/cloudflare/cfssl v1.6.5
@@ -13,7 +15,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/hashicorp/vault/api v1.15.0
-	github.com/hyperledger/fabric v1.4.0-rc1.0.20241219073107-866756f7d890 // release-2.5
+	github.com/hyperledger/fabric v1.4.0-rc1.0.20240618194258-7c3876255bf0 // v2.5.9
 	github.com/hyperledger/fabric-chaincode-go v0.0.0-20240704073638-9fb89180dc17
 	github.com/hyperledger/fabric-protos-go v0.3.5
 	github.com/mitchellh/mapstructure v1.5.0

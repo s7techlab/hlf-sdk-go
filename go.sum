@@ -946,8 +946,8 @@ github.com/hashicorp/hcl v1.0.0/go.mod h1:E5yfLk+7swimpb2L/Alb/PJmXilQ/rhwaUYs4T
 github.com/hashicorp/vault/api v1.15.0 h1:O24FYQCWwhwKnF7CuSqP30S51rTV7vz1iACXE/pj5DA=
 github.com/hashicorp/vault/api v1.15.0/go.mod h1:+5YTO09JGn0u+b6ySD/LLVf8WkJCPLAL2Vkmrn2+CM8=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
-github.com/hyperledger/fabric v1.4.0-rc1.0.20241219073107-866756f7d890 h1:etZ+eM3Na8Pol2q09wT1PQVfQDXzX32kzelJV4AZXBw=
-github.com/hyperledger/fabric v1.4.0-rc1.0.20241219073107-866756f7d890/go.mod h1:r+8gp3WLEGjrHVLF36ld3fAw0L1QvTmnB9+Mmlj92ts=
+github.com/hyperledger/fabric v1.4.0-rc1.0.20240618194258-7c3876255bf0 h1:w1N0xx9Jg7nFxDelL7+BYj7Z3YIg3L1nTTWRlzkG88U=
+github.com/hyperledger/fabric v1.4.0-rc1.0.20240618194258-7c3876255bf0/go.mod h1:kNGP0htTW6MAA5Psl/+9utzXGLXh2roCnu/25tnysOE=
 github.com/hyperledger/fabric-amcl v0.0.0-20230602173724-9e02669dceb2 h1:B1Nt8hKb//KvgGRprk0h1t4lCnwhE9/ryb1WqfZbV+M=
 github.com/hyperledger/fabric-amcl v0.0.0-20230602173724-9e02669dceb2/go.mod h1:X+DIyUsaTmalOpmpQfIvFZjKHQedrURQ5t4YqquX7lE=
 github.com/hyperledger/fabric-chaincode-go v0.0.0-20240704073638-9fb89180dc17 h1:SCsBjYLaoHCuyN6D3AAEX+YjBEnXn7MVpxn3rNX5gu4=
