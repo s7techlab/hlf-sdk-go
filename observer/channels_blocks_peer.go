@@ -28,7 +28,7 @@ type (
 		seekFromFetcher    SeekFromFetcher
 		stopRecreateStream bool
 
-		isWork        bool
+		isWork        sync.Mutex
 		cancelObserve context.CancelFunc
 
 		mu     sync.RWMutex
@@ -141,12 +141,12 @@ func (acb *ChannelsBlocksPeer[T]) Stop() {
 	if acb.cancelObserve != nil {
 		acb.cancelObserve()
 	}
-
-	acb.isWork = false
 }
 
 func (acb *ChannelsBlocksPeer[T]) Observe(ctx context.Context) <-chan *Block[T] {
-	if acb.isWork {
+	if !acb.isWork.TryLock() {
+		// The isWork can set Lock status once
+		// If isWork already locked then skip the next running
 		return acb.blocks
 	}
 
@@ -160,12 +160,17 @@ func (acb *ChannelsBlocksPeer[T]) Observe(ctx context.Context) <-chan *Block[T] 
 
 	// init new channels if they are fetched
 	go func() {
-		acb.isWork = true
-
 		ticker := time.NewTicker(acb.refreshPeriod)
 		defer func() {
 			ticker.Stop()
+			// If the process for startNotObservedChannels is closed and the status of isWork is set to
+			// Unlock, then after acquiring the lock, the process can close the channels without waiting
+			// for startNotObservedChannels to stop or the context to be closed. The observer may then try
+			// to write to an already closed channel.
+			acb.isWork.Lock()
 			close(acb.blocks)
+			// Set to Unlock status again after closing these channels. Final unlocking
+			acb.isWork.Unlock()
 		}()
 
 		for {
@@ -193,8 +198,15 @@ func (acb *ChannelsBlocksPeer[T]) startNotObservedChannels(ctx context.Context, 
 
 		// channel merger
 		go func() {
-			for b := range chBlocks.channelWithBlocks {
-				acb.blocks <- b
+			for {
+				select {
+				case <-ctx.Done():
+					// unlock isWork, because context for startNotObservedChannels is closed
+					acb.isWork.Unlock()
+					return
+				case b := <-chBlocks.channelWithBlocks:
+					acb.blocks <- b
+				}
 			}
 		}()
 	}
